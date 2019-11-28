@@ -59,6 +59,10 @@ internal properties. For further information, see the `bundled property document
     // Construct a graph
     Graph g;
 
+If you want to use Utopia's full graph functionality we strongly recommend
+that your graph is defined as described in the apply_rule section: 
+:ref:`Apply rules on Graph Entities <apply_rule_graph>`.
+
 .. note::
 
     If you construct the `adjacency_list` take care that the ordering of the 
@@ -149,6 +153,168 @@ YAML file looks like this:
 This of course is a highly documented configuration. You only need to specify
 configuration options if the creation algorithm you set requires them, otherwise
 they will be just ignored.
+
+.. _apply_rule_graph:
+
+Apply rule 
+----------
+
+Utopia provides an interface to easily apply a rule to entities of 
+a graph. The user just needs to define a lambda function that takes one 
+graph entity descriptor as input and call the ``apply_rule`` function. 
+This is best described through examples:
+
+.. code-block:: c++
+
+    #include <utopia/graph/apply.hh>        // for apply_rule
+    #include <utopia/graph/iterator.hh>     // for range, IterateOver
+
+    // -- Simple Examples -----------------------------------------------------
+    // The full possibilities are described in the example below
+    
+    // Set all vertices' v_prop to 42
+    apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
+        [this](auto vertex){
+            auto& state = this->g[vertex].state;
+            state.v_prop = 42;
+        },
+        g 
+    );
+
+    // Set all neighbors' v_prop synchronously to the sum of all their 
+    // neighbors' v_prop accumulated to the former v_prop.
+    apply_rule<IterateOver::neighbors, Update::sync, Shuffle::off>(
+        [this](auto neighbor){
+            auto state = this->g[neighbor].state;
+            
+            for (auto next_neighbor : range<IterateOver::neighbors>(neighbor, 
+                                                                    this->g){
+                state.v_prop += this->g[next_neighbor].v_prop;
+            }
+
+            return state;
+        },
+        boost::vertex(0, g), // Neighbors of vertex '0'
+        g 
+    );
+
+    // -- Example with detailed explanation -----------------------------------
+    apply_rule<                     // Apply a rule to graph entities
+        IterateOver::vertices,      // Choose the entities that the rule 
+                                    // should be applied to. Here: vertices.
+                                    // All available options are:
+                                    //      IterateOver::vertices
+                                    //      IterateOver::edges
+                                    //
+                                    //      IterateOver::neighbors
+                                    //      IterateOver::inv_neighbors (inverse)
+                                    //      IterateOver::degree
+                                    //      IterateOver::out_degree
+                                    //      IterateOver::in_degree
+                                    //
+                                    // The last options require a parent_vertex
+                                    // that works as a reference.
+
+        Update::async,              // Apply a rule asynchronously
+        
+        Shuffle::off                // Randomize the order ('Shuffle::on')
+                                    // or not 'Shuffle::off'.
+    >(
+        [this](auto v){
+            auto& state = this->g[v].state;     // Get the state by reference.
+                                                // WARNING:
+                                                //      If Update::sync was 
+                                                //      selected work on a 
+                                                //      state copy, meaning
+                                                //      leave away the '&'
+                                                //      and return the state
+                                                //      at the end of the
+                                                //      lambda function. 
+            
+            state.v_prop = 42;                  // Set the vertex property
+            
+            return state;                       // Return the state.
+                                                // NOTE if Update::asyn you
+                                                //      do _not_ need to return
+                                                //      the state. Delete the
+                                                //      line.
+        },
+        // boost::vertex(0, g),     // The parent vertex that needs to be
+                                    // given when IterateOver requires a 
+                                    // reference vertex such as neighbors
+                                    // of vertex '0' as is selected here.
+
+        g                           // the graph object
+    );
+
+    
+Note that this functionality can only be used if the vertices and edges of the 
+graph are derived from a ``Utopia::GraphEntity``. Your definition of the graph 
+needs to look like this:
+
+.. code-block:: c++
+
+    #include <boost/graph/adjacency_list.hpp>
+    #include <utopia/core/graph/entity.hh>
+
+    // -- Vertex --------------------------------------------------------------
+    /// The vertex state 
+    struct VertexState {
+        /// A vertex property
+        unsigned v_prop = 0;
+
+        // Add your vertex parameters here.
+        // ...
+    };
+
+    /// The traits of a vertex are just the traits of a graph entity
+    using VertexTraits = Utopia::GraphEntityTraits<VertexState>;
+
+    /// A vertex is a graph entity with vertex traits
+    using Vertex = GraphEntity<VertexTraits>;
+
+    // -- Edge ----------------------------------------------------------------
+    /// The edge state
+    struct EdgeState {
+        /// An edge property
+        unsigned e_prop = 0;
+
+        // Add your edge parameters here.
+        // ...
+    };
+
+    /// The traits of an edge are just the traits of a graph entity
+    using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;
+
+    /// An edge is a graph entity with edge traits
+    using Edge = GraphEntity<EdgeTraits>;
+
+    // -- Graph ---------------------------------------------------------------
+    /// Declare a graph type with the formerly defined Vertex and Edge types
+    using G = boost::adjacency_list<
+            boost::vecS,         // edge container
+            boost::vecS,         // vertex container
+            boost::undirectedS,
+            Vertex,
+            Edge>;
+
+    // Create a graph
+    G g;
+    
+
+This graph structure is similar but a bit more sophisticated than described above the 
+:ref:`Graph Creation <create_graphs>`.
+
+In this graph definition the vertex and edge property access works as follows:
+
+.. code-block:: c++
+
+    // Get the vertex property defined above
+    g[vertex].state.v_prob;
+
+    // Get the edge property defined above
+    g[edge].state.e_prob;
+
 
 .. _save_graph_properties:
 

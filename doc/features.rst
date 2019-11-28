@@ -169,7 +169,7 @@ The ``AgentManager``
 
 The ``apply_rule`` Interface – rule-based formulation of model dynamics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Apply a rule on multiple Utopia ``Entity``  (``Cell`` or ``Agent``). Normally, a rule changes the state of an entity.
+* Apply a rule on multiple Utopia ``Entity``  (``Cell``, ``Agent``, or ``GraphEntity``). Normally, a rule changes the state of an entity.
 * Rules can be applied ...
 
     * ... synchronously (in parallel) or asynchronously 
@@ -193,8 +193,17 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
                             // Utopia entities.
         );
 
+        // Apply a rule to all vertices of a graph
+        apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
+            [this](auto vertex){
+                this->g[vertex].state.property = 42;
+            },
+            g 
+        );
+
 * 📚
-  `Doxygen <../doxygen/html/group___rules.html>`_
+  `Doxygen <../doxygen/html/group___rules.html>`_,
+  :ref:`FAQ on apply_rule on Graphs <apply_rule_graph>`
 
 
 .. _feature_entity:
@@ -230,7 +239,25 @@ Graph Creation
 * 📚
   `Doxygen <../doxygen/html/namespace_utopia_1_1_graph.html>`_,
   :ref:`FAQ on Create Graph <create_graphs>`,
+  :ref:`Graph Creation requirements for the  apply_rule on Graphs <apply_rule_graph>`
 
+
+Iterate Over Graph Entities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Conveniently loop over graph entities:
+
+.. code-block:: c++
+
+    include <utopia/graph/iterator.hh>
+    // ...
+
+    // Loop over all vertices and print their states
+    for (auto vertex : range<IterateOver::vertex>(g):
+        std::cout << g[vertex].property << "\n";
+
+    // Loop over all neighbors of vertex '0' and print their states
+    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g):
+        std::cout << g[vertex].property << "\n";
 
 
 |
@@ -271,7 +298,7 @@ Saving Static Graphs
   `Doxygen <../doxygen/html/group___graph_utilities.html>`_
 
 Saving Dynamic Graphs
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 * Save a dynamic graph and its properties in a Utopia frontend compatible way with a single function.
 * 📚
   `Doxygen <../doxygen/html/group___graph_utilities.html>`_,
