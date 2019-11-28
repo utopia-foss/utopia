@@ -26,6 +26,16 @@ using GraphEntityTraits = EntityTraits<StateType,
                                 CustomLinkContainers>;
 
 
+/// A graph entity is a slightly specialized state container
+/** It can be extended with the use of tags and can be associated with
+  * so-called "custom links". These specializations are carried into
+  * the graph entity by means of the GraphEntityTraits struct.
+  * A graph entity should be used as the base class for a Vertex and
+  * an Edge that is placed on a boost::graph graph object.
+  *
+  * \tparam Traits  Valid Utopia::EntityTraits, describing the type of graph 
+  *                 entity
+  */
 template<typename Traits>
 class GraphEntity :
     public Entity<Traits>

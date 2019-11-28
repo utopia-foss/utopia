@@ -109,7 +109,7 @@ decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
 } // namespace Graph
 
 
-/// Get the iterator range over specified graph entities
+/// Get the iterator range over selected graph entities
 /** 
  * \tparam iterate_over Specify over which graph entities to iterate over
  *                      Valid options: 
@@ -128,7 +128,7 @@ decltype(auto) range(const Graph& g){
 }
 
 
-/// Get the iterator range over specified graph entities
+/// Get the iterator range over selected graph entities
 /** This function returns the iterator range wrt. another graph entity.
  *  For example iterating of the neighbors (adjacent_vertices) of a vertex
  *  requires a vertex descriptor as reference. 
