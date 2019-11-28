@@ -24,10 +24,10 @@ struct EdgeState {
 
 
 /// The traits of a vertex are just the traits of a graph entity
-using VertexTraits = Utopia::GraphEntityTraits<VertexState, Update::manual>;
+using VertexTraits = Utopia::GraphEntityTraits<VertexState>;
 
 /// The traits of an edge are just the traits of a graph entity
-using EdgeTraits = Utopia::GraphEntityTraits<EdgeState, Update::manual>;
+using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;
 
 /// A vertex is a graph entity with vertex traits
 using Vertex = GraphEntity<VertexTraits>;
