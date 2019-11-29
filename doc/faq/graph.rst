@@ -174,8 +174,8 @@ This is best described through examples:
     
     // Set all vertices' v_prop to 42
     apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-        [this](auto vertex){
-            auto& state = this->g[vertex].state;
+        [this](auto vertex_desc){
+            auto& state = this->g[vertex_desc].state;
             state.v_prop = 42;
         },
         g 
@@ -184,10 +184,10 @@ This is best described through examples:
     // Set all neighbors' v_prop synchronously to the sum of all their 
     // neighbors' v_prop accumulated to the former v_prop.
     apply_rule<IterateOver::neighbors, Update::sync, Shuffle::off>(
-        [this](auto neighbor){
-            auto state = this->g[neighbor].state;
+        [this](auto neighbor_desc){
+            auto state = this->g[neighbor_desc].state;
             
-            for (auto next_neighbor : range<IterateOver::neighbors>(neighbor, 
+            for (auto next_neighbor : range<IterateOver::neighbors>(neighbor_desc, 
                                                                     this->g){
                 state.v_prop += this->g[next_neighbor].v_prop;
             }
@@ -220,24 +220,21 @@ This is best described through examples:
         Shuffle::off                // Randomize the order ('Shuffle::on')
                                     // or not 'Shuffle::off'.
     >(
-        [this](auto v){
-            auto& state = this->g[v].state;     // Get the state by reference.
-                                                // WARNING:
-                                                //      If Update::sync was 
-                                                //      selected work on a 
-                                                //      state copy, meaning
-                                                //      leave away the '&'
-                                                //      and return the state
-                                                //      at the end of the
-                                                //      lambda function. 
+        [this]                      // Capture the whole model
+                                    // The graph is then available as member 'g'
+        (auto vertex_desc)
+        {
+            auto& state = this->g[vertex_desc].state;     
+            // Get the state by reference.
+            // WARNING: If Update::sync was selected work on a state copy, 
+            //          meaning leave away the '&' and return the state
+            //          at the end of the lambda function. 
+
+            state.v_prop = 42;      // Set the vertex property
             
-            state.v_prop = 42;                  // Set the vertex property
-            
-            return state;                       // Return the state.
-                                                // NOTE if Update::asyn you
-                                                //      do _not_ need to return
-                                                //      the state. Delete the
-                                                //      line.
+            return state;           // Return the state.
+                                    // NOTE if Update::asyn you do _not_ need 
+                                    // to return the state. Delete the line.
         },
         // boost::vertex(0, g),     // The parent vertex that needs to be
                                     // given when IterateOver requires a 
@@ -247,10 +244,12 @@ This is best described through examples:
         g                           // the graph object
     );
 
-    
+
+Prerequisits on Graph, Vertex, & Edge Type
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Note that this functionality can only be used if the vertices and edges of the 
-graph are derived from a ``Utopia::GraphEntity``. Your definition of the graph 
-needs to look like this:
+graph are derived from a   `Utopia::Entity <../doxygen/html/group___graph_entity.html>`_. 
+Your definition of the graph needs to look like this:
 
 .. code-block:: c++
 
@@ -302,8 +301,8 @@ needs to look like this:
     G g;
     
 
-This graph structure is similar but a bit more sophisticated than described above the 
-:ref:`Graph Creation <create_graphs>`.
+This graph structure is similar but a bit more sophisticated than described above 
+in the section on :ref:`Graph Creation <create_graphs>`.
 
 In this graph definition the vertex and edge property access works as follows:
 
