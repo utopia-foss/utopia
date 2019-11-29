@@ -147,7 +147,14 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
     >(
         [this]                      // Capture the whole model
                                     // The graph is then available as member 'g'
-        (auto vertex_desc)
+        
+        (auto vertex_desc)          // Take a vertex descriptor as input argument.
+                                    // The vertex descriptor is normally just a
+                                    // literal type, so copying is actually
+                                    // faster than taking it by const reference
+                                    // (NOTE that in contrast the apply_rule 
+                                    //  for cell- or agent-based models should 
+                                    //  take the state as const reference.)
         {
             auto& state = this->g[vertex_desc].state;     
             // Get the state by reference.
@@ -168,8 +175,6 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 
         g                           // the graph object
     );
-
-
 }
 
 }   // namespace Utopia
