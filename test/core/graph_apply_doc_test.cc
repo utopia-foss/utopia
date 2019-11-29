@@ -13,6 +13,7 @@ namespace Utopia
 {
 
 // ++ Types +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Below, an example of the required graph types - doc reference line
 
 // -- Vertex --------------------------------------------------------------
 /// The vertex state 
@@ -55,6 +56,7 @@ using Graph = boost::adjacency_list<
               Vertex,
               Edge>;
 
+// End of the required graph types - doc reference line
 
 // ++ Fixtures ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 struct GraphFixture {
@@ -94,6 +96,7 @@ struct GraphFixture {
 // ++ Tests +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 {
+    // Below: Start of apply_rule on graph entities examples - doc reference line 
     // -- Simple Examples -----------------------------------------------------
     // The full possibilities are described in the example below
     
@@ -175,6 +178,8 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 
         g                           // the graph object
     );
+
+    // End of apply_rule on graph entities examples - doc reference line 
 }
 
 }   // namespace Utopia

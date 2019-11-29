@@ -12,7 +12,7 @@ namespace Utopia {
 
 /// GraphEntityTraits are mainly just another name for Utopia::EntityTraits
 /** The only difference is that the update_mode is restricted as default to  
- *  Update::manual.
+ *  Update::manual and a default constructor is required.
  */
 template<typename StateType,
          typename GraphEntityTags=EmptyTag,

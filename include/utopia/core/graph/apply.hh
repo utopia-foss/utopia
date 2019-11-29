@@ -37,8 +37,8 @@ void _apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 {
     // Determine whether the lambda function returns a void
     using GraphType = typename std::remove_reference_t<Graph>;
-    using VertexDesc = typename boost::graph_traits<GraphType>
-                                                        ::vertex_descriptor;
+    using VertexDesc =
+        typename boost::graph_traits<GraphType>::vertex_descriptor;
     using ReturnType = typename std::invoke_result_t<Rule, VertexDesc>;
     constexpr bool lambda_returns_void = std::is_same_v<ReturnType, void>;
 
@@ -134,6 +134,10 @@ void apply_rule(Rule&& rule, Graph&& g)
     else if constexpr (mode == Update::async){
         _apply_async(it, it_end, g, rule);
     }
+    else{
+        static_assert((mode == Update::async or mode == Update::sync), 
+            "apply_rule only works with 'Update::async' or 'Update::sync'!");
+    }
 }
 
 
@@ -169,8 +173,8 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
 {
     // Get types
     using GraphType = typename std::remove_reference_t<Graph>;
-    using VertexDesc = typename boost::graph_traits<GraphType>
-                                                        ::vertex_descriptor;
+    using VertexDesc =
+        typename boost::graph_traits<GraphType>::vertex_descriptor;
     
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
@@ -185,6 +189,10 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
     else if constexpr (mode == Update::async){
         // Apply the rule to each element asynchronously
         _apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+    }
+    else{
+        static_assert((mode == Update::async or mode == Update::sync), 
+            "apply_rule only works with 'Update::async' or 'Update::sync'!");
     }
 }
 
@@ -233,6 +241,10 @@ void apply_rule(Rule&& rule,
     }
     else if constexpr (mode == Update::async){
         _apply_async(it, it_end, g, rule);
+    }
+    else{
+        static_assert((mode == Update::async or mode == Update::sync), 
+            "apply_rule only works with 'Update::async' or 'Update::sync'!");
     }
 }
 
@@ -286,6 +298,10 @@ void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
     else if constexpr (mode == Update::async){
         // Apply the rule to each element asynchronously
         _apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+    }
+    else{
+        static_assert((mode == Update::async or mode == Update::sync), 
+            "apply_rule only works with 'Update::async' or 'Update::sync'!");
     }
 }
 
