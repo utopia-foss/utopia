@@ -27,6 +27,7 @@ set(TESTS_CORE
     exceptions_test
     graph_test
     graph_apply_test
+    graph_apply_doc_test
     graph_creation_test
     graph_iterator_test
     grid_square_test
