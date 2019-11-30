@@ -125,14 +125,14 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle = Shuffle::on,
+         Shuffle shuffle,
          typename Graph, 
          typename Rule,
          typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g)
 {
     using namespace GraphUtil;
-    
+
     auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>(g);
 
     if constexpr (mode == Update::sync) {
@@ -171,7 +171,7 @@ void apply_rule(Rule&& rule, Graph&& g)
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle = Shuffle::on,
+         Shuffle shuffle,
          typename Graph, 
          typename Rule,
          typename RNG,
@@ -232,7 +232,7 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle = Shuffle::on,
+         Shuffle shuffle,
          typename Graph, 
          typename Rule,
          typename VertexDesc = typename boost::graph_traits<
@@ -286,7 +286,7 @@ void apply_rule(Rule&& rule,
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle = Shuffle::on,
+         Shuffle shuffle,
          typename Graph, 
          typename Rule,
          typename RNG,
