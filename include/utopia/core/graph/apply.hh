@@ -18,6 +18,9 @@ namespace Utopia {
  *  \{
  */
 
+
+namespace GraphUtil{
+
 /// Apply a rule asynchronously
 /** This helper function applies a rule to a range of entities that is given
  *  through an iterator pair one after the other.
@@ -33,7 +36,7 @@ namespace Utopia {
  *                  iterator range.
  */
 template<typename Graph, typename Iter, typename Rule>
-void _apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
+void apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 {
     // Determine whether the lambda function returns a void
     using GraphType = typename std::remove_reference_t<Graph>;
@@ -76,7 +79,7 @@ void _apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
  *          and return the copied and changed state at the end of the function.
  */
 template<typename Iter, typename Graph, typename Rule>
-void _apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
+void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 {
     // initialize the state cache
     std::vector<decltype(g[*it_begin].state)> state_cache;
@@ -95,6 +98,8 @@ void _apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
         ++counter;
     }
 }
+
+} // namespace GraphUtil
 
 
 /// Apply a rule on graph entity properties
@@ -126,13 +131,15 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g)
 {
+    using namespace GraphUtil;
+    
     auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>(g);
 
     if constexpr (mode == Update::sync) {
-        _apply_sync(it, it_end, g, rule);
+        apply_sync(it, it_end, g, rule);
     }
     else if constexpr (mode == Update::async){
-        _apply_async(it, it_end, g, rule);
+        apply_async(it, it_end, g, rule);
     }
     else{
         static_assert((mode == Update::async or mode == Update::sync), 
@@ -171,6 +178,8 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
 {
+    using namespace GraphUtil;
+
     // Get types
     using GraphType = typename std::remove_reference_t<Graph>;
     using VertexDesc =
@@ -184,11 +193,11 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
 
     if constexpr (mode == Update::sync) {
-        _apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+        apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
     }
     else if constexpr (mode == Update::async){
         // Apply the rule to each element asynchronously
-        _apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+        apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
     }
     else{
         static_assert((mode == Update::async or mode == Update::sync), 
@@ -233,14 +242,16 @@ void apply_rule(Rule&& rule,
                 VertexDesc parent_vertex,
                 Graph&& g)
 {
+    using namespace GraphUtil;
+
     auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>
                             (parent_vertex, g);
 
     if constexpr (mode == Update::sync) {
-        _apply_sync(it, it_end, g, rule);
+        apply_sync(it, it_end, g, rule);
     }
     else if constexpr (mode == Update::async){
-        _apply_async(it, it_end, g, rule);
+        apply_async(it, it_end, g, rule);
     }
     else{
         static_assert((mode == Update::async or mode == Update::sync), 
@@ -284,6 +295,8 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
 {
+    using namespace GraphUtil;
+
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
     // and shuffle them.
@@ -293,11 +306,11 @@ void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
 
     if constexpr (mode == Update::sync) {
-        _apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+        apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
     }
     else if constexpr (mode == Update::async){
         // Apply the rule to each element asynchronously
-        _apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
+        apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
     }
     else{
         static_assert((mode == Update::async or mode == Update::sync), 
