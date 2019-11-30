@@ -203,6 +203,17 @@ In this graph definition the vertex and edge property access works as follows:
     g[edge].state.e_prob;
 
 
+Can I modify the Graph structure while looping over a graph entity?
+-------------------------------------------------------------------
+In general you can do it but you should be really careful because the iterators
+you use to loop over the graph can easily be invalidated. Have a look at the 
+:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html>`_ 
+for further information.
+
+As a rule of thumb: If you want to change the graph structure 
+- use ``boost::listS`` as the appropriate list and edge containers and
+- do not use the ``apply_rule`` functions because they can easily result in buggy behavior.
+
 .. _save_graph_properties:
 
 Save node & edge properties
