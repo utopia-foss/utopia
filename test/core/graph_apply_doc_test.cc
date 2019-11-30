@@ -102,7 +102,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
     
     // Set all vertices' v_prop to 42
     apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-        [this](auto vertex_desc){
+        [this](const auto vertex_desc){
             auto& state = this->g[vertex_desc].state;
             state.v_prop = 42;
         },
@@ -112,11 +112,11 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
     // Set all neighbors' v_prop synchronously to the sum of all their 
     // neighbors' v_prop accumulated to the former v_prop.
     apply_rule<IterateOver::neighbors, Update::sync, Shuffle::off>(
-        [this](auto neighbor_desc){
+        [this](const auto neighbor_desc){
             auto state = this->g[neighbor_desc].state;
             
-            for (auto next_neighbor : range<IterateOver::neighbors>(neighbor_desc, 
-                                                                    this->g)){
+            for (const auto next_neighbor 
+                    : range<IterateOver::neighbors>(neighbor_desc, this->g)){
                 state.v_prop += this->g[next_neighbor].state.v_prop;
             }
 
@@ -151,7 +151,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
         [this]                      // Capture the whole model
                                     // The graph is then available as member 'g'
         
-        (auto vertex_desc)          // Take a vertex descriptor as input argument.
+        (const auto vertex_desc)    // Take a vertex descriptor as input argument.
                                     // The vertex descriptor is normally just a
                                     // literal type, so copying is actually
                                     // faster than taking it by const reference
