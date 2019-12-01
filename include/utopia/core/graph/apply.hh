@@ -108,10 +108,9 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
  * \tparam iterate_over Over which graph entity to iterate over. See 
  *          \ref IterateOver
  * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle::on  Whether to shuffle the container
+ * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
- * \tparam RNG          The random number generator type
  *  
  * \param rule          The rule that takes a graph entity descriptor
  *                      (vertex_descriptor or edge_descriptor).
@@ -119,9 +118,7 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
  *                      the rule function needs to return a copied state and
  *                      changed state that overwrites the old state.
  *                      Returning a state is optional for asynchronous update.
- * \param parent_vertex The parent vertex 
  * \param g             The graph
- * \param rng           The random number generator
  */
 template<IterateOver iterate_over,
          Update mode,
@@ -154,7 +151,7 @@ void apply_rule(Rule&& rule, Graph&& g)
  * \tparam iterate_over Over which graph entity to iterate over. See 
  *          \ref IterateOver
  * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle::on  Whether to shuffle the container
+ * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
  * \tparam RNG          The random number generator type
@@ -164,8 +161,7 @@ void apply_rule(Rule&& rule, Graph&& g)
  *                      If the graph entity states are updated synchronously
  *                      the rule function needs to return a copied state and
  *                      changed state that overwrites the old state.
- *                      Returning a state is optional for asynchronous update.
- * \param parent_vertex The parent vertex 
+ *                      Returning a state is optional for asynchronous update. 
  * \param g             The graph
  * \param rng           The random number generator
  */
@@ -215,10 +211,9 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
  * \tparam iterate_over Over which graph entity to iterate over. See 
  *          \ref IterateOver
  * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle::on  Whether to shuffle the container
+ * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
- * \tparam RNG          The random number generator type
  *  
  * \param rule          The rule that takes a graph entity descriptor
  *                      (vertex_descriptor or edge_descriptor).
@@ -228,7 +223,6 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
  *                      Returning a state is optional for asynchronous update.
  * \param parent_vertex The parent vertex 
  * \param g             The graph
- * \param rng           The random number generator
  */
 template<IterateOver iterate_over,
          Update mode,
@@ -269,7 +263,7 @@ void apply_rule(Rule&& rule,
  * \tparam iterate_over Over which graph entity to iterate over. See 
  *          \ref IterateOver
  * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle::on  Whether to shuffle the container
+ * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
  * \tparam RNG          The random number generator type
@@ -293,7 +287,10 @@ template<IterateOver iterate_over,
          typename VertexDesc = typename boost::graph_traits<
             std::remove_reference_t<Graph>>::vertex_descriptor,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
-void apply_rule(Rule&& rule, VertexDesc parent_vertex, Graph&& g, RNG&& rng)
+void apply_rule(Rule&& rule, 
+                const VertexDesc parent_vertex, 
+                Graph&& g, 
+                RNG&& rng)
 {
     using namespace GraphUtil;
 
