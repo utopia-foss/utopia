@@ -54,7 +54,7 @@ public:
     }
 
     /// Construct a graph entity with initial state
-    GraphEntity(const State initial_state)
+    GraphEntity(const State& initial_state)
     :
         Entity<Traits>(id_counter, initial_state)
     {

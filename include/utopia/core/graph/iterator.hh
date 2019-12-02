@@ -67,6 +67,12 @@ decltype(auto) iterator_pair(const Graph& g){
     else if constexpr (iterate_over == IterateOver::edges){
         return boost::edges(g);
     }
+    else {
+        static_assert((iterate_over == IterateOver::vertices)
+                      or (iterate_over == IterateOver::edges),
+                      "Only the iterator pairs of vertices and edges can be"
+                      "returned: iterate_over is set wrong!");
+    }
 }
 
 
@@ -103,6 +109,15 @@ decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
     }
     else if constexpr (iterate_over == IterateOver::out_edges){
         return boost::out_edges(e, g);
+    }
+    else {
+        static_assert((iterate_over == IterateOver::neighbors)
+                      or (iterate_over == IterateOver::inv_neighbors)
+                      or (iterate_over == IterateOver::in_edges)
+                      or (iterate_over == IterateOver::out_edges),
+                      "Only the iterator pairs of neighbors, inv_neighbors, "
+                      "in_edge, and out_edgecan be returned: "
+                      "iterate_over is set wrong!");
     }
 }
 
