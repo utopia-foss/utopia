@@ -168,7 +168,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
             state.v_prop = 42;      // Set the vertex property
             
             return state;           // Return the state.
-                                    // NOTE if Update::asyn you do _not_ need 
+                                    // NOTE if Update::async you do _not_ need 
                                     // to return the state. Delete the line.
         },
         // boost::vertex(0, g),     // The parent vertex that needs to be

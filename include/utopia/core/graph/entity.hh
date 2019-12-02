@@ -2,6 +2,7 @@
 #define UTOPIA_CORE_GRAPH_ENTITY_HH
 
 #include "../tags.hh"
+#include "../types.hh"
 #include "../entity.hh"
 
 namespace Utopia {

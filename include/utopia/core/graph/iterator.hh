@@ -121,7 +121,7 @@ decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
     }
 }
 
-} // namespace Graph
+} // namespace --- Graph
 
 
 /// Get the iterator range over selected graph entities
