@@ -19,7 +19,7 @@ namespace Utopia {
  */
 
 
-namespace GraphUtil{
+namespace GraphUtils{
 
 /// Apply a rule asynchronously
 /** This helper function applies a rule to a range of entities that is given
@@ -99,7 +99,7 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
     }
 }
 
-} // namespace GraphUtil
+} // namespace GraphUtils
 
 
 /// Apply a rule on graph entity properties
@@ -128,9 +128,9 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g)
 {
-    using namespace GraphUtil;
+    using namespace GraphUtils;
 
-    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>(g);
+    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>(g);
 
     if constexpr (mode == Update::sync) {
         apply_sync(it, it_end, g, rule);
@@ -174,7 +174,7 @@ template<IterateOver iterate_over,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
 {
-    using namespace GraphUtil;
+    using namespace GraphUtils;
 
     // Get types
     using GraphType = typename std::remove_reference_t<Graph>;
@@ -184,7 +184,7 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
     // and shuffle them.
-    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>(g);
+    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>(g);
     std::vector<VertexDesc> it_shuffled(it, it_end);
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
 
@@ -236,9 +236,9 @@ void apply_rule(Rule&& rule,
                 VertexDesc parent_vertex,
                 Graph&& g)
 {
-    using namespace GraphUtil;
+    using namespace GraphUtils;
 
-    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>
+    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>
                             (parent_vertex, g);
 
     if constexpr (mode == Update::sync) {
@@ -292,12 +292,12 @@ void apply_rule(Rule&& rule,
                 Graph&& g, 
                 RNG&& rng)
 {
-    using namespace GraphUtil;
+    using namespace GraphUtils;
 
     // Get the iterators, create a vector with a copy because the 
     // original iterators are const, thus cannot be shuffed,
     // and shuffle them.
-    auto [it, it_end] = Utopia::GraphUtil::iterator_pair<iterate_over>
+    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>
                             (parent_vertex, g);
     std::vector<VertexDesc> it_shuffled(it, it_end);
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
