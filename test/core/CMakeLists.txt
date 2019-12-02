@@ -29,6 +29,7 @@ set(TESTS_CORE
     graph_apply_test
     graph_apply_doc_test
     graph_creation_test
+    graph_entity_test
     graph_iterator_test
     grid_square_test
     model_test
