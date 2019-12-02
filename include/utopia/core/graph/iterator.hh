@@ -5,6 +5,7 @@
 
 namespace Utopia {
 /**
+ *  \ingroup Graph
  *  \addtogroup GraphIterators
  *  \{
  */

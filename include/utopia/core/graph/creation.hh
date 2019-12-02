@@ -12,6 +12,11 @@
 namespace Utopia {
 namespace Graph {
 
+/**
+ *  \addtogroup Graph
+ *  \{
+ */
+
 
 // -- Graph creation algorithms -----------------------------------------------
 
@@ -617,6 +622,10 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
                                     "'BollobasRiordan'.");
     }
 }
+
+/**
+ *  \}
+ */
 
 
 } // namespace Graph

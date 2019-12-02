@@ -13,7 +13,7 @@
 namespace Utopia {
 
 
-/**
+/** \ingroup Graph
  *  \addtogroup Rules
  *  \{
  */
