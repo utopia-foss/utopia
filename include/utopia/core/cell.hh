@@ -1,9 +1,7 @@
 #ifndef UTOPIA_CORE_CELL_HH
 #define UTOPIA_CORE_CELL_HH
 
-#include "state.hh"
 #include "tags.hh"
-#include "space.hh"
 #include "types.hh"
 #include "entity.hh"
 

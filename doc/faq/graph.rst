@@ -59,6 +59,10 @@ internal properties. For further information, see the `bundled property document
     // Construct a graph
     Graph g;
 
+If you want to use Utopia's full graph functionality we strongly recommend
+that your graph is defined as described in the apply_rule section: 
+:ref:`Apply rules on Graph Entities <apply_rule_graph>`.
+
 .. note::
 
     If you construct the `adjacency_list` take care that the ordering of the 
@@ -149,6 +153,66 @@ YAML file looks like this:
 This of course is a highly documented configuration. You only need to specify
 configuration options if the creation algorithm you set requires them, otherwise
 they will be just ignored.
+
+.. _apply_rule_graph:
+
+Apply rule 
+----------
+
+Utopia provides an interface to easily apply a rule to entities of 
+a graph. The user just needs to define a lambda function that takes one 
+graph entity descriptor as input and call the ``apply_rule`` function. 
+This is best described through examples:
+
+.. literalinclude:: ../../test/core/graph_apply_doc_test.cc
+    :language: c++
+    :start-after: // Below: Start of apply_rule on graph entities examples - doc reference line 
+    :end-before: // End of apply_rule on graph entities examples - doc reference line 
+    :dedent: 4
+
+.. note::
+
+    You can find the whole working and tested example including all references
+    in the file ``utopia/test/core/apply_rule_graph_doc_test.cc``.
+
+
+Prerequisits on Graph, Vertex, & Edge Type
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Note that this functionality can only be used if the vertices and edges of the 
+graph are derived from a   `Utopia::Entity <../doxygen/html/group___graph_entity.html>`_. 
+Your definition of the graph needs to look like this:
+
+
+.. literalinclude:: ../../test/core/graph_apply_doc_test.cc
+    :language: c++
+    :start-after: // Below, an example of the required graph types - doc reference line
+    :end-before: // End of the required graph types - doc reference line
+
+
+This graph structure is similar but a bit more sophisticated than described above 
+in the section on :ref:`Graph Creation <create_graphs>`.
+
+In this graph definition the vertex and edge property access works as follows:
+
+.. code-block:: c++
+
+    // Get the vertex property v_prop
+    g[vertex].state.v_prob;
+
+    // Get the edge property e_prop
+    g[edge].state.e_prob;
+
+
+Can I modify the Graph structure while looping over a graph entity?
+-------------------------------------------------------------------
+In general you can do it but you should be really careful because the iterators
+you use to loop over the graph can easily be invalidated. Have a look at the 
+:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html>`_ 
+for further information.
+
+As a rule of thumb: If you want to change the graph structure 
+- use ``boost::listS`` as the appropriate list and edge containers and
+- do not use the ``apply_rule`` functions because they can easily result in buggy behavior.
 
 .. _save_graph_properties:
 
