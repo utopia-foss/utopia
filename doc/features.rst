@@ -361,7 +361,7 @@ Meta-Configuration – Controlling the Model Simulation
     #. **User configuration:** user- or machine-specific *updates* to the defaults
 
         * Used for all simulation runs, regardless of the model.
-        * Empty by default. Deploy using ``utopia config user --deploy``; see CLI help for more info.
+        * Empty by default. Deploy using ``utopia config user --deploy``; see ``utopia config --help`` for more info.
 
     #. **Run configuration:** updates for a specific simulation run
     #. **Temporary changes:** additional updates, defined via the CLI

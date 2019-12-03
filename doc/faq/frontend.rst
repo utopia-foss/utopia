@@ -101,7 +101,7 @@ In other words, you should be able to have full control over all the parameters 
 Ideally, you only specify those parameters you want to *change* and rely on the defaults for everything else.
 
 This flexibility is realised using a set of different configuration levels.
-The many different ways to adjust the configuration might be overwhelming at first, but be sure: These options are all there for a reason and you can greatly benefit from them.
+The many different ways to adjust the configuration might be overwhelming at first, but be sure: These options are all there for a reason. You can greatly benefit from them, which we will explore in the following.
 
 
 Which possibilities are there to configure a simulation?
@@ -129,7 +129,7 @@ Combining all these levels creates the so-called **meta configuration**, which c
 The combination happens by starting from the lowest level, the base configuration, and recursively updating all entries in the configuration with the entries from the next level.
 
 The individual files and the resulting meta configuration are also stored alongside your output data, such that all the parameters are in one place.
-The stored meta configuration file can also be used as the run configuration for a new simulation run.
+The stored meta configuration file can also be used as the run configuration for a new simulation run, simply by passing it to ``utopia run``.
 
 This can be a little bit confusing at first, but no worries: The section below gives a more detailed description of the different use cases.
 
