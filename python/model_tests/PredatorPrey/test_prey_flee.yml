@@ -2,11 +2,10 @@
 parameter_space:
   num_steps: 30
 
-  PredatorPrey: !model
-    model_name: PredatorPrey
-
+  PredatorPrey:
     space:
-      extent: [30, 1]
+      extent: [100, 1]
+      periodic: false  # such that it moves only in 1D
 
     cell_manager:
       grid:

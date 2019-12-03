@@ -24,6 +24,8 @@ def assert_eq(a, b, *, epsilon=1e-6):
 # - taking up resources
 # - reproduction
 
+# TODO Use xarray for all tests!
+
 def test_cost_of_living_prey():
     """Test the cost of living of the prey"""
     # Create, run, and load a universe
@@ -32,21 +34,11 @@ def test_cost_of_living_prey():
     # Get the data
     data = dm['multiverse'][0]['data']['PredatorPreyPlant']
     prey = data["prey"]
-
-    prey.stack(dim=['x', 'y'])
-    
-    res_prey = data['resource_prey']
-    res_prey.stack(dim=['x', 'y'])
-
-    # Assert that life is costly...
-    # NOTE Requires initial resources of 2 and cost of living of 1
-    for i, r in enumerate(res_prey):
-        unique = np.unique(r)
-        if 2-i >= 0:
-            assert unique == 2-i
+    res_prey = data['resource_prey']    
 
     # Assert that in the end all prey is dead due to starvation
-    assert np.unique(prey.isel(time=-1)) == 0
+    assert np.all(prey.isel(time=-1) == 0)
+    assert np.all(res_prey.diff(dim="time") <= 1.)
 
 
 def test_cost_of_living_Predator():
@@ -57,12 +49,12 @@ def test_cost_of_living_Predator():
 
     # Get the data
     data = dm['multiverse'][0]['data']['PredatorPreyPlant']
-    res_predator = data['resource_predator']
+    pred = data['predator']
+    res_pred = data['resource_predator']
 
-    # Assert that life is costly
-    for i, r in enumerate(res_predator):
-        unique = np.unique(r)
-        assert unique == 2-i
+    # Assert that life is costly and all predators die in the end
+    assert np.all(pred.isel(time=-1) == 0)
+    assert np.all(res_pred.diff(dim="time") <= 1.)
 
 
 def test_eating_prey():

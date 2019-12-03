@@ -115,8 +115,8 @@ def test_predator_movement():
 
 def test_prey_flee():
     """ Test whether the prey flees from the predator. Unfortunately, as the 
-        update order is random, the prey can only flee, if its own cell has not 
-        been updated, before a predator invades it.
+        update order is random, the prey can only flee, if its own cell has
+        not been updated, before a predator invades it.
     """
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm

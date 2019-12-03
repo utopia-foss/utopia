@@ -28,6 +28,20 @@ rect_2D_empty:
 
     # no neighborhood given -> use default, i.e.: empty neighborhood
 
+rect_2D_empty_superfluous_args:
+  space:
+    periodic: true
+    # implied extent: [1, 1]
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 5
+
+    neighborhood:
+      mode: empty
+      distance: 42  # is unused; check that it does not throw
+
 rect_2D_vonNeumann:
   space:
     periodic: true
@@ -36,6 +50,18 @@ rect_2D_vonNeumann:
     grid:
       structure: square
       resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+
+rect_2D_vonNeumann_small_grid:
+  space:
+    periodic: true
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 1  # too low resolution for distance == 1
 
     neighborhood:
       mode: vonNeumann
@@ -104,6 +130,20 @@ rect_2D_vonNeumann_np:
     grid:
       structure: square
       resolution: 5
+
+    neighborhood:
+      mode: vonNeumann
+
+
+rect_2D_vonNeumann_np_small_grid:
+  space:
+    periodic: false
+    extent: [3, 1]
+
+  cell_manager:
+    grid:
+      structure: square
+      resolution: 1  # small... but this is no issue with non-periodic space
 
     neighborhood:
       mode: vonNeumann

@@ -2,17 +2,8 @@
 parameter_space:
   num_steps: 2
 
-  PredatorPrey: !model
-    model_name: PredatorPrey
-
-    space:
-      extent: [2, 1]
-
+  PredatorPrey:
     cell_manager:
-      grid:
-        structure: square
-        resolution: 1
-
       cell_params:
         p_prey: 0.
         p_predator: 1.

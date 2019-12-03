@@ -1,18 +1,9 @@
 ---
 parameter_space:
-  num_steps: 3
+  num_steps: 30
 
-  PredatorPreyPlant: !model
-    model_name: PredatorPreyPlant
-
-    space:
-      extent: [2, 1]
-
+  PredatorPreyPlant:
     cell_manager:
-      grid:
-        structure: square
-        resolution: 1
-
       cell_params:
         prey:
           min_init_resources: 2
