@@ -442,7 +442,8 @@ protected:
       */
     NBFuncID<Base> get_nb_func_vonNeumann(const Config& nb_params) {
         // Extract the optional distance parameter
-        const auto distance = get_nb_param_distance<true>(nb_params);
+        constexpr bool check_shape = true;
+        const auto distance = get_nb_param_distance<check_shape>(nb_params);
 
         // For distance 1, use the specialized functions which are defined as
         // class members (to don't bloat this method even more). Those
@@ -713,7 +714,8 @@ protected:
       */
     NBFuncID<Base> get_nb_func_Moore(const Config& nb_params) {
         // Extract the optional distance parameter
-        const auto distance = get_nb_param_distance<true>(nb_params);
+        constexpr bool check_shape = true;
+        const auto distance = get_nb_param_distance<check_shape>(nb_params);
 
         // For distance 1, use the specialized functions which are defined as
         // class members (to don't bloat this method even more). Those
