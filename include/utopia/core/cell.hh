@@ -2,6 +2,7 @@
 #define UTOPIA_CORE_CELL_HH
 
 #include "tags.hh"
+#include "types.hh"
 #include "entity.hh"
 
 
