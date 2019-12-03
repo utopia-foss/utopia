@@ -42,16 +42,19 @@ void apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
     using GraphType = typename std::remove_reference_t<Graph>;
     using VertexDesc =
         typename boost::graph_traits<GraphType>::vertex_descriptor;
-    using ReturnType = typename std::invoke_result_t<Rule, VertexDesc>;
+    using ReturnType = typename std::invoke_result_t<Rule, VertexDesc, Graph>;
     constexpr bool lambda_returns_void = std::is_same_v<ReturnType, void>;
 
     // Apply the rule to each element 
     if constexpr (lambda_returns_void){
-        std::for_each(it_begin, it_end, rule);
+        std::for_each(it_begin, it_end, 
+        [&rule, &g](auto g_entity){
+            rule(g_entity, g);
+        });
     }
     else {
         std::for_each(it_begin, it_end, [&rule, &g](auto g_entity){
-            g[g_entity].state = rule(g_entity);
+            g[g_entity].state = rule(g_entity, g);
         });
     }
 }
@@ -86,9 +89,9 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
     state_cache.reserve(std::distance(it_begin, it_end));
 
     // apply the rule
-    std::transform(it_begin, it_end,
-                std::back_inserter(state_cache),
-                std::forward<Rule>(rule));
+    for (auto entity : boost::make_iterator_range(it_begin, it_end)){
+        state_cache.push_back(rule(entity, g));
+    }
 
     // move the cache
     auto counter = 0u;

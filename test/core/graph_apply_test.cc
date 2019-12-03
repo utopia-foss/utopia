@@ -131,8 +131,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_async, G,
         // assignment.
         auto counter = 0u;
         apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-            [this, &counter](auto v){
-                auto& state = this->G::g[v].state;
+            [&counter](auto v, auto& g){
+                auto& state = g[v].state;
                 state.v_prop = counter;
                 ++counter;
                 return state;
@@ -164,8 +164,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_async, G,
         // assignment.
         auto counter = 0u;
         apply_rule<IterateOver::neighbors, Update::async, Shuffle::off>(
-            [this, &counter](auto v){
-                auto& state = this->G::g[v].state;
+            [&counter](auto v, auto& g){
+                auto& state = g[v].state;
                 state.v_prop = counter;
                 ++counter;
                 return state;
@@ -208,13 +208,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_sync, G,
     // if the states are updated synchronously.
     auto counter = 0u;
     apply_rule<IterateOver::vertices, Update::sync, Shuffle::off>(
-        [this, &counter](auto v){
-            auto state = this->G::g[v].state;
+        [&counter](auto v, auto& g){
+            auto state = g[v].state;
             state.v_prop = counter;
 
             // Add all neighbors v_prop
-            for (auto nb : range<IterateOver::neighbors>(v, this->G::g)){
-                state.v_prop += this->G::g[nb].state.v_prop;
+            for (auto nb : range<IterateOver::neighbors>(v, g)){
+                state.v_prop += g[nb].state.v_prop;
             }
             ++counter;
             return state;
@@ -256,8 +256,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_async, G,
         // assignment.
         auto counter = 0u;
         apply_rule<IterateOver::vertices, Update::async, Shuffle::on>(
-            [this, &counter](auto v){
-                auto& state = this->G::g[v].state;
+            [&counter](auto v, auto& g){
+                auto& state = g[v].state;
                 state.v_prop = counter;
                 ++counter;
                 return state;
@@ -294,8 +294,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_async, G,
         // assignment.
         auto counter = 0u;
         apply_rule<IterateOver::neighbors, Update::async, Shuffle::on>(
-            [this, &counter](auto v){
-                auto& state = this->G::g[v].state;
+            [&counter](auto v, auto& g){
+                auto& state = g[v].state;
                 state.v_prop = counter;
                 ++counter;
                 return state;
@@ -321,13 +321,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_sync, G,
     // if the states are updated synchronously.
     auto counter = 0u;
     apply_rule<IterateOver::vertices, Update::sync, Shuffle::on>(
-        [this, &counter](auto v){
-            auto state = this->G::g[v].state;
+        [&counter](auto v, auto& g){
+            auto state = 
+            g[v].state;
             state.v_prop = counter;
 
             // Add all neighbors v_prop
-            for (auto nb : range<IterateOver::neighbors>(v, this->G::g)){
-                state.v_prop += this->G::g[nb].state.v_prop;
+            for (auto nb : range<IterateOver::neighbors>(v, g)){
+                state.v_prop += g[nb].state.v_prop;
             }
             ++counter;
             return state;
