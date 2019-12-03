@@ -98,12 +98,12 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 {
     // Below: Start of apply_rule on graph entities examples - doc reference line 
     // -- Simple Examples -----------------------------------------------------
-    // The full possibilities are described in the example below
+    // The full possibilities are described in the detailed example below
     
     // Set all vertices' v_prop to 42
     apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-        [this](const auto vertex_desc){
-            auto& state = this->g[vertex_desc].state;
+        [](const auto vertex_desc, auto& g){
+            auto& state = g[vertex_desc].state;
             state.v_prop = 42;
         },
         g 
@@ -112,12 +112,12 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
     // Set all neighbors' v_prop synchronously to the sum of all their 
     // neighbors' v_prop accumulated to the former v_prop.
     apply_rule<IterateOver::neighbors, Update::sync, Shuffle::off>(
-        [this](const auto neighbor_desc){
-            auto state = this->g[neighbor_desc].state;
+        [](const auto neighbor_desc, auto& g){
+            auto state = g[neighbor_desc].state;
             
             for (const auto next_neighbor 
-                    : range<IterateOver::neighbors>(neighbor_desc, this->g)){
-                state.v_prop += this->g[next_neighbor].state.v_prop;
+                    : range<IterateOver::neighbors>(neighbor_desc, g)){
+                state.v_prop += g[next_neighbor].state.v_prop;
             }
 
             return state;
@@ -140,45 +140,57 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
                                     //      IterateOver::out_degree
                                     //      IterateOver::in_degree
                                     //
-                                    // The last options require a parent_vertex
-                                    // that works as a reference.
+                                    // The last options require the
+                                    // parent_vertex that works as a reference.
 
-        Update::async,              // Apply a rule asynchronously
+        Update::async,              // Apply the rule asynchronously, i.e.
+                                    // sequentially. Other option: Update::sync
         
-        Shuffle::off                // Randomize the order ('Shuffle::on')
-                                    // or not 'Shuffle::off'.
+        Shuffle::off                // Randomize the order (Shuffle::on)
+                                    // or not (Shuffle::off).
     >(
-        [this]                      // Capture the whole model
-                                    // The graph is then available as member 'g'
-        
-        (const auto vertex_desc)    // Take a vertex descriptor as input argument.
+        []
+        (const auto vertex_desc,    // In this example, iteration happens
+                                    // over vertices; thus, the first argument
+                                    // is the vertex descriptor.
                                     // The vertex descriptor is normally just a
                                     // literal type, so copying is actually
                                     // faster than taking it by const reference
-                                    // (NOTE that in contrast the apply_rule 
-                                    //  for cell- or agent-based models should 
-                                    //  take the state as const reference.)
+                                    // NOTE: The cell- or agent-based
+                                    // apply_rule expect the state as a const
+                                    // reference.
+
+        auto& g)                    // The rule function expects the graph
+                                    // as second argument.
+                                    // NOTE: It's IMPORTANT to pass this as
+                                    // (non-const) reference, otherwise the
+                                    // whole graph is copied!
         {
-            auto& state = this->g[vertex_desc].state;     
-            // Get the state by reference.
-            // WARNING: If Update::sync was selected work on a state copy, 
-            //          meaning leave away the '&' and return the state
-            //          at the end of the lambda function. 
+            // Get the state (by reference)
+            auto& state = g[vertex_desc].state;     
+            // WARNING: If Update::sync was selected, you should work on a COPY
+            //          of the state. To achieve that, leave away the '&' and
+            //          return the state at the end of the rule function.
 
-            state.v_prop = 42;      // Set the vertex property
+            // Set a vertex property
+            state.v_prop = 42;
+
+            // ... can do more stuff here ...
             
-            return state;           // Return the state.
-                                    // NOTE if Update::async you do _not_ need 
-                                    // to return the state. Delete the line.
+            // For Update::sync, return the state. Optional for Update::async.
+            // return state;
         },
-        // boost::vertex(0, g),     // The parent vertex that needs to be
+        // boost::vertex(0, g),     // This is the parent_vertex argument.
+                                    // The parent vertex that needs to be
                                     // given when IterateOver requires a 
-                                    // reference vertex such as neighbors
-                                    // of vertex '0' as is selected here.
+                                    // reference vertex.
+                                    // As an example, vertex 0 is given here.
 
-        g                           // the graph object
+        g                           // Finally, specify the graph that
+                                    // contains the objects to iterate over.
+                                    // It is passed as the second argument to
+                                    // the rule function.
     );
-
     // End of apply_rule on graph entities examples - doc reference line 
 }
 
