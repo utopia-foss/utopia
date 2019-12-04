@@ -121,11 +121,59 @@ using GraphFixtures = boost::mpl::vector<
 
 
 // ++ Tests +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_async, G, 
+
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_sync, G, GraphFixtures, G)
+{
+    // Set the vertex property to a counter value that increments with each
+    // assignment. Also add the neighbors property which should be constant 
+    // if the states are updated synchronously.
+    auto counter = 0u;
+    apply_rule<IterateOver::vertices, Update::sync>(
+        [&counter](auto v, auto& g){
+            auto state = g[v].state;
+            state.v_prop = counter;
+
+            // Add all neighbors v_prop
+            for (auto nb : range<IterateOver::neighbors>(v, g)){
+                state.v_prop += g[nb].state.v_prop;
+            }
+            ++counter;
+            return state;
+        },
+        G::g
+    );
+    
+    // Set the properties manually in the reference graph
+    // The property consists of a counter variable and the number of neighbors
+    // times the default vertex property
+    counter = 0;
+    for (auto [it, it_end] = boost::vertices(G::g_ref); it!=it_end; ++it){        
+        const unsigned expected_v_prop 
+            = counter + (boost::out_degree(*it, G::g_ref) * G::v_prop_default);
+
+        G::g_ref[*it].state.v_prop = expected_v_prop;
+
+        ++counter;
+    }
+
+    // Test that manually applying the rule leads to the same result
+    // as with the apply_rule interface
+    // If the rule was applied synchronously all the neighbor's vertex 
+    // properties should still have the same constant value.
+    for (auto i = 0u; i < boost::num_vertices(G::g); ++i){
+        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop 
+                == G::g_ref[boost::vertex(i, G::g_ref)].state.v_prop);
+    }
+}
+
+
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_noshuffle, G, 
     GraphFixtures, G)
 {
     {
-        // -- Test iteration over vertices ----------------------------------------
+        // -- Test iteration over vertices ------------------------------------
 
         // Set the vertex property to a counter value that increments with each
         // assignment.
@@ -200,68 +248,30 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_async, G,
 }
 
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_noshuffle_sync, G, 
-    GraphFixtures, G)
-{
-    // Set the vertex property to a counter value that increments with each
-    // assignment. Also add the neighbors property which should be constant 
-    // if the states are updated synchronously.
-    auto counter = 0u;
-    apply_rule<IterateOver::vertices, Update::sync, Shuffle::off>(
-        [&counter](auto v, auto& g){
-            auto state = g[v].state;
-            state.v_prop = counter;
 
-            // Add all neighbors v_prop
-            for (auto nb : range<IterateOver::neighbors>(v, g)){
-                state.v_prop += g[nb].state.v_prop;
-            }
-            ++counter;
-            return state;
-        },
-        G::g
-    );
-    
-    // Set the properties manually in the reference graph
-    // The property consists of a counter variable and the number of neighbors
-    // times the default vertex property
-    counter = 0;
-    for (auto [it, it_end] = boost::vertices(G::g_ref); it!=it_end; ++it){        
-        const unsigned expected_v_prop 
-            = counter + (boost::out_degree(*it, G::g_ref) * G::v_prop_default);
-
-        G::g_ref[*it].state.v_prop = expected_v_prop;
-
-        ++counter;
-    }
-
-    // Test that manually applying the rule leads to the same result
-    // as with the apply_rule interface
-    // If the rule was applied synchronously all the neighbor's vertex 
-    // properties should still have the same constant value.
-    for (auto i = 0u; i < boost::num_vertices(G::g); ++i){
-        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop 
-                == G::g_ref[boost::vertex(i, G::g_ref)].state.v_prop);
-    }
-}
-
-
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_async, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_shuffle, G, 
     GraphFixtures, G)
 {
     {
-        // -- Test iteration over vertices ----------------------------------------
+        // -- Test iteration over vertices ------------------------------------
 
         // Set the vertex property to a counter value that increments with each
         // assignment.
         auto counter = 0u;
-        apply_rule<IterateOver::vertices, Update::async, Shuffle::on>(
+        apply_rule<IterateOver::vertices, Update::async>(
             [&counter](auto v, auto& g){
                 auto& state = g[v].state;
                 state.v_prop = counter;
                 ++counter;
                 return state;
             },
+            G::g,
+            G::rng
+        );
+
+        // Once more, now with a do-nothing rule and explicit Shuffle::on
+        apply_rule<IterateOver::vertices, Update::async, Shuffle::on>(
+            [](auto, auto&){},
             G::g,
             G::rng
         );
@@ -310,58 +320,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_async, G,
     //      iterate over is covered in the `graph_iterator_test.cc`
     //      Therefore, here it is sufficient to test for the two cases from 
     //      above because they have distinct apply_rule signatures.
-    }
-}
-
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_shuffle_sync, G, 
-    GraphFixtures, G)
-{ 
-    // Set the vertex property to a counter value that increments with each
-    // assignment. Also add the neighbors property which should be constant 
-    // if the states are updated synchronously.
-    auto counter = 0u;
-    apply_rule<IterateOver::vertices, Update::sync, Shuffle::on>(
-        [&counter](auto v, auto& g){
-            auto state = 
-            g[v].state;
-            state.v_prop = counter;
-
-            // Add all neighbors v_prop
-            for (auto nb : range<IterateOver::neighbors>(v, g)){
-                state.v_prop += g[nb].state.v_prop;
-            }
-            ++counter;
-            return state;
-        },
-        G::g,
-        G::rng
-    );
-    
-    // Set the properties manually in the reference graph
-    // The property consists of a counter variable and the number of neighbors
-    // times the default vertex property
-
-    // Set the properties manually in the reference graph
-    auto [it, it_end] = boost::vertices(G::g_ref);
-    std::vector<typename G::VertexDesc> it_shuffled(it, it_end);
-    std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), G::rng_ref);
-    counter = 0;
-    for (auto v : it_shuffled){        
-        const unsigned expected_v_prop 
-            = counter + (boost::out_degree(v, G::g_ref) * G::v_prop_default);
-
-        G::g_ref[v].state.v_prop = expected_v_prop;
-
-        ++counter;
-    }
-
-    // Test that manually applying the rule leads to the same result
-    // as with the apply_rule interface
-    // If the rule was applied synchronously all the neighbor's vertex 
-    // properties should still have the same constant value.
-    for (auto i = 0u; i < boost::num_vertices(G::g); ++i){
-        BOOST_TEST(G::g[boost::vertex(i, G::g)].state.v_prop 
-                == G::g_ref[boost::vertex(i, G::g_ref)].state.v_prop);
     }
 }
 
