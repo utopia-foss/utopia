@@ -96,11 +96,12 @@ struct GraphFixture {
 // ++ Tests +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 {
-    // Below: Start of apply_rule on graph entities examples - doc reference line 
+    // DOC REFERENCE START: apply_rule on graph entities examples
     // -- Simple Examples -----------------------------------------------------
-    // The full possibilities are described in the detailed example below
+    // NOTE: The full possibilities are described in the detailed example below
     
-    // Set all vertices' v_prop to 42
+    // Sequentially iterate over all vertices (without shuffling) and set the
+    // vertices' v_prop to 42.
     apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
         [](const auto vertex_desc, auto& g){
             auto& state = g[vertex_desc].state;
@@ -111,12 +112,13 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
 
     // Set all neighbors' v_prop synchronously to the sum of all their 
     // neighbors' v_prop accumulated to the former v_prop.
-    apply_rule<IterateOver::neighbors, Update::sync, Shuffle::off>(
+    apply_rule<IterateOver::neighbors, Update::sync>(
         [](const auto neighbor_desc, auto& g){
             auto state = g[neighbor_desc].state;
             
             for (const auto next_neighbor 
-                    : range<IterateOver::neighbors>(neighbor_desc, g)){
+                    : range<IterateOver::neighbors>(neighbor_desc, g))
+            {
                 state.v_prop += g[next_neighbor].state.v_prop;
             }
 
@@ -131,23 +133,28 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
         IterateOver::vertices,      // Choose the entities that the rule 
                                     // should be applied to. Here: vertices.
                                     // All available options are:
-                                    //      IterateOver::vertices
-                                    //      IterateOver::edges
+                                    //   * IterateOver::vertices
+                                    //   * IterateOver::edges
                                     //
-                                    //      IterateOver::neighbors
-                                    //      IterateOver::inv_neighbors (inverse)
-                                    //      IterateOver::degree
-                                    //      IterateOver::out_degree
-                                    //      IterateOver::in_degree
+                                    //   * IterateOver::neighbors
+                                    //   * IterateOver::inv_neighbors (inverse)
+                                    //   * IterateOver::degree
+                                    //   * IterateOver::out_degree
+                                    //   * IterateOver::in_degree
                                     //
                                     // The last options require the
                                     // parent_vertex that works as a reference.
 
         Update::async,              // Apply the rule asynchronously, i.e.
-                                    // sequentially. Other option: Update::sync
+                                    // sequentially.
+                                    // With Update::sync, the state change is
+                                    // first buffered and applied to all
+                                    // entities at once.
         
-        Shuffle::off                // Randomize the order (Shuffle::on)
-                                    // or not (Shuffle::off).
+        Shuffle::off                // Whether to randomize the order. This
+                                    // argument is only available for the
+                                    // Update::async mode. For Shuffle::on, it
+                                    // requires to pass an RNG to apply_rule.
     >(
         []
         (const auto vertex_desc,    // In this example, iteration happens
@@ -186,12 +193,19 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
                                     // reference vertex.
                                     // As an example, vertex 0 is given here.
 
-        g                           // Finally, specify the graph that
-                                    // contains the objects to iterate over.
+        g                           // Specify the graph that contains the
+                                    // objects to iterate over.
                                     // It is passed as the second argument to
                                     // the rule function.
+
+        // rng                      // For Update::async and when you would
+                                    // like to shuffle the order of the rule
+                                    // application, pass the random number
+                                    // generator as last argument here.
+                                    // In such a scenario, the Shuffle template
+                                    // argument is optional.
     );
-    // End of apply_rule on graph entities examples - doc reference line 
+    // DOC REFERENCE END: apply_rule on graph entities examples
 }
 
 }   // namespace Utopia

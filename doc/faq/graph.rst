@@ -166,8 +166,8 @@ This is best described through examples:
 
 .. literalinclude:: ../../test/core/graph_apply_doc_test.cc
     :language: c++
-    :start-after: // Below: Start of apply_rule on graph entities examples - doc reference line 
-    :end-before: // End of apply_rule on graph entities examples - doc reference line 
+    :start-after: // DOC REFERENCE START: apply_rule on graph entities examples
+    :end-before: // DOC REFERENCE END: apply_rule on graph entities examples
     :dedent: 4
 
 .. note::

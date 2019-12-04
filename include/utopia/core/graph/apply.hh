@@ -105,22 +105,55 @@ void apply_sync(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 } // namespace GraphUtils
 
 
-/// Apply a rule on graph entity properties
-/** This overload specified the apply_rule function for not shuffled entities.
+
+// ----------------------------------------------------------------------------
+// apply_rule definitions WITHOUT the need for a reference vertex
+
+/// Synchronously apply a rule to graph entities
+/** This overload specifies the apply_rule function for a synchronous update.
+ *  In such a case, it makes no sense to shuffle, so the shuffle option is not
+ *  available here.
  * 
- * \tparam iterate_over Over which graph entity to iterate over. See 
- *          \ref IterateOver
- * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle      Whether to shuffle the container
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
  *  
- * \param rule          The rule that takes a graph entity descriptor
- *                      (vertex_descriptor or edge_descriptor).
- *                      If the graph entity states are updated synchronously
- *                      the rule function needs to return a copied state and
- *                      changed state that overwrites the old state.
- *                      Returning a state is optional for asynchronous update.
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For the synchronous update, the rule
+ *                      function needs to return the new state.
+ * \param g             The graph
+ */
+template<IterateOver iterate_over,
+         Update mode,
+         typename Graph, 
+         typename Rule,
+         typename std::enable_if_t<mode == Update::sync, int> = 0>
+void apply_rule(Rule&& rule, Graph&& g)
+{
+    using namespace GraphUtils;
+    auto [it, it_end] = iterator_pair<iterate_over>(g);
+    apply_sync(it, it_end, g, rule);
+}
+
+
+/// Asynchronously apply a rule to graph entities, without shuffling
+/** This overload specifies the apply_rule function for an asynchronous update.
+ *  
+ * \warning Not shuffling a rule often creates unwanted artifacts. Thus, to use
+ *          this function, the Shuffle::off template argument needs to be
+ *          given explicitly.
+ * 
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
+ * \tparam Graph        The graph type
+ * \tparam Rule         The rule type
+ *  
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For an asynchronous update, returning the
+ *                      state is optional.
  * \param g             The graph
  */
 template<IterateOver iterate_over,
@@ -128,195 +161,199 @@ template<IterateOver iterate_over,
          Shuffle shuffle,
          typename Graph, 
          typename Rule,
-         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+         typename std::enable_if_t<mode == Update::async, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g)
 {
+    static_assert(shuffle == Shuffle::off,
+        "Refusing to asynchronously apply a rule without shuffling. Either "
+        "explicitly specify Shuffle::off or pass an RNG to apply_rule to "
+        "allow shuffling.");
+
     using namespace GraphUtils;
-
-    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>(g);
-
-    if constexpr (mode == Update::sync) {
-        apply_sync(it, it_end, g, rule);
-    }
-    else if constexpr (mode == Update::async){
-        apply_async(it, it_end, g, rule);
-    }
-    else{
-        static_assert((mode == Update::async or mode == Update::sync), 
-            "apply_rule only works with 'Update::async' or 'Update::sync'!");
-    }
+    auto [it, it_end] = iterator_pair<iterate_over>(g);
+    apply_async(it, it_end, g, rule);
 }
 
 
-/// Apply a rule on graph entity properties
-/** This overload specified the apply_rule function for shuffled entities.
+/// Asynchronously, in shuffled order, apply a rule to graph entities
+/** Using the given RNG, the iteration order is shuffled before the rule is
+ *  applied sequentially to the specified entities.
  * 
- * \tparam iterate_over Over which graph entity to iterate over. See 
- *          \ref IterateOver
- * \tparam mode         The update mode \ref UpdateMode
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
  * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
  * \tparam RNG          The random number generator type
  *  
- * \param rule          The rule that takes a graph entity descriptor
- *                      (vertex_descriptor or edge_descriptor).
- *                      If the graph entity states are updated synchronously
- *                      the rule function needs to return a copied state and
- *                      changed state that overwrites the old state.
- *                      Returning a state is optional for asynchronous update. 
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For an asynchronous update, returning the
+ *                      state is optional.
  * \param g             The graph
  * \param rng           The random number generator
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle,
+         Shuffle shuffle = Shuffle::on,
          typename Graph, 
          typename Rule,
          typename RNG,
+         typename std::enable_if_t<mode == Update::async, int> = 0,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
 {
     using namespace GraphUtils;
 
-    // Get types
     using GraphType = typename std::remove_reference_t<Graph>;
     using VertexDesc =
         typename boost::graph_traits<GraphType>::vertex_descriptor;
     
-    // Get the iterators, create a vector with a copy because the 
-    // original iterators are const, thus cannot be shuffed,
-    // and shuffle them.
+    // Get the iterators and create a vector with a copy because the original
+    // iterators are const, thus cannot be shuffled. Then shuffle.
     auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>(g);
     std::vector<VertexDesc> it_shuffled(it, it_end);
-    std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
+    
+    std::shuffle(std::begin(it_shuffled),
+                 std::end(it_shuffled),
+                 std::forward<RNG>(rng));
 
-    if constexpr (mode == Update::sync) {
-        apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
-    }
-    else if constexpr (mode == Update::async){
-        // Apply the rule to each element asynchronously
-        apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
-    }
-    else{
-        static_assert((mode == Update::async or mode == Update::sync), 
-            "apply_rule only works with 'Update::async' or 'Update::sync'!");
-    }
+    // Now with the shuffled container, apply the rule to each element
+    apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
 }
 
 
-/// Apply a rule on graph entity properties
+
+// ----------------------------------------------------------------------------
+// apply_rule definitions WITH the need for a reference vertex
+
+
+/// Synchronously apply a rule to graph entities
 /** This overload specified the apply_rule function for not shuffled entities 
- *  where getting the correct iterator pair is dependent on a parent_vertex, 
+ *  where getting the correct iterator pair is dependent on a ref_vertex, 
  *  for example if the rule should be applied to the neighbors, inv_neighbors, 
- *  in_degree, out_degree or degree wrt. the parent_vertex.
+ *  in_degree, out_degree or degree wrt. the ref_vertex.
  * 
- * \tparam iterate_over Over which graph entity to iterate over. See 
- *          \ref IterateOver
- * \tparam mode         The update mode \ref UpdateMode
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
  * \tparam Shuffle      Whether to shuffle the container
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
- *  
- * \param rule          The rule that takes a graph entity descriptor
- *                      (vertex_descriptor or edge_descriptor).
- *                      If the graph entity states are updated synchronously
- *                      the rule function needs to return a copied state and
- *                      changed state that overwrites the old state.
- *                      Returning a state is optional for asynchronous update.
- * \param parent_vertex The parent vertex 
+ * 
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For the synchronous update, the rule
+ *                      function needs to return the new state.
+ * \param ref_vertex    Reference vertex descriptor to create the iterator from
  * \param g             The graph
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle,
          typename Graph, 
          typename Rule,
-         typename VertexDesc = typename boost::graph_traits<
-            std::remove_reference_t<Graph>>::vertex_descriptor, 
-         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+         typename VertexDesc =
+            typename boost::graph_traits<
+                std::remove_reference_t<Graph>>::vertex_descriptor,
+         typename std::enable_if_t<mode == Update::sync, int> = 0>
 void apply_rule(Rule&& rule, 
-                VertexDesc parent_vertex,
+                const VertexDesc ref_vertex,
                 Graph&& g)
 {
     using namespace GraphUtils;
-
-    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>
-                            (parent_vertex, g);
-
-    if constexpr (mode == Update::sync) {
-        apply_sync(it, it_end, g, rule);
-    }
-    else if constexpr (mode == Update::async){
-        apply_async(it, it_end, g, rule);
-    }
-    else{
-        static_assert((mode == Update::async or mode == Update::sync), 
-            "apply_rule only works with 'Update::async' or 'Update::sync'!");
-    }
+    auto [it, it_end] = iterator_pair<iterate_over>(ref_vertex, g);
+    apply_sync(it, it_end, g, rule);
 }
 
 
-/// Apply a rule on graph entity properties
-/** This overload specified the apply_rule function for shuffled entities 
- *  where getting the correct iterator pair is dependent on a parent_vertex, 
- *  for example if the rule should be applied to the neighbors, inv_neighbors, 
- *  in_degree, out_degree or degree wrt. the parent_vertex.
+/// Asynchronously apply a rule to graph entities, without shuffling
+/** This overload specifies the apply_rule function for an asynchronous update.
+ *  
+ * \warning Not shuffling a rule often creates unwanted artifacts. Thus, to use
+ *          this function, the Shuffle::off template argument needs to be
+ *          given explicitly.
  * 
- * \tparam iterate_over Over which graph entity to iterate over. See 
- *          \ref IterateOver
- * \tparam mode         The update mode \ref UpdateMode
- * \tparam Shuffle      Whether to shuffle the container
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
+ * \tparam Graph        The graph type
+ * \tparam Rule         The rule type
+ *  
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For an asynchronous update, returning the
+ *                      state is optional.
+ * \param ref_vertex    Reference vertex descriptor to create the iterator from
+ * \param g             The graph
+ */
+template<IterateOver iterate_over,
+         Update mode,
+         Shuffle shuffle = Shuffle::on,
+         typename Graph, 
+         typename Rule,
+         typename VertexDesc =
+            typename boost::graph_traits<
+                std::remove_reference_t<Graph>>::vertex_descriptor,
+         typename std::enable_if_t<mode == Update::async, int> = 0,
+         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+void apply_rule(Rule&& rule,
+                const VertexDesc ref_vertex,
+                Graph&& g)
+{
+    using namespace GraphUtils;
+    auto [it, it_end] = iterator_pair<iterate_over>(ref_vertex, g);
+    apply_async(it, it_end, g, rule);
+}
+
+
+/// Asynchronously, in shuffled order, apply a rule to graph entities
+/** This overload specified the apply_rule function for shuffled entities 
+ *  where getting the correct iterator pair is dependent on a ref_vertex, 
+ *  for example if the rule should be applied to the neighbors, inv_neighbors, 
+ *  in_degree, out_degree or degree wrt. the ref_vertex.
+ * 
+ * \tparam iterate_over Over which kind of graph entity to iterate over. See 
+ *                      \ref IterateOver
+ * \tparam mode         The update mode, see \ref UpdateMode
+ * \tparam Shuffle      Whether to shuffle the iteration
  * \tparam Graph        The graph type
  * \tparam Rule         The rule type
  * \tparam RNG          The random number generator type
- *  
- * \param rule          The rule that takes a graph entity descriptor
- *                      (vertex_descriptor or edge_descriptor).
- *                      If the graph entity states are updated synchronously
- *                      the rule function needs to return a copied state and
- *                      changed state that overwrites the old state.
- *                      Returning a state is optional for asynchronous update.
- * \param parent_vertex The parent vertex 
+ * 
+ * \param rule          The rule function, expecting (descriptor, graph)
+ *                      as arguments. For an asynchronous update, returning the
+ *                      state is optional.
+ * \param ref_vertex    Reference vertex descriptor to create the iterator from
  * \param g             The graph
  * \param rng           The random number generator
  */
 template<IterateOver iterate_over,
          Update mode,
-         Shuffle shuffle,
+         Shuffle shuffle = Shuffle::on,
          typename Graph, 
          typename Rule,
          typename RNG,
-         typename VertexDesc = typename boost::graph_traits<
-            std::remove_reference_t<Graph>>::vertex_descriptor,
-         typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
+         typename VertexDesc =
+            typename boost::graph_traits<
+                std::remove_reference_t<Graph>>::vertex_descriptor>
 void apply_rule(Rule&& rule, 
-                const VertexDesc parent_vertex, 
+                const VertexDesc ref_vertex, 
                 Graph&& g, 
                 RNG&& rng)
 {
+    static_assert(mode == Update::async,
+                  "Shuffled apply_rule is only possible for Update::async!");
+
     using namespace GraphUtils;
 
-    // Get the iterators, create a vector with a copy because the 
-    // original iterators are const, thus cannot be shuffed,
-    // and shuffle them.
-    auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>
-                            (parent_vertex, g);
+    // Get the iterators and create a vector with a copy because the original
+    // iterators are const, thus cannot be shuffled. Then shuffle.
+    auto [it, it_end] = iterator_pair<iterate_over>(ref_vertex, g);
     std::vector<VertexDesc> it_shuffled(it, it_end);
+
     std::shuffle(std::begin(it_shuffled), std::end(it_shuffled), rng);
 
-    if constexpr (mode == Update::sync) {
-        apply_sync(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
-    }
-    else if constexpr (mode == Update::async){
-        // Apply the rule to each element asynchronously
-        apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
-    }
-    else{
-        static_assert((mode == Update::async or mode == Update::sync), 
-            "apply_rule only works with 'Update::async' or 'Update::sync'!");
-    }
+    apply_async(std::begin(it_shuffled), std::end(it_shuffled), g, rule);
 }
+
 
 /**
  *  \} // endgroup Rules
