@@ -420,6 +420,7 @@ of it.
 <!-- ###################################################################### -->
 
 ## Dependencies
+
 | Software | Version | Comments |
 | ---------| ------- | -------- |
 | GCC | >= 7 | Full C++17 support required |
@@ -449,9 +450,10 @@ Check out the [troubleshooting section](#troubleshooting) if this fails.
 
 
 #### Recommended
+
 | Software | Version | Purpose |
 | ---------| ------- | ------- |
-| [doxygen](http://www.stack.nl/~dimitri/doxygen/) | >= 1.8.14 | Builds the C++ code documentation |
+| [doxygen](http://www.doxygen.nl) | >= 1.8.14 | Builds the C++ code documentation |
 | [graphviz](https://graphviz.gitlab.io) | >= 2.38 | Used by doxygen to create dependency diagrams |
 | [ffmpeg](https://www.ffmpeg.org) | >= 4.0 | Used for creating videos |
 
