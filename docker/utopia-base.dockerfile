@@ -5,7 +5,7 @@
 #     that are not backwards-compatible
 # -----------------------------------------------------------------------------
 
-FROM ubuntu:bionic
+FROM ubuntu:rolling
 
 LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
 
