@@ -1,5 +1,5 @@
 <!-- _Set the title to: "Update supported Ubuntu version to X.Y" -->
-<!-- Replace X.Y and TAG with the actual version numbers everywhere -->
+<!-- Replace X.Y with the Ubuntu version and TAG with the release name -->
 
 ### What does this MR do?
 
@@ -14,8 +14,10 @@ branch. Support for selected Ubuntu versions might continue in maintained
 - [ ] Update the Docker base image: `ccees/utopia-base:TAG-v1`
   - [ ] In `utopia-base.dockerfile`
   - [ ] In `.gitlab-ci.yml`
-- [ ] Enforce most recent software versions in
-    `cmake/modules/UtopiaMacros.cmake`
+- [ ] Enforce most recent software versions in:
+  - [ ] `cmake/modules/UtopiaMacros.cmake`
+  - [ ] `cmake/modules/UtopiaEnv.cmake`
+  - [ ] `cmake/UtopiaConfig.cmake.in`
 - [ ] Update `README.md`: Installation instructions and dependency list
 
 ### Can this MR be merged?
