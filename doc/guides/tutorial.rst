@@ -614,6 +614,12 @@ In fact, it is part of the default plotting system. You might have noticed the c
    :start-after: # --- An animation of the CA `slope`
    :end-before: # --- An animation of the CA `avalanche`
 
+.. note::
+    
+    To create animations, you need to have ``ffmpeg`` installed.
+    For more information, have a look at the recommended dependencies section in the :doc:`README <../README>`.
+
+
 Quite a few more parameters here. Let's try and understand the most important ones:
 
 * ``enabled: false`` is used here to disable the plot by default
