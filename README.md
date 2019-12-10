@@ -80,11 +80,19 @@ _Note:_ If you have [Anaconda](https://www.anaconda.com/) installed, you already
 However, notice that there might be issues during [the configuration step](#4-configure-and-build). Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
 ##### On Ubuntu 18.04
+
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
             libboost-dev libboost-test-dev libhdf5-dev \
             pkg-config python3-dev python3-pip python3-venv
+```
+
+Further, we recommend to install the following optional packages:
+
+```bash
+apt update
+apt install ffmpeg graphviz doxygen
 ```
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
@@ -104,6 +112,12 @@ brew update
 brew install armadillo boost cmake doxygen hdf5 pkg-config python3
 ```
 
+Further, we recommend to install the following optional packages:
+
+```bash
+brew update
+brew install ffmpeg graphviz doxygen
+```
 
 #### 4 — Configure and build
 Enter the repository and create your desired build directory:
