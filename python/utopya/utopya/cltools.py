@@ -2,12 +2,15 @@
 
 import os
 import re
+import glob
 import logging
-from typing import Callable, Dict
+from typing import Callable, Dict, Sequence, Tuple
 from pkg_resources import resource_filename
 
 from .multiverse import Multiverse
 from .tools import recursive_update, add_item
+from .model_registry import get_info_bundle as _get_info_bundle
+from . import MODELS as _MODELS
 
 # Local constants
 log = logging.getLogger(__name__)
@@ -131,7 +134,9 @@ def register_models(args, *, registry):
     if not args.separator:
         # Will only register a single model.
         # Gather all the path-related arguments
-        raise NotImplementedError() # TODO
+        # TODO
+        raise NotImplementedError("Registering a single model is currently "
+                                  "not possible via the CLI!")
         # paths = dict()
         # specs[args.model_name] = dict(paths=paths)
 
@@ -250,3 +255,155 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
           "open the file to edit your configuration. Note that it is wise to "
           "only enable those entries that you absolutely _need_ to set."
           .format(user_cfg_path))
+
+
+def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
+                     prompt_for_confirmation: bool=False) -> None:
+    """
+    Args:
+        model_name (str): Description
+        new_name (str): Description
+        models_dir (str): Description
+        prompt_for_confirmation (bool, optional): Description
+    
+    Raises:
+        ValueError: Description
+    """
+    def apply_replacements(s, *replacements: Sequence[Tuple[str, str]]) -> str:
+        """Applies multiple replacements onto the given string"""
+        for replacement in replacements:
+            s = s.replace(*replacement)
+        return s
+
+    def create_file_map(*, files: Sequence[str],
+                        source_dir: str, target_dir: str,
+                        abs_file_map: dict,
+                        replacements: Sequence[Tuple[str, str]]) -> dict:
+        """Given a file list with absolute paths, aggregates the file path
+        changes into ``abs_file_map`` and gathers the relative file path
+        changes into the returned dict.
+        The file name is changed according to the specified replacements.
+        """
+        rel_file_map = dict()
+
+        for fpath in files:
+            rel_fpath = os.path.relpath(fpath, start=source_dir)
+            new_rel_fpath = apply_replacements(rel_fpath, *replacements)
+
+            abs_file_map[fpath] = os.path.join(target_dir, new_rel_fpath)
+            rel_file_map[rel_fpath] = new_rel_fpath
+
+        return rel_file_map
+
+    def prompt(question: str) -> bool:
+        try:
+            response = input("\n{} [y/N]  ".format(question))
+        
+        except KeyboardInterrupt:
+            return False
+
+        if response.lower() not in ['y', 'yes']:
+            return False
+
+        return True
+
+    # Get the model information
+    info_bundle = _get_info_bundle(model_name=model_name)
+
+    # Check if the name is not already taken, being case-insensitive
+    if new_name.lower() in [n.lower() for n in _MODELS.keys()]:
+        raise ValueError("A model with name '{}' is already registered! "
+                         "Make sure that the name is unique. If you keep "
+                         "receiving this error despite no other model with "
+                         "this name being implemented, remove the entry from "
+                         "the model registry, e.g. via the `utopia models rm` "
+                         "CLI command.\n"
+                         "Already registered models: {}"
+                         "".format(new_name, ", ".join(_MODELS.keys())))
+
+    # Define the replacements
+    replacements = [
+        (model_name, new_name),
+        (model_name.lower(), new_name.lower()),
+        (model_name.upper(), new_name.upper()),
+    ]
+
+    # Parse the target directory (making it absolute) and perform some
+    # rudimentary checks that make sure it's a valid model directory
+    models_dir = os.path.expanduser(models_dir)
+    if not os.path.isabs(models_dir):
+        models_dir = os.path.abspath(models_dir)
+
+    if not os.path.isdir(models_dir):
+        raise ValueError("The specified target model directory, {}, does not "
+                         "exist!".format(models_dir))
+
+    # TODO Check against Utopia config which should contain a list of all
+    #      models source directories
+
+    # The mapping of all files that are to be copied and in which the content
+    # is to be replaced. It maps absolute source file paths to absolute target
+    # file paths.
+    file_map = dict()
+
+    # Define the source and target directory paths of the implementation
+    impl_source_dir = info_bundle.paths['source_dir']
+    impl_target_dir = os.path.join(models_dir, new_name)
+    impl_file_map = dict() # Contains relative paths
+
+    impl_source_files = glob.glob(os.path.join(impl_source_dir, "*"),
+                                 recursive=True)
+    impl_file_map = create_file_map(files=impl_source_files,
+                                    source_dir=impl_source_dir,
+                                    target_dir=impl_target_dir,
+                                    abs_file_map=file_map,
+                                    replacements=replacements)
+
+    # TODO Do the same for Python-related files
+
+
+    # Gathered all information now. Inform about it.
+    # Implementation-related files
+    max_key_len = min(max([len(k) for k in impl_file_map]), 32)
+    print("The following implementation files from\n\t{}\n\nwill be copied "
+          "to\n\t{}\n\nusing the following new file names:"
+          "".format(impl_source_dir, impl_target_dir))
+    print("\n".join(["\t{:{l:d}s}  ->  {:s}".format(k, v, l=max_key_len)
+                     for k, v in impl_file_map.items()]))
+
+    # TODO Python-related files
+
+
+    # Replacements
+    max_repl_len = max([len(rs) for rs, _ in replacements])
+    print("\nInside all of these {:d} files, the following string "
+          "replacements will be made:\n{}\n"
+          "".format(len(file_map),
+                    "\n".join(["\t'{:{l:d}s}'  ->  '{:s}'"
+                               "".format(*repl, l=max_repl_len)
+                               for repl in replacements])))
+
+    # Ask whether to proceed
+    if prompt_for_confirmation and not prompt("Proceed with copying?"):
+        print("Not proceeding ...")
+        return
+    print("Now copying ...")
+
+    # Now, the actual copying
+    for i, (src_fpath, target_fpath) in enumerate(file_map.items()):
+        print("Copying file {:d}/{:d} ...".format(i+1, len(file_map)))
+        print("\t   {:s}\n\t-> {:s}\n".format(src_fpath, target_fpath))
+
+        with open(src_fpath, mode='r') as src_file:
+            src_lines = src_file.read()
+
+        # Apply the replacements
+        target_lines = apply_replacements(src_lines, *replacements)
+
+        # Write the file, failing if it already exists
+        os.makedirs(os.path.dirname(target_fpath), exist_ok=True)
+        with open(target_fpath, mode='x') as target_file:
+            target_file.write(target_lines)
+
+    print("Finished copying.\nRemember to register the new model in the "
+          "relevant CMakeLists.txt file.")
