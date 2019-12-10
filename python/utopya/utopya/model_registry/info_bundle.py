@@ -21,6 +21,7 @@ class ModelInfoBundle:
 
     # Which entries to expect inside the paths property
     PATH_KEYS = (('binary', str, True),
+                 ('source_dir', str),  # TODO consider _requiring_ this one
                  ('default_cfg', str, True),
                  ('default_plots', str),
                  ('base_plots', str))
@@ -67,7 +68,8 @@ class ModelInfoBundle:
         # Populate it, checking some properties
         err_msg_fstr = "Failed loading '{}' info for '{}' model info bundle!"
         
-        load_selected_keys(paths, add_to=self.paths, keys=self.PATH_KEYS,
+        load_selected_keys(paths,
+                           add_to=self.paths, keys=self.PATH_KEYS,
                            err_msg_prefix=err_msg_fstr.format('paths',
                                                               model_name))
         
@@ -161,8 +163,10 @@ class ModelInfoBundle:
         if src_dir:
             abs_src_path = os.path.join(base_src_dir, src_dir)
 
-        # If a source directory is given, auto-detect some files
+        # If a source directory is given, store it, then auto-detect some files
         if abs_src_path:
+            paths['source_dir'] = abs_src_path
+
             for key, fname_fstr in self.SRC_DIR_SEARCH_PATHS:
                 # Build the full file path and see if a file exists there
                 fname = fname_fstr.format(self.model_name)
