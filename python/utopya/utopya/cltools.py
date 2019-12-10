@@ -258,7 +258,8 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
 
 
 def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
-                     prompt_for_confirmation: bool=False) -> None:
+                     prompt_for_confirmation: bool=False,
+                     add_to_cmakelists: bool=True) -> None:
     """
     Args:
         model_name (str): Description
@@ -405,5 +406,39 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
         with open(target_fpath, mode='x') as target_file:
             target_file.write(target_lines)
 
-    print("Finished copying.\nRemember to register the new model in the "
-          "relevant CMakeLists.txt file.")
+    print("Finished copying.")
+
+    if not add_to_cmakelists:
+        print("Remember to register the new model in the relevant "
+              "CMakeLists.txt file and reconfigure using CMake.")
+        return
+
+    # Add subdirectory to CMakeLists.txt file
+    print("Adding model directory to CMakeLists.txt ...")
+    cmakelists_fpath = os.path.abspath(os.path.join(impl_target_dir,
+                                                    "../CMakeLists.txt"))
+    with open(cmakelists_fpath, 'r') as cmakelists_file:
+        cmakelists_lines = cmakelists_file.readlines()
+
+    # Find the relevant add_subdirectory command to add the line to.
+    # Assuming an ascending alphabetical list, it need be added before the
+    # first model name that compares larger to the new model name
+    insert_idx = None
+    for i, line in enumerate(cmakelists_lines):
+        if line.startswith("add_subdirectory"):
+            if line[len("add_subdirectory(")].lower() > new_name.lower():
+                insert_idx = i
+                break
+
+    if insert_idx is None:
+        raise ValueError("Found no add_subdirectory command to insert the "
+                         "new model directory after; please do it manually!\n"
+                         "File:  {}".format(cmakelists_fpath))
+
+    cmakelists_lines.insert(insert_idx - 1,
+                            "add_subdirectory({})\n".format(new_name))
+
+    with open(cmakelists_fpath, 'w') as cmakelists_file:
+        cmakelists_file.writelines(cmakelists_lines)
+
+    print("Finished.")
