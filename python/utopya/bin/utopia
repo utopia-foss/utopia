@@ -171,6 +171,12 @@ pm_cp.add_argument('-d', '--dry-run',
     action='store_true',
     help="If given, performs a dry run: No copy or write operations will be "
          "carried out.")
+pm_cp.add_argument('--skip-exts',
+    nargs='+',
+    default=['.pyc'],
+    help="File extensions to skip. These need to have a leading dot! If "
+         "nothing is given, skips the following extensions:  .pyc")
+
 
 
 # subcommand: config ..........................................................
@@ -445,6 +451,7 @@ if __name__ == '__main__':
             copy_model_files(model_name=args.model_name,
                              new_name=args.new_name,
                              target_project=args.target_project,
+                             skip_exts=args.skip_exts,
                              use_prompts=not args.non_interactive,
                              dry_run=args.dry_run)
 

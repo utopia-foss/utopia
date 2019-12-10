@@ -25,7 +25,8 @@ def mib_kwargs() -> dict:
     """Some default kwargs for a ModelInfoBundle"""
     return dict(paths=dict(binary="/abs/foo/binary/path",
                            default_cfg="/abs/foo/config/path"),
-                metadata=dict(description="bar"), additional_stuff=123)
+                metadata=dict(description="bar"), additional_stuff=123,
+                project_name="ProjectName")
 
 @pytest.fixture
 def tmp_model_registry(tmp_cfg_dir) -> umr._ModelRegistry:
@@ -67,6 +68,7 @@ def test_ModelInfoBundle(tmpdir, mib_kwargs):
     # Paths and metadata access
     assert mib['paths'] is mib.paths
     assert mib['metadata'] is mib.metadata
+    assert mib['project_name'] is mib.project_name
 
     # as_dict returns a deep copy
     assert mib.as_dict is not mib._d

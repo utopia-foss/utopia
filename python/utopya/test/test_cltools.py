@@ -5,11 +5,19 @@ import pytest
 import utopya.cltools as clt
 import utopya.model_registry as mr
 from utopya.yaml import write_yml
+from utopya.cfg import load_from_cfg_dir
 
 # Fixtures --------------------------------------------------------------------
 
 from .test_cfg import tmp_cfg_dir
 from .test_model_registry import tmp_model_registry
+
+
+class MockArgs(dict):
+    """An attribute dict to mock the CL arguments"""
+    def __init__(self, *args, **kwargs):
+        super(MockArgs, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 # -----------------------------------------------------------------------------
 
@@ -115,15 +123,8 @@ def test_deploy_user_cfg(tmpdir, monkeypatch, capsys):
     assert out.find("Not deploying user config.") >= 0
 
 
-def test_register_models(tmp_model_registry, tmpdir):
-    """"""
-    # An attribute dict to use to mock the object that is returned after
-    # command line args are parsed: an attribute-access dict
-    class MockArgs(dict):
-        def __init__(self, *args, **kwargs):
-            super(MockArgs, self).__init__(*args, **kwargs)
-            self.__dict__ = self
-
+def test_register_models(tmp_model_registry, tmp_cfg_dir, tmpdir):
+    """Test the register_models command line helper function"""
     # Create some testing arguments
     args = MockArgs()
     args.separator = ";"
@@ -135,6 +136,8 @@ def test_register_models(tmp_model_registry, tmpdir):
     args.exists_action = None
     args.label = None
     args.overwrite_label = False
+    args.project_name = "ProjectName"
+    args.update_project_info = False
 
     # Try registration ... will fail, because files are missing in this test
     with pytest.raises(KeyError, match="Missing required key: default_cfg"):
@@ -147,3 +150,152 @@ def test_register_models(tmp_model_registry, tmpdir):
     args.src_dir += ";src/spam"
     with pytest.raises(ValueError, match="Mismatch of sequence lengths"):
         clt.register_models(args, registry=tmp_model_registry)
+
+    # Test again with invocation of the register_project function
+    # Changes are made only to tmp_cfg_dir and the fixture returns them to the
+    # old state after the test.
+    # But this test is only meant to test the *invocation* of register_project,
+    # the actual test happens in test_register_project
+    args.update_project_info = True
+    with pytest.raises(AttributeError,
+                       match="has no attribute 'project_base_dir'"):
+        clt.register_models(args, registry=tmp_model_registry)
+
+
+def test_register_project(tmp_cfg_dir, tmpdir):
+    """Test the register_project command line helper function"""
+    args = MockArgs()
+    args.name = "ProjectName"
+    args.base_dir = tmpdir.join("base")
+    args.models_dir = tmpdir.join("base/src/models")
+    args.python_model_tests_dir = tmpdir.join("base/python/model_tests")
+    args.python_model_plots_dir = tmpdir.join("base/python/model_plots")
+
+    # Before invocation, the (temporary) cfg dir has no projects defined and
+    # the plot module paths are not adjusted
+    assert not load_from_cfg_dir('projects')
+    assert not load_from_cfg_dir('plot_module_paths')
+
+    # Invoke it and test that it is written
+    project = clt.register_project(args)
+    print(project)
+    assert project == load_from_cfg_dir('projects')['ProjectName']
+
+    # The python model plots should also have changed
+    plot_module_paths = load_from_cfg_dir('plot_module_paths')
+    assert "ProjectName" in plot_module_paths
+    assert plot_module_paths["ProjectName"] == args.python_model_plots_dir
+
+
+    # If invoking it without model plots, there should not be another one
+    args.name = "AnotherProject"
+    args.python_model_plots_dir = None
+
+    project = clt.register_project(args)
+    print(project)
+    assert load_from_cfg_dir('projects')['AnotherProject']
+
+    assert plot_module_paths == load_from_cfg_dir('plot_module_paths')
+
+
+def test_copy_model_files(capsys, monkeypatch):
+    """This tests the copy_model_files CLI helper function. It only tests
+    the dry_run because mocking the write functions would be too difficult
+    here. The actual copying is tested
+    """
+    # First, without prompts
+    copy_model_files = lambda **kws: clt.copy_model_files(**kws,
+                                                          use_prompts=False,
+                                                          skip_exts=['.pyc'],
+                                                          dry_run=True)
+
+    # This should work
+    copy_model_files(model_name="CopyMeBare",
+                     new_name="FooBar", target_project="Utopia")
+
+    # Make sure that some content is found in the output; this is a proxy for
+    # the actual behaviour...
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+
+    # Path changes
+    assert 0 < out.find("CopyMeBare.cc") < out.find("FooBar.cc")
+    assert 0 < out.find("CopyMeBare/CopyMeBare.cc") < out.find("FooBar/FooBar.cc")
+
+    # Added the add_subdirectory command at the correct position
+    assert (0 < out.find("add_subdirectory(dummy)")
+              < out.find("add_subdirectory(FooBar)")
+              < out.find("add_subdirectory(HdfBench)"))
+
+
+    # Without adding to CMakeLists.txt ...
+    copy_model_files(model_name="CopyMeBare", add_to_cmakelists=False,
+                     new_name="FooBar2", target_project="Utopia")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+    assert not (0 < out.find("add_subdirectory(FooBar2)"))
+    assert 0 < out.find("Remember to register the new model in the ")
+
+
+    # These should not work due to bad model or project names
+    with pytest.raises(ValueError, match="'dummy' is already registered!"):
+        copy_model_files(model_name="CopyMeBare",
+                        new_name="dummy", target_project="Utopia")
+    _ = capsys.readouterr()
+    
+    with pytest.raises(ValueError, match="No Utopia project with name 'NoSu"):
+        copy_model_files(model_name="CopyMeBare",
+                        new_name="FooBar", target_project="NoSuchProject")
+    _ = capsys.readouterr()
+
+
+    # These should not work, because use_prompts == False
+    with pytest.raises(ValueError, match="Missing new_name argument!"):
+        copy_model_files(model_name="CopyMeBare")
+    _ = capsys.readouterr()
+    
+    with pytest.raises(ValueError, match="Missing target_project argument!"):
+        copy_model_files(model_name="CopyMeBare", new_name="FooBar")
+    _ = capsys.readouterr()
+
+
+    # Now, do it again, mocking some of the prompts
+    copy_model_files = lambda **kws: clt.copy_model_files(**kws, dry_run=True)
+
+    monkeypatch.setattr('builtins.input', lambda x: "MyNewModel")
+    copy_model_files(model_name="CopyMeBare", target_project="Utopia")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+    assert 0 < out.find("Name of the new model:      MyNewModel")
+
+    monkeypatch.setattr('builtins.input', lambda x: "Utopia")
+    copy_model_files(model_name="CopyMeBare", new_name="FooBar")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+    assert 0 < out.find("Utopia project to copy to:  Utopia")
+
+    monkeypatch.setattr('builtins.input', lambda x: "N")
+    copy_model_files(model_name="CopyMeBare",
+                     new_name="FooBar", target_project="Utopia")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+    assert 0 < out.find("Not proceeding")
+
+    def raise_KeyboardInterrupt(*_):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr('builtins.input', raise_KeyboardInterrupt)
+    copy_model_files(model_name="CopyMeBare", target_project="Utopia")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+
+    monkeypatch.setattr('builtins.input', raise_KeyboardInterrupt)
+    copy_model_files(model_name="CopyMeBare", new_name="FooBar")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)
+
+    monkeypatch.setattr('builtins.input', raise_KeyboardInterrupt)
+    copy_model_files(model_name="CopyMeBare",
+                     new_name="FooBar", target_project="Utopia")
+    out, _ = capsys.readouterr()
+    print(out, "\n"+"#"*79)

@@ -210,7 +210,7 @@ def register_project(args, *, arg_prefix: str='') -> dict:
     Returns:
         dict: Information on the newly added or updated project
     """
-    project_name = args.project_name
+    project_name = getattr(args, arg_prefix + "name")
     log.debug("Adding or updating information for Utopia project '%s' ...",
               project_name)
 
@@ -218,6 +218,9 @@ def register_project(args, *, arg_prefix: str='') -> dict:
     for arg_name in ('base_dir', 'models_dir',
                      'python_model_tests_dir', 'python_model_plots_dir'):
         project_paths[arg_name] = getattr(args, arg_prefix + arg_name)
+
+        if project_paths[arg_name]:
+            project_paths[arg_name] = str(project_paths[arg_name])
 
     # Load existing project information, update it, store back to file
     projects = load_from_cfg_dir('projects')  # empty dict if file is missing
@@ -322,18 +325,21 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
 
 
 def copy_model_files(*, model_name: str,
-                     new_name: str, target_project: str,
+                     new_name: str=None, target_project: str=None,
                      add_to_cmakelists: bool=True,
+                     skip_exts: Sequence[str]=None,
                      use_prompts: bool=True,
                      dry_run: bool=False) -> None:
     """A helper function to conveniently copy model-related files, rename them,
     and adjust their content to the new name as well.
-
+    
     Args:
         model_name (str): The name of the model to copy
-        new_name (str): The new name of the model. This may not conflict with
-            any already existing model name in the model registry.
-        target_project (str): The name of the project to copy the model to.
+        new_name (str, optional): The new name of the model. This may not
+            conflict with any already existing model name in the model
+            registry.
+        target_project (str, optional): The name of the project to copy the
+            model to. It needs to be a registered Utopia project.
         add_to_cmakelists (bool, optional): Whether to add the new model to the
             corresponding CMakeLists.txt file.
         use_prompts (bool, optional): Whether to interactively prompt for
@@ -356,6 +362,7 @@ def copy_model_files(*, model_name: str,
     def create_file_map(*, source_dir: str, target_dir: str,
                         abs_file_map: dict,
                         replacements: Sequence[Tuple[str, str]],
+                        skip_exts: Sequence[str]=None,
                         glob_args: Sequence[str]=("**",)) -> dict:
         """Given a file list with absolute paths, aggregates the file path
         changes into ``abs_file_map`` and gathers the relative file path
@@ -388,6 +395,9 @@ def copy_model_files(*, model_name: str,
             if os.path.isdir(fpath) or not os.path.exists(fpath):
                 continue
 
+            if skip_exts and os.path.splitext(fpath)[1] in skip_exts:
+                continue
+
             rel_fpath = os.path.relpath(fpath, start=source_dir)
             new_rel_fpath = apply_replacements(rel_fpath, *replacements)
 
@@ -412,17 +422,6 @@ def copy_model_files(*, model_name: str,
               "".format(num=len(file_map), label=label,
                         from_dir=source_dir, to_dir=target_dir,
                         files="\n".join(files)))
-
-    def prompt(question: str) -> bool:
-        """Displays a yes-NO prompt and returns a boolean with the result."""
-        try:
-            response = input("\n{} [y/N]  ".format(question))
-        except KeyboardInterrupt:
-            return False
-
-        if response.lower() not in ('y', 'yes'):
-            return False
-        return True
 
     def add_model_to_cmakelists(*, fpath: str, new_name: str, write: bool):
         """Adds the relevant add_subdirectory command to the CMakeLists file
@@ -471,6 +470,16 @@ def copy_model_files(*, model_name: str,
         if write:
             with open(fpath, 'w') as f:
                 f.writelines(lines)
+            
+            print("Subdirectory for model '{}' added to\n\t{}"
+                  "".format(new_name, fpath))
+
+        else:
+            print("Not writing. Preview of how the new\n\t{}\nfile _would_ "
+                  "look like:".format(fpath))
+            print("-"*79 + "\n")
+            print("".join(lines))
+            print("-"*79)
 
     # Gather information on model, project, and replacements . . . . . . . . .
     # Get the model information
@@ -485,7 +494,6 @@ def copy_model_files(*, model_name: str,
         try:
             new_name = input("\nWhat should be the name of the NEW model?  ")
         except KeyboardInterrupt:
-            print()
             return
 
     # Check if the name is not already taken, being case-insensitive
@@ -519,7 +527,6 @@ def copy_model_files(*, model_name: str,
                                    "should the model be copied to?  "
                                    "".format(", ".join(projects)))
         except KeyboardInterrupt:
-            print()
             return
     print("Utopia project to copy to:  {}".format(target_project))
 
@@ -554,7 +561,8 @@ def copy_model_files(*, model_name: str,
     impl_file_map = create_file_map(source_dir=impl_source_dir,
                                     target_dir=impl_target_dir,
                                     abs_file_map=file_map,
-                                    replacements=replacements)
+                                    replacements=replacements,
+                                    skip_exts=skip_exts)
 
     if target_py_t_dir and info_bundle.paths.get('python_model_tests_dir'):
         py_t_source_dir = info_bundle.paths['python_model_tests_dir']
@@ -562,7 +570,8 @@ def copy_model_files(*, model_name: str,
         py_t_file_map = create_file_map(source_dir=py_t_source_dir,
                                         target_dir=py_t_target_dir,
                                         abs_file_map=file_map,
-                                        replacements=replacements)
+                                        replacements=replacements,
+                                        skip_exts=skip_exts)
     
     if target_py_p_dir and info_bundle.paths.get('python_model_plots_dir'):
         py_p_source_dir = info_bundle.paths['python_model_plots_dir']
@@ -570,7 +579,8 @@ def copy_model_files(*, model_name: str,
         py_p_file_map = create_file_map(source_dir=py_p_source_dir,
                                         target_dir=py_p_target_dir,
                                         abs_file_map=file_map,
-                                        replacements=replacements)
+                                        replacements=replacements,
+                                        skip_exts=skip_exts)
 
 
     # Gathered all information now. . . . . . . . . . . . . . . . . . . . . . .
@@ -598,43 +608,59 @@ def copy_model_files(*, model_name: str,
         print("--- THIS IS A DRY RUN. ---")
         print("Copy and write operations below are not operational.")
 
-    if use_prompts and not prompt("Proceed?"):
-        print("Not proceeding.")
-        return
+    if use_prompts:
+        try:
+            response = input("\nProceed [y/N]  ")
+        except KeyboardInterrupt:
+            response = "N"
+        if response.lower() not in ('y', 'yes'):
+            print("\nNot proceeding ...")
+            return
 
-    print("\nNow copying ...\n")
+    print("\nNow copying and refactoring ...")
 
     # Now, the actual copying . . . . . . . . . . . . . . . . . . . . . . . . .
     for i, (src_fpath, target_fpath) in enumerate(file_map.items()):
-        print("Copying file {:d}/{:d} ...".format(i+1, len(file_map)))
-        print("\t   {:s}\n\t-> {:s}\n".format(src_fpath, target_fpath))
+        print("\nFile {:d}/{:d} ...".format(i+1, len(file_map)))
+        print("\t   {:s}\n\t-> {:s}".format(src_fpath, target_fpath))
+
+        try:
+            with open(src_fpath, mode='r') as src_file:
+                src_lines = src_file.read()
+
+        except Exception as exc:
+            print("\tReading FAILED due to {}: {}."
+                  "".format(exc.__class__.__name__, str(exc)))
+            print("\tIf you want this file copied and refactored, you will "
+                  "have to do it manually.")
+            continue
+
+        target_lines = apply_replacements(src_lines, *replacements)
+
         if dry_run:
             continue
 
-        with open(src_fpath, mode='r') as src_file:
-            src_lines = src_file.read()
-
-        # Apply the replacements
-        target_lines = apply_replacements(src_lines, *replacements)
-
-        # Write the file, failing if it already exists
+        # Create directories and write the file; failing if it already exists
         os.makedirs(os.path.dirname(target_fpath), exist_ok=True)
         with open(target_fpath, mode='x') as target_file:
             target_file.write(target_lines)
 
-    print("Finished copying.\n")
+    print("\nFinished copying.\n")
 
-    if not add_to_cmakelists:
-        print("Remember to register the new model in the relevant "
-              "CMakeLists.txt file and reconfigure using CMake.")
-        return
-
-    # Add the new subdirectory to CMakeLists.txt file
-    print("Adding model directory to CMakeLists.txt ...")
+    # Prepare for CMakeLists.txt adjustments
     cmakelists_fpath = os.path.abspath(os.path.join(impl_target_dir,
                                                     "../CMakeLists.txt"))
+    
+    if not add_to_cmakelists:
+        print("Not extending CMakeLists.txt automatically.")
+        print("Remember to register the new model in the relevant "
+              "CMakeLists.txt file at\n\t{}\nand invoke CMake to reconfigure."
+              "".format(cmakelists_fpath))
+        return
+
+    print("Adding model directory to CMakeLists.txt ...")
     add_model_to_cmakelists(fpath=cmakelists_fpath, new_name=new_name,
                             write=not dry_run)
-    print("New model directory added to CMakeLists.txt file.")
 
+    # All done now.
     print("\nFinished.")
