@@ -13,6 +13,7 @@ UTOPIA_CFG_DIR = os.path.expanduser('~/.config/utopia')
 
 # Names of configuration entries
 UTOPIA_CFG_FILE_NAMES = dict(user='user_cfg.yml',
+                             projects='projects.yml',
                              external_module_paths='external_module_paths.yml',
                              plot_module_paths='plot_module_paths.yml')
 

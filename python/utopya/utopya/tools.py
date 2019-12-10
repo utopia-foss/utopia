@@ -323,7 +323,6 @@ def pformat(obj) -> str:
 
     This is achieved by creating a yaml representation.
     """
-
     sstream = io.StringIO("")
     yaml.dump(obj, stream=sstream)
     sstream.seek(0)

@@ -38,14 +38,21 @@ endif()
 message(STATUS "")
 message(STATUS "Providing model information to Utopia frontend ...")
 
+# Declare the directories containing the models tests and plots
+set(UTOPIA_PYTHON_MODEL_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/model_tests
+    CACHE STRING "the directory containing all python-based model tests" FORCE)
+set(UTOPIA_PYTHON_MODEL_PLOTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/model_plots
+    CACHE STRING "the directory containing all python-based model plots" FORCE)
+
 # Register the existing models
 register_models_with_frontend()
 
 # Register paths of additional python modules with the frontend. This is used
 # to communicate to the plotting framework in which places to look for further
 # model-specific plots.
-register_plot_module(NAME base_models
+register_plot_module(NAME ${CMAKE_PROJECT_NAME}
                      MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/model_plots")
+# TODO Remove as soon as register_models_with_frontend takes care of this
 
 # Tests .......................................................................
 message(STATUS "")

@@ -88,6 +88,23 @@ pm_reg_cfg.add_argument('--base-plots-cfg',
          "it may be given relative to it. The path given here has precedence "
          "over a potentially auto-detected path within --src-dir.")
 
+pm_reg_prj = pm_reg.add_argument_group('project information')
+pm_reg_prj.add_argument('--project-name',
+    help="Name of the Utopia project this model belongs to. If using the "
+         "--separator argument, all models are associated with this project.")
+pm_reg_prj.add_argument('--update-project-info',
+    action="store_true",
+    help="If given, will allow the update of project information.")
+pm_reg_prj.add_argument('--project-base-dir',
+    help="Path to the base directory of the project")
+pm_reg_prj.add_argument('--project-models-dir',
+    help="Path to the models directory of the project")
+pm_reg_prj.add_argument('--project-python-model-tests-dir',
+    help="Path to the python tests directory of the project")
+pm_reg_prj.add_argument('--project-python-model-plots-dir',
+    help="Path to the python plots directory of the project")
+
+
 # Modifiers
 pm_reg.add_argument('--label',
     help="The label under which this configuration will be stored in the "
@@ -151,7 +168,7 @@ pm_cp.add_argument('-y', '--yes',
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths', 'plot_module_paths'],
+    choices=['user', 'external_module_paths', 'plot_module_paths', 'projects'],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',

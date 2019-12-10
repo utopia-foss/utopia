@@ -9,6 +9,7 @@ from pkg_resources import resource_filename
 
 from .multiverse import Multiverse
 from .tools import recursive_update, add_item
+from .cfg import load_from_cfg_dir, write_to_cfg_dir
 from .model_registry import get_info_bundle as _get_info_bundle
 from . import MODELS as _MODELS
 
@@ -166,7 +167,8 @@ def register_models(args, *, registry):
                          binary=bin_path,
                          base_src_dir=args.base_src_dir,
                          base_bin_dir=args.base_bin_dir)
-            specs[model_name] = dict(paths=paths)
+            specs[model_name] = dict(paths=paths,
+                                     project_name=args.project_name)
 
     log.debug("Received registry parameters for %d model%s.",
               len(specs), "s" if len(specs) != 1 else "")
@@ -176,10 +178,33 @@ def register_models(args, *, registry):
         registry.register_model_info(model_name, **bundle_kwargs,
                                      exists_action=args.exists_action,
                                      label=args.label,
-                                     overwrite_label=args.overwrite_label
-                                     )
+                                     overwrite_label=args.overwrite_label)
 
     log.info("Model registration finished.\n\n%s\n", registry.info_str)
+
+    # If there is to be project info registered, pass the arguments on
+    if args.update_project_info:
+        register_project(args, arg_prefix='project_')
+
+
+def register_project(args, *, arg_prefix: str=''):
+    """Register or update information of an Utopia project, i.e. a repository
+    that implements models.
+    """
+    project_name = args.project_name
+    project_paths = dict()
+    for arg_name in ('base_dir', 'models_dir',
+                     'python_model_tests_dir', 'python_model_plots_dir'):
+        project_paths[arg_name] = getattr(args, arg_prefix + arg_name)
+
+    # Load existing project information, update it, store back to file
+    projects = load_from_cfg_dir('projects')  # empty dict if file is missing
+    projects[project_name] = project_paths
+
+    write_to_cfg_dir('projects', projects)
+    log.info("Updated information for Utopia project '%s'.", project_name)
+
+    # TODO If python_model_plots_dir is given, update plot modules cfg file
 
 
 def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH

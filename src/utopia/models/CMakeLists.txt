@@ -7,6 +7,10 @@
 #      it is important that the names of folders and targets match.
 #   5. Re-configure using `cmake ..`
 
+# Declare this directory as containing all models of this project
+set(UTOPIA_MODELS_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    CACHE STRING "the directory containing all model source directories" FORCE)
+
 message(STATUS "")
 message(STATUS "Starting Utopia model registration ...")
 

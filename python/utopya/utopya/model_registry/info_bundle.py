@@ -49,6 +49,7 @@ class ModelInfoBundle:
 
     def __init__(self, *, model_name: str,
                  paths: dict, metadata: dict=None,
+                 project_name: str=None,
                  registration_time: str=None,
                  missing_path_action: str='log',
                  **additional_kwargs):
@@ -58,7 +59,8 @@ class ModelInfoBundle:
                           else time.strftime(TIME_FSTR))
 
         # Prepare data dict
-        self._d = dict(paths=dict(), metadata=dict(), **additional_kwargs)
+        self._d = dict(paths=dict(), metadata=dict(),
+                       project_name=project_name, **additional_kwargs)
 
         # Parse paths before loading them, already expanding the user '~' ...
         paths = self._parse_paths(**{k: os.path.expanduser(p)
@@ -129,6 +131,11 @@ class ModelInfoBundle:
     def metadata(self) -> dict:
         """Access to the metadata information of the bundle"""
         return self._d['metadata']
+
+    @property
+    def project_name(self) -> str:
+        """Access to the Utopia project name information of the bundle"""
+        return self._d['project_name']
 
     @property
     def missing_paths(self) -> dict:
