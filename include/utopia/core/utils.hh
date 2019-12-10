@@ -3,11 +3,12 @@
 
 #include <cmath>
 #include <iomanip>
-#include <iostream>
+#include <iostream> // needed for operator<< overloads
 #include <vector>
 #include <tuple>
 #include <utility>
-#include <string>
+#include <string>  
+#include <sstream> // needed for making string representations of arb. types
 
 #include <boost/hana/ext/std/tuple.hpp>
 #include <boost/hana/for_each.hpp>
@@ -502,7 +503,7 @@ template<typename T>
 constexpr bool is_callable_object_v = is_callable_object<T>::value;
 
 /**
- * @brief 
+ * @brief pretty print a pair
  * 
  * @tparam T 
  * @tparam U 
@@ -515,6 +516,11 @@ std::ostream& operator<<(std::ostream& out, const std::pair<T, U>& pair){
     out << "(" << pair.first << ", " << pair.second << ")";
     return out;
 }
+
+
+
+
+
 
 
 /**
@@ -631,6 +637,22 @@ std::ostream& operator<< (std::ostream& ostr, std::tuple<Types...> tuple)
 
     ostr << val_str;
     return ostr;
+}
+
+/**
+ * @brief Turn any object for which operator<< exists into a string. Mostly useful
+ *        for logging data via spdlog which for instance cannot log containers 
+ *        per default.
+ * 
+ * @tparam T automatically determined
+ * @param t object to be turned into a string to be logged
+ * @return std::string string representation provided by std::stringstream
+ */
+template<typename T> 
+std::string str(T&& t){
+    std::stringstream s;
+    s << t; 
+    return s.str();
 }
 
 
