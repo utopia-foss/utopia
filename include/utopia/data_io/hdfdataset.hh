@@ -3,6 +3,9 @@
  * provides a class for writing to, reading from and creating almost arbitrary
  * data to a dataset in a HDF5 file.
  * @file hdfdataset.hh
+ * @todo Should we append in the first dimensions instead of the last?
+ *       Think about what is better/more performant/ expected by users?
+ *
  */
 #ifndef UTOPIA_DATAIO_HDFDATASET_HH
 #define UTOPIA_DATAIO_HDFDATASET_HH
@@ -14,6 +17,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
+#include "../core/utils.hh"
 #include "hdfattribute.hh"
 #include "hdfbufferfactory.hh"
 #include "hdfchunking.hh"
@@ -75,11 +79,12 @@ class HDFDataset
             }
         }
 
+        hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
+
         // distinguish by chunksize; chunked dataset needed for compression
         if (_chunksizes.size() > 0)
         {
             // create creation property list, set chunksize and compress level
-            hid_t plist = H5Pcreate(H5P_DATASET_CREATE);
 
             H5Pset_chunk(plist, _rank, _chunksizes.data());
 
@@ -115,6 +120,9 @@ class HDFDataset
                              H5P_DEFAULT,
                              H5P_DEFAULT);
         }
+
+        // set fill value to initialize empty values in the dataset
+        // variable length data needs to be treated separatly (first case)
 
         H5Oget_info(dset, &_info);
         _address                       = _info.addr;
@@ -194,7 +202,7 @@ class HDFDataset
      */
     template < typename T >
     herr_t
-    __write_container__(T data, hid_t memspace, hid_t filespace)
+    __write_container__(T&& data, hid_t memspace, hid_t filespace)
     {
         using value_type_1 =
             typename Utils::remove_qualifier_t< T >::value_type;
@@ -284,7 +292,7 @@ class HDFDataset
             buffer = data.c_str();
         }
 
-        // check if attribute has been created, else do
+        // check if dataset has been created, else do
         if (_dataset == -1)
         {
             _dataset = __create_dataset__< const char* >(len);
@@ -480,10 +488,30 @@ class HDFDataset
                                              H5P_DEFAULT,
                                              &temp_buffer[0]);
 
-                        auto tb = temp_buffer.begin();
-                        std::generate(buffer.begin(), buffer.end(), [&tb]() {
-                            return *(tb++);
-                        });
+                        /* README:
+                        - hdf5 uses `NULL` as fill value for string entries
+                        which are not written per default, and setting another
+                        fillvalue did not succeed for variable length data.
+                        - The NULL produces a segmentation fault when trying to
+                          turn it into an std::string.
+                        - Hence, as a workaround, teh `NULL`s are treated
+                        explicitly when postprocessing the data into their final
+                        form, which is what the code below does.
+                        */
+                        for (auto [b, tb] = std::make_tuple(
+                                 buffer.begin(), temp_buffer.begin());
+                             b != buffer.end();
+                             ++b, ++tb)
+                        {
+                            if (*tb != NULL)
+                            {
+                                *b = *tb;
+                            }
+                            else
+                            {
+                                *b = "\0";
+                            }
+                        }
                         return err;
                     }
                     else
@@ -545,10 +573,15 @@ class HDFDataset
                     {
                         buffer[i].resize(temp_buffer[i].len);
                     }
-                    for (std::size_t j = 0; j < temp_buffer[i].len; ++j)
+
+                    // I consider this more elegant than using std::for_each
+                    // and defining the 'j' index outside of the predicate
+                    for (auto [it, j] =
+                             std::make_tuple(std::begin(buffer[i]), 0ul);
+                         it != std::end(buffer[i]);
+                         ++it, ++j)
                     {
-                        buffer[i][j] =
-                            static_cast< value_type_2* >(temp_buffer[i].p)[j];
+                        *it = static_cast< value_type_2* >(temp_buffer[i].p)[j];
                     }
                 }
                 return err;
@@ -1009,7 +1042,7 @@ class HDFDataset
      * @param parent_object The HDFGroup/HDFFile into which the dataset shall be
      * created
      * @param adaptor The function which makes the data to be written from given
-     *                iterators
+     * iterators
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      * @param capacity The maximum size of the dataset in each dimension. Give
@@ -1143,7 +1176,7 @@ class HDFDataset
      */
     template < typename T >
     void
-    write(T data, [[maybe_unused]] std::vector< hsize_t > shape = {})
+    write(T&& data, [[maybe_unused]] std::vector< hsize_t > shape = {})
     {
         // dataset does not yet exist
         hid_t memspace  = H5S_ALL;
@@ -1361,13 +1394,6 @@ class HDFDataset
                     ": Error when trying to increase extent");
             }
 
-            // get size
-            hsize_t size = 1;
-            for (auto& s : counts)
-            {
-                size *= s;
-            }
-
             // get file and memory spaces which represent the selection to write
             // at
             std::tie(filespace, memspace) = __select_dataset_subset__(counts);
@@ -1376,7 +1402,7 @@ class HDFDataset
         }
 
         // everything is prepared, we can write the data
-        if constexpr (Utils::is_container_v< T >)
+        if constexpr (Utils::is_container_v< std::decay_t< T > >)
         {
             herr_t err = __write_container__(
                 std::forward< T >(data), memspace, filespace);
@@ -1386,7 +1412,7 @@ class HDFDataset
                                          ": Error in appending container");
             }
         }
-        else if constexpr (Utils::is_string_v< T >)
+        else if constexpr (Utils::is_string_v< std::decay_t< T > >)
         {
             herr_t err = __write_stringtype__(
                 std::forward< T >(data), memspace, filespace);
@@ -1396,7 +1422,8 @@ class HDFDataset
                                          ": Error in appending string");
             }
         }
-        else if constexpr (std::is_pointer_v< T > and !Utils::is_string_v< T >)
+        else if constexpr (std::is_pointer_v< std::decay_t< T > > and
+                           !Utils::is_string_v< std::decay_t< T > >)
         {
             herr_t err = __write_pointertype__(
                 std::forward< T >(data), memspace, filespace);
@@ -1430,10 +1457,9 @@ class HDFDataset
      * @param begin start iterator of range to write
      * @param end end iteator of range to write
      * @param adaptor Modifier function which takes a reference of type
-     *                Iter::value_type and returns some arbitrary type, from 
-     *                which a buffer is made which then is written to the 
-     *                dataset. This hence determines what is written to the 
-     *                dataset
+     * Iter::value_type and returns some arbitrary type, from which a buffer is
+     * made which then is written to the dataset. This hence determines what is
+     * written to the dataset
      */
     template < typename Iter, typename Adaptor >
     void
@@ -1444,16 +1470,462 @@ class HDFDataset
         // copy suffices
         if constexpr (std::is_same_v< Type, typename Iter::value_type >)
         {
-            write(std::vector< Type >(begin, end));
+            write(std::vector< Type >(std::forward< Iter >(begin),
+                                      std::forward< Iter >(end)));
         }
         else
         {
-            std::vector< Type > buff(std::distance(begin, end));
-            std::generate(buff.begin(), buff.end(), [&begin, &adaptor]() {
-                return adaptor(*(begin++));
-            });
+            // the lambda should enable copy elision
+            write([&]() {
+                std::vector< Type > buff(std::distance(begin, end));
 
-            write(std::move(buff));
+                std::generate(buff.begin(), buff.end(), [&begin, &adaptor]() {
+                    return adaptor(*(begin++));
+                });
+                return buff;
+            }());
+        }
+    }
+
+    /**
+     * @brief Write a boost::multi_array of arbitrary type and dimension to the
+     * dataset. The dataset needs to be of dimension N >= d, because dataset
+     * dimensions cannot be changed after they have been created. In all other
+     * regards this behaves like the normal 'write' function that accepts a
+     * value.
+     *
+     * @warning When no custom offset vector is given, and one reuses the
+     * dataset for multiple writes, it is assumed that the size of the data written 
+     * varies only in the first dimension. Envisage this as stacking
+     * rectangular blocks of varying height but equal width and depth. 
+     * The reason is that it is rather difficult to automatically
+     * determine the offset such that the user can do arbitrary writes
+     * without any overwrites of existing data or storage inefficiencies occuring.
+     * @tparam T type held by the boost::multi_array, automatically determined
+     * from argument
+     * @tparam d dimensionality of the boost::multi_array, automatically
+     * determined
+     * @param data boost::multi_array to be written to dataset.
+     * @param offset optional custom offset, which gives the element the zeroth
+     * entry of the newly written array shall be put to.
+     */
+    template < typename T, std::size_t d >
+    void
+    write_nd(const boost::multi_array< T, d >& data,
+             std::vector< hsize_t >            offset = {})
+    {
+
+        // create memory spaces
+        hid_t memspace  = H5S_ALL;
+        hid_t filespace = H5S_ALL;
+
+        // for logging stuff
+        const auto log = spdlog::get("data_io");
+
+        // dataset does not yet exist
+        if (_dataset == -1)
+        {
+
+            // two possibilities: capacity given or not:
+            // if not given:
+            //   use data to determine extent and capacity, correcting the
+            //   assumed ones from 'open'
+            // else use given values
+
+            if (_capacity == std::vector< hsize_t >{ H5S_UNLIMITED } and
+                _rank == 1)
+            {
+                _rank = d;
+                _current_extent.resize(_rank, 0);
+                _offset.resize(_rank, 0);
+                for (std::size_t i = 0; i < _rank; ++i)
+                {
+                    _current_extent[i] = data.shape()[i];
+                }
+                _capacity.resize(d, H5S_UNLIMITED);
+            }
+            else
+            {
+                _current_extent.resize(_rank, 1);
+                _offset.resize(_rank, 0);
+
+                for (auto [i, j] = std::make_tuple(_rank - d, 0); i < _rank;
+                     ++i, ++j)
+                {
+                    _current_extent[i] = data.shape()[j];
+                }
+            }
+
+            log->debug("Dataset {} does not exist yet, properties were "
+                       "determined to be",
+                       _path);
+            log->debug(" rank: {}", Utils::str(_capacity));
+            log->debug(" datarank: {}", Utils::str(d));
+            log->debug(" datashape: {}",
+                       Utils::str(std::vector< std::size_t >(
+                           data.shape(), data.shape() + d)));
+            log->debug(" capacity: {}", Utils::str(_capacity));
+            log->debug(" offset: {}", Utils::str(_offset));
+            log->debug(" current_extent: {}", Utils::str(_current_extent));
+        }
+        else
+        {
+            if (_rank < d)
+            {
+                throw std::invalid_argument(
+                    "Error, the dimensionality of the dataset, which is " +
+                    std::to_string(_current_extent.size()) +
+                    ", must be >=  the dimensionality of the data to be "
+                    "written, which is " +
+                    std::to_string(d));
+            }
+            else
+            {
+
+                log->debug("Dataset {} does  exist", _path);
+                log->debug("Properties of data to be written");
+                log->debug(" datarank: {}", Utils::str(d));
+                log->debug(" datashape: {}",
+                           Utils::str(std::vector< std::size_t >(
+                               data.shape(), data.shape() + d)));
+
+                log->debug(
+                    "Properties before change for accomodating new data");
+                log->debug(" rank: {}", Utils::str(_capacity));
+                log->debug(" capacity: {}", Utils::str(_capacity));
+                log->debug(" offset: {}", Utils::str(_offset));
+                log->debug(" current_extent: {}", Utils::str(_current_extent));
+
+                std::vector< hsize_t > _new_extent = _current_extent;
+
+                // two cases: When offset is given, and when not. When it is
+                // given, then it is assumed that the data has always the same
+                // shape except in the first dimension
+
+                if (offset.size() != 0)
+                {
+
+                    // when offset is given we use it to
+                    // determine how to extent the dataset. Note that the
+                    // requirement that all data written have the same shape in
+                    // all dimensions but the first is not enforced here, hence
+                    // the algorithm works a little differently
+                    _offset = offset;
+                    for (std::size_t i = 0; i < _rank - d; ++i)
+                    {
+                        if (_offset[i] == _current_extent[i])
+                        {
+                            _new_extent[i] += 1;
+                        }
+                    }
+
+                    for (auto [i, j] = std::make_tuple(_rank - d, 0ul); i < d;
+                         ++i)
+                    {
+                        if (_current_extent[i] < (_offset[i] + data.shape()[j]))
+                        {
+                            _new_extent[i] = _offset[i] + data.shape()[j];
+                        }
+                        if (_new_extent[i] > _capacity[i])
+                        {
+                            throw std::runtime_error(
+                                "Dataset " + _path + ": Capacity[" +
+                                std::to_string(i) +
+                                "] = " + std::to_string(_capacity[i]) +
+                                ", which is too small for a desired new "
+                                "extent[" +
+                                std::to_string(i) +
+                                "] = " + std::to_string(_new_extent[i]));
+                        }
+                    }
+
+                    // extend the dataset to the new size
+                    herr_t err = H5Dset_extent(_dataset, _new_extent.data());
+
+                    if (err < 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": Error when trying to increase extent");
+                    }
+                }
+
+                else
+                {
+                    // zeroth index is treated separatlye because it is used to
+                    // increase the total available space in the dataset
+
+                    _new_extent[0] += (d == _rank) ? data.shape()[0]
+                                                   : 1; // add all needed slices
+
+                    if (_new_extent[0] > _capacity[0])
+                    {
+                        throw std::runtime_error(
+                            "Error in " + _path + ", capacity " +
+                            std::to_string(_capacity[0]) + " at index " +
+                            std::to_string(0) + " of " + std::to_string(d) +
+                            " is too small for new extent " +
+                            std::to_string(_new_extent[0]));
+                    }
+
+                    for (auto [i, j] =
+                             std::make_tuple(1ul, (d == _rank) ? 1ul : 0ul);
+                         i < _rank && j < d;
+                         ++i, ++j)
+                    {
+                        if (data.shape()[j] > _current_extent[i])
+                        {
+                            _new_extent[i] +=
+                                data.shape()[j] - _current_extent[i];
+                            if (_new_extent[i] > _capacity[i])
+                            {
+                                throw std::runtime_error(
+                                    "Error in " + _path +
+                                    ", capacity at index " + std::to_string(i) +
+                                    " of " + std::to_string(d) +
+                                    " is too small");
+                            }
+                        }
+                    }
+
+                    // extend the dataset to the new size
+                    herr_t err = H5Dset_extent(_dataset, _new_extent.data());
+
+                    if (err < 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": Error when trying to increase extent");
+                    }
+
+                    // if the algo progresses until here, it is safe to do this;
+
+                    _offset.resize(_rank);
+                    std::fill(_offset.begin(), _offset.end(), 0);
+                    _offset[0] = _current_extent[0];
+                }
+                /*
+                 * README: The count vector is needed for determining the slice
+                 * to write to in the datafile. hdf5 determines slices in the
+                 * dataset via [start, step, count], pattern, where the 'count'
+                 * gives the number fo steps in each dimension. Hence, the
+                 * counts have to be computed/assigned from the data to be
+                 * written
+                 */
+                std::vector< hsize_t > counts(_rank, 1);
+
+                for (auto [i, j] = std::make_tuple(_rank - d, 0); i < _rank;
+                     ++i, ++j)
+                {
+                    counts[i] = data.shape()[j];
+                }
+
+                // get file and memory spaces which represent the selection to
+                // write at
+                std::tie(filespace, memspace) =
+                    __select_dataset_subset__(counts);
+
+                // update the current extent
+                _current_extent = _new_extent;
+
+                log->debug("Properties after change for accomodating new data");
+                log->debug(" rank: {}", Utils::str(_capacity));
+                log->debug(" capacity: {}", Utils::str(_capacity));
+                log->debug(" offset: {}", Utils::str(_offset));
+                log->debug(" current_extent: {}", Utils::str(_current_extent));
+
+                // if the offset is given, override the computed offset
+            }
+        }
+
+        // dataset extension is done, now we can check if we have to buffer data
+        // FIXME: this has to be put into the bufferfactory class later, ideally
+        // using a plain char buffer for it to avoid templating and enabling
+        // memory reuse by making the bufferfactory a member.
+
+        if constexpr (std::is_scalar_v< T >)
+        {
+            if (_dataset == -1)
+            {
+                _dataset = __create_dataset__< T >(0);
+            }
+
+            herr_t err = H5Dwrite(_dataset,
+                                  HDFTypeFactory::type< T >(),
+                                  memspace,
+                                  filespace,
+                                  H5P_DEFAULT,
+                                  data.data());
+
+            if (err < 0)
+            {
+                throw std::runtime_error(
+                    "Dataset " + _path +
+                    ": Error in writing nd-array holding scalar values");
+            }
+        }
+        else if constexpr (Utils::is_string_v< T >)
+        {
+            if (_dataset == -1)
+            {
+                _dataset = __create_dataset__< T >(0);
+            }
+
+            // make a buffer that mirrors the shape of the data
+            boost::multi_array< const char*, d > buffer(
+                reinterpret_cast< boost::array< size_t, d > const& >(
+                    *data.shape()));
+
+            // fill the buffer
+            std::transform(data.data(),
+                           data.data() + data.num_elements(),
+                           buffer.data(),
+                           [](auto&& str) { return str.c_str(); });
+
+            // write the buffer
+            herr_t err = H5Dwrite(_dataset,
+                                  HDFTypeFactory::type< const char* >(),
+                                  memspace,
+                                  filespace,
+                                  H5P_DEFAULT,
+                                  buffer.data());
+
+            if (err < 0)
+            {
+                throw std::runtime_error(
+                    "Dataset " + _path +
+                    ": Error in writing nd-array holding string values");
+            }
+        }
+        else if constexpr (Utils::is_container_v< T >)
+        {
+            hsize_t typesize = 0;
+            if constexpr (Utils::is_array_like_v< T >)
+            {
+                typesize = Utils::get_size< T >::value;
+
+                // create dataset with given typesize
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__< T >(typesize);
+                }
+                // write the buffer not needed here
+
+                herr_t err = H5Dwrite(_dataset,
+                                      HDFTypeFactory::type< T >(typesize),
+                                      memspace,
+                                      filespace,
+                                      H5P_DEFAULT,
+                                      data.data());
+                if (err < 0)
+                {
+                    throw std::runtime_error(
+                        "Dataset " + _path +
+                        ": Error in writing nd-array holding array values");
+                }
+            }
+            else
+            {
+                // create dataset with given typesize
+                if (_dataset == -1)
+                {
+                    _dataset = __create_dataset__< T >(0);
+                }
+
+                // vector is stored
+                if constexpr (std::is_same_v<
+                                  std::vector< typename T::value_type >,
+                                  std::decay_t< T > >)
+                {
+                    // make  buffer
+                    boost::multi_array< hvl_t, d > buffer(
+                        reinterpret_cast< boost::array< size_t, d > const& >(
+                            *data.shape()));
+
+                    std::transform(
+                        data.data(),
+                        data.data() + data.num_elements(),
+                        buffer.data(),
+                        [](auto&& v) {
+                            return hvl_t{
+                                v.size(),
+                                // cumbersome const cast needed because I want
+                                // to keep const Reference argument 'cause it
+                                // can bind to lvalues and rvalues alike, i.e.
+                                // you can construct a multi_array int he arg
+                                // list, but also pass an existing one as
+                                // reference.
+                                const_cast< Utils::remove_qualifier_t< decltype(
+                                    v.data()) >* >(v.data())
+                            };
+                        });
+
+                    // write the buffer
+                    herr_t err = H5Dwrite(_dataset,
+                                          HDFTypeFactory::type< T >(typesize),
+                                          memspace,
+                                          filespace,
+                                          H5P_DEFAULT,
+                                          buffer.data());
+
+                    if (err < 0)
+                    {
+                        throw std::runtime_error("Dataset " + _path +
+                                                 ": Error in writing nd-array "
+                                                 "holding vector values");
+                    }
+                }
+                // no vector is stored
+                else
+                {
+                    // make  buffers, when no vector we need two of them,
+                    // one to transform to vector which has contiguous storage
+                    // which in turn is needed by hdf5, the other
+                    // for turning the new vectors into hvl_t
+                    boost::multi_array< std::vector< typename T::value_type >,
+                                        d >
+                        vector_buffer(reinterpret_cast<
+                                      boost::array< size_t, d > const& >(
+                            *data.shape()));
+
+                    boost::multi_array< hvl_t, d > buffer(
+                        reinterpret_cast< boost::array< size_t, d > const& >(
+                            *data.shape()));
+
+                    std::transform(
+                        data.data(),
+                        data.data() + data.num_elements(),
+                        vector_buffer.data(),
+                        [](auto&& v) {
+                            return std::vector< typename T::value_type >(
+                                v.begin(), v.end());
+                        });
+
+                    std::transform(vector_buffer.data(),
+                                   vector_buffer.data() +
+                                       vector_buffer.num_elements(),
+                                   buffer.data(),
+                                   [](auto&& v) {
+                                       return hvl_t{ v.size(), v.data() };
+                                   });
+
+                    // write the buffer
+                    herr_t err = H5Dwrite(_dataset,
+                                          HDFTypeFactory::type< T >(typesize),
+                                          memspace,
+                                          filespace,
+                                          H5P_DEFAULT,
+                                          buffer.data());
+
+                    if (err < 0)
+                    {
+                        throw std::runtime_error(
+                            "Dataset " + _path +
+                            ": Error in writing nd-array holding non-vector "
+                            "container values");
+                    }
+                }
+            }
         }
     }
 
@@ -1462,7 +1934,7 @@ class HDFDataset
      *         Type gives the type of the buffer to read, and currently only
      *         1d reads are supported, so ND dataset of double has to be read
      *         into a 1d buffer containing doubles of size = product of
-     * dimenions of datasets.
+     *         dimenions of datasets.
      *
      * @tparam Type  Type to read to.
      * @param start  offset to start reading from (inclusive)
@@ -1554,11 +2026,13 @@ class HDFDataset
             }
             return std::make_tuple(readshape, buffer);
         }
-        // we can have string types too, i.e. char*, const char*, std::string
-        else if constexpr (Utils::is_string_v< Type >) 
+        else if constexpr (Utils::is_string_v< Type >) // we can have string
+                                                       // types too, i.e. char*,
+                                                       // const char*,
+                                                       // std::string
         {
-             // resized in __read_stringtype__ because this as a scalar
-            std::string buffer;
+            std::string buffer; // resized in __read_stringtype__ because this
+                                // as a scalar
             buffer.resize(size);
             herr_t err = __read_stringtype__(buffer, memspace, filespace);
             if (err < 0)
@@ -1649,9 +2123,9 @@ class HDFDataset
      * @brief Construct a new HDFDataset object
      *
      * @param parent_object The HDFGroup/HDFFile into which the dataset shall be
-     *          created
+     *                      created
      * @param adaptor The function which makes the data to be written from given
-     *                iterators
+     *                 iterators
      * @param path The path of the dataset in the parent_object
      * @param rank The number of dimensions of the dataset
      * @param capacity The maximum size of the dataset in each dimension. Give

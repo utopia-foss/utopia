@@ -28,6 +28,7 @@ set(TESTS_DATAIO
     writetask_test
     datamanager_test
     factory_test
+    hdf_ndim_io_test
     )
 
 # Add DATAIO_-prefixed test targets

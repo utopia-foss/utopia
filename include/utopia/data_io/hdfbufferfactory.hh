@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <hdf5.h>
+#include <boost/multi_array.hpp>
 
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
