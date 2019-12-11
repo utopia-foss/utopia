@@ -204,7 +204,19 @@ def register_project(args, *, arg_prefix: str=''):
     write_to_cfg_dir('projects', projects)
     log.info("Updated information for Utopia project '%s'.", project_name)
 
-    # TODO If python_model_plots_dir is given, update plot modules cfg file
+    # If python_model_plots_dir is given, update plot modules cfg file
+    if project_paths['python_model_plots_dir']:
+        plot_module_paths = load_from_cfg_dir('plot_module_paths')
+        model_plots_dir = project_paths['python_model_plots_dir']
+
+        # Remove duplicate paths and instead store it under the project name
+        plot_module_paths = {k:v for k,v in plot_module_paths.items()
+                             if v != model_plots_dir}
+        plot_module_paths[project_name] = model_plots_dir
+
+        write_to_cfg_dir('plot_module_paths', plot_module_paths)
+        log.info("Updated plot module paths for Utopia project '%s'.",
+                 project_name)
 
 
 def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
