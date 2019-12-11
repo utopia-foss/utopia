@@ -149,7 +149,7 @@ pm_rm.add_argument('--all',
     help="Remove the registry entries for all currently registered models.")
 
 
-# sub-subcommand: remove model registry entries . . . . . . . . . . . . . . . .
+# sub-subcommand: copy a model . . . . . . . . . . . . . . . . . . . . . . . .
 pm_cp.add_argument('model_name',
     help="Name of the models to copy")
 pm_cp.add_argument('--new-name',
@@ -164,6 +164,10 @@ pm_cp.add_argument('--target-project',
 pm_cp.add_argument('-y', '--yes',
     action='store_true',
     help="If given, will NOT ask for confirmation before copying.")
+pm_cp.add_argument('-d', '--dry-run',
+    action='store_true',
+    help="If given, performs a dry run: No copy or write operations will be "
+         "carried out.")
 
 
 # subcommand: config ..........................................................
@@ -438,7 +442,9 @@ if __name__ == '__main__':
             copy_model_files(model_name=args.model_name,
                              new_name=args.new_name,
                              target_project=args.target_project,
-                             prompt_for_confirmation=not args.yes)
+                             verbose=args.verbose,
+                             prompt_for_confirmation=not args.yes,
+                             dry_run=args.dry_run)
 
         else:
             # Mode: ls or None

@@ -321,20 +321,31 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
           .format(user_cfg_path))
 
 
-def copy_model_files(*, model_name: str, new_name: str, target_project: str,
+def copy_model_files(*, model_name: str,
+                     new_name: str, target_project: str,
+                     add_to_cmakelists: bool=True,
                      prompt_for_confirmation: bool=False,
-                     add_to_cmakelists: bool=True) -> None:
-    """
+                     dry_run: bool=False) -> None:
+    """A helper function to conveniently copy model-related files, rename them,
+    and adjust their content to the new name as well.
+
     Args:
         model_name (str): The name of the model to copy
         new_name (str): The new name of the model. This may not conflict with
             any already existing model name in the model registry.
         target_project (str): The name of the project to copy the model to.
+        add_to_cmakelists (bool, optional): Whether to add the new model to the
+            corresponding CMakeLists.txt file.
         prompt_for_confirmation (bool, optional): Whether to interactively
             prompt for confirmation before proceeding to copy all files.
+        dry_run (bool, optional): If given, no write or copy operations will be
+            carried out.
     
     Raises:
         ValueError: Upon bad arguments
+    
+    Returns:
+        None
     """
     def apply_replacements(s, *replacements: Sequence[Tuple[str, str]]) -> str:
         """Applies multiple replacements onto the given string"""
@@ -342,15 +353,35 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
             s = s.replace(*replacement)
         return s
 
-    def create_file_map(*, files: Sequence[str],
-                        source_dir: str, target_dir: str,
+    def create_file_map(*, source_dir: str, target_dir: str,
                         abs_file_map: dict,
-                        replacements: Sequence[Tuple[str, str]]) -> dict:
+                        replacements: Sequence[Tuple[str, str]],
+                        glob_args: Sequence[str]=("**",)) -> dict:
         """Given a file list with absolute paths, aggregates the file path
         changes into ``abs_file_map`` and gathers the relative file path
         changes into the returned dict.
+
         The file name is changed according to the specified replacements.
+        
+        Args:
+            source_dir (str): The source directory to look for files in using
+                glob and the ``glob_args``. Note that directories are not
+                matched.
+            target_dir (str): The target directory of the renamed files
+            abs_file_map (dict): The mutable file map that the absolute file
+                path changes are aggregated in.
+            replacements (Sequence[Tuple[str, str]]): The replacement
+                specifications, applied to the relative paths.
+            glob_args (Sequence[str], optional): The glob arguments to match
+                files within the source directory. By default, this matches
+                all files, also down the source directory tree. The glob
+                ``recursive`` option is enabled.
+        
+        Returns:
+            dict: The file map relative to source and target dir.
         """
+        files = glob.glob(os.path.join(source_dir, *glob_args),
+                          recursive=True)
         rel_file_map = dict()
 
         for fpath in files:
@@ -367,7 +398,7 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
 
     def print_file_map(*, file_map: dict, source_dir: str, target_dir: str,
                        label: str):
-        """Prints a humand-readable version of the given (relative) file map
+        """Prints a human-readable version of the given (relative) file map
         which copies from the source directory tree to the target directory
         tree.
         """
@@ -383,17 +414,65 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
                         files="\n".join(files)))
 
     def prompt(question: str) -> bool:
+        """Displays a yes-NO prompt and returns a boolean with the result."""
         try:
             response = input("\n{} [y/N]  ".format(question))
-        
         except KeyboardInterrupt:
             return False
 
-        if response.lower() not in ['y', 'yes']:
+        if response.lower() not in ('y', 'yes'):
             return False
-
         return True
 
+    def add_model_to_cmakelists(*, fpath: str, new_name: str, write: bool):
+        """Adds the relevant add_subdirectory command to the CMakeLists file
+        at the specified path.
+        
+        Assumes an ascending alphabetical list of add_subdirectory commands
+        and adds the new command at a suitable place.
+        
+        Args:
+            fpath (str): The absolute path of the CMakeLists.txt file
+            new_name (str): The new model name to add to it
+            write (bool): If false, will not write.
+        
+        Raises:
+            ValueError: On missing ``add_subdirectory`` command in the given
+                file. In this case, the line has to be added manually.
+        """
+        # Read the file
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
+
+        # Find the line to add the add_subdirectory command at
+        insert_idx = None
+        for i, line in enumerate(lines):
+            if not line.startswith("add_subdirectory"):
+                continue
+
+            insert_idx = i
+            _model = line[len("add_subdirectory("):-2]
+            if _model.lower() > new_name.lower():
+                break
+        else:
+            # Did not break. Insert behind the last add_subdirectory command
+            insert_idx += 1
+
+        if insert_idx is None:
+            raise ValueError("Found no add_subdirectory commands and thus do "
+                             "not know where to insert the command for the "
+                             "new model directory; please do it manually in "
+                             "the following file:  {}".format(fpath))
+
+        lines.insert(insert_idx if insert_idx
+                                else last_add_subdir_idx + 1,
+                                "add_subdirectory({})\n".format(new_name))
+
+        if write:
+            with open(fpath, 'w') as f:
+                f.writelines(lines)
+
+    # Gather information on model, project, and replacements . . . . . . . . .
     # Get the model information
     info_bundle = _get_info_bundle(model_name=model_name)
 
@@ -415,7 +494,7 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
         (model_name.upper(), new_name.upper()),
     ]
 
-    # Find out the project
+    # Find out the project that the files are copied _to_
     projects = load_from_cfg_dir('projects')
     project_info = projects.get(target_project)
     if not project_info:
@@ -425,57 +504,50 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
                          "Available projects: {}."
                          "".format(target_project, ", ".join(projects)))
     
+    # Generate the file maps . . . . . . . . . . . . . . . . . . . . . . . . .
     # The mapping of all files that are to be copied and in which the content
     # is to be replaced. It maps absolute source file paths to absolute target
     # file paths.
     file_map = dict()
 
+    # Relative file maps, created below
+    impl_file_map = None
+    py_t_file_map = None
+    py_p_file_map = None
+
     # Find out the target directories
     target_models_dir = project_info.get('models_dir')
-    target_python_model_tests_dir = project_info.get('python_model_tests_dir')
-    target_python_model_plots_dir = project_info.get('python_model_plots_dir')
+    target_py_t_dir = project_info.get('python_model_tests_dir')
+    target_py_p_dir = project_info.get('python_model_plots_dir')
 
-    # Define the source and target directory paths of the implementation
+    # Define the source and target directory paths of the implementation and
+    # the python-related files, if the path information is available.
     impl_source_dir = info_bundle.paths['source_dir']
     impl_target_dir = os.path.join(target_models_dir, new_name)
-    impl_source_files = glob.glob(os.path.join(impl_source_dir, "**"),
-                                 recursive=True)
-    impl_file_map = create_file_map(files=impl_source_files,
-                                    source_dir=impl_source_dir,
+    impl_file_map = create_file_map(source_dir=impl_source_dir,
                                     target_dir=impl_target_dir,
                                     abs_file_map=file_map,
                                     replacements=replacements)
 
-    # Do the same for Python-related files, if the paths are available
-    py_t_file_map = None
-    py_p_file_map = None
-
-    if (    target_python_model_tests_dir
-        and info_bundle.paths.get('python_model_tests_dir')):
+    if target_py_t_dir and info_bundle.paths.get('python_model_tests_dir'):
         py_t_source_dir = info_bundle.paths['python_model_tests_dir']
-        py_t_target_dir = os.path.join(target_python_model_tests_dir, new_name)
-        py_t_source_files = glob.glob(os.path.join(py_t_source_dir, "**"),
-                                      recursive=True)
-        py_t_file_map = create_file_map(files=py_t_source_files,
-                                        source_dir=py_t_source_dir,
+        py_t_target_dir = os.path.join(target_py_t_dir, new_name)
+        py_t_file_map = create_file_map(source_dir=py_t_source_dir,
                                         target_dir=py_t_target_dir,
                                         abs_file_map=file_map,
                                         replacements=replacements)
     
-    if (    target_python_model_plots_dir
-        and info_bundle.paths.get('python_model_plots_dir')):
+    if target_py_p_dir and info_bundle.paths.get('python_model_plots_dir'):
         py_p_source_dir = info_bundle.paths['python_model_plots_dir']
-        py_p_target_dir = os.path.join(target_python_model_plots_dir, new_name)
-        py_p_source_files = glob.glob(os.path.join(py_p_source_dir, "**"),
-                                      recursive=True)
-        py_p_file_map = create_file_map(files=py_p_source_files,
-                                        source_dir=py_p_source_dir,
+        py_p_target_dir = os.path.join(target_py_p_dir, new_name)
+        py_p_file_map = create_file_map(source_dir=py_p_source_dir,
                                         target_dir=py_p_target_dir,
                                         abs_file_map=file_map,
                                         replacements=replacements)
 
 
-    # Gathered all information now. Inform about it.
+    # Gathered all information now. . . . . . . . . . . . . . . . . . . . . . .
+    # Inform about the file changes and the replacement in them.
     print_file_map(file_map=impl_file_map, label="model implementation",
                    source_dir=impl_source_dir, target_dir=impl_target_dir)
 
@@ -487,27 +559,30 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
         print_file_map(file_map=py_p_file_map, label="python model plot",
                        source_dir=py_p_source_dir, target_dir=py_p_target_dir)
 
-
-
-    # Replacements
     max_repl_len = max([len(rs) for rs, _ in replacements])
+    repl_info = ["\t'{:{l:d}s}'  ->  '{:s}'".format(*repl, l=max_repl_len)
+                 for repl in replacements]
     print("\nInside all of these {:d} files, the following string "
-          "replacements will be made:\n{}\n"
-          "".format(len(file_map),
-                    "\n".join(["\t'{:{l:d}s}'  ->  '{:s}'"
-                               "".format(*repl, l=max_repl_len)
-                               for repl in replacements])))
+          "replacements will be carried out:\n{}\n"
+          "".format(len(file_map), "\n".join(repl_info)))
 
-    # Ask whether to proceed
-    if prompt_for_confirmation and not prompt("Proceed with copying?"):
+    # Inform about dry run and ask whether to proceed
+    if dry_run:
+        print("--- THIS IS A DRY RUN. ---")
+        print("Copy and write operations below are not operational.")
+
+    if prompt_for_confirmation and not prompt("Proceed?"):
         print("Not proceeding.")
         return
-    print("Now copying ...")
 
-    # Now, the actual copying
+    print("\nNow copying ...\n")
+
+    # Now, the actual copying . . . . . . . . . . . . . . . . . . . . . . . . .
     for i, (src_fpath, target_fpath) in enumerate(file_map.items()):
         print("Copying file {:d}/{:d} ...".format(i+1, len(file_map)))
         print("\t   {:s}\n\t-> {:s}\n".format(src_fpath, target_fpath))
+        if dry_run:
+            continue
 
         with open(src_fpath, mode='r') as src_file:
             src_lines = src_file.read()
@@ -520,39 +595,19 @@ def copy_model_files(*, model_name: str, new_name: str, target_project: str,
         with open(target_fpath, mode='x') as target_file:
             target_file.write(target_lines)
 
-    print("Finished copying.")
+    print("Finished copying.\n")
 
     if not add_to_cmakelists:
         print("Remember to register the new model in the relevant "
               "CMakeLists.txt file and reconfigure using CMake.")
         return
 
-    # Add subdirectory to CMakeLists.txt file
+    # Add the new subdirectory to CMakeLists.txt file
     print("Adding model directory to CMakeLists.txt ...")
     cmakelists_fpath = os.path.abspath(os.path.join(impl_target_dir,
                                                     "../CMakeLists.txt"))
-    with open(cmakelists_fpath, 'r') as cmakelists_file:
-        cmakelists_lines = cmakelists_file.readlines()
+    add_model_to_cmakelists(fpath=cmakelists_fpath, new_name=new_name,
+                            write=not dry_run)
+    print("New model directory added to CMakeLists.txt file.")
 
-    # Find the relevant add_subdirectory command to add the line to.
-    # Assuming an ascending alphabetical list, it need be added before the
-    # first model name that compares larger to the new model name
-    insert_idx = None
-    for i, line in enumerate(cmakelists_lines):
-        if line.startswith("add_subdirectory"):
-            if line[len("add_subdirectory(")].lower() > new_name.lower():
-                insert_idx = i
-                break
-
-    if insert_idx is None:
-        raise ValueError("Found no add_subdirectory command to insert the "
-                         "new model directory after; please do it manually!\n"
-                         "File:  {}".format(cmakelists_fpath))
-
-    cmakelists_lines.insert(insert_idx - 1,
-                            "add_subdirectory({})\n".format(new_name))
-
-    with open(cmakelists_fpath, 'w') as cmakelists_file:
-        cmakelists_file.writelines(cmakelists_lines)
-
-    print("Finished.")
+    print("\nFinished.")
