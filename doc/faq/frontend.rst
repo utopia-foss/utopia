@@ -117,7 +117,7 @@ To achieve the goal stated above, Utopia uses a hierarchy of configuration level
 #. **User configuration:** user- or machine-specific *updates* to the defaults
 
     * Is used for all simulation runs, regardless of the model. This would be the place to specify model-*independent* parameters like the number of CPUs to work on.
-    * Empty by default. Deploy using ``utopia config user --deploy`` and follow the steps given there.
+    * Nonexistent by default. Deploy using ``utopia config user --deploy``; see ``utopia config --help`` for more info. The deployed version contains descriptions of all possible settings.
 
 #. **Run configuration:** updates for a specific simulation run
 #. **Temporary changes:** additional updates, defined via the CLI
