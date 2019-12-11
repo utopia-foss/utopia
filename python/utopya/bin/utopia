@@ -157,13 +157,16 @@ pm_cp.add_argument('--new-name',
     help="Name of the new model. If not given, will prompt for it.")
 pm_cp.add_argument('--target-project',
     nargs="?",
-    help="Name of the Utopia project to copy the new model to. Note that this "
-         "project needs to be known to the Utopia CLI, i.e. registered in the "
-         "~/.config/utopia/projects.yml file. If this is not the case, update "
-         "the project you want to copy to and reconfigure it.")
-pm_cp.add_argument('-y', '--yes',
+    help="Name of the Utopia project to copy the new model to. If not given, "
+         "will prompt for it. "
+         "Note that this project needs to be known to the Utopia Frontend, "
+         "i.e. registered in the ~/.config/utopia/projects.yml file. If this "
+         "is not the case, update the project you want to create the new "
+         "model in and reconfigure it; this should register it.")
+pm_cp.add_argument('--non-interactive',
     action='store_true',
-    help="If given, will NOT ask for confirmation before copying.")
+    help="If given, will not use any prompts. This requires for all arguments "
+         "to be specified directly.")
 pm_cp.add_argument('-d', '--dry-run',
     action='store_true',
     help="If given, performs a dry run: No copy or write operations will be "
@@ -442,8 +445,7 @@ if __name__ == '__main__':
             copy_model_files(model_name=args.model_name,
                              new_name=args.new_name,
                              target_project=args.target_project,
-                             verbose=args.verbose,
-                             prompt_for_confirmation=not args.yes,
+                             use_prompts=not args.non_interactive,
                              dry_run=args.dry_run)
 
         else:

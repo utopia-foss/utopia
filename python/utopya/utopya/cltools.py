@@ -324,7 +324,7 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
 def copy_model_files(*, model_name: str,
                      new_name: str, target_project: str,
                      add_to_cmakelists: bool=True,
-                     prompt_for_confirmation: bool=False,
+                     use_prompts: bool=True,
                      dry_run: bool=False) -> None:
     """A helper function to conveniently copy model-related files, rename them,
     and adjust their content to the new name as well.
@@ -336,8 +336,8 @@ def copy_model_files(*, model_name: str,
         target_project (str): The name of the project to copy the model to.
         add_to_cmakelists (bool, optional): Whether to add the new model to the
             corresponding CMakeLists.txt file.
-        prompt_for_confirmation (bool, optional): Whether to interactively
-            prompt for confirmation before proceeding to copy all files.
+        use_prompts (bool, optional): Whether to interactively prompt for
+            confirmation or missing arguments.
         dry_run (bool, optional): If given, no write or copy operations will be
             carried out.
     
@@ -475,6 +475,18 @@ def copy_model_files(*, model_name: str,
     # Gather information on model, project, and replacements . . . . . . . . .
     # Get the model information
     info_bundle = _get_info_bundle(model_name=model_name)
+    print("\nModel selected to copy:     {}  (from project: {})"
+          "".format(info_bundle.model_name, info_bundle.project_name))
+
+    # Find out the new name
+    if not new_name:
+        if not use_prompts:
+            raise ValueError("Missing new_name argument!")
+        try:
+            new_name = input("\nWhat should be the name of the NEW model?  ")
+        except KeyboardInterrupt:
+            print()
+            return
 
     # Check if the name is not already taken, being case-insensitive
     if new_name.lower() in [n.lower() for n in _MODELS.keys()]:
@@ -487,6 +499,8 @@ def copy_model_files(*, model_name: str,
                          "Already registered models: {}"
                          "".format(new_name, ", ".join(_MODELS.keys())))
 
+    print("Name of the new model:      {}".format(new_name))
+
     # Define the replacements
     replacements = [
         (model_name, new_name),
@@ -496,6 +510,19 @@ def copy_model_files(*, model_name: str,
 
     # Find out the project that the files are copied _to_
     projects = load_from_cfg_dir('projects')
+
+    if not target_project:
+        if not use_prompts:
+            raise ValueError("Missing target_project argument!")
+        try:
+            target_project = input("\nWhich Utopia project (available: {}) "
+                                   "should the model be copied to?  "
+                                   "".format(", ".join(projects)))
+        except KeyboardInterrupt:
+            print()
+            return
+    print("Utopia project to copy to:  {}".format(target_project))
+
     project_info = projects.get(target_project)
     if not project_info:
         raise ValueError("No Utopia project with name '{}' is known to the "
@@ -571,7 +598,7 @@ def copy_model_files(*, model_name: str,
         print("--- THIS IS A DRY RUN. ---")
         print("Copy and write operations below are not operational.")
 
-    if prompt_for_confirmation and not prompt("Proceed?"):
+    if use_prompts and not prompt("Proceed?"):
         print("Not proceeding.")
         return
 
