@@ -129,7 +129,12 @@ def add_from_kv_pairs(*pairs, add_to: dict,
 
 def register_models(args, *, registry):
     """Handles registration of multiple models given argparse args"""
-    # The dict to hold all arguments
+    # If there is project info to be updated, do so
+    project_info = None
+    if args.update_project_info:
+        project_info = register_project(args, arg_prefix='project_')
+
+    # The dict to hold all model info bundle arguments
     specs = dict()
 
     if not args.separator:
@@ -160,13 +165,22 @@ def register_models(args, *, registry):
                                        bin_paths, src_dirs))
         # TODO Will ignore other path-related arguments! Warn if given.
 
-        # Go over them, create the path_args dict, and populate specs dict
+        # Go over them, create the paths dict, and populate specs dict.
+        # If there is project info given, use it to extend path information
+        # with the python-related directories. Only do so if they exist.
         for model_name, bin_path, src_dir in zip(model_names,
                                                  bin_paths, src_dirs):
             paths = dict(src_dir=src_dir,
                          binary=bin_path,
                          base_src_dir=args.base_src_dir,
                          base_bin_dir=args.base_bin_dir)
+
+            if project_info:
+                for _k in ('python_model_tests_dir', 'python_model_plots_dir'):
+                    _path = os.path.join(project_info[_k], model_name)
+                    if os.path.isdir(_path):
+                        paths[_k] = _path
+
             specs[model_name] = dict(paths=paths,
                                      project_name=args.project_name)
 
@@ -182,16 +196,24 @@ def register_models(args, *, registry):
 
     log.info("Model registration finished.\n\n%s\n", registry.info_str)
 
-    # If there is to be project info registered, pass the arguments on
-    if args.update_project_info:
-        register_project(args, arg_prefix='project_')
 
-
-def register_project(args, *, arg_prefix: str=''):
+def register_project(args, *, arg_prefix: str='') -> dict:
     """Register or update information of an Utopia project, i.e. a repository
     that implements models.
+    
+    Args:
+        args (TYPE): The CLI arguments object
+        arg_prefix (str, optional): The prefix to use when using attribute
+            access to these arguments. Useful if the names as defined in the
+            CLI are different depending on the invocation
+    
+    Returns:
+        dict: Information on the newly added or updated project
     """
     project_name = args.project_name
+    log.debug("Adding or updating information for Utopia project '%s' ...",
+              project_name)
+
     project_paths = dict()
     for arg_name in ('base_dir', 'models_dir',
                      'python_model_tests_dir', 'python_model_plots_dir'):
@@ -206,6 +228,8 @@ def register_project(args, *, arg_prefix: str=''):
 
     # If python_model_plots_dir is given, update plot modules cfg file
     if project_paths['python_model_plots_dir']:
+        log.debug("Additionally updating the python model plots path ...")
+
         plot_module_paths = load_from_cfg_dir('plot_module_paths')
         model_plots_dir = project_paths['python_model_plots_dir']
 
@@ -217,6 +241,9 @@ def register_project(args, *, arg_prefix: str=''):
         write_to_cfg_dir('plot_module_paths', plot_module_paths)
         log.info("Updated plot module paths for Utopia project '%s'.",
                  project_name)
+
+    # Return the project information
+    return projects[project_name]
 
 
 def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
@@ -294,18 +321,20 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
           .format(user_cfg_path))
 
 
-def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
+def copy_model_files(*, model_name: str, new_name: str, target_project: str,
                      prompt_for_confirmation: bool=False,
                      add_to_cmakelists: bool=True) -> None:
     """
     Args:
-        model_name (str): Description
-        new_name (str): Description
-        models_dir (str): Description
-        prompt_for_confirmation (bool, optional): Description
+        model_name (str): The name of the model to copy
+        new_name (str): The new name of the model. This may not conflict with
+            any already existing model name in the model registry.
+        target_project (str): The name of the project to copy the model to.
+        prompt_for_confirmation (bool, optional): Whether to interactively
+            prompt for confirmation before proceeding to copy all files.
     
     Raises:
-        ValueError: Description
+        ValueError: Upon bad arguments
     """
     def apply_replacements(s, *replacements: Sequence[Tuple[str, str]]) -> str:
         """Applies multiple replacements onto the given string"""
@@ -325,6 +354,9 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
         rel_file_map = dict()
 
         for fpath in files:
+            if os.path.isdir(fpath) or not os.path.exists(fpath):
+                continue
+
             rel_fpath = os.path.relpath(fpath, start=source_dir)
             new_rel_fpath = apply_replacements(rel_fpath, *replacements)
 
@@ -332,6 +364,23 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
             rel_file_map[rel_fpath] = new_rel_fpath
 
         return rel_file_map
+
+    def print_file_map(*, file_map: dict, source_dir: str, target_dir: str,
+                       label: str):
+        """Prints a humand-readable version of the given (relative) file map
+        which copies from the source directory tree to the target directory
+        tree.
+        """
+        max_key_len = min(max([len(k) for k in file_map]), 32)
+        files = ["\t{:{l:d}s}  ->  {:s}".format(k, v, l=max_key_len)
+                 for k, v in file_map.items()]
+
+        print("\nThe following {num:d} {label:s} files from\n\t{from_dir:}\n"
+              "will be copied to\n\t{to_dir:}\nusing the following new file "
+              "names:\n{files:}"
+              "".format(num=len(file_map), label=label,
+                        from_dir=source_dir, to_dir=target_dir,
+                        files="\n".join(files)))
 
     def prompt(question: str) -> bool:
         try:
@@ -366,30 +415,30 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
         (model_name.upper(), new_name.upper()),
     ]
 
-    # Parse the target directory (making it absolute) and perform some
-    # rudimentary checks that make sure it's a valid model directory
-    models_dir = os.path.expanduser(models_dir)
-    if not os.path.isabs(models_dir):
-        models_dir = os.path.abspath(models_dir)
-
-    if not os.path.isdir(models_dir):
-        raise ValueError("The specified target model directory, {}, does not "
-                         "exist!".format(models_dir))
-
-    # TODO Check against Utopia config which should contain a list of all
-    #      models source directories
-
+    # Find out the project
+    projects = load_from_cfg_dir('projects')
+    project_info = projects.get(target_project)
+    if not project_info:
+        raise ValueError("No Utopia project with name '{}' is known to the "
+                         "frontend. Check the spelling and note that the "
+                         "project name is case-sensitive.\n"
+                         "Available projects: {}."
+                         "".format(target_project, ", ".join(projects)))
+    
     # The mapping of all files that are to be copied and in which the content
     # is to be replaced. It maps absolute source file paths to absolute target
     # file paths.
     file_map = dict()
 
+    # Find out the target directories
+    target_models_dir = project_info.get('models_dir')
+    target_python_model_tests_dir = project_info.get('python_model_tests_dir')
+    target_python_model_plots_dir = project_info.get('python_model_plots_dir')
+
     # Define the source and target directory paths of the implementation
     impl_source_dir = info_bundle.paths['source_dir']
-    impl_target_dir = os.path.join(models_dir, new_name)
-    impl_file_map = dict() # Contains relative paths
-
-    impl_source_files = glob.glob(os.path.join(impl_source_dir, "*"),
+    impl_target_dir = os.path.join(target_models_dir, new_name)
+    impl_source_files = glob.glob(os.path.join(impl_source_dir, "**"),
                                  recursive=True)
     impl_file_map = create_file_map(files=impl_source_files,
                                     source_dir=impl_source_dir,
@@ -397,19 +446,47 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
                                     abs_file_map=file_map,
                                     replacements=replacements)
 
-    # TODO Do the same for Python-related files
+    # Do the same for Python-related files, if the paths are available
+    py_t_file_map = None
+    py_p_file_map = None
+
+    if (    target_python_model_tests_dir
+        and info_bundle.paths.get('python_model_tests_dir')):
+        py_t_source_dir = info_bundle.paths['python_model_tests_dir']
+        py_t_target_dir = os.path.join(target_python_model_tests_dir, new_name)
+        py_t_source_files = glob.glob(os.path.join(py_t_source_dir, "**"),
+                                      recursive=True)
+        py_t_file_map = create_file_map(files=py_t_source_files,
+                                        source_dir=py_t_source_dir,
+                                        target_dir=py_t_target_dir,
+                                        abs_file_map=file_map,
+                                        replacements=replacements)
+    
+    if (    target_python_model_plots_dir
+        and info_bundle.paths.get('python_model_plots_dir')):
+        py_p_source_dir = info_bundle.paths['python_model_plots_dir']
+        py_p_target_dir = os.path.join(target_python_model_plots_dir, new_name)
+        py_p_source_files = glob.glob(os.path.join(py_p_source_dir, "**"),
+                                      recursive=True)
+        py_p_file_map = create_file_map(files=py_p_source_files,
+                                        source_dir=py_p_source_dir,
+                                        target_dir=py_p_target_dir,
+                                        abs_file_map=file_map,
+                                        replacements=replacements)
 
 
     # Gathered all information now. Inform about it.
-    # Implementation-related files
-    max_key_len = min(max([len(k) for k in impl_file_map]), 32)
-    print("The following implementation files from\n\t{}\n\nwill be copied "
-          "to\n\t{}\n\nusing the following new file names:"
-          "".format(impl_source_dir, impl_target_dir))
-    print("\n".join(["\t{:{l:d}s}  ->  {:s}".format(k, v, l=max_key_len)
-                     for k, v in impl_file_map.items()]))
+    print_file_map(file_map=impl_file_map, label="model implementation",
+                   source_dir=impl_source_dir, target_dir=impl_target_dir)
 
-    # TODO Python-related files
+    if py_t_file_map:
+        print_file_map(file_map=py_t_file_map, label="python model test",
+                       source_dir=py_t_source_dir, target_dir=py_t_target_dir)
+    
+    if py_p_file_map:
+        print_file_map(file_map=py_p_file_map, label="python model plot",
+                       source_dir=py_p_source_dir, target_dir=py_p_target_dir)
+
 
 
     # Replacements
@@ -423,7 +500,7 @@ def copy_model_files(*, model_name: str, new_name: str, models_dir: str,
 
     # Ask whether to proceed
     if prompt_for_confirmation and not prompt("Proceed with copying?"):
-        print("Not proceeding ...")
+        print("Not proceeding.")
         return
     print("Now copying ...")
 

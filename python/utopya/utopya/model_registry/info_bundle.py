@@ -24,7 +24,10 @@ class ModelInfoBundle:
                  ('source_dir', str),  # TODO consider _requiring_ this one
                  ('default_cfg', str, True),
                  ('default_plots', str),
-                 ('base_plots', str))
+                 ('base_plots', str),
+                 ('python_model_tests_dir', str),
+                 ('python_model_plots_dir', str),
+                 )
 
     # Path keys that are assumed to be relative to the source directory
     PATH_KEYS_REL_TO_SRC = ('default_cfg', 'default_plots', 'base_plots')

@@ -155,11 +155,12 @@ pm_cp.add_argument('model_name',
 pm_cp.add_argument('--new-name',
     nargs="?",
     help="Name of the new model. If not given, will prompt for it.")
-pm_cp.add_argument('--models-dir',
+pm_cp.add_argument('--target-project',
     nargs="?",
-    help="Relative or absolute path to the directory the new model should be "
-         "created in. It should be the same directory that other Utopia "
-         "models are contained in as well.")
+    help="Name of the Utopia project to copy the new model to. Note that this "
+         "project needs to be known to the Utopia CLI, i.e. registered in the "
+         "~/.config/utopia/projects.yml file. If this is not the case, update "
+         "the project you want to copy to and reconfigure it.")
 pm_cp.add_argument('-y', '--yes',
     action='store_true',
     help="If given, will NOT ask for confirmation before copying.")
@@ -436,7 +437,7 @@ if __name__ == '__main__':
         elif args.models_mode == 'copy':
             copy_model_files(model_name=args.model_name,
                              new_name=args.new_name,
-                             models_dir=args.models_dir,
+                             target_project=args.target_project,
                              prompt_for_confirmation=not args.yes)
 
         else:
