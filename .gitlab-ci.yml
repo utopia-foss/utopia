@@ -270,8 +270,7 @@ test:core: &test_core
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
-  # NOTE: This will always execute, even if the script fails
-  after_script:
+  after_script: # NOTE: This will always execute, even if the script fails
     - source $CI_PROJECT_DIR/build/activate
     - pip3 install gcovr
     - cd $CI_PROJECT_DIR/build
@@ -281,10 +280,11 @@ test:core: &test_core
     # Run again for coverage report in GitLab
     - gcovr $GCOVR_PATHS
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
-  artifacts:
+  artifacts: &coverage_artifacts
     name: "$CI_JOB_NAME"
+    expose_as: Coverage report of Core tests
     paths:
-      - $CI_PROJECT_DIR/build/coverage
+      - build/coverage/
     expire_in: 1 week
 
 test:dataio:
@@ -296,6 +296,9 @@ test:dataio:
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_dataio
+  artifacts:
+    <<: *coverage_artifacts
+    expose_as: Coverage report of DataIO tests
 
 test:utopya:
   stage: test
@@ -352,6 +355,9 @@ test:models:
     - utopia run SandPile --debug
     - utopia run SimpleEG --debug
     - utopia run Vegetation --debug
+  artifacts:
+    <<: *coverage_artifacts
+    expose_as: Coverage report of Model tests
 
 test:cli:
   stage: test
