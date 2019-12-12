@@ -31,15 +31,15 @@ BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
 
 def test_dummy_plotting():
     """Test plotting of the dummy model works"""
-    mv, _ = ModelTest('CopyMe').create_run_load()
+    mv, _ = ModelTest('CopyMeGrid').create_run_load()
     
     # Plot the default configuration
     mv.pm.plot_from_cfg()
 
 
-def test_CopyMe_plotting():
-    """Test plotting of the CopyMe model works"""
-    mv, _ = ModelTest('CopyMe').create_run_load()
+def test_CopyMeGrid_plotting():
+    """Test plotting of the CopyMeGrid model works"""
+    mv, _ = ModelTest('CopyMeGrid').create_run_load()
 
     # Plot the default configuration
     mv.pm.plot_from_cfg()
@@ -47,7 +47,7 @@ def test_CopyMe_plotting():
 
 def test_basic_plotting(tmpdir):
     """Tests the plot_funcs.basic_* modules"""
-    mv, _ = ModelTest('CopyMe').create_run_load()
+    mv, _ = ModelTest('CopyMeGrid').create_run_load()
 
     mv.pm.plot_from_cfg(plots_cfg=BASIC_UNI_PLOTS,
                         plot_only=["distance_map"])
@@ -55,7 +55,7 @@ def test_basic_plotting(tmpdir):
 
 def test_ca_plotting():
     """Tests the plot_funcs.ca module"""
-    mv, _ = ModelTest('CopyMe').create_run_load()
+    mv, _ = ModelTest('CopyMeGrid').create_run_load()
 
     # Run the CA plots (initial frame + animation)
     mv.pm.plot_from_cfg(plot_only=["initial_state_and_trait"])

@@ -1,4 +1,4 @@
-"""Tests of the output of the CopyMe model"""
+"""Tests of the output of the CopyMeGraph model"""
 
 import numpy as np
 
@@ -6,8 +6,9 @@ import pytest
 
 from utopya.testtools import ModelTest
 
-# Configure the ModelTest class for CopyMe
-mtc = ModelTest("CopyMe", test_file=__file__)  # TODO set your model name here
+# Configure the ModelTest class for CopyMeGraph
+mtc = ModelTest("CopyMeGraph", test_file=__file__) # TODO set the model name
+
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
@@ -15,8 +16,8 @@ mtc = ModelTest("CopyMe", test_file=__file__)  # TODO set your model name here
 
 # Tests -----------------------------------------------------------------------
 
-def test_basics():
-    """Test the most basic features of the model"""
+def test_that_it_runs():
+    """Tests that the model runs through with the default settings"""
     # Create a Multiverse using the default model configuration
     mv = mtc.create_mv()
 
@@ -30,6 +31,7 @@ def test_basics():
 
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
+
 
 # NOTE The below test is an example of how to access data and write a test.
 #      You can adjust this to your needs and then remove the decorator to
@@ -49,7 +51,7 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['multiverse'].items():
         # Get the data
-        data = uni['data']['CopyMe']  # TODO change this to your model name
+        data = uni['data']['CopyMeGraph'] # TODO change this to your model name
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
@@ -57,5 +59,13 @@ def test_output():
         # Check that all datasets are available
         assert 'some_state' in data
         assert 'some_trait' in data
+
+        # It is very helpful to make use of the xarray functionality!
+        # See:  http://xarray.pydata.org/en/stable/why-xarray.html
+        some_state = data['some_state']
+        assert some_state.dims == ('time', 'vertex_idx')
+        
+        some_trait = data['some_trait']
+        assert some_trait.dims == ('time', 'vertex_idx')
 
         # Can do further tests here ...

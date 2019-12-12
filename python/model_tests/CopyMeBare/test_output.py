@@ -7,7 +7,8 @@ import pytest
 from utopya.testtools import ModelTest
 
 # Configure the ModelTest class
-mtc = ModelTest("CopyMeBare", test_file=__file__)  # TODO set your model name here
+mtc = ModelTest("CopyMeBare", test_file=__file__)  # TODO set the model name
+
 
 # Fixtures --------------------------------------------------------------------
 # Define fixtures
@@ -15,8 +16,8 @@ mtc = ModelTest("CopyMeBare", test_file=__file__)  # TODO set your model name he
 
 # Tests -----------------------------------------------------------------------
 
-def test_basics():
-    """Test the most basic features of the model"""
+def test_that_it_runs():
+    """Tests that the model runs through with the default settings"""
     # Create a Multiverse using the default model configuration
     mv = mtc.create_mv()
 

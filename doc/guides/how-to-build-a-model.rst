@@ -18,15 +18,17 @@ that world.
 To that end, there are two models supplied that can be used as a basis for new
 models: the so-called ``CopyMe`` models. Use those for 
 
-    * ``CopyMe``: A basic Cellular Automaton model.
+    * ``CopyMeGrid``: A basic Cellular Automaton model.
         * Already includes the ``CellManager``.
         * Recommended if you want to work with a Cellular Automaton
+    * ``CopyMeGraph``: A basic graph model.
+        * Already includes a graph and example functionality
+        * Recommended if you want to work with a graph
     * ``CopyMeBare``: The bare basics. Really.
         * Recommended if you do not need a Cellular Automaton
 
-You should now decide with which model you want to start. If you can't decide,
-just use the ``CopyMe`` model. If you go with a different model, replace all
-the mentions of ``CopyMe`` below with the name of the model of your choice.
+You should now decide with which model you want to start. Replace all the 
+mentions of ``CopyMe`` below with the name of the model of your choice.
 
 Let's get the infrastructure set up! To avoid problems, go through the
 following sections from top to bottom.
@@ -47,9 +49,9 @@ For the setup of the infrastructure, we provide a so-called ``CopyMe`` model,
 which can be copied and used as basis for your own model; this will be the
 first step below.
 Note that there is also a ``CopyMeBare`` model; it includes *only the bare
-basics* needed for a model, while the ``CopyMe`` model also includes showcase
-of some functionality. If you are new to *Utopia*, you should go with the
-latter; if you are already more proficient, use the former.
+basics* needed for a model, while the ``CopyMeGrid`` and ``CopyMeGraph`` models 
+also includes showcase of some functionality. If you are new to *Utopia*, you 
+should go with the latter; if you are already more proficient, use the former.
 
 1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
 2. Copy the ``CopyMe`` directory and paste it in the same directory.
@@ -164,7 +166,7 @@ the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
 Custom Model Plots
 ^^^^^^^^^^^^^^^^^^
 As you saw in the :doc:`tutorial <tutorial>`, it is possible to have custom
-model plots which are taylored to the data your model is producing.
+model plots which are tailored to the data your model is producing.
 You can set them up in the following way:
 
 16. Move to the ``python/model_plots`` directory

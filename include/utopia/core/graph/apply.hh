@@ -39,10 +39,10 @@ template<typename Graph, typename Iter, typename Rule>
 void apply_async(Iter it_begin, Iter it_end, Graph&& g, Rule&& rule)
 {
     // Determine whether the lambda function returns a void
-    using GraphType = typename std::remove_reference_t<Graph>;
-    using VertexDesc =
-        typename boost::graph_traits<GraphType>::vertex_descriptor;
-    using ReturnType = typename std::invoke_result_t<Rule, VertexDesc, Graph>;
+    // The lambda function can either be called with a vertex descriptor or 
+    // and edge descriptor. Therefore, both cases need to be accounted for
+    using Desc = typename std::iterator_traits<Iter>::value_type;
+    using ReturnType = typename std::invoke_result_t<Rule, Desc, Graph>;
     constexpr bool lambda_returns_void = std::is_same_v<ReturnType, void>;
 
     // Apply the rule to each element 
@@ -205,14 +205,11 @@ void apply_rule(Rule&& rule, Graph&& g, RNG&& rng)
 {
     using namespace GraphUtils;
 
-    using GraphType = typename std::remove_reference_t<Graph>;
-    using VertexDesc =
-        typename boost::graph_traits<GraphType>::vertex_descriptor;
-    
     // Get the iterators and create a vector with a copy because the original
     // iterators are const, thus cannot be shuffled. Then shuffle.
     auto [it, it_end] = Utopia::GraphUtils::iterator_pair<iterate_over>(g);
-    std::vector<VertexDesc> it_shuffled(it, it_end);
+    using Desc = typename std::iterator_traits<decltype(it)>::value_type;
+    std::vector<Desc> it_shuffled(it, it_end);
     
     std::shuffle(std::begin(it_shuffled),
                  std::end(it_shuffled),

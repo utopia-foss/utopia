@@ -8,6 +8,7 @@
 #include <utopia/core/graph/apply.hh>
 #include <utopia/core/state.hh>
 #include <utopia/core/graph/entity.hh>
+#include <utopia/core/zip.hh>
 
 namespace Utopia
 {
@@ -174,7 +175,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_noshuffle, G,
 {
     {
         // -- Test iteration over vertices ------------------------------------
-
         // Set the vertex property to a counter value that increments with each
         // assignment.
         auto counter = 0u;
@@ -245,6 +245,24 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_noshuffle, G,
     //      Therefore, here it is sufficient to test for the two cases from 
     //      above because they have distinct apply_rule signatures.
     }
+
+    {
+        // -- Test iteration over edges ---------------------------------------
+        // Set the edge property to a counter value that increments with each
+        // assignment.
+        // Just check here that the function is called, not whether the result
+        // is correct.
+        auto counter = 0u;
+        apply_rule<IterateOver::edges, Update::async, Shuffle::off>(
+            [&counter](auto e, auto& g){
+                auto& state = g[e].state;
+                state.e_prop = counter;
+                ++counter;
+                return state;
+            },
+            G::g
+        );
+    } 
 }
 
 
@@ -254,7 +272,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_shuffle, G,
 {
     {
         // -- Test iteration over vertices ------------------------------------
-
         // Set the vertex property to a counter value that increments with each
         // assignment.
         auto counter = 0u;
@@ -320,6 +337,25 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_manual_rule_async_shuffle, G,
     //      iterate over is covered in the `graph_iterator_test.cc`
     //      Therefore, here it is sufficient to test for the two cases from 
     //      above because they have distinct apply_rule signatures.
+    }
+
+    {
+        // -- Test iteration over edges ---------------------------------------
+        // Set the edge property to a counter value that increments with each
+        // assignment.
+        // Just test that the function is called and not, whether the result
+        // is correct.
+        auto counter = 0u;
+        apply_rule<IterateOver::edges, Update::async>(
+            [&counter](auto e, auto& g){
+                auto& state = g[e].state;
+                state.e_prop = counter;
+                ++counter;
+                return state;
+            },
+            G::g,
+            G::rng
+        );
     }
 }
 

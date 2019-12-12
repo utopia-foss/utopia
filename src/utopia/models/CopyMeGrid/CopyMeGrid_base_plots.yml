@@ -8,8 +8,8 @@ mean_cell_state_over_time:
 
   universes: all
   
-  # Use the CopyMe-specific plot functions
-  module: model_plots.CopyMe
+  # Use the CopyMeGrid-specific plot functions
+  module: model_plots.CopyMeGrid
   plot_func: state_mean
 
 
@@ -17,12 +17,12 @@ mean_cell_state_over_time:
 state_single_time_step:
   based_on: .ca.state
 
-  model_name: CopyMe
+  model_name: CopyMeGrid
 
 state_anim:
   based_on: .ca.state
   
-  model_name: CopyMe
+  model_name: CopyMeGrid
 
   # Specify the time index (will be ignored, but needs to be specified)
   time_idx: 0
@@ -42,7 +42,7 @@ time_series.uni:
 
   dag_options:
     # Provide the base path within the universe to make selection easier
-    select_path_prefix: data/CopyMe
+    select_path_prefix: data/CopyMeGrid
 
 
 # A time series specialization for multiverse data
@@ -53,15 +53,15 @@ time_series.mv:
 
   select_and_combine:
     # Provide the base path within each universe to make selection easier
-    base_path: data/CopyMe
+    base_path: data/CopyMeGrid
 
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# Some example DAG-based plots that are implemented in the CopyMe model plots
-# and performs some visualization that is not generalizable but needs be
-# implemented specifically for the CopyMe model
-some_dag_based_CopyMe_plot:
+# Some example DAG-based plots that are implemented in the CopyMeGrid model 
+# plots and performs some visualization that is not generalizable but needs be
+# implemented specifically for the CopyMeGrid model
+some_dag_based_CopyMeGrid_plot:
   based_on: .default_style_and_helpers
 
-  module: model_plots.CopyMe
-  plot_func: some_DAG_based_CopyMe_plot
+  module: model_plots.CopyMeGrid
+  plot_func: some_DAG_based_CopyMeGrid_plot

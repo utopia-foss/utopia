@@ -347,11 +347,11 @@ test:models:
     # Also test each model via the CLI.
     # Need to enter the virtual env first
     - $ENTER_UTOPIA_ENV
-    - pip freeze  # FIXME
     
     # First, the test and benchmark models:
     - utopia run dummy --debug
-    - utopia run CopyMe --debug
+    - utopia run CopyMeGraph --debug
+    - utopia run CopyMeGrid --debug
     - utopia run CopyMeBare --debug --no-plot
     - utopia run HdfBench --sweep --num-seeds 3 --debug
 
@@ -384,7 +384,6 @@ test:cli:
   script:
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
-    - pip freeze  # FIXME
     
     # Test deployment of user configuration
     - utopia config user --deploy

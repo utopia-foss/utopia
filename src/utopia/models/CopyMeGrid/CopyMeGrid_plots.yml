@@ -8,7 +8,7 @@ some_state_mean:
   # Base it on some existing configuration
   based_on: mean_cell_state_over_time
 
-  # Specify the dataset within the CopyMe output that is to be plotted
+  # Specify the dataset within the CopyMeGrid output that is to be plotted
   mean_of: some_state
 
 some_trait_mean:
@@ -97,13 +97,13 @@ mean_state_and_trait:
 
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# Some example DAG-based plots that are implemented in the CopyMe model plots
-# and performs some visualization that is not generalizable but needs be
-# implemented specifically for the CopyMe model
+# Some example DAG-based plots that are implemented in the CopyMeGrid model 
+# plots and performs some visualization that is not generalizable but needs be
+# implemented specifically for the CopyMeGrid model
 
 # ... Specilization for universe data
 some_universe_plot:
-  based_on: some_dag_based_CopyMe_plot
+  based_on: some_dag_based_CopyMeGrid_plot
 
   creator: universe
   universes: all
@@ -128,7 +128,7 @@ some_universe_plot:
 
   dag_options:
     # Provide the base path within the universe to make selection easier
-    select_path_prefix: data/CopyMe
+    select_path_prefix: data/CopyMeGrid
 
   scatter_kwargs:
     label: mean state
@@ -141,7 +141,7 @@ some_universe_plot:
 
 # ... Specilization for multiverse data
 some_multiverse_plot:
-  based_on: some_dag_based_CopyMe_plot
+  based_on: some_dag_based_CopyMeGrid_plot
   enabled: false   # manually enable for a multiverse plot
 
   creator: multiverse

@@ -12,8 +12,8 @@ parameter_space:
     default: 42
     values: [23, 42, 665, 667]
 
-  # TODO change "CopyMe" to the name of your model instance
-  CopyMe: !model  
-    model_name: CopyMe  # imports the model config for the CopyMe model
+  # TODO change "CopyMeGraph" to the name of your model instance
+  CopyMeGraph: !model  
+    model_name: CopyMeGraph  # imports the model config for the CopyMeGraph model
 
     # NOTE Below, entries from the model config can be changed or added

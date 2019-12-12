@@ -193,6 +193,14 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
                             // Utopia entities.
         );
 
+        // Apply a rule to all vertices of a graph
+        apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
+            [this](auto vertex){
+                this->g[vertex].state.property = 42;
+            },
+            g 
+        );
+
 * 📚
   `Doxygen <../doxygen/html/group___rules.html>`_,
   :ref:`apply_rule on Graphs <apply_rule_graph>`
@@ -233,6 +241,18 @@ Graph Creation
   :ref:`FAQ on Create Graph <create_graphs>`,
   :ref:`Graph Creation requirements for the  apply_rule on Graphs <apply_rule_graph>`
 
+.. code-block:: c++
+
+    include <utopia/graph/iterator.hh>
+    // ...
+
+    // Loop over all vertices and print their states
+    for (auto vertex : range<IterateOver::vertex>(g):
+        std::cout << g[vertex].property << "\n";
+
+    // Loop over all neighbors of vertex '0' and print their states
+    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g):
+        std::cout << g[vertex].property << "\n";
 
 Iterate Over Graph Entities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

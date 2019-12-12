@@ -130,7 +130,7 @@ YAML file looks like this:
         parallel: false
     
         # Allow self edges
-        self-edges: false
+        self_edges: false
 
       WattsStrogatz:
         # Rewiring probability

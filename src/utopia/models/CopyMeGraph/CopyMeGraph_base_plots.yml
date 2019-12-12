@@ -1,0 +1,48 @@
+# The base plots of this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file
+---
+# A model-specific plot of the mean state over time
+mean_cell_state_over_time:
+  based_on: [.default_style_and_helpers]
+
+  universes: all
+  
+  # Use the CopyMeGraph-specific plot functions
+  module: model_plots.CopyMeGraph
+  plot_func: state_mean
+
+
+# Plots using the DAG framework ...............................................
+# A time series specialization for universe data
+time_series.uni:
+  based_on: .dag.generic.time_series
+  
+  creator: universe
+  universes: all
+
+  dag_options:
+    # Provide the base path within the universe to make selection easier
+    select_path_prefix: data/CopyMeGraph
+
+
+# A time series specialization for multiverse data
+time_series.mv:
+  based_on: .dag.generic.time_series
+  
+  creator: multiverse
+
+  select_and_combine:
+    # Provide the base path within each universe to make selection easier
+    base_path: data/CopyMeGraph
+
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+# Some example DAG-based plots that are implemented in the CopyMeGraph model plots
+# and performs some visualization that is not generalizable but needs be
+# implemented specifically for the CopyMeGraph model
+some_dag_based_CopyMeGraph_plot:
+  based_on: .default_style_and_helpers
+
+  module: model_plots.CopyMeGraph
+  plot_func: some_DAG_based_CopyMeGraph_plot

@@ -1,4 +1,4 @@
-"""CopyMe-model specific plot function for the state"""
+"""CopyMeGrid-model specific plot function for the state"""
 
 import numpy as np
 
@@ -25,12 +25,12 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
             takes care of plot aesthetics (labels, title, ...) and saving.
             To plot on the current axis, use ``hlpr.ax``.
         uni (UniverseGroup): The selected universe data
-        mean_of (str): The name of the CopyMe dataset that the mean is to be
+        mean_of (str): The name of the CopyMeGrid dataset that the mean is to be
             calculated of
         **plot_kwargs: Passed on to matplotlib.pyplot.plot
     """
     # Extract the data
-    data = uni['data/CopyMe'][mean_of]
+    data = uni['data/CopyMeGrid'][mean_of]
 
     # Calculate the mean over the spatial dimensions
     mean = data.mean(['x', 'y'])
@@ -51,8 +51,8 @@ def state_mean(dm: DataManager, *, hlpr: PlotHelper, uni: UniverseGroup,
 @is_plot_func(use_dag=True,
               required_dag_tags=('x_values', 'scatter',
                                  'amplitude', 'offset', 'frequency'))
-def some_DAG_based_CopyMe_plot(*, data: dict, hlpr: PlotHelper,
-                               scatter_kwargs: dict=None):
+def some_DAG_based_CopyMeGrid_plot(*, data: dict, hlpr: PlotHelper,
+                                   scatter_kwargs: dict=None):
     """This is an example plot to show how to implement a generic DAG-based
     plot function.
     

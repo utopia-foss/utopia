@@ -113,11 +113,9 @@ public:
 
 
     /// Write data
-    /** \details This function is called to write out data. It should be called
-      *         at the end of the model constructor to write out the initial
-      *         state. After that, the configuration determines at which times
-      *         data is written.
-      *         See \ref Utopia::DataIO::Dataset::write
+    /** \details This function is called to write out data.
+      *          The configuration determines at which times data is written.
+      *          See \ref Utopia::DataIO::Dataset::write
       */
     void write_data () {
         // Example:

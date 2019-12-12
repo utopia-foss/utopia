@@ -1,5 +1,5 @@
 
-``CopyMe`` - A good place to start with your CA-based model
+``CopyMeGraph`` - A good place to start with your CA-based model
 ===========================================================
 
 This is an *example* for the documentation of your model implementation. 
@@ -50,9 +50,9 @@ You can use some short code blocks to convey some information. Adjust the langua
 Default Model Configuration
 ---------------------------
 
-Below are the default configuration parameters for the ``CopyMe`` model.
+Below are the default configuration parameters for the ``CopyMeGraph`` model.
 
-.. literalinclude:: ../../src/utopia/models/CopyMe/CopyMe_cfg.yml
+.. literalinclude:: ../../src/utopia/models/CopyMeGraph/CopyMeGraph_cfg.yml
    :language: yaml
    :start-after: ---
 
