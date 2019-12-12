@@ -74,3 +74,5 @@ cases.
 .. doxygenfunction:: Utopia::get_as_MultiIndex
 .. doxygentypedef:: Utopia::SpaceVecType
 .. doxygentypedef:: Utopia::MultiIndexType
+
+

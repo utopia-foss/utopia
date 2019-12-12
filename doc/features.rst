@@ -352,23 +352,25 @@ Meta-Configuration – Controlling the Model Simulation
 * Every option in Utopia can be set through a configuration parameter. The complete set of configuration options of a simulation run is gathered in a meta configuration.
 * Configuration levels, sequentially updating the defaults to arrive at the final meta configuration:
 
-    #. **Base configuration:** all the default values for the Multiverse
-    #. **User configuration:** user- or machine-specific defaults
-
-        * Deploy using ``utopia config user --deploy``; see CLI help for more info.
-
+    #. **Base configuration:** all the default values
     #. **Model configurations:** model-specific defaults
 
         * Defined alongside the respective models, see :ref:`above <feature_model_config>`
         * Provide defaults not for the *whole* meta configuration but for the respective models; can be imported where needed.
 
-    #. **Run configuration:** adaptations for a specific simulation run
-    #. **Temporary changes:** defined via the CLI
+    #. **User configuration:** user- or machine-specific *updates* to the defaults
+
+        * Used for all simulation runs, regardless of the model.
+        * Nonexistent by default. Deploy using ``utopia config user --deploy``; see ``utopia config --help`` for more info. The deployed version contains descriptions of all possible settings.
+
+    #. **Run configuration:** updates for a specific simulation run
+    #. **Temporary changes:** additional updates, defined via the CLI
 
 * The ``parameter_space`` key of the meta config is passed to the model; it can be conveniently sweeped over (see :ref:`below <feature_parameter_sweeps>`).
 * 📚
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
-  :py:class:`~utopya.multiverse.Multiverse`
+  :py:class:`~utopya.multiverse.Multiverse`,
+  :ref:`FAQ Entry <faq_config>`
 
 
 

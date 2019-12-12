@@ -37,6 +37,7 @@ Utopia has been developed by (in alphabetical order):
 * Lorenzo Biasi
 * Unai Fischer Abaigar
 * Benjamin Herdeanu
+* Christian Kobrow
 * Fabian Krautgasser
 * Daniel Lake
 * Hendrik Leusmann
