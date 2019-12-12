@@ -15,66 +15,89 @@ It is a **starting point** for your own expedition into the *Utopia* world.
 You will be the one who afterwards defines the rules, the entities etc. of
 that world.
 
-To that end, there are two models supplied that can be used as a basis for new
-models: the so-called ``CopyMe`` models. Use those for 
+To that end, there are three models supplied that can be used as a basis for
+new models, the so-called ``CopyMe`` models.
+They not only showcase some Utopia functionality, but also provide good
+starting conditions for different scenarios:
 
     * ``CopyMeGrid``: A basic Cellular Automaton model.
+
         * Already includes the ``CellManager``.
         * Recommended if you want to work with a Cellular Automaton
+
     * ``CopyMeGraph``: A basic graph model.
+
         * Already includes a graph and example functionality
         * Recommended if you want to work with a graph
+
     * ``CopyMeBare``: The bare basics. Really.
-        * Recommended if you do not need a Cellular Automaton
 
-You should now decide with which model you want to start. Replace all the 
-mentions of ``CopyMe`` below with the name of the model of your choice.
+        * Recommended if you do not need a Cellular Automaton or a Graph.
+        * Recommended if you are proficient with Utopia.
 
-Let's get the infrastructure set up! To avoid problems, go through the
-following sections from top to bottom.
+You should now decide with which model you want to start with. This can be such
+a ``CopyMe`` model, or some other model.
+Below, you will need to replace all mentions of ``CopyMe`` with the name of
+the model of your choice.
+  
+
+Choosing a name for your model
+------------------------------
+This is the point where you should decide on the name of your new Utopia model.
+
+For the purpose of this guide, we assume you want to implement a model called ``MyFancyModel``.
+Probably, you will give it a more suitable name.
+So, keep in mind to replace every ``MyFancyModel`` below with the actual model name.
 
 .. note::
 
-  The steps in this guide are numbered; if you run into problems and ask for
-  help, you can name the step you got stuck at.
-  
+    Utopia has a naming convention for models.
+    Your model name should consist of words that start with Capital Letters and are ``DirectlyConcatenatedWithoutSeparatingSymbols``.
+
+    Also, you should not include the ``Model`` string into the name, e.g.: you *should* name your model ``ForestFire`` rather than ``ForestFireModel``.
+    (So... ``MyFancyModel`` is actually not the best example ;))
+
 
 Setting Up The Infrastructure
 -----------------------------
-We assume that you want to build your own model, called ``MyFancyModel``.
-Probably, you will give it a more suitable name. So, keep in mind to replace
-every ``MyFancyModel`` below with the actual model name.
+Ok, let's get started by setting up the model infrastructure.
+The following will involve a lot of copying and renaming, so make sure to be concentrated.
 
-For the setup of the infrastructure, we provide a so-called ``CopyMe`` model,
-which can be copied and used as basis for your own model; this will be the
-first step below.
-Note that there is also a ``CopyMeBare`` model; it includes *only the bare
-basics* needed for a model, while the ``CopyMeGrid`` and ``CopyMeGraph`` models 
-also includes showcase of some functionality. If you are new to *Utopia*, you 
-should go with the latter; if you are already more proficient, use the former.
+.. hint::
 
-1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
-2. Copy the ``CopyMe`` directory and paste it in the same directory.
+    The Utopia CLI provides a command to do all the copying, renaming of files, and refactoring of file content:
+
+    .. code-block:: bash
+
+        (utopia-env) $ utopia models copy CopyMe --new-name MyFancyModel
+
+    If you let the CLI do this step for you, most of the steps below are already covered.
+    It still makes sense to go through the individual steps and read the remarks, such that you get an idea of what the CLI tool actually did.
+
+    See ``utopia models copy --help`` for more usage information.
+
+    **For CCEES Group Members:** To copy to the ``utopia/models`` repository, the target project name need be ``UtopiaModels``.
+    If this does not work, make sure that the ``utopia/models`` repository on your machine is up-to-date with the latest master and you invoked ``cmake ..`` after the update.
+
+
+To avoid problems, go through the following points from top to bottom, and first read all of the instructions of one step before starting to carry them out.
 
 .. note::
 
-  **Important!** If you are a CCEES group member, you should **not** paste
-  into the ``src/utopia/models`` directory in the ``utopia`` repository (which holds
-  the framework code), but into the same directory inside the group-internal
-  `models repository <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
+    The steps in this guide are numbered; if you run into problems and ask for
+    help, you can name the step you got stuck at.
+
+
+1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
+
+2. Copy the ``CopyMe`` directory and paste it in the same directory.
+
+    .. note::
+
+        **Important!** If you are a CCEES group member, you should **not** paste into the ``src/utopia/models`` directory in the ``utopia`` repository (which holds the framework code), but into the corresponding ``src/models`` directory inside the group-internal `models repository <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
 
 3. Rename the copied directory to ``MyFancyModel`` (or rather, your chosen
    name).
-
-.. note::
-
-  A remark concerning the naming convention: Your model name should consist of
-  words that start with Capital Letters and are
-  ``DirectlyConcatenatedWithoutSeparatingSymbols``.
-
-  Also, you should not include the ``Model`` string into the name, e.g.: you
-  *should* name your model ``ForestFire`` rather than ``ForestFireModel``.
-  (So... ``MyFancyModel`` is actually not the best example ;))
 
 4. Rename all the files inside of the newly created directory such that all
    occurrences of ``CopyMe`` are replaced by ``MyFancyModel``.

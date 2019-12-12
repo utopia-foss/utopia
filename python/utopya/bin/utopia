@@ -36,14 +36,17 @@ p_eval  = subparsers.add_parser('eval',
 # subcommand: models ..........................................................
 p_models_sp = p_models.add_subparsers(dest='models_mode')
 
+pm_ls  = p_models_sp.add_parser('ls',
+                                help="list registered models")
 pm_reg = p_models_sp.add_parser('register',
                                 help="add a new model to the model registry")
 pm_edit= p_models_sp.add_parser('edit',
                                 help="edit an existing model registry entry")
-pm_ls  = p_models_sp.add_parser('ls',
-                                help="list registered models")
 pm_rm  = p_models_sp.add_parser('rm',
                                 help="remove registered models")
+pm_cp  = p_models_sp.add_parser('copy',
+                                help="create a new model by copying an "
+                                     "existing one")
 
 # sub-subcommand: model registration  . . . . . . . . . . . . . . . . . . . . .
 # Main arguments
@@ -84,6 +87,23 @@ pm_reg_cfg.add_argument('--base-plots-cfg',
     help="Path to the base plots configuration. If --src-dir was given, "
          "it may be given relative to it. The path given here has precedence "
          "over a potentially auto-detected path within --src-dir.")
+
+pm_reg_prj = pm_reg.add_argument_group('project information')
+pm_reg_prj.add_argument('--project-name',
+    help="Name of the Utopia project this model belongs to. If using the "
+         "--separator argument, all models are associated with this project.")
+pm_reg_prj.add_argument('--update-project-info',
+    action="store_true",
+    help="If given, will allow the update of project information.")
+pm_reg_prj.add_argument('--project-base-dir',
+    help="Path to the base directory of the project")
+pm_reg_prj.add_argument('--project-models-dir',
+    help="Path to the models directory of the project")
+pm_reg_prj.add_argument('--project-python-model-tests-dir',
+    help="Path to the python tests directory of the project")
+pm_reg_prj.add_argument('--project-python-model-plots-dir',
+    help="Path to the python plots directory of the project")
+
 
 # Modifiers
 pm_reg.add_argument('--label',
@@ -129,10 +149,40 @@ pm_rm.add_argument('--all',
     help="Remove the registry entries for all currently registered models.")
 
 
+# sub-subcommand: copy a model . . . . . . . . . . . . . . . . . . . . . . . .
+pm_cp.add_argument('model_name',
+    help="Name of the models to copy")
+pm_cp.add_argument('--new-name',
+    nargs="?",
+    help="Name of the new model. If not given, will prompt for it.")
+pm_cp.add_argument('--target-project',
+    nargs="?",
+    help="Name of the Utopia project to copy the new model to. If not given, "
+         "will prompt for it. "
+         "Note that this project needs to be known to the Utopia Frontend, "
+         "i.e. registered in the ~/.config/utopia/projects.yml file. If this "
+         "is not the case, update the project you want to create the new "
+         "model in and reconfigure it; this should register it.")
+pm_cp.add_argument('--non-interactive',
+    action='store_true',
+    help="If given, will not use any prompts. This requires for all arguments "
+         "to be specified directly.")
+pm_cp.add_argument('-d', '--dry-run',
+    action='store_true',
+    help="If given, performs a dry run: No copy or write operations will be "
+         "carried out.")
+pm_cp.add_argument('--skip-exts',
+    nargs='+',
+    default=['.pyc'],
+    help="File extensions to skip. These need to have a leading dot! If "
+         "nothing is given, skips the following extensions:  .pyc")
+
+
+
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths', 'plot_module_paths'],
+    choices=['user', 'external_module_paths', 'plot_module_paths', 'projects'],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',
@@ -334,7 +384,8 @@ from paramspace import ParamDim
 
 import utopya
 from utopya.tools import pformat, load_yml, add_item
-from utopya.cltools import deploy_user_cfg, register_models, add_from_kv_pairs
+from utopya.cltools import (deploy_user_cfg, register_models, copy_model_files,
+                            add_from_kv_pairs)
 from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
 
 
@@ -395,6 +446,14 @@ if __name__ == '__main__':
             
             for model_name in model_names:
                 utopya.MODELS.remove_entry(model_name)
+
+        elif args.models_mode == 'copy':
+            copy_model_files(model_name=args.model_name,
+                             new_name=args.new_name,
+                             target_project=args.target_project,
+                             skip_exts=args.skip_exts,
+                             use_prompts=not args.non_interactive,
+                             dry_run=args.dry_run)
 
         else:
             # Mode: ls or None

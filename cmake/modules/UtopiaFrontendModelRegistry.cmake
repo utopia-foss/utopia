@@ -32,6 +32,12 @@ function(register_models_with_frontend)
                         --label added_by_cmake
                         --overwrite-label
                         --exists-action validate
+                        --project-name "${CMAKE_PROJECT_NAME}"
+                        --update-project-info
+                        --project-base-dir "${CMAKE_SOURCE_DIR}"
+                        --project-models-dir "${UTOPIA_MODELS_DIR}"
+                        --project-python-model-tests-dir "${UTOPIA_PYTHON_MODEL_TESTS_DIR}"
+                        --project-python-model-plots-dir "${UTOPIA_PYTHON_MODEL_PLOTS_DIR}"
                     RESULT_VARIABLE exit_code
                     OUTPUT_VARIABLE output
                     ERROR_VARIABLE output

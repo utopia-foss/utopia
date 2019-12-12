@@ -21,9 +21,13 @@ class ModelInfoBundle:
 
     # Which entries to expect inside the paths property
     PATH_KEYS = (('binary', str, True),
+                 ('source_dir', str),  # TODO consider _requiring_ this one
                  ('default_cfg', str, True),
                  ('default_plots', str),
-                 ('base_plots', str))
+                 ('base_plots', str),
+                 ('python_model_tests_dir', str),
+                 ('python_model_plots_dir', str),
+                 )
 
     # Path keys that are assumed to be relative to the source directory
     PATH_KEYS_REL_TO_SRC = ('default_cfg', 'default_plots', 'base_plots')
@@ -48,6 +52,7 @@ class ModelInfoBundle:
 
     def __init__(self, *, model_name: str,
                  paths: dict, metadata: dict=None,
+                 project_name: str=None,
                  registration_time: str=None,
                  missing_path_action: str='log',
                  **additional_kwargs):
@@ -57,7 +62,8 @@ class ModelInfoBundle:
                           else time.strftime(TIME_FSTR))
 
         # Prepare data dict
-        self._d = dict(paths=dict(), metadata=dict(), **additional_kwargs)
+        self._d = dict(paths=dict(), metadata=dict(),
+                       project_name=project_name, **additional_kwargs)
 
         # Parse paths before loading them, already expanding the user '~' ...
         paths = self._parse_paths(**{k: os.path.expanduser(p)
@@ -67,7 +73,8 @@ class ModelInfoBundle:
         # Populate it, checking some properties
         err_msg_fstr = "Failed loading '{}' info for '{}' model info bundle!"
         
-        load_selected_keys(paths, add_to=self.paths, keys=self.PATH_KEYS,
+        load_selected_keys(paths,
+                           add_to=self.paths, keys=self.PATH_KEYS,
                            err_msg_prefix=err_msg_fstr.format('paths',
                                                               model_name))
         
@@ -129,6 +136,11 @@ class ModelInfoBundle:
         return self._d['metadata']
 
     @property
+    def project_name(self) -> str:
+        """Access to the Utopia project name information of the bundle"""
+        return self._d['project_name']
+
+    @property
     def missing_paths(self) -> dict:
         """Returns those paths where os.path.exists did not evaluate to True"""
         return {k: p for k, p in self.paths.items() if not os.path.exists(p)}
@@ -161,8 +173,10 @@ class ModelInfoBundle:
         if src_dir:
             abs_src_path = os.path.join(base_src_dir, src_dir)
 
-        # If a source directory is given, auto-detect some files
+        # If a source directory is given, store it, then auto-detect some files
         if abs_src_path:
+            paths['source_dir'] = abs_src_path
+
             for key, fname_fstr in self.SRC_DIR_SEARCH_PATHS:
                 # Build the full file path and see if a file exists there
                 fname = fname_fstr.format(self.model_name)
