@@ -1,4 +1,4 @@
-# The model configuration for the CopyMe model
+# The model configuration for the CopyMeGraph model
 #
 # This file should ONLY contain model-specific configuration and needs to be
 # written such that it can be used by _every_ model instance, regardless
@@ -20,22 +20,45 @@
 space:
   periodic: true
 
-# --- CellManager and cell initialization
-cell_manager:
-  grid:
-    structure: square
-    resolution: 64      # in cells per unit length of physical space
+# -- Network and agent initialization -----------------------------------------
+create_graph:
+  model: ErdosRenyi
+  num_vertices: 1000
+  mean_degree: 4
 
-  neighborhood:
-    mode: Moore
+  # --- Model-specific parameters
+  ErdosRenyi:
+    # Allow parallel edges
+    parallel: false
 
-  # Cell initialization parameters
-  cell_params:
-    some_state: 3.14
-    some_trait: 42
+    # Allow self edges
+    self_edges: false
 
-    # Use a random trait value between zero and `some_trait`
-    random_initial_trait: true
+  WattsStrogatz:
+    # Rewiring probability
+    p_rewire: 0.2
+
+  BarabasiAlbert:
+    # Allow parallel edges
+    parallel: false
+
+  BollobasRiordan:
+    # Graph generating parameters
+    alpha: 0.2
+    beta: 0.8
+    gamma: 0.
+    del_in: 0.
+    del_out: 0.5
+
+# Vertex initialization parameters
+init_some_state: 3.14
+init_some_trait: 42
+
+# Edge initialization parameters
+init_weight: 1.
+
+# Use a random weight between zero and `init_weight`
+init_random_weight: true
 
 # --- Other initialization parameters
 # Add parameters and their documentation here ...

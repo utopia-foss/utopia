@@ -1,5 +1,5 @@
-#ifndef UTOPIA_MODELS_COPYME_HH
-#define UTOPIA_MODELS_COPYME_HH
+#ifndef UTOPIA_MODELS_COPYMEGRID_HH
+#define UTOPIA_MODELS_COPYMEGRID_HH
 // TODO Adjust above include guard (and at bottom of file)
 
 // standard library includes
@@ -13,9 +13,7 @@
 #include <utopia/core/apply.hh>
 
 
-namespace Utopia {
-namespace Models {
-namespace CopyMe {
+namespace Utopia::Models::CopyMeGrid {
 
 // ++ Type definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -62,8 +60,8 @@ struct CellState {
 
 
 /// Specialize the CellTraits type helper for this model
-/** \details Specifies the type of each cells' state as first template argument
-  *         and the update mode as second.
+/** Specifies the type of each cells' state as first template argument and the 
+  * update mode as second.
   *
   * See \ref Utopia::CellTraits for more information.
   */
@@ -76,18 +74,18 @@ using ModelTypes = Utopia::ModelTypes<>;
 
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-/// The CopyMe Model; a good start for a CA-based model
+/// The CopyMeGrid Model; a good start for a CA-based model
 /** TODO Add your model description here.
  *  This model's only right to exist is to be a template for new models.
  *  That means its functionality is based on nonsense but it shows how
  *  actually useful functionality could be implemented.
  */
-class CopyMe:
-    public Model<CopyMe, ModelTypes>
+class CopyMeGrid:
+    public Model<CopyMeGrid, ModelTypes>
 {
 public:
     /// The type of the Model base class of this derived class
-    using Base = Model<CopyMe, ModelTypes>;
+    using Base = Model<CopyMeGrid, ModelTypes>;
 
     /// Data type of the group to write model data to, holding datasets
     using DataGroup = typename Base::DataGroup;
@@ -96,13 +94,12 @@ public:
     using DataSet = typename Base::DataSet;
 
     /// Type of the CellManager to use
-    using CellManager = Utopia::CellManager<CellTraits, CopyMe>;
+    using CellManager = Utopia::CellManager<CellTraits, CopyMeGrid>;
     // NOTE that it requires the model's type as second template argument
 
     /// Extract the type of the rule function from the CellManager
-    /** \details This is a function that receives a reference to a cell and
-      *         returns the new cell state. For more details, check out
-      *         \ref Utopia::CellManager
+    /** This is a function that receives a reference to a cell and returns the 
+      * new cell state. For more details, check out \ref Utopia::CellManager
       *
       * \note   Whether the cell state gets applied directly or
       *         requires a synchronous update depends on the update mode
@@ -144,12 +141,12 @@ private:
 
 public:
     // -- Model Setup ---------------------------------------------------------
-    /// Construct the CopyMe model
+    /// Construct the CopyMeGrid model
     /** \param name     Name of this model instance
      *  \param parent   The parent model this model instance resides in
      */
     template<class ParentModel>
-    CopyMe (const std::string name, ParentModel &parent)
+    CopyMeGrid (const std::string name, ParentModel &parent)
     :
         // Initialize first via base model
         Base(name, parent),
@@ -193,9 +190,10 @@ public:
         //      where a _stored_ lambda function is passed to it. For the setup
         //      done here, the function is only used once; thus, it makes more
         //      sense to just use a temporary lambda.
+        
         this->_log->debug("VIP cells set up.");
 
-        // NOTE The initial state need and should not be written here. The
+        // NOTE The initial state need and should NOT be written here. The
         //      write_data method is invoked first at time `write_start`.
         //      However, this is a good place to store data that is constant
         //      during the run and needs to be written at some point.
@@ -211,6 +209,15 @@ private:
 
 
     // .. Helper functions ....................................................
+
+    /// Calculate the mean of all cells' some_state
+    double calc_some_state_mean () const {
+        double sum = 0.;
+        for (const auto &cell : _cm.cells()) {
+            sum += cell->state().some_state;
+        }
+        return sum / _cm.cells().size();
+    }
 
 
     // .. Rule functions ......................................................
@@ -278,26 +285,23 @@ public:
 
     /// Monitor model information
     /** \details Here, functions and values can be supplied to the monitor that
-     *          are then available to the frontend. The monitor() function is
-     *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small.
-     *          With this information, you can then define stop conditions on
-     *          frontend side, that can stop a simulation once a certain set
-     *          of conditions is fulfilled.
+     *           are then available to the frontend. The monitor() function is
+     *           _only_ called if a certain emit interval has passed; thus, the
+     *           performance hit is small.
+     *           With this information, you can then define stop conditions on
+     *           frontend side, that can stop a simulation once a certain set
+     *           of conditions is fulfilled.
      */
     void monitor () {
-        // Supply some number directly by value
         this->_monitor.set_entry("some_value", 42);
         this->_monitor.set_entry("state_mean", calc_some_state_mean());
     }
 
 
     /// Write data
-    /** \details This function is called to write out data. It should be called
-      *         at the end of the model constructor to write out the initial
-      *         state. After that, the configuration determines at which times
-      *         data is written.
-      *         See \ref Utopia::DataIO::Dataset::write
+    /** \details This function is called to write out data.
+      *          The configuration determines the times at which it is invoked.
+      *          See \ref Utopia::DataIO::Dataset::write
       */
     void write_data () {
         // Write out the some_state of all cells
@@ -317,20 +321,8 @@ public:
     // .. Getters and setters .................................................
     // Add getters and setters here to interface with other models
 
-    /// Calculate the mean of all cells' some_state
-    double calc_some_state_mean() const {
-        double sum = 0.;
-        for (const auto &cell : _cm.cells()) {
-            sum += cell->state().some_state;
-        }
-        return sum / _cm.cells().size();
-    }
-
-
 };
 
-} // namespace CopyMe
-} // namespace Models
-} // namespace Utopia
+} // namespace Utopia::Models::CopyMeGrid
 
-#endif // UTOPIA_MODELS_COPYME_HH
+#endif // UTOPIA_MODELS_COPYMEGRID_HH

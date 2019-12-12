@@ -44,31 +44,39 @@ public:
     /// The type of the state
     using State = typename Traits::State;
 
+private:
     /// The id counter that counts how many graph entities exist
     static inline IndexType id_counter = 0;
 
+public:
     /// Construct a graph entity with empty initial state
     GraphEntity()
     :
-        Entity<Traits>(id_counter, State{})
-    {
-        ++id_counter;
-    }
+        Entity<Traits>(id_counter++, State{})
+    {};
 
     /// Construct a graph entity with initial state
     GraphEntity(const State& initial_state)
     :
-        Entity<Traits>(id_counter, initial_state)
-    {
-        ++id_counter;
-    }
+        Entity<Traits>(id_counter++, initial_state)
+    {};
 
     /// Copy-construct a graph entity
     GraphEntity(const GraphEntity& ge):
-        Entity<Traits>(id_counter, ge.state) 
-    {
-        ++id_counter;
-    };
+        Entity<Traits>(id_counter++, ge.state) 
+    {};
+
+    /// Copy-assign a graph entity
+    GraphEntity& operator=(GraphEntity ge){
+        std::swap(this->state, ge.state);
+        std::swap(this->custom_links(), ge.custom_links());
+        return *this;
+    }
+
+    /// Get the id counter
+    IndexType get_id_counter(){
+        return id_counter;
+    }
 };
 
 // end group GraphEntity

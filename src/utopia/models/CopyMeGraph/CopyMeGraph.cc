@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "CopyMe.hh"
+#include "CopyMeGraph.hh"
 
-using namespace Utopia::Models::CopyMe;
+using namespace Utopia::Models::CopyMeGraph;
 
 
 int main (int, char** argv) {
@@ -11,7 +11,7 @@ int main (int, char** argv) {
         Utopia::PseudoParent pp(argv[1]);
 
         // Initialize the main model instance and directly run it
-        CopyMe("CopyMe", pp).run();
+        CopyMeGraph("CopyMeGraph", pp).run();
 
         // Done.
         return 0;
