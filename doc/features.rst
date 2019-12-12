@@ -355,13 +355,21 @@ The ``utopia`` Command Line Interface (CLI)
         utopia run MyModel --num-steps 1000 --set-params log_levels.model=debug --set-model-params my_param=12.345
 
 * **Debug Mode:** by adding the ``--debug`` flag, logger verbosity is increased and errors are raised; this makes debugging easier.
+* **Copying a model:** The CLI helps a lot with that by copying all relevant files, renaming them, and even refactoring them. Copying between Utopia projects is also possible.
+
+    .. code-block:: bash
+
+        utopia models copy CopyMe --new-name MyFancyModel
+
 * To learn about all possible commands:
 
     .. code-block:: bash
 
-        utopia --help       # Shows available subcommands
-        utopia run --help   # Help for running a model
-        utopia eval --help  # Help for evaluating a model run
+        utopia --help           # Shows all available subcommands
+        utopia run --help       # Help for running a model
+        utopia eval --help      # Help for evaluating a model run
+        utopia config --help    # Help regarding the Utopia configuration
+        utopia models --help    # Help regarding the model registry
 
 
 
