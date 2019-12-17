@@ -152,6 +152,7 @@ BOOST_FIXTURE_TEST_CASE(lambda_rule, ModelFixture)
     auto& cm_sync = mm_sync._cm;
     Utopia::apply_rule([](const auto&) {return 42;},
                         cm_sync.cells());
+    
     // check that rule was applied correctly
     auto wrong = std::count_if(cm_sync.cells().begin(),
                                cm_sync.cells().end(),
@@ -160,10 +161,12 @@ BOOST_FIXTURE_TEST_CASE(lambda_rule, ModelFixture)
                               });
     BOOST_TEST(wrong == 0);
 
+    // And again for async
     auto& cm_async = mm_async._cm;
     auto& rng = *mm_async._rng;
     Utopia::apply_rule([](const auto&) { return 42; },
                         cm_async.cells(), rng);
+    
     // check that rule was applied correctly
     wrong = std::count_if(cm_async.cells().begin(),
                           cm_async.cells().end(),
@@ -235,4 +238,68 @@ BOOST_FIXTURE_TEST_CASE(manual, ModelFixture)
     // check that execution order of the container changed
     // (there is a chance that some elements remain in place...)
     BOOST_TEST(ids != ids_now, boost::test_tools::per_element());
+}
+
+
+/// Check that async rules can also return void
+// NOTE This does not check the shuffled update order, because it is already
+//      asserted by the other tests.
+BOOST_FIXTURE_TEST_CASE(void_rule, ModelFixture)
+{
+    using Utopia::Update;
+    using Utopia::Shuffle;
+
+    auto& rng = *mm_manual._rng;
+
+    // Define void rules that alter the cell state
+    auto rule_async = [](const auto& cell) {
+        cell->state() += 42;
+    };
+    auto rule_manual = [](const auto& cell) {
+        cell->state += 42;
+    };
+
+    // For the async state update -- without shuffle
+    {
+    auto& cm = mm_async._cm;
+    Utopia::apply_rule<false>(rule_async, cm.cells());
+    
+    const auto num_incorrect =
+        std::count_if(cm.cells().begin(), cm.cells().end(),
+            [](const auto& cell) { return cell->state() != 42; });
+    BOOST_TEST(num_incorrect == 0);
+    }
+
+    // For the async state update -- with shuffle
+    {
+    auto& cm = mm_async._cm;
+    Utopia::apply_rule<true>(rule_async, cm.cells(), rng);
+    
+    const auto num_incorrect =
+        std::count_if(cm.cells().begin(), cm.cells().end(),
+            [](const auto& cell) { return cell->state() != 84; });
+    BOOST_TEST(num_incorrect == 0);
+    }
+
+    // For the manually managed state updates -- without shuffle
+    {
+    auto& cm = mm_manual._cm;
+    Utopia::apply_rule<Update::async, Shuffle::off>(rule_manual, cm.cells());
+    
+    const auto num_incorrect =
+        std::count_if(cm.cells().begin(), cm.cells().end(),
+            [](const auto& cell) { return cell->state != 42; });
+    BOOST_TEST(num_incorrect == 0);
+    }
+
+    // For the manually managed state updates -- with shuffle
+    {
+    auto& cm = mm_manual._cm;
+    Utopia::apply_rule<Update::async>(rule_manual, cm.cells(), rng);
+    
+    const auto num_incorrect =
+        std::count_if(cm.cells().begin(), cm.cells().end(),
+            [](const auto& cell) { return cell->state != 84; });
+    BOOST_TEST(num_incorrect == 0);
+    }
 }

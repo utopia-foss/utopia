@@ -76,12 +76,20 @@ public:
     /// Neighborhood function used in public interface (with cell as argument)
     using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
     
-    /// The type of a rule function acting on the cells of this cell manager
+    /// The type of a rule function acting on cells of this cell manager
     /** This is a convenience type def that models can use to easily have this
       * type available.
       */
     using RuleFunc =
         typename std::function<CellState(const std::shared_ptr<Cell>&)>;
+
+    /// The type of a void rule function acting on cells of this cell manager
+    /** This is a convenience type def that models can use to easily have this
+      * type available.
+      * Void rule functions are only possible for asynchronous updates.
+      */
+    using VoidRuleFunc =
+        typename std::function<void(const std::shared_ptr<Cell>&)>;
     
 
 private:

@@ -6,6 +6,7 @@
 
 #include "state.hh"
 
+
 namespace Utopia {
 
 namespace impl {
@@ -13,6 +14,7 @@ namespace impl {
 template<class Container>
 using entity_t = typename Container::value_type::element_type;
 }
+
 
 /**
  *  \addtogroup Rules
@@ -26,6 +28,9 @@ enum class Shuffle {
     /// Immediately apply the rule sequentially
     off
 };
+
+
+// -- Manually-managed state updates ------------------------------------------
 
 /// Apply a rule synchronously to manually updated states
 /** This creates a cache for new states whose contents are moved into the
@@ -54,12 +59,12 @@ void apply_rule (Rule&& rule, const Container& container)
     state_cache.reserve(container.size());
 
     // apply the rule
-    std::transform(begin(container), end(container),
-                   back_inserter(state_cache),
+    std::transform(std::begin(container), std::end(container),
+                   std::back_inserter(state_cache),
                    std::forward<Rule>(rule));
 
     // move the cache
-    for (size_t i = 0; i < container.size(); ++i) {
+    for (std::size_t i = 0; i < container.size(); ++i) {
         container[i]->state = std::move(state_cache[i]);
     }
 }
@@ -90,10 +95,25 @@ template<Update mode,
          typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
 void apply_rule (Rule&& rule, const Container& container)
 {
-    // apply the rule
-    std::for_each(begin(container), end(container),
-                  [&rule](const auto& cell)
-                  { cell->state = rule(cell); });
+    // Apply the rule, distinguishing by return type of the rule
+    using ReturnType =
+        std::invoke_result_t<Rule, typename Container::value_type>;
+
+    if constexpr(std::is_same_v<ReturnType, void>)
+    {
+        // Is a void-rule; no need to set the return value
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& cell){ rule(cell); }
+        );
+    }
+    else
+    {
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& cell){ cell->state = rule(cell); }
+        ); 
+    }
 }
 
 /// Apply a rule asynchronously and shuffled to manually updated states
@@ -128,15 +148,33 @@ void apply_rule (Rule&& rule, const Container& container, RNG&& rng)
 {
     // copy the original container and shuffle it
     std::remove_const_t<Container> container_shuffled(container);
-    std::shuffle(begin(container_shuffled),
-                 end(container_shuffled),
+    std::shuffle(std::begin(container_shuffled),
+                 std::end(container_shuffled),
                  std::forward<RNG>(rng));
 
-    // apply the rule
-    std::for_each(begin(container_shuffled), end(container_shuffled),
-                  [&rule](const auto& cell) { cell->state = rule(cell); });
+    // Apply the rule, distinguishing by return type of the rule
+    using ReturnType =
+        std::invoke_result_t<Rule, typename Container::value_type>;
+
+    if constexpr(std::is_same_v<ReturnType, void>)
+    {
+        // Is a void-rule; no need to set the return value
+        std::for_each(
+            std::begin(container_shuffled), std::end(container_shuffled),
+            [&rule](const auto& entity){ rule(entity); }
+        );
+    }
+    else
+    {
+        std::for_each(
+            std::begin(container_shuffled), std::end(container_shuffled),
+            [&rule](const auto& entity){ entity->state = rule(entity); }
+        );
+    } 
 }
 
+
+// -- Synchronous state updates -----------------------------------------------
 /// Apply a rule synchronously on the state of all entities of a container
 /** Applies the rule function to each of the entities' states and
  *  stores the result in a buffer. Afterwards, it iterates over all
@@ -155,14 +193,21 @@ template<
 std::enable_if_t<sync, void>
     apply_rule(const Rule& rule, const Container& container)
 {
-    for_each(container.begin(), container.end(),
+    // Apply the rule
+    std::for_each(
+        std::begin(container), std::end(container),
         [&rule](const auto& entity){ entity->state_new() = rule(entity); }
     );
-    for_each(container.begin(), container.end(),
+    
+    // Update the state, moving it from the buffer state to the actual state
+    std::for_each(
+        std::begin(container), std::end(container),
         [](const auto& entity){ entity->update(); }
     );
 }
 
+
+// -- Asynchronous state updates ----------------------------------------------
 /// Apply a rule on asynchronous states without prior shuffling
 /** \param rule       An application rule, see \ref rule
  *  \param Container  A container with the entities upon whom rule is applied
@@ -178,9 +223,24 @@ template<
 std::enable_if_t<not sync && not shuffle, void>
     apply_rule(const Rule& rule, const Container& container)
 {
-    for_each(container.begin(), container.end(),
-        [&rule](const auto& entity){ entity->state() = rule(entity); }
-    );
+    // Apply the rule, distinguishing by return type of the rule
+    using ReturnType =
+        std::invoke_result_t<Rule, typename Container::value_type>;
+
+    if constexpr(std::is_same_v<ReturnType, void>)
+    {
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& entity){ rule(entity); }
+        );
+    }
+    else
+    {
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& entity){ entity->state() = rule(entity); }
+        );
+    }
 }
 
 
@@ -200,12 +260,29 @@ template<
 std::enable_if_t<not sync && shuffle, void>
     apply_rule(const Rule& rule, const Container& container, RNG&& rng)
 {
-    std::remove_const_t<Container> copy_container(container);
-    std::shuffle(copy_container.begin(), copy_container.end(),
-        std::forward<RNG>(rng));
-    for_each(copy_container.begin(), copy_container.end(),
-        [&rule](const auto& entity){ entity->state() = rule(entity); }
-    );
+    std::remove_const_t<Container> container_shuffled(container);
+    std::shuffle(std::begin(container_shuffled),
+                 std::end(container_shuffled),
+                 std::forward<RNG>(rng));
+
+    // Apply the rule, distinguishing by return type of the rule
+    using ReturnType =
+        std::invoke_result_t<Rule, typename Container::value_type>;
+
+    if constexpr(std::is_same_v<ReturnType, void>)
+    {
+        std::for_each(
+            std::begin(container_shuffled), std::end(container_shuffled),
+            [&rule](const auto& entity){ rule(entity); }
+        );
+    }
+    else
+    {
+        std::for_each(
+            std::begin(container_shuffled), std::end(container_shuffled),
+            [&rule](const auto& entity){ entity->state() = rule(entity); }
+        );
+    }
 }
 
 /**
