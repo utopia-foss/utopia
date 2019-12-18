@@ -59,7 +59,7 @@ that you consider part of the environment.
     /// Parameter of the Environment model
     /** NOTE this needs to inherit from the Environment::BaseEnvParam
      */
-    struct EnvParam : Environment::BaseEnvParam
+    struct EnvParam : Utopia::Models::Environment::BaseEnvParam
     {
         double some_global_parameter;
         // .. Add more parameters of type double here ..
@@ -120,7 +120,7 @@ parameters that you consider part of the environment.
         /// Construct the cell state
         /** \details Uses the cell_manager.cell_params entry of your model
          */
-        EnvCellState(const DataIO::Config& cfg)
+        EnvCellState(const Utopia::DataIO::Config& cfg)
         :
             some_heterogeneous_parameter(
                 get_as<double>("some_heterogeneous_parameter", cfg, 0.))
@@ -130,7 +130,7 @@ parameters that you consider part of the environment.
         ~EnvCellState() { }
 
         /// Getter
-        double get_env(const std::string& key) {
+        double get_env(const std::string& key) const override {
             if (key == "some_heterogeneous_parameter") {
                 return some_heterogeneous_parameter;
             }
@@ -143,7 +143,7 @@ parameters that you consider part of the environment.
         }
 
         /// Setter
-        void set_env(const std::string& key, const double& value) {
+        void set_env(const std::string& key, const double& value) override {
             if (key == "some_heterogeneous_parameter") {
                 some_heterogeneous_parameter = value;
             }
