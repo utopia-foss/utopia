@@ -9,9 +9,8 @@ import copy
 import time
 from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set, Dict
-from typing.io import BinaryIO
 
-from utopya.task import WorkerTask, TaskList, sigmap
+from utopya.task import WorkerTask, TaskList, SIGMAP
 from utopya.stopcond import StopCondition
 from utopya.reporter import WorkerManagerReporter
 from utopya.tools import format_time
@@ -61,7 +60,8 @@ class WorkerManager:
         Args:
             num_workers (Union[int, str], optional): The number of workers
                 that can work in parallel. If 'auto' (default), uses
-                os.cpu_count(). If below zero, deduces abs(num_workers) from the CPU count.
+                os.cpu_count(). If below zero, deduces abs(num_workers) from
+                the CPU count.
             poll_delay (float, optional): How long (in seconds) the delay
                 between worker polls should be. For too small delays (<0.01),
                 the CPU load will become significant.
@@ -190,7 +190,9 @@ class WorkerManager:
 
     @property
     def task_count(self) -> int:
-        """Returns the number of tasks that this manager *ever* took care of. Careful: This is NOT the current number of tasks in the queue!"""
+        """Returns the number of tasks that this manager *ever* took care of.
+        Careful: This is NOT the current number of tasks in the queue!
+        """
         return len(self.tasks)
 
     @property
@@ -218,7 +220,8 @@ class WorkerManager:
     def active_tasks(self) -> List[WorkerTask]:
         """The list of currently active tasks.
 
-        Note that this information might not be up-to-date; a process might quit just after the list has been updated.
+        Note that this information might not be up-to-date; a process might
+        quit just after the list has been updated.
         """
         return self._active_tasks
 
@@ -236,7 +239,8 @@ class WorkerManager:
 
     @property
     def poll_delay(self) -> float:
-        """The poll frequency in polls/second. Strictly speaking: the sleep time between two polls, which roughly equals the poll frequency."""
+        """The poll frequency in polls/second. Strictly speaking: the sleep
+        time between two polls, which roughly equals the poll frequency."""
         return self._poll_delay
 
     @poll_delay.setter
@@ -248,7 +252,7 @@ class WorkerManager:
             warnings.warn("Setting a poll delay of {} < 0.01s can lead to "
                           "significant CPU load. Consider choosing a higher "
                           "value.", UserWarning)
-        self._poll_delay = val    
+        self._poll_delay = val
 
     @property
     def nonzero_exit_handling(self) -> str:
@@ -532,11 +536,10 @@ class WorkerManager:
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            log.error("Did not finish working due to a %s: %s",
-                      err.__class__.__name__, str(err))
+            log.critical("Did not finish working! See above for error log.")
             
             # Now terminate the remaining active tasks
-            log.warning("Terminating active tasks ...")
+            log.hilight("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
 
             # Store end time and invoke a report
@@ -552,7 +555,7 @@ class WorkerManager:
             log.critical("Re-raising error ...")
             raise
 
-        except KeyboardInterrupt as err:
+        except KeyboardInterrupt:
             # Got interrupted. Also interrupt the workers, giving them some
             # time to shut down ...
 
@@ -612,7 +615,7 @@ class WorkerManager:
             if self.interrupt_params.get('exit', True):
                 # Exit with appropriate exit code (128 + abs(signum))
                 log.warning("Exiting after KeyboardInterrupt ...")
-                sys.exit(128 + sigmap[signal])
+                sys.exit(128 + SIGMAP[signal])
 
             log.warning("Continuing after KeyboardInterrupt ...")
             return
@@ -629,21 +632,22 @@ class WorkerManager:
 
     def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
         """Helper function to invoke the reporter's report function"""
-        if self.reporter is not None:
-            # Check whether to suppress this rf_spec
-            if (self._suppress_rf_specs
-                and rf_spec_name in self._suppress_rf_specs):
-                # Do not report this one
-                return
+        if self.reporter is None:
+            return
+        
+        # Check whether to suppress this rf_spec
+        if self._suppress_rf_specs and rf_spec_name in self._suppress_rf_specs:
+            # Do not report this one
+            return
 
-            # Resolve the spec name
-            rfs = self.rf_spec[rf_spec_name]
-            
-            if not isinstance(rfs, list):
-                rfs = [rfs]
+        # Resolve the spec name
+        rfs = self.rf_spec[rf_spec_name]
+        
+        if not isinstance(rfs, list):
+            rfs = [rfs]
 
-            for rf in rfs:
-                self.reporter.report(rf, *args, **kwargs)
+        for rf in rfs:
+            self.reporter.report(rf, *args, **kwargs)
 
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it
@@ -661,7 +665,8 @@ class WorkerManager:
             task = self.task_queue.get_nowait()
 
         except queue.Empty as err:
-            raise queue.Empty("No more tasks available in tasks queue.") from err
+            raise queue.Empty("No more tasks available in tasks queue."
+                              ) from err
         
         else:
             log.debug("Got task %s from queue. (Priority: %s)",
@@ -674,7 +679,8 @@ class WorkerManager:
         return task
     
     def _poll_workers(self) -> None:
-        """Will poll all workers that are in the working list and remove them from that list if they are no longer alive.
+        """Will poll all workers that are in the working list and remove them
+        from that list if they are no longer alive.
         """
         # Poll the task's worker's status
         for task in self.active_tasks:
@@ -691,14 +697,17 @@ class WorkerManager:
         # have to rebuild the list of active tasks now...
         self.active_tasks[:] = [t for t in self.active_tasks
                                 if t.worker_status is None]
-        # NOTE this will also poll all other active tasks and potentially not add them to the active_tasks list again.
+        # NOTE this will also poll all other active tasks and potentially not
+        #      add them to the active_tasks list again.
+
         # Now, only active tasks are in the list, but the list is shorter
         # Can deduce the number of finished tasks from this
         self._num_finished_tasks += (old_len - len(self.active_tasks))
 
         return
 
-    def _check_stop_conds(self, stop_conds: Sequence[StopCondition]) -> Set[WorkerTask]:
+    def _check_stop_conds(self, stop_conds: Sequence[StopCondition]
+                          ) -> Set[WorkerTask]:
         """Checks the given stop conditions for the active tasks and compiles
         a list of tasks that needs to be terminated.
         
@@ -730,7 +739,8 @@ class WorkerManager:
         # Return as set to be sure that they are unique
         return set(to_terminate)
 
-    def _signal_workers(self, tasks: Union[str, List[WorkerTask]], *, signal: Union[str, int]) -> None:
+    def _signal_workers(self, tasks: Union[str, List[WorkerTask]],
+                        *, signal: Union[str, int]) -> None:
         """Send signals to a list of WorkerTasks.
         
         Args:
@@ -764,7 +774,8 @@ class WorkerManager:
         starting from the one added most recently.
 
         As the WorkerManager occupies the main thread, it is difficult for
-        other threads to signal to the WorkerManager that an exception occurred.
+        other threads to signal to the WorkerManager that an exception
+        occurred.
         The pending_exceptions attribute allows such a handling; child threads
         can just add an exception object to it and they get handled during
         working of the WorkerManager.
@@ -781,7 +792,8 @@ class WorkerManager:
                 exceptions
         """
 
-        def log_task_stream(task: WorkerTask, *, num_entries: int, stream_name: str='out') -> None:
+        def log_task_stream(task: WorkerTask, *, num_entries: int,
+                            stream_name: str='out') -> None:
             """Logs the last `num_entries` from the log of the `stream_name`
             of the given WorkerTask object using log.error
             """
@@ -822,7 +834,7 @@ class WorkerManager:
                 continue
 
             # Ignore terminated tasks for `warn` and `ignore` levels
-            elif (    exc.task.worker_status == -15
+            elif (    abs(exc.task.worker_status) == SIGMAP['SIGTERM']
                   and self.nonzero_exit_handling not in ['warn_all', 'raise']):
                 continue
 
@@ -831,20 +843,19 @@ class WorkerManager:
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            # Generate a message
-            log.warning("WorkerTask '%s' exited with non-zero exit status: %s",
-                        exc.task.name, exc.task.worker_status)
+            # Provide some info on the exit status
             
             if self.nonzero_exit_handling in ['warn', 'warn_all']:
-                # Print the last few lines of the error log
-                log_task_stream(exc.task, num_entries=5)
+                # Print the error and the last few lines of the error log
+                log.warning(str(exc))
+                log_task_stream(exc.task, num_entries=8)
 
                 # Nothing else to do
                 continue
 
-            # At this stage, 'raise' is the desired handling mode
-            # Show more lines of the log
-            log_task_stream(exc.task, num_entries=20)
+            # At this stage, the handling mode is 'raise'. Show more log lines:
+            log.critical(str(exc))
+            log_task_stream(exc.task, num_entries=24)
 
             # By raising here, the except block in start_working will be
             # invoked and terminate workers before calling sys.exit
@@ -860,18 +871,36 @@ class WorkerManager:
 class WorkerManagerError(BaseException):
     """The base exception class for WorkerManager errors"""
 
+
 class WorkerManagerTotalTimeout(WorkerManagerError):
     """Raised when a total timeout occurred"""
 
+
 class WorkerTaskError(WorkerManagerError):
     """Raised when there was an error in a WorkerTask"""
+
 
 class WorkerTaskNonZeroExit(WorkerTaskError):
     """Can be raised when a WorkerTask exited with a non-zero exit code."""
 
     def __init__(self, task: WorkerTask, *args, **kwargs):
-        # Store the task        
+        # Store the task
         self.task = task
 
         # Pass everything else to the parent init
         super().__init__(*args, **kwargs)
+
+    def __str__(self) -> str:
+        """Returns information on the error"""
+        signals = [signal for signal, signum in SIGMAP.items()
+                   if signum == abs(self.task.worker_status)]
+
+        return ("Task '{}' exited with non-zero exit status: {}.\n"
+                "This may originate from the following signals:  {}.\n"
+                "Googling these might help with identifying the error. "
+                "Also, inspect the log and the log file for further error "
+                "messages. To increase verbosity, run in debug mode, e.g. by "
+                "passing the --debug flag to the CLI."
+                "".format(self.task.name,
+                          self.task.worker_status,
+                          ", ".join(signals)))
