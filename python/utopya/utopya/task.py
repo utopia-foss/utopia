@@ -20,7 +20,10 @@ from .tools import yaml
 
 # Local variables
 log = logging.getLogger(__name__)
-sigmap = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
+
+# A map from signal names to corresponding integer exit codes
+SIGMAP = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
+
 
 # -----------------------------------------------------------------------------
 # Helper methods
@@ -67,6 +70,7 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO,
     # Thread dies here.
 
 # Custom parse methods ........................................................
+
 
 def parse_yaml_dict(line: str, *, start_str: str="!!map") -> Union[None, dict]:
     """A yaml parse function that can be passed to enqueue_lines. It only tries
@@ -263,7 +267,7 @@ class WorkerTask(Task):
                  setup_func: Callable=None,
                  setup_kwargs: dict=None,
                  worker_kwargs: dict=None,
-                  **task_kwargs):
+                 **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use
         in the WorkerManager.
         
@@ -392,7 +396,8 @@ class WorkerTask(Task):
     # Public API ..............................................................
 
     def spawn_worker(self) -> subprocess.Popen:
-        """Spawn a worker process using subprocess.Popen and manage the corresponding queue and thread for reading the stdout stream.
+        """Spawn a worker process using subprocess.Popen and manage the
+        corresponding queue and thread for reading the stdout stream.
         
         If there is a setup_func, this function will be called first.
         
@@ -720,11 +725,11 @@ class WorkerTask(Task):
                         forward_raw: bool=False) -> bool:
         """Forwards the streams to stdout, either via logging module or print
         
-        This function can be periodically called to forward the part of the 
+        This function can be periodically called to forward the part of the
         stream logs that was not already forwarded to stdout.
 
         The information for that is stored in the stream dict. The log_level
-        entry is used to determine whether the logging module should be used 
+        entry is used to determine whether the logging module should be used
         or (in case of None) the print method.
         
         Args:
@@ -732,9 +737,6 @@ class WorkerTask(Task):
         
         Returns:
             bool: whether there was any output
-        
-        Deleted Parameters:
-            log_level (Union[int, None], optional): 
         """
 
         def print_lines(lines: List[str], *, log_level: int):
@@ -811,11 +813,11 @@ class WorkerTask(Task):
         """
         # Determine the signal number
         try:
-            signum = sigmap[signal]
+            signum = SIGMAP[signal]
         
         except KeyError as err:
             raise ValueError("No signal named '{}' available! Valid signals "
-                             "are: {}".format(signal, ", ".join(sigmap.keys()))
+                             "are: {}".format(signal, ", ".join(SIGMAP.keys()))
                              ) from err
 
         # Handle some specific cases, then all the other signals ...
@@ -829,7 +831,7 @@ class WorkerTask(Task):
 
         elif signal == 'SIGINT':
             log.debug("Interrupting worker of task %s ...", self.name)
-            self.worker.send_signal(sigmap['SIGINT'])
+            self.worker.send_signal(SIGMAP['SIGINT'])
 
         else:
             log.debug("Sending %s (%d) to worker of task %s ...",
