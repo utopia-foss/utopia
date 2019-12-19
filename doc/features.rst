@@ -169,24 +169,24 @@ The ``AgentManager``
 
 The ``apply_rule`` Interface – rule-based formulation of model dynamics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Apply a rule on multiple Utopia ``Entity``  (``Cell``, ``Agent``, or ``GraphEntity``). Normally, a rule changes the state of an entity.
-* Rules can be applied ...
-
-    * ... synchronously (in parallel) or asynchronously 
-    * ... on a container that is shuffled or not
+* Apply a rule on Utopia ``Entity`` objects, e.g. ``Cell``, ``Agent``, or ``GraphEntity``. This can be used to change the state of an entity.
+* Rules can be applied synchronously (in parallel) or asynchronously (sequentially)
+* For asynchronous updates, the iteration order can be shuffled for each invocation. This avoids artifacts originating from a fixed application order.
+* Code example:
 
     .. code-block:: c++
 
         // Apply a rule to all cells of a cell manager
-        apply_rule<Update::async,               // Apply the rule asynchronously,
-                                                // one cell after the other.
-                   Shuffle::off>                // Do not shuffle the container
-                                                // before applying the rule
+        apply_rule<Update::async,             // Apply the rule asynchronously,
+                                              // one cell after the other.
+                   Shuffle::off>              // Do not shuffle the container
+                                              // before applying the rule
         (
-            [](const auto& cell){               // Operate on a cell
-                auto& state = cell->state;      // Get the state reference
-                state.age += 1;                 // Increment the age
-                return state;                   // return the changed state
+            [](const auto& cell){             // Operate on a cell
+                auto& state = cell->state;    // Get the state reference
+                state.age += 1;               // Increment the age member
+                // return state;              // Optional for async update.
+                                              // REQUIRED for sync update
             },
             _cm.cells()     // Apply the rule to all cells in the cell manager.
                             // This can however, also be any container of
@@ -195,15 +195,15 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
 
         // Apply a rule to all vertices of a graph
         apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-            [this](auto vertex){
-                this->g[vertex].state.property = 42;
+            [](auto vertex, auto& g){
+                g[vertex].state.property = 42;
             },
-            g 
+            g               // The graph to iterate over
         );
 
 * 📚
   `Doxygen <../doxygen/html/group___rules.html>`_,
-  :ref:`apply_rule on Graphs <apply_rule_graph>`
+  :ref:`apply_rule on graph entities <apply_rule_graph>`
 
 
 .. _feature_entity:

@@ -39,6 +39,9 @@ The function it represents must take a pointer to the entity as single
 argument and may capture arbitrary objects.
 The function's return value is the new state of the entity it is applied to.
 
+For asynchronously applied rules, no return value is required; the state may be
+changed directly.
+
 Currently, rules may also alter other members (i.e., tags) of the entity
 they are applied to, and may even change states of other entities. *Notice
 that this does not make sense if you intend to apply such a rule
