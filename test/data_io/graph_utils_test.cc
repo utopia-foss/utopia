@@ -1,20 +1,79 @@
-#include <cassert>
-#include <iostream>
-#include <random>
-#include <cstdio>
+#define BOOST_TEST_MODULE test graph utilities
 
-#include "dataio_test.hh"
+#include <boost/test/unit_test.hpp>
+#include <boost/mpl/vector.hpp>
 
 #include <utopia/data_io/graph_utils.hh>
 #include <utopia/data_io/hdfgroup.hh>
 #include <utopia/data_io/hdffile.hh>
 
+#include "dataio_test.hh"
 
 using namespace Utopia;
 using namespace Utopia::DataIO;
 
-/// Test the save graph functionality
-void test_save_graph()
+// -- Fixtures ----------------------------------------------------------------
+
+template <typename Graph>
+struct SmallGraphFixture{
+    using Type = Graph;
+    Graph g = create_and_initialize_test_graph<Graph>(10,3);
+
+    SmallGraphFixture() {
+        setup_loggers();
+    }
+};
+
+using SmallGraphsVecSFixtures = boost::mpl::vector<
+    SmallGraphFixture<Graph_vertvecS_edgevecS_undir>,
+    SmallGraphFixture<Graph_vertvecS_edgevecS_dir>
+>;
+
+using SmallGraphsSetSListSFixtures = boost::mpl::vector<
+    SmallGraphFixture<Graph_vertlistS_edgelistS_undir>,
+    SmallGraphFixture<Graph_vertsetS_edgesetS_undir>
+>;
+
+template <typename Graph>
+struct LargeGraphFixture{
+    using Type = Graph;
+    Graph g = create_and_initialize_test_graph<Graph>(100,30);
+
+    LargeGraphFixture() {
+        setup_loggers();
+    }
+};
+
+using LargeGraphsFixtures = boost::mpl::vector<
+    LargeGraphFixture<Graph_vertvecS_edgevecS_undir>,
+    LargeGraphFixture<Graph_vertvecS_edgevecS_dir>,
+    LargeGraphFixture<Graph_vertlistS_edgelistS_undir>,
+    LargeGraphFixture<Graph_vertsetS_edgesetS_undir>
+>;
+
+// -- Test cases --------------------------------------------------------------
+
+/// Test the save_graph function with internal id's.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_graph_vecS, G,
+                                SmallGraphsVecSFixtures, G)
+{
+    using Utopia::DataIO::create_graph_group;
+    using Utopia::DataIO::save_graph;
+    // Create a test HDFFile and a HDFGroup
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
+    auto grp = hdf.open_group("testgroup");
+
+    // Open a graph group and save the graph
+    auto ggrp = create_graph_group(G::g, grp, "testgraph");
+    save_graph(G::g, ggrp);
+
+    // Remove the graph testsfile
+    std::remove("graph_testfile.h5");
+}
+
+/// Test the save_graph function with custom id's.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_graph_listS_setS, G,
+                                SmallGraphsSetSListSFixtures, G)
 {
     using Utopia::DataIO::create_graph_group;
     using Utopia::DataIO::save_graph;
@@ -22,449 +81,400 @@ void test_save_graph()
     // Create a test HDFFile and a HDFGroup
     auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
     auto grp = hdf.open_group("testgroup");
-
-    // Test case 1:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
-
-    // Set up graph
-    auto g_vvu = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_undir>(10,3);
-
-    // Open a graph group and save the graph
-    auto grp_vvu = create_graph_group(g_vvu, grp, "g_vvu");
-    save_graph(g_vvu, grp_vvu);
-
-    // Test case 2:
-    //     vertex container: boost::listS
-    //     list container:   boost::listS
-
-    // Set up graph
-    auto g_llu = create_and_initialize_test_graph<Graph_vertlistS_edgelistS_undir>(10,3);
-
-    // In the case of boost::listS, the graph does not store a boost::vertex_index internally.
-    // Therefore, the save_graph function would not work.
-    // To overcome this, the user needs to define an id in the Vertex struct itself.
-    // It can be given to the save_data function through a property map, which
-    // needs to be defined.
-    // NOTE: The user needs to adapt this id, such that it actually represents a unique id
-    //       for every agent within the model dynamics!
-    using VertexIdMapLLU = boost::property_map<Graph_vertlistS_edgelistS_undir,
-            std::size_t Vertex::*
-    >::type;
-    VertexIdMapLLU vertex_id_map_llu = get(&Vertex::id, g_llu);
+    
+    // In the case of boost::listS and boost::setS, the graph does not store a
+    // boost::vertex_index internally. Therefore, the save_graph function would
+    // not work. To overcome this, the user needs to define an id in the Vertex
+    // struct itself. It can be given to the save_data function through a
+    // property map, which needs to be defined.
+    // NOTE: The user needs to adapt this id, such that it actually represents
+    //       a unique id for every agent within the model dynamics!
+    using VertexIdMap = typename boost::property_map<typename G::Type,
+                                                std::size_t Vertex::*>::type;
+    VertexIdMap vertex_id_map = get(&Vertex::id, G::g);
 
     // Open a graph group and save the graph
-    auto grp_llu = create_graph_group(g_llu, grp, "g_llu");
-    save_graph(g_llu, grp_llu, vertex_id_map_llu);
+    auto ggrp = create_graph_group(G::g, grp, "testgraph");
+    save_graph(G::g, ggrp, vertex_id_map);
 
+    // Don't remove the file for the last fixture as this will be used for
+    // checking the attributes
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        std::remove("graph_testfile.h5");
+    }
+}
 
-    // Test case 3:
-    //     vertex container: boost::setS
-    //     list container:   boost::setS
+/// Test that the attributes are written correctly in the save_graph function
+BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
+    // NOTE This test is only done for the last fixture of the test above.
 
-    // Set up graph
-    auto g_ssu = create_and_initialize_test_graph<Graph_vertsetS_edgesetS_undir>(10,3);
+    // Read the HDF5 file
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","r");
+    auto grp = hdf.open_group("testgroup");
+    auto ggrp = grp->open_group("testgraph");
 
-    // In the case of boost::setS, the graph does not store a boost::vertex_index internally.
-    // Therefore, the save_graph function would not work.
-    // To overcome this, the user needs to define an id in the Vertex struct itself.
-    // It can be given to the save_data function through a property map, which
-    // needs to be defined.
-    // NOTE: The user needs to adapt this id, such that it actually represents a unique id
-    //       for every agent within the model dynamics!
-    using VertexIdMapSSU = boost::property_map<Graph_vertsetS_edgesetS_undir,
-            std::size_t Vertex::*
-    >::type;
-    VertexIdMapSSU vertex_id_map_ssu = get(&Vertex::id, g_ssu);
+    // Test that the group attribute is set correctly
+    HDFAttribute ggrp_attr(*ggrp, "content");
+    auto attr_content = std::get<1>(ggrp_attr.read<std::string>());
+    BOOST_TEST(attr_content == "network");
+    ggrp_attr.close();
 
-    // Open a graph group and save the graph
-    auto grp_ssu = create_graph_group(g_ssu, grp, "g_ssu");
-    save_graph(g_ssu, grp_ssu, vertex_id_map_ssu);
+    ggrp_attr.open(*ggrp, "is_directed");
+    auto attr_is_dir = std::get<1>(ggrp_attr.read<int>());
+    BOOST_TEST(attr_is_dir == 0);
+    ggrp_attr.close();
 
+    ggrp_attr.open(*ggrp, "allows_parallel");
+    auto attr_parallel = std::get<1>(ggrp_attr.read<int>());
+    BOOST_TEST(attr_parallel == 0);
+    ggrp_attr.close();
 
-    // Test case 4:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
-    //     undirected graph
+    ggrp_attr.open(*ggrp, "num_vertices");
+    auto attr_num_vertices = std::get<1>(ggrp_attr.read<size_t>());
+    BOOST_TEST(attr_num_vertices == 10);
+    ggrp_attr.close();
 
-    // Set up graph
-    auto g_vvd = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_dir>(10,3);
-
-    // Open a graph group and save the graph
-    auto grp_vvd = create_graph_group(g_vvd, grp, "g_vvd");
-    save_graph(g_vvd, grp_vvd);
-
+    ggrp_attr.open(*ggrp, "num_edges");
+    auto attr_num_edges = std::get<1>(ggrp_attr.read<size_t>());
+    BOOST_TEST(attr_num_edges == 3);
+    ggrp_attr.close();
 
     // Remove the graph testsfile
     std::remove("graph_testfile.h5");
 }
 
-
-/// Test if the data written to hdf5 matches the original data
-/// Also test consistency of boost iterator range
-template <typename GraphType, typename GRP_PTR>
-void test_vertex_data(GraphType g, GRP_PTR grp, std::string name){
-
-    std::vector<std::size_t> g_ids;
-    std::vector<int> g_ints;
-    std::vector<long long unsigned int> shape = {100};
-
-    // get original data with the same iterator range
-    for (auto v : boost::make_iterator_range(vertices(g))) {
-        g_ids.push_back(g[v].id);
-        g_ints.push_back(g[v].test_int);
-    }
-
-    // get the datasets
-    auto dset_id = grp->open_group("id")->open_dataset(name);
-    auto dset_int = grp->open_group("test_int")->open_dataset(name);
-
-    // read data
-    auto data_id = dset_id->template read<std::vector<std::size_t> >();
-    auto data_int = dset_int->template read<std::vector<int> >();
-
-
-
-    if ( g_ids != std::get<1>(data_id)) {
-
-        throw std::runtime_error("Data \"id\" written by "
-                           "\"save_graph_properties\" does not match "
-                           "original data");
-    }
-
-
-    if ( g_ints != std::get<1>(data_int)) {
-        throw std::runtime_error("Data \"test_int\" written by "
-                           "\"save_graph_properties\" does not match "
-                           "original data");
-    }
-
-    if (shape != std::get<0>(data_int)) {
-        throw std::runtime_error("Data \"test_int\" written by "
-                                 "\"save_graph_properties\" does not match "
-                                 "desired shape");
-
-    }
-
-}
-
-/// Test consistency of data order
-template <typename GRP_PTR>
-void test_vertex_data_consistency(GRP_PTR grp, std::string name){
-
-    // get the datasets
-    auto dset_id = grp->open_group("id")->open_dataset(name);
-    auto dset_id2 = grp->open_group("id2")->open_dataset(name);
-
-    // read data
-    auto data_id = dset_id->template read<std::vector<std::size_t> >();
-    auto data_id2 = dset_id2->template read<std::vector<std::size_t> >();
-
-
-
-    if ( std::get<1>(data_id) != std::get<1>(data_id2)) {
-
-        throw std::runtime_error("Data \"id\" and \"id2\" written by "
-                                 "\"save_graph_properties\" do not match");
-    }
-}
-
-
-/// Test the save graph vertex value functionality
-void test_save_graph_vertex_value()
+/// Test the save_graph_entity_properties functionality for 1d data using
+/// vertex descriptors.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_properties_vertices_1d, G,
+                                LargeGraphsFixtures, G)
 {
-    using namespace Utopia::DataIO;
+    using Utopia::DataIO::save_graph_entity_properties;
 
     // Create a test HDFFile and a HDFGroup
     auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
     auto grp = hdf.open_group("testgroup");
 
-    auto vertex_vals = std::make_tuple(
-            std::make_tuple(
-                    "id",
-                    [](auto& v){return v.id;}),
-            std::make_tuple(
-                    "test_double",
-                    [](auto& v){return v.test_double;}),
-            std::make_tuple(
-                    "test_value",
-                    [](auto& v){return v.get_test_value();}),
-            std::make_tuple(
-                    "test_int",
-                    [](auto& v){return v.test_int;}),
-            std::make_tuple(
-                    "id2",
-                    [](auto& v){return v.id;})
-                           );
-
-    auto vertex_desc_vals = std::make_tuple(
-            std::make_tuple(
-                    "id",
-                    [](auto& g, auto& v){return g[v].id;}),
-            std::make_tuple(
-                    "test_double",
-                    [](auto& g, auto& v){return g[v].test_double;}),
-            std::make_tuple(
-                    "test_value",
-                    [](auto& g, auto& v){return g[v].get_test_value();}),
-            std::make_tuple(
-                    "test_int",
-                    [](auto& g, auto& v){return g[v].test_int;}),
-            std::make_tuple(
-                    "id2",
-                    [](auto& g, auto& v){return g[v].id;})
+    const auto vertex_desc_vals = std::make_tuple(
+            std::make_tuple("id",
+                    [](auto& vd, auto& g){return g[vd].id;}),
+            std::make_tuple("test_double",
+                    [](auto& vd, auto& g){return g[vd].test_double;}),
+            std::make_tuple("test_value",
+                    [](auto& vd, auto& g){return g[vd].get_test_value();}),
+            std::make_tuple("test_int",
+                    [](auto& vd, auto& g){return g[vd].test_int;}),
+            std::make_tuple("id2",
+                    [](auto& vd, auto& g){return g[vd].id;})
     );
 
-    // Test case 1:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
+    save_vertex_properties(G::g, grp, "dset", vertex_desc_vals);
 
-    // Set up graph
-    auto g_vvu = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_undir>(100,30);
+    // Get the datasets
+    auto dset_id = grp->open_group("id")->open_dataset("dset");
+    auto dset_id2 = grp->open_group("id2")->open_dataset("dset");
 
-    save_graph_properties<Vertex>(g_vvu, grp, "g_vvu", vertex_vals);
-    save_graph_properties<Graph_vertvecS_edgevecS_undir_vdesc>(g_vvu, grp, "g_vvu_desc", vertex_desc_vals);
+    // Read the data
+    auto data_id = dset_id->template read<std::vector<std::size_t>>();
+    auto data_id2 = dset_id2->template read<std::vector<std::size_t>>();
 
-    test_vertex_data(g_vvu, grp, "g_vvu");
-    test_vertex_data_consistency(grp, "g_vvu");
-    test_vertex_data(g_vvu, grp, "g_vvu_desc");
-    test_vertex_data_consistency(grp, "g_vvu_desc");
+    // Assert the vertex data consistency
+    BOOST_TEST(std::get<1>(data_id) == std::get<1>(data_id2));
 
-    // Test case 2:
-    //     vertex container: boost::listS
-    //     list container:   boost::listS
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        // Do not test data for setS as the iterator range might differ
 
-    // Set up graph
-    auto g_llu = create_and_initialize_test_graph<Graph_vertlistS_edgelistS_undir>(100,30);
+        std::vector<std::size_t> g_ids;
+        std::vector<int> g_ints;
+        std::vector<long long unsigned int> shape = {100};
 
-    save_graph_properties<Vertex>(g_llu, grp, "g_llu", vertex_vals);
-    save_graph_properties<Graph_vertlistS_edgelistS_undir_vdesc>(g_llu, grp, "g_llu_desc", vertex_desc_vals);
+        // get original data with the same iterator range
+        for (const auto v : range<IterateOver::vertices>(G::g)) {
+            g_ids.push_back(G::g[v].id);
+            g_ints.push_back(G::g[v].test_int);
+        }
 
-    test_vertex_data(g_llu, grp, "g_llu");
-    test_vertex_data_consistency(grp, "g_llu");
-    test_vertex_data(g_llu, grp, "g_llu_desc");
-    test_vertex_data_consistency(grp, "g_llu_desc");
+        // Get additional test data
+        auto dset_int = grp->open_group("test_int")->open_dataset("dset");
+        auto data_int = dset_int->template read<std::vector<int>>();
 
-
-    // Test case 3:
-    //     vertex container: boost::setS
-    //     list container:   boost::setS
-
-    // Set up graph
-    auto g_ssu = create_and_initialize_test_graph<Graph_vertsetS_edgesetS_undir>(100,30);
-
-    save_graph_properties<Vertex>(g_ssu, grp, "g_ssu", vertex_vals);
-    save_graph_properties<Graph_vertsetS_edgesetS_undir_vdesc>(g_ssu, grp, "g_ssu_desc", vertex_desc_vals);
-
-    // Do not test data here as the iterator range of setS might differ
-
-    // However, the consistency in one call of `save_graph_properties` is given
-    test_vertex_data_consistency(grp, "g_ssu");
-    test_vertex_data_consistency(grp, "g_ssu_desc");
-
-
-    // Test case 4:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
-    //     undirected graph
-
-    // Set up graph
-    auto g_vvd = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_dir>(100,30);
-
-    save_graph_properties<Vertex>(g_vvd, grp, "g_vvd", vertex_vals);
-    save_graph_properties<Graph_vertvecS_edgevecS_dir_vdesc >(g_vvd, grp, "g_vvd_desc", vertex_desc_vals);
-
-    test_vertex_data(g_vvd, grp, "g_vvd");
-    test_vertex_data_consistency(grp, "g_vvd");
-    test_vertex_data(g_vvd, grp, "g_vvd_desc");
-    test_vertex_data_consistency(grp, "g_vvd_desc");
+        // Check for matching data
+        BOOST_TEST(g_ids == std::get<1>(data_id));
+        BOOST_TEST(g_ints == std::get<1>(data_int));
+        BOOST_TEST(shape == std::get<0>(data_int));
+    }
 
     // Remove the graph testsfile
     std::remove("graph_testfile.h5");
 }
 
-/// Test if the data written to hdf5 matches the original data
-/// Also test consistency of boost iterator range
-template <typename GraphType, typename GRP_PTR>
-void test_edge_data(GraphType g, GRP_PTR grp, std::string name){
-
-    std::vector<float> g_weights;
-    std::vector<std::size_t > g_sources;
-    std::vector<std::size_t > g_targets;
-
-    // get original data with the same iterator range
-    for (auto e : boost::make_iterator_range(edges(g))) {
-        g_weights.push_back(g[e].weight);
-        g_sources.push_back(g[source(e, g)].id);
-        g_targets.push_back(g[target(e, g)].id);
-    }
-
-    // get the datasets
-    auto dset_weight = grp->open_group("weight")->open_dataset(name);
-    auto dset_sources = grp->open_group("_sources")->open_dataset(name);
-    auto dset_targets = grp->open_group("_targets")->open_dataset(name);
-
-    // read data
-    auto data_weight = dset_weight->template read<std::vector<float> >();
-    auto data_sources = dset_sources->template read<std::vector<std::size_t> >();
-    auto data_targets = dset_targets->template read<std::vector<std::size_t> >();
-
-    if ( g_weights != std::get<1>(data_weight)) {
-
-        throw std::runtime_error("Data \"weight\" written by "
-                                 "\"save_graph_properties\" does not match "
-                                 "original data");
-    }
-
-    if ( g_sources != std::get<1>(data_sources)) {
-
-        throw std::runtime_error("Data \"_sources\" written by "
-                                 "\"save_graph_properties\" does not match "
-                                 "original data");
-    }
-    if ( g_targets != std::get<1>(data_targets)) {
-
-        throw std::runtime_error("Data \"_targets\" written by "
-                                 "\"save_graph_properties\" does not match "
-                                 "original data");
-    }
-
-}
-
-/// Test consistency of data order
-template <typename GRP_PTR>
-void test_edge_data_consistency(GRP_PTR grp, std::string name){
-
-    // get the datasets
-    auto dset_sources = grp->open_group("_sources")->open_dataset(name);
-    auto dset_targets = grp->open_group("_targets")->open_dataset(name);
-    auto dset_sources2 = grp->open_group("_sources2")->open_dataset(name);
-    auto dset_targets2 = grp->open_group("_targets2")->open_dataset(name);
-
-    // read data
-    auto data_sources = dset_sources->template read<std::vector<std::size_t> >();
-    auto data_targets = dset_targets->template read<std::vector<std::size_t> >();
-    auto data_sources2 = dset_sources2->template read<std::vector<std::size_t> >();
-    auto data_targets2 = dset_targets2->template read<std::vector<std::size_t> >();
-
-
-
-    if ( std::get<1>(data_sources) != std::get<1>(data_sources2)) {
-
-        throw std::runtime_error("Data \"_sources\" and \"_sources2\" written "
-                                 "by \"save_graph_properties\" do not match");
-    }
-    if ( std::get<1>(data_sources) != std::get<1>(data_sources2)) {
-
-        throw std::runtime_error("Data \"_targets\" and \"_targets2\" written "
-                                 "by \"save_graph_properties\" do not match");
-    }
-}
-
-
-/// Test the save graph edge value functionality
-void test_save_graph_edge_value()
+/// Test the save_graph_entity_properties functionality for 2d data using
+/// vertex descriptors.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_properties_vertices_2d, G,
+                                LargeGraphsFixtures, G)
 {
-    using namespace Utopia::DataIO;
+    using Utopia::DataIO::save_graph_entity_properties;
 
     // Create a test HDFFile and a HDFGroup
     auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
     auto grp = hdf.open_group("testgroup");
 
-    auto edge_vals = std::make_tuple(
-            std::make_tuple("weight", [](auto& e){return e.weight;})
+    const auto vertex_desc_vals = std::make_tuple(
+            std::make_tuple("id_test_int", "dim0_name",
+                std::make_tuple("id",
+                        [](auto& vd, auto& g){return g[vd].id;}),
+                std::make_tuple("test_int",
+                        [](auto& vd, auto& g){return g[vd].test_int;})
+            )
     );
 
-    auto edge_desc_vals = std::make_tuple(
-            std::make_tuple("_sources",
-                    [](auto& g, auto& e){return g[source(e, g)].id;}),
-            std::make_tuple("_targets",
-                    [](auto& g, auto& e){return g[target(e, g)].id;}),
-            std::make_tuple("_sources2",
-                            [](auto& g, auto& e){return g[source(e, g)].id;}),
-            std::make_tuple("_targets2",
-                            [](auto& g, auto& e){return g[target(e, g)].id;})
-    );
+    save_vertex_properties(G::g, grp, "dset", vertex_desc_vals);
 
-    // Test case 1:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        // Do not test data for setS as the iterator range might differ
+        
+        std::vector<std::size_t> g_id;
+        std::vector<std::size_t> g_test_int;
 
-    // Set up graph
-    auto g_vvu = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_undir>(100,30);
+        // Get the original data with the same iterator range
+        for (const auto v : range<IterateOver::vertices>(G::g)) {
+            g_id.push_back(G::g[v].id);
+            g_test_int.push_back(G::g[v].test_int);
+        }
 
-    save_graph_properties<Edge>(g_vvu, grp, "g_vvu", edge_vals);
-    save_graph_properties<Graph_vertvecS_edgevecS_undir_edesc>(g_vvu, grp, "g_vvu", edge_desc_vals);
+        // Get the dataset
+        auto dset_id_test_int = grp->open_group("id_test_int")
+                                ->open_dataset("dset");
+        
+        // Read the data
+        auto data_id_test_int = std::get<1>(dset_id_test_int
+                                ->template read<std::vector<std::size_t>>());
+        auto data_id = std::vector<std::size_t>(
+                                            data_id_test_int.begin(),
+                                            data_id_test_int.begin() + 100);
+        auto data_test_int = std::vector<std::size_t>(
+                                            data_id_test_int.begin() + 100,
+                                            data_id_test_int.end());
 
-    test_edge_data(g_vvu, grp, "g_vvu");
-    test_edge_data_consistency(grp, "g_vvu");
-
-    // Test case 2:
-    //     vertex container: boost::listS
-    //     list container:   boost::listS
-
-    // Set up graph
-    auto g_llu = create_and_initialize_test_graph<Graph_vertlistS_edgelistS_undir>(100,30);
-
-    save_graph_properties<Edge>(g_llu, grp, "g_llu", edge_vals);
-    save_graph_properties<Graph_vertlistS_edgelistS_undir_edesc>(g_llu, grp, "g_llu", edge_desc_vals);
-
-    test_edge_data(g_llu, grp, "g_llu");
-    test_edge_data_consistency(grp, "g_llu");
-
-
-
-    // Test case 3:
-    //     vertex container: boost::setS
-    //     list container:   boost::setS
-
-    // Set up graph
-    auto g_ssu = create_and_initialize_test_graph<Graph_vertsetS_edgesetS_undir>(100,30);
-
-
-    save_graph_properties<Edge>(g_ssu, grp, "g_ssu", edge_vals);
-    save_graph_properties<Graph_vertsetS_edgesetS_undir_edesc>(g_ssu, grp, "g_ssu", edge_desc_vals);
-
-    test_edge_data_consistency(grp, "g_ssu");
-
-    // Test case 4:
-    //     vertex container: boost::vecS
-    //     list container:   boost::vecS
-    //     undirected graph
-
-    // Set up graph
-    auto g_vvd = create_and_initialize_test_graph<Graph_vertvecS_edgevecS_dir>(100,30);
-
-    save_graph_properties<Edge>(g_vvd, grp, "g_vvd", edge_vals);
-    save_graph_properties<Graph_vertvecS_edgevecS_dir_edesc >(g_vvd, grp, "g_vvd", edge_desc_vals);
-
-    test_edge_data(g_vvd, grp, "g_vvd");
-    test_edge_data_consistency(grp, "g_vvd");
-
+        // Check for matching data
+        BOOST_TEST(g_id == data_id);
+        BOOST_TEST(g_test_int == data_test_int);
+    }
 
     // Remove the graph testsfile
     std::remove("graph_testfile.h5");
 }
 
-int main() {
-    try {
-        // Setup
-        Utopia::setup_loggers();
+/// Test the save_graph_entity_properties functionality for 1d data using
+/// edge descriptors.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_properties_edges_1d, G,
+                                LargeGraphsFixtures, G)
+{
+    using Utopia::DataIO::save_graph_entity_properties;
 
-        // Run the test
-        test_save_graph();
-        test_save_graph_vertex_value();
-        test_save_graph_edge_value();
+    // Create a test HDFFile and a HDFGroup
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
+    auto grp = hdf.open_group("testgroup");
 
-        std::cout << "Tests successful." << std::endl;
-        return 0;
+    const auto edge_desc_vals = std::make_tuple(
+            std::make_tuple("weights",
+                    [](auto& ed, auto& g){return g[ed].weight;}),
+            std::make_tuple("sources",
+                    [](auto& ed, auto& g){return g[source(ed, g)].id;}),
+            std::make_tuple("targets",
+                    [](auto& ed, auto& g){return g[target(ed, g)].id;}),
+            std::make_tuple("sources2",
+                    [](auto& ed, auto& g){return g[source(ed, g)].id;}),
+            std::make_tuple("targets2",
+                    [](auto& ed, auto& g){return g[target(ed, g)].id;})
+    );
+
+    save_edge_properties(G::g, grp, "dset", edge_desc_vals);
+
+    // Get the datasets
+    auto dset_sources = grp->open_group("sources")->open_dataset("dset");
+    auto dset_targets = grp->open_group("targets")->open_dataset("dset");
+    auto dset_sources2 = grp->open_group("sources2")->open_dataset("dset");
+    auto dset_targets2 = grp->open_group("targets2")->open_dataset("dset");
+
+    // Read the data
+    auto data_sources = std::get<1>(dset_sources
+                                ->template read<std::vector<std::size_t>>());
+    auto data_targets = std::get<1>(dset_targets
+                                ->template read<std::vector<std::size_t>>());
+    auto data_sources2 = std::get<1>(dset_sources2
+                                ->template read<std::vector<std::size_t>>());
+    auto data_targets2 = std::get<1>(dset_targets2
+                                ->template read<std::vector<std::size_t>>());
+
+    // Assert the edge data consistency
+    BOOST_TEST( data_sources == data_sources2);
+    BOOST_TEST( data_targets == data_targets2);
+
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        // Do not test data for setS as the iterator range might differ
+
+        std::vector<float> g_weights;
+        std::vector<std::size_t> g_sources;
+        std::vector<std::size_t> g_targets;
+
+        // Get the original data with the same iterator range
+        for (const auto e : range<IterateOver::edges>(G::g)) {
+            g_weights.push_back(G::g[e].weight);
+            g_sources.push_back(G::g[source(e, G::g)].id);
+            g_targets.push_back(G::g[target(e, G::g)].id);
+        }
+
+        // Get additional test data
+        auto dset_weights = grp->open_group("weights")->open_dataset("dset");
+        auto data_weights = std::get<1>(dset_weights
+                                    ->template read<std::vector<float>>());
+
+        // Check for matching data
+        BOOST_TEST(g_weights == data_weights);
+        BOOST_TEST(g_sources == data_sources);
+        BOOST_TEST(g_targets == data_targets);
     }
-    catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        return 1;
+
+    // Remove the graph testsfile
+    std::remove("graph_testfile.h5");
+}
+
+/// Test the save_graph_entity_properties functionality for 2d data using
+/// edge descriptors.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_properties_edges_2d, G,
+                                LargeGraphsFixtures, G)
+{
+    using Utopia::DataIO::save_graph_entity_properties;
+
+    // Create a test HDFFile and a HDFGroup
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
+    auto grp = hdf.open_group("testgroup");
+
+    const auto edge_desc_vals = std::make_tuple(
+            std::make_tuple("edges1", "label",
+                std::make_tuple("source",
+                    [](auto& ed, auto& g){return g[source(ed, g)].id;}),
+                std::make_tuple("target",
+                    [](auto& ed, auto& g){return g[target(ed, g)].id;})
+            ),
+            std::make_tuple("edges2", "label",
+                std::make_tuple(123,
+                    [](auto& ed, auto& g){ return g[source(ed, g)].id; }),
+                std::make_tuple(456,
+                    [](auto& ed, auto& g){ return g[target(ed, g)].id; })
+            ),
+            std::make_tuple("edges3", "label",
+                std::make_tuple(1.23,
+                    [](auto& ed, auto& g){ return g[source(ed, g)].id; }),
+                std::make_tuple(4.56,
+                    [](auto& ed, auto& g){ return g[target(ed, g)].id; })
+            )
+    );
+
+    save_edge_properties(G::g, grp, "dset", edge_desc_vals);
+
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        // Do not test data for setS as the iterator range might differ
+        
+        std::vector<std::size_t> g_sources;
+        std::vector<std::size_t> g_targets;
+
+        // Get the original data with the same iterator range
+        for (const auto e : range<IterateOver::edges>(G::g)) {
+            g_sources.push_back(G::g[source(e, G::g)].id);
+            g_targets.push_back(G::g[target(e, G::g)].id);
+        }
+
+        // Get the edge data
+        auto dset_edges = grp->open_group("edges1")->open_dataset("dset");
+        auto data_edges = std::get<1>(dset_edges
+                                ->template read<std::vector<std::size_t>>());
+        auto edge_sources = std::vector<std::size_t>(data_edges.begin(),
+                                                     data_edges.begin() + 30);
+        auto edge_targets = std::vector<std::size_t>(data_edges.begin() + 30,
+                                                     data_edges.end());
+
+        // Check for matching data
+        BOOST_TEST(g_sources == edge_sources);
+        BOOST_TEST(g_targets == edge_targets);
     }
-    catch (...) {
-        std::cout << "Exception occurred!" << std::endl;
-        return 1;
+
+    // Don't remove the file for the last fixture as this will be used for
+    // checking the attributes
+    if (not std::is_same_v<typename G::Type, Graph_vertsetS_edgesetS_undir>) {
+        std::remove("graph_testfile.h5");
     }
+}
+
+/// Test that the attributes are written correctly in 'save_graph_entity_properties'
+BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph_entity_properties) {
+    // NOTE This test is only done for the last fixture of the test above.
+
+    // Read the HDF5 file
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","r");
+    auto grp = hdf.open_group("testgroup");
+    auto grp_edges = grp->open_group("edges1");
+    auto dset_edges = grp_edges->open_dataset("dset");
+
+    // Test that the group attribute is set correctly
+    HDFAttribute grp_edges_attr(*grp_edges, "is_edge_property");
+    auto attr_is_edge_prop = std::get<1>(grp_edges_attr.read<int>());
+    BOOST_TEST(attr_is_edge_prop == 1);
+    grp_edges_attr.close();
+
+    // Test that the dataset attributes are set correctly
+
+    HDFAttribute dset_edges_attr(*dset_edges, "dim_name__0");
+    auto attr_dim0_name = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_dim0_name == "label");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords_mode__label");
+    auto attr_cmode_label = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_cmode_label == "values");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords__label");
+    auto attr_c_label = std::get<1>(dset_edges_attr.read<
+                                                std::vector<std::string>>());
+    std::vector<std::string> c_label{"source", "target"};
+    BOOST_TEST(attr_c_label == c_label);
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "dim_name__1");
+    auto attr_dim1_name = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_dim1_name == "edge_idx");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords_mode__edge_idx");
+    auto attr_cmode_eidx = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_cmode_eidx == "trivial");
+    dset_edges_attr.close();
+
+    // Test that integer coordinates are written correctly
+
+    auto grp_int_coords = grp->open_group("edges2");
+    auto dset_int_coords = grp_int_coords->open_dataset("dset");
+
+    HDFAttribute grp_int_coords_attr(*dset_int_coords, "coords__label");
+    auto attr_c_label_int = std::get<1>(grp_int_coords_attr.read<
+                                                std::vector<int>>());
+    std::vector<int> c_label_int{123, 456};
+    BOOST_TEST(attr_c_label_int == c_label_int);
+    grp_int_coords_attr.close();
+
+    // Test that double coordinates are written correctly
+
+    auto grp_double_coords = grp->open_group("edges3");
+    auto dset_double_coords = grp_double_coords->open_dataset("dset");
+
+    HDFAttribute grp_double_coords_attr(*dset_double_coords, "coords__label");
+    auto attr_c_label_double = std::get<1>(grp_double_coords_attr.read<
+                                                std::vector<double>>());
+    std::vector<double> c_label_double{1.23, 4.56};
+    BOOST_TEST(attr_c_label_double == c_label_double);
+    grp_double_coords_attr.close();
+
+    // Remove the graph testsfile
+    std::remove("graph_testfile.h5");
 }
