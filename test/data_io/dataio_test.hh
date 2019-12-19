@@ -194,7 +194,7 @@ struct Vertex {
     double test_double;
     std::size_t id;
 
-    double get_test_value() {
+    double get_test_value() const {
         return test_double * test_int;
     }
 };
@@ -233,16 +233,6 @@ using Graph_vertvecS_edgevecS_dir =  boost::adjacency_list<
                                             boost::directedS,
                                             Vertex,             // vertex struct
                                             Edge>;              // edge struct
-
-using Graph_vertvecS_edgevecS_undir_vdesc = Graph_vertvecS_edgevecS_undir::vertex_descriptor;
-using Graph_vertlistS_edgelistS_undir_vdesc = Graph_vertlistS_edgelistS_undir::vertex_descriptor;
-using Graph_vertsetS_edgesetS_undir_vdesc = Graph_vertsetS_edgesetS_undir ::vertex_descriptor;
-using Graph_vertvecS_edgevecS_dir_vdesc = Graph_vertvecS_edgevecS_dir::vertex_descriptor;
-
-using Graph_vertvecS_edgevecS_undir_edesc = Graph_vertvecS_edgevecS_undir::edge_descriptor;
-using Graph_vertlistS_edgelistS_undir_edesc = Graph_vertlistS_edgelistS_undir::edge_descriptor;
-using Graph_vertsetS_edgesetS_undir_edesc = Graph_vertsetS_edgesetS_undir ::edge_descriptor;
-using Graph_vertvecS_edgevecS_dir_edesc = Graph_vertvecS_edgevecS_dir::edge_descriptor;
 
 /// Creates a small test graph
 template<typename GraphType>
