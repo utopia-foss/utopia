@@ -39,45 +39,40 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 These instructions are intended for 'clean' __Ubuntu__ (18.04) or __macOS__
 setups.
 
-If you encounter difficulties, it's worth having a look at the [troubleshooting section](#troubleshooting).
+If you encounter problems, it's worth having a look at the [**troubleshooting section**](#troubleshooting) below.
 If this does not resolve your installation problems, [file an issue in the GitLab project](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues).
 
 
-#### 1 — Get access to the repository
-To work comfortably with Utopia, access to the GitLab needs to be easy.
-The best way to achieve that is by registering a so-called SSH key with your
-GitLab account.
-
-To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ce/ssh/#generating-a-new-ssh-key-pair)
-and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
-
-
-#### 2 — Cloning Utopia
+#### 1 — Cloning Utopia
 First, create a `Utopia` directory at a place of your choice.
-This is where the Utopia repository will be stored.
+This is where the Utopia repository will be cloned to.
 When working with or developing for Utopia, auxilary data will have a place
-here as well.
+there as well.
 
 In your terminal, enter the `Utopia` directory you just created.
 
-With access to the Utopia GitLab project, you can clone the repository to that
-directory using the following command:
+Now, get a clone URL via the _Clone_ button in the top right-hand corner of the [Utopia project page](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia).  
+If you are a developer or CCEES group member, you should [get an SSH key registered](#ssh-repository-access) with the GitLab and use the SSH address.
+Otherwise, use the HTTPS address.
+
+To clone the repository, use the following command and add the chosen clone URL at the indicated place:
 
 ```bash
-git clone --recurse-submodules ssh://git@ts-gitlab.iup.uni-heidelberg.de:10022/utopia/utopia.git
+git clone --recurse-submodules UTOPIA-CLONE-URL
 ```
 
-Inside your top level `Utopia` directory, there will now be a `utopia`
-directory, which mirrors this repository.
+After cloning, there will be a new `utopia`
+directory (mirroring this repository) inside your top-level `Utopia` directory.
 
 _Note:_ Utopia uses [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules); with the `--recurse-submodules` option, the submodule repositories are automatically cloned alongside the `utopia` repository.
 
 
-#### 3 — Install dependencies
+#### 2 — Install dependencies
 Install the third-party dependencies using a package manager.
 
 _Note:_ If you have [Anaconda](https://www.anaconda.com/) installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
-However, notice that there might be issues during [the configuration step](#4-configure-and-build). Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
+However, notice that there might be issues during [the configuration step](#4-configure-and-build).
+Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
 ##### On Ubuntu 18.04
 
@@ -119,7 +114,7 @@ brew update
 brew install ffmpeg graphviz doxygen
 ```
 
-#### 4 — Configure and build
+#### 3 — Configure and build
 Enter the repository and create your desired build directory:
 
 ```bash
@@ -142,7 +137,7 @@ make dummy     # builds only the dummy model
 make -j4 all   # builds all models, using 4 CPUs
 ```
 
-#### 5 — Run a model :tada:
+#### 4 — Run a model :tada:
 You should now be able to run a Utopia model.
 Being in the `build` directory, call:
 
@@ -238,6 +233,14 @@ See [below](#building-the-documentation-locally) on how to build the documentati
 <!-- ###################################################################### -->
 
 ## Information for Developers
+### SSH Repository Access
+To work comfortably with Utopia, access to the GitLab needs to be easy.
+The best way to achieve that is by registering a so-called SSH key with your
+GitLab account.
+
+To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ce/ssh/#generating-a-new-ssh-key-pair)
+and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
+
 ### New to Utopia? How do I implement a model?
 Aside from exploring the already existing models, you should check out the guides in the [documentation](#utopia-documentation)) which will get you started for implementing your own, fancy, new Utopia model. :tada:
 
@@ -476,28 +479,36 @@ Check out the [troubleshooting section](#troubleshooting) if this fails.
 <!-- ###################################################################### -->
 
 ## Troubleshooting
-* If the `cmake ..` command failed during resolution of the Python
-    dependencies it is probably due to the configuration routine attempting to
-    load the packages via SSH and you not having access to the GitLab.
-    To fix this, the most comfortable solution is to register your SSH key
-    with the GitLab; you can follow [these](https://docs.gitlab.com/ce/ssh)
-    instructions to do so.  
-    Alternatively, you can manually install the Python dependencies into the
-    virtual environment:
+* If you have a previous installation and the **build fails inexplicably**,
+    removing the `build` directory completely and starting anew from the
+    [configuration step](#3-configure-and-build) should help.  
+    In cases where the installation _used_ to work but at some point _stopped_ working, this should be a general remedy.
+
+* In cases where you encounter errors with the **model registry**, it helps to
+    remove the registry entries of all models and regenerate them:
 
     ```bash
+    utopia models rm --all
     cd build
-    source ./activate
-    pip install git+https://...
+    cmake ..
     ```
 
-    The URLs to use for cloning can be found by following the links in the
-    [dependency table](#dependencies); if these dependencies change, you will
-    have to manually update them.
-    Note that deleting the build directory will also require to install the
-    dependencies anew.
+* If at some point the `spdlog` and `yaml-cpp` dependencies are updated, you
+    might need to update the git **submodules**. To get the current version, call:
 
-* Anaconda ships its own version of the HDF5 library which is _not_
+    ```bash
+    git submodule update
+    ```
+
+    This will perform a `git checkout` of the specified commit in all
+    submodules. To fetch data of submodules that were not previously available
+    on your branch, call the following command:
+
+    ```bash
+    git submodule update --init --recursive
+    ```
+
+* **Anaconda** ships its own version of the HDF5 library which is _not_
     compatible with Utopia. To tell CMake where to find the correct version of
     the library, add the following argument (without the comments!) to the
     `cmake ..` command during [configuration](#4-configure-and-build):
@@ -512,32 +523,4 @@ Check out the [troubleshooting section](#troubleshooting) if this fails.
     ```bash
     cd build
     cmake -DHDF5_ROOT=/usr/ ..
-    ```
-
-* If you have a previous installation and the build fails inexplicably,
-    removing the `build` directory completely and starting anew from the
-    [configuration step](#4-configure-and-build) should help.
-
-* In cases where you encounter errors with the model registry, it helps to
-    remove the registry entries of all models and regenerate them:
-
-    ```bash
-    utopia models rm --all
-    cd build
-    cmake ..
-    ```
-
-* If at some point the `spdlog` and `yaml-cpp` dependencies are updated, you
-    might need to update the git submodules. To get the current version, call:
-
-    ```bash
-    git submodule update
-    ```
-
-    This will perform a `git checkout` of the specified commit in all
-    submodules. To fetch data of submodules that were not previously available
-    on your branch, call the following command:
-
-    ```bash
-    git submodule update --init --recursive
     ```
