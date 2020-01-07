@@ -1,6 +1,5 @@
 """Tests the WorkerManager class"""
 
-import os
 import time
 import queue
 import pkg_resources
@@ -8,10 +7,8 @@ import pkg_resources
 import numpy as np
 import pytest
 
-from utopya.workermanager import (WorkerManager,
-                                  WorkerManagerTotalTimeout,
-                                  WorkerTaskNonZeroExit)
-from utopya.task import sigmap
+from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
+from utopya.task import SIGMAP
 from utopya.yaml import load_yml
 
 # Some constants
@@ -271,7 +268,7 @@ def test_signal_workers(wm, longer_sleep_task):
 
     # Check if they were all killed
     for task in wm.tasks:
-        assert task.worker_status == -sigmap['SIGKILL']
+        assert task.worker_status == -SIGMAP['SIGKILL']
 
     # Same again for other specific signals
     for _ in range(3):
@@ -280,7 +277,7 @@ def test_signal_workers(wm, longer_sleep_task):
     wm.start_working(post_poll_func=ppf)
 
     for task in wm.tasks[-3:]:
-        assert task.worker_status in [-sigmap['SIGTERM'], -sigmap['SIGKILL']]
+        assert task.worker_status in [-SIGMAP['SIGTERM'], -SIGMAP['SIGKILL']]
         # NOTE sleep task _might_ not allow SIGTERM, will then be killed
     
     for _ in range(3):
@@ -289,7 +286,7 @@ def test_signal_workers(wm, longer_sleep_task):
     wm.start_working(post_poll_func=ppf)
 
     for task in wm.tasks[-3:]:
-        assert task.worker_status == -sigmap['SIGINT']
+        assert task.worker_status == -SIGMAP['SIGINT']
 
     # And invalid signalling value; needs to be a valid signal _name_
     wm.add_task(**sleep_task)

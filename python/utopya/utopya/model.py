@@ -5,11 +5,9 @@ import logging
 from tempfile import TemporaryDirectory
 from typing import Tuple
 
-from .model_registry import (MODELS, ModelInfoBundle,
-                             get_info_bundle, load_model_cfg)
+from .model_registry import ModelInfoBundle, get_info_bundle, load_model_cfg
 from .multiverse import Multiverse, FrozenMultiverse
 from .datamanager import DataManager
-from .model_registry import ModelInfoBundle
 
 # Get a logger
 log = logging.getLogger(__name__)
@@ -24,7 +22,7 @@ class Model:
     """
 
     def __init__(self, *, name: str=None, info_bundle: ModelInfoBundle=None,
-                 base_dir: str=None, sim_errors: str='raise',
+                 base_dir: str=None, sim_errors: str=None,
                  use_tmpdir: bool=False):
         """Initialize the ModelTest for the given model name
         
@@ -33,7 +31,7 @@ class Model:
                 given, need to pass info_bundle.
             info_bundle (ModelInfoBundle, optional): The required information
                 to work with this model. If not given, will attempt to find the
-                model in the model registry via ``name``. 
+                model in the model registry via ``name``.
             base_dir (str, optional): For convenience, can specify this path
                 which will be seen as the base path for config files; if set,
                 arguments that allow specifying configuration files can specify
@@ -44,6 +42,9 @@ class Model:
                 flag can be overwritten in the create_mv and create_run_load
                 methods. For ``false``, the regular model output
                 directory is used.
+        
+        Raises:
+            ValueError: Upon bad base_dir
         """
         # Determine model info bundle to use (via Multiverse class method)
         self._info_bundle = get_info_bundle(model_name=name,
@@ -161,10 +162,10 @@ class Model:
         # Also set the exit handling value, if not already set
         # TODO do this in a more elegant way
         _se = self._sim_errors
-        if 'worker_manager' not in update_meta_cfg:
+        if _se and 'worker_manager' not in update_meta_cfg:
             update_meta_cfg['worker_manager'] = dict(nonzero_exit_handling=_se)
 
-        elif 'nonzero_exit_handling' not in update_meta_cfg['worker_manager']:
+        elif _se and 'nonzero_exit_handling' not in update_meta_cfg['worker_manager']:
             update_meta_cfg['worker_manager']['nonzero_exit_handling'] = _se
 
         # else: entry was already set; don't set it again
@@ -224,11 +225,9 @@ class Model:
 
     def _store_mv(self, mv: Multiverse, **kwargs) -> None:
         """Stores a created Multiverse object and all the kwargs in a dict"""
-        self._mvs.append(dict(mv=mv, **kwargs)) 
+        self._mvs.append(dict(mv=mv, **kwargs))
 
     def _create_tmpdir(self) -> TemporaryDirectory:
         """Create a TemporaryDirectory"""
         return TemporaryDirectory(prefix=self.name,
                                   suffix="_mv{}".format(len(self._mvs)))
-        
-        

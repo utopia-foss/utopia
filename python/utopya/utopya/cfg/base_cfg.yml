@@ -77,8 +77,8 @@ reporter:
     # Creates a report file containing runtime statistics
     report_file:
       parser: sim_report
-      write_to: 
-        file: 
+      write_to:
+        file:
           path: _report.txt
       min_report_intv: 10     # update the file if min_report_intv seconds have passed.
 
@@ -100,7 +100,7 @@ worker_manager:
   #       read from the line buffer frequently enough.
 
   # How to react upon a simulation exiting with non-zero exit code
-  nonzero_exit_handling: warn_all
+  nonzero_exit_handling: raise
   # can be: ignore, warn, warn_all, raise
   # warn_all will also warn if the simulation was terminated by the frontend
   # raise will lead to a SystemExit with the error code of the simulation
@@ -172,7 +172,7 @@ worker_kwargs:
   save_streams: true
   # This file is saved only after the WorkerTask has finished in order to
   # reduce I/O operations on files
-  
+
   # Whether to forward the streams to stdout
   forward_streams: in_single_run
   # can be: true, false, or 'in_single_run' (print only in single runs)
@@ -325,7 +325,7 @@ data_manager:
     #     └┬ 0
     #        └┬ cfg
     #         └ data
-    #           └─ ...         
+    #           └─ ...
     #      ├ 1
     #      ...
 
