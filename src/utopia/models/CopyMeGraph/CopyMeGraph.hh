@@ -177,6 +177,9 @@ private:
     // ... but you should definitely check out the documentation ;)
 
     // -- Members -------------------------------------------------------------
+    /// A re-usable uniform real distribution to evaluate probabilities
+    std::uniform_real_distribution<double> _prob_distr;
+    
     /// The graph
     GraphType _g;
 
@@ -185,9 +188,6 @@ private:
 
     // More parameters here ...
 
-
-    /// A re-usable uniform real distribution to evaluate probabilities
-    std::uniform_real_distribution<double> _prob_distr;
 
     // .. Temporary objects ...................................................
 
@@ -215,6 +215,9 @@ public:
         // Initialize first via base model
         Base(name, parent),
 
+        // Initialize the uniform real distribution to range [0., 1.]
+        _prob_distr(0., 1.),
+
         // Now initialize the graph
         _g{initialize_graph()},
 
@@ -222,8 +225,6 @@ public:
         _some_parameter(get_as<double>("some_parameter", this->_cfg)),
         // ...
 
-        // Initialize the uniform real distribution to range [0., 1.]
-        _prob_distr(0., 1.),
 
         // Datasets
         // For setting up datasets that store Graph data, you can use the
