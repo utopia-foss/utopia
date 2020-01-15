@@ -35,10 +35,10 @@ starting conditions for different scenarios:
         * Recommended if you do not need a Cellular Automaton or a Graph.
         * Recommended if you are proficient with Utopia.
 
-You should now decide with which model you want to start with. This can be such
-a ``CopyMe`` model, or some other model.
-Below, you will need to replace all mentions of ``CopyMe`` with the name of
-the model of your choice.
+You should now decide with which model you want to start with.
+This can be one of the above ``CopyMe`` models or some other model.
+
+⚠️ Below, you will need to replace all mentions of ``CopyMe`` with the name of the model of your choice.
   
 
 Choosing a name for your model
@@ -69,7 +69,7 @@ The following will involve a lot of copying and renaming, so make sure to be con
 
     .. code-block:: bash
 
-        (utopia-env) $ utopia models copy CopyMe --new-name MyFancyModel
+        (utopia-env) $ utopia models copy ModelToCopy --new-name MyFancyModel
 
     If you let the CLI do this step for you, most of the steps below are already covered.
     It still makes sense to go through the individual steps and read the remarks, such that you get an idea of what the CLI tool actually did.
