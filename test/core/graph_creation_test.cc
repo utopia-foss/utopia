@@ -50,8 +50,10 @@ struct CreateGraphFix : GraphFix, DiGraphFix {
 BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
 {
     // .. undirected graphs ...................................................
-    // A map in which to store the graph for each model
+    // A map in which to store the graph for each model (for mean_degree>0)
     std::vector<Graph> g_vec;
+    // A separate map for the graphs with mean degree zero
+    std::vector<Graph> g_deg0_vec;
 
     // Fill the map with undirected graphs for each model
     for (const auto& model_map : cfg){
@@ -65,15 +67,27 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
             BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(model_cfg, rng),
                               std::runtime_error);
         }
+        else if (model_cfg["mean_degree"].as<std::size_t>() == 0){
+            g_deg0_vec.push_back(Utopia::Graph::create_graph<Graph>(model_cfg,
+                                                                    rng));
+        }
         else{
             g_vec.push_back(Utopia::Graph::create_graph<Graph>(model_cfg, rng));
         }
     }
 
-    // Check that all created graphs have 10 vertices and edges (mean_degree=2)
+    // Check that all created graphs with mean_degree>0 have 10 vertices and
+    // 10 edges (mean_degree=2)
     for (const auto& g : g_vec){
         BOOST_TEST(boost::num_vertices(g) == 10);
         BOOST_TEST(boost::num_edges(g) == 10);
+    }
+
+    // Check that all created graphs with mean_degree=0 have 10 vertices and
+    // 0 edges
+    for (const auto& g : g_deg0_vec){
+        BOOST_TEST(boost::num_vertices(g) == 10);
+        BOOST_TEST(boost::num_edges(g) == 0);
     }
 
     // For regular graphs check that all vertices have the same correct number
@@ -89,8 +103,10 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
     
 
     // .. directed graphs ...................................................
-    // A map in which to store the graph for each model
+    // A map in which to store the graph for each model (for mean_degree>0)
     std::vector<DiGraph> g_vec_dir;
+    // A separate map for the graphs with mean degree zero
+    std::vector<DiGraph> g_deg0_vec_dir;
 
     // Fill the map with directed graphs for each model
     // Fill the map with undirected graphs for each model
@@ -109,18 +125,29 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
             auto g = Utopia::Graph::create_graph<DiGraph>(model_cfg, rng);
             BOOST_TEST(boost::num_vertices(g) == 10);
         }
+        else if (model_cfg["mean_degree"].as<std::size_t>() == 0){
+            g_deg0_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(
+                                                            model_cfg, rng));
+        }
         else{
             g_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(model_cfg, 
                                                                      rng));
         }
     }
 
-    // Check that all created graphs have 10 vertices and 20 edges (mean_degree=2)
+    // Check that all created graphs with mean_degree>0 have 10 vertices and
+    // 20 edges (mean_degree=2)
     for (const auto& g : g_vec_dir){
         BOOST_TEST(boost::num_vertices(g) == 10);
         BOOST_TEST(boost::num_edges(g) == 20);
     }
 
+    // Check that all created graphs with mean_degree=0 have 10 vertices and
+    // 0 edges
+    for (const auto& g : g_deg0_vec_dir){
+        BOOST_TEST(boost::num_vertices(g) == 10);
+        BOOST_TEST(boost::num_edges(g) == 0);
+    }
 
     // For regular graphs check that all vertices have the same correct number
     // of edges
