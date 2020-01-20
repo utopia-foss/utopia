@@ -515,6 +515,12 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
                                  double p_rewire,
                                  RNG& rng)
 {
+    // In the case of zero mean degree create a graph with no edges. This is
+    // done manually as the boost::small_world_iterator behaves differently.
+    if (mean_degree == 0) {
+        return Graph{num_vertices};
+    }
+    
     // Create an empty graph
     Graph g;
 

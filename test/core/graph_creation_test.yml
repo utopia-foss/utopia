@@ -1,6 +1,6 @@
-
 ---
 # Working graph creation test cases
+
 regular:
   model: regular
   num_vertices: 10
@@ -68,4 +68,31 @@ BollobasRiordan:
     gamma: 0.
     del_in: 0.
     del_out: 0.5
+
+regularZeroDeg:
+  model: regular
+  num_vertices: 10
+  mean_degree: 0
+
+ErdosRenyiZeroDeg:
+  model: ErdosRenyi
+  num_vertices: 10
+  mean_degree: 0
+  ErdosRenyi:
+    parallel: false
+    self_edges: false
+
+WattsStrogatzZeroDeg:
+  model: WattsStrogatz
+  num_vertices: 10
+  mean_degree: 0
+  WattsStrogatz:
+    p_rewire: 0.2
+
+BarabasiAlbertZeroDeg:
+  model: BarabasiAlbert
+  num_vertices: 10
+  mean_degree: 0
+  BarabasiAlbert:
+    parallel: false
   
