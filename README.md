@@ -146,7 +146,9 @@ source ./activate
 ```
 
 to enter the virtual environment, where the Utopia Command Line Interface (CLI) is available.
-The `utopia` command gives you control over running and evaluating model simulations:
+(If you later want to exit the virtual environment, call the `deactivate` command.)
+
+The `utopia` command is now available and gives you control over running and evaluating model simulations:
 
 ```bash
 utopia run dummy
@@ -182,6 +184,7 @@ source ./build/activate
 ```
 
 Now, your shell should be prefixed with `(utopia-env)`.
+(To exit the virtual environment, simply call `deactivate`.)
 All the following should take place inside this virtual environment.
 
 As you have already done with the `dummy` model, the basic command to run a model named `SomeModel` is:
