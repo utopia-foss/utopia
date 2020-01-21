@@ -12,9 +12,10 @@ variables:
 
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
+  BASE_IMAGE_UBUNTU_VERSION: eoan   # NOTE Adjust upon new Ubuntu Release
+  BASE_IMAGE_VERSION: "1"           # NOTE Increment when changing dockerfile
   BASE_IMAGE_NAME: ccees/utopia-base
-  BASE_IMAGE_VERSION: "3.0"
-  BASE_IMAGE: "${BASE_IMAGE_NAME}:v${BASE_IMAGE_VERSION}"
+  BASE_IMAGE: "${BASE_IMAGE_NAME}:${BASE_IMAGE_UBUNTU_VERSION}-v${BASE_IMAGE_VERSION}"
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
 
@@ -147,7 +148,10 @@ setup:utopia-base:
     - master
     - web
   script:
-    - docker build -f docker/utopia-base.dockerfile -t $BASE_IMAGE .
+    - docker build -f docker/utopia-base.dockerfile
+                   -t $BASE_IMAGE
+                   --build-arg UBUNTU_VERSION=${BASE_IMAGE_UBUNTU_VERSION}
+                   .
     - docker push $BASE_IMAGE
 
 
