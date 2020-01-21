@@ -112,8 +112,10 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
     auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","r");
     auto grp = hdf.open_group("testgroup");
     auto ggrp = grp->open_group("testgraph");
+    auto dset_vertices = ggrp->open_dataset("_vertices");
+    auto dset_edges = ggrp->open_dataset("_edges");
 
-    // Test that the group attribute is set correctly
+    // Test that the group attributes are set correctly
     HDFAttribute ggrp_attr(*ggrp, "content");
     auto attr_content = std::get<1>(ggrp_attr.read<std::string>());
     BOOST_TEST(attr_content == "network");
@@ -138,6 +140,47 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
     auto attr_num_edges = std::get<1>(ggrp_attr.read<size_t>());
     BOOST_TEST(attr_num_edges == 3);
     ggrp_attr.close();
+
+    // Test that the edge dataset attributes are set correctly
+
+    HDFAttribute dset_edges_attr(*dset_edges, "dim_name__0");
+    auto attr_dim0_name = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_dim0_name == "label");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords_mode__label");
+    auto attr_cmode_label = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_cmode_label == "values");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords__label");
+    auto attr_c_label = std::get<1>(dset_edges_attr.read<
+                                                std::vector<std::string>>());
+    std::vector<std::string> c_label{"source", "target"};
+    BOOST_TEST(attr_c_label == c_label);
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "dim_name__1");
+    auto attr_dim1_name = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_dim1_name == "edge_idx");
+    dset_edges_attr.close();
+
+    dset_edges_attr.open(*dset_edges, "coords_mode__edge_idx");
+    auto attr_cmode_eidx = std::get<1>(dset_edges_attr.read<std::string>());
+    BOOST_TEST(attr_cmode_eidx == "trivial");
+    dset_edges_attr.close();
+
+    // Test that the vertex dataset attributes are set correctly
+
+    HDFAttribute dset_vertices_attr(*dset_vertices, "dim_name__0");
+    auto v_attr_dim0_name = std::get<1>(dset_vertices_attr.read<std::string>());
+    BOOST_TEST(v_attr_dim0_name == "vertex_idx");
+    dset_vertices_attr.close();
+
+    dset_vertices_attr.open(*dset_vertices, "coords_mode__vertex_idx");
+    auto v_attr_cmode_label = std::get<1>(dset_vertices_attr.read<std::string>());
+    BOOST_TEST(v_attr_cmode_label == "trivial");
+    dset_vertices_attr.close();
 
     // Remove the graph testsfile
     std::remove("graph_testfile.h5");
