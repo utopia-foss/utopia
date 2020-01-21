@@ -30,6 +30,56 @@ namespace DataIO {
 
 namespace GraphUtilsHelper{
 
+/** This function opens the vertex and edge datasets for a single graph and
+ *  adds attributes.
+ * @details Via the attributes the size of the graph is stored and the trivial
+ *          coordinates (i.e. vertex idx and edge idx) are added.
+ *
+ * @tparam        Graph
+ *
+ * @param g       The graph to save
+ * @param grp     The HDFGroup the graph should be stored in
+ *
+ * @return std::pair<std::shared_ptr<HDFDataset<HDFGroup>>,
+ *                   std::shared_ptr<HDFDataset<HDFGroup>>>
+ *         Pair containing [vertex dataset, edge dataset]
+ */
+template <typename Graph>
+std::pair<std::shared_ptr<HDFDataset<HDFGroup>>,
+          std::shared_ptr<HDFDataset<HDFGroup>>>
+setup_graph_containers(const Graph& g, const std::shared_ptr<HDFGroup>& grp)
+{
+    // Collect some information on the graph
+    const auto num_vertices = boost::num_vertices(g);
+    const auto num_edges    = boost::num_edges(g);
+
+    // Get a logger to use here (Note: needs to have been setup beforehand)
+    spdlog::get("data_io")->info("Saving graph with {} vertices and {} edges "
+                                 "...", num_vertices, num_edges);
+
+    // Store additional metadata in the group attributes
+    grp->add_attribute("num_vertices", num_vertices);
+    grp->add_attribute("num_edges", num_edges);
+
+    // Initialize datasets to store vertices and edges in
+    auto dset_vertices = grp->open_dataset("_vertices", { num_vertices });
+    auto dset_edges = grp->open_dataset("_edges", { 2, num_edges });
+    // NOTE Need shape to be {2, num_edges} because write writes line by line.
+
+    // Set attributes
+    dset_vertices->add_attribute("dim_name__0", "vertex_idx");
+    dset_vertices->add_attribute("coords_mode__vertex_idx", "trivial");
+
+    dset_edges->add_attribute("dim_name__0", "label");
+    dset_edges->add_attribute("coords_mode__label", "values");
+    dset_edges->add_attribute("coords__label",
+                              std::vector<std::string>{"source", "target"});
+    dset_edges->add_attribute("dim_name__1", "edge_idx");
+    dset_edges->add_attribute("coords_mode__edge_idx", "trivial");
+
+    return std::make_pair(dset_vertices, dset_edges);
+}
+
 /// Builds new tuple containing all elements but the first two
 template <typename First, typename Second, typename... Tail>
 constexpr std::tuple<Tail...> tuple_tail(const std::tuple<First, Second,
@@ -275,43 +325,28 @@ template <typename Graph>
 void
 save_graph(const Graph& g, const std::shared_ptr<HDFGroup>& grp)
 {
-    // Collect some information on the graph
-    const auto num_vertices = boost::num_vertices(g);
-    const auto num_edges    = boost::num_edges(g);
-
-    // Get a logger to use here (Note: needs to have been setup beforehand)
-    auto log = spdlog::get("data_io");
-    log->info("Saving graph with {} vertices and {} edges ...",
-              num_vertices,
-              num_edges);
-
-    // Store additional metadata in the group attributes
-    grp->add_attribute("num_vertices", num_vertices);
-    grp->add_attribute("num_edges", num_edges);
-
-    // Initialize datasets to store vertices and edges in
-    auto dset_vl = grp->open_dataset("_vertices", { num_vertices });
-    auto dset_al = grp->open_dataset("_edges", { 2, num_edges });
-    // NOTE Need shape to be {2, num_edges} because write writes line by line.
+    // Create and prepare the datasets for vertices and edges
+    auto [dset_vertices,
+          dset_edges] = GraphUtilsHelper::setup_graph_containers(g, grp);
 
     // Save vertex list
     auto [v, v_end] = boost::vertices(g);
-    dset_vl->write(v, v_end, [&](auto vd) {
+    dset_vertices->write(v, v_end, [&](auto vd) {
         return boost::get(boost::vertex_index_t(), g, vd);
     });
 
     // Save edges
     // NOTE Need to call write twice to achieve the desired data shape.
     auto [e, e_end] = boost::edges(g);
-    dset_al->write(e, e_end, [&](auto ed) {
+    dset_edges->write(e, e_end, [&](auto ed) {
         return boost::get(boost::vertex_index_t(), g, boost::source(ed, g));
     });
 
-    dset_al->write(e, e_end, [&](auto ed) {
+    dset_edges->write(e, e_end, [&](auto ed) {
         return boost::get(boost::vertex_index_t(), g, boost::target(ed, g));
     });
 
-    log->debug("Graph saved.");
+    spdlog::get("data_io")->debug("Graph saved.");
 }
 
 /// Write function for a boost::Graph
@@ -334,42 +369,27 @@ save_graph(const Graph&                       g,
            const std::shared_ptr<HDFGroup>&   grp,
            const PropertyMap                  vertex_ids)
 {
-    // Collect some information on the graph
-    const auto num_vertices = boost::num_vertices(g);
-    const auto num_edges    = boost::num_edges(g);
-
-    // Get a logger to use here (Note: needs to have been setup beforehand)
-    auto log = spdlog::get("data_io");
-    log->info("Saving graph with {} vertices and {} edges ...",
-              num_vertices,
-              num_edges);
-
-    // Store additional metadata in the group attributes
-    grp->add_attribute("num_vertices", num_vertices);
-    grp->add_attribute("num_edges", num_edges);
-
-    // Initialize datasets to store vertices and adjacency lists in
-    auto dset_vl = grp->open_dataset("_vertices", { num_vertices });
-    auto dset_al = grp->open_dataset("_edges", { 2, num_edges });
-    // NOTE Need shape to be {2, num_edges} because write writes line by line.
+    // Create and prepare the datasets for vertices and edges
+    auto [dset_vertices,
+          dset_edges] = GraphUtilsHelper::setup_graph_containers(g, grp);
 
     // Save vertex list
     auto [v, v_end] = boost::vertices(g);
-    dset_vl->write(
+    dset_vertices->write(
         v, v_end, [&](auto vd) { return boost::get(vertex_ids, vd); });
 
     // Save edges
     // NOTE Need to call write twice to achieve the desired data shape.
     auto [e, e_end] = boost::edges(g);
-    dset_al->write(e, e_end, [&](auto ed) {
+    dset_edges->write(e, e_end, [&](auto ed) {
         return boost::get(vertex_ids, boost::source(ed, g));
     });
 
-    dset_al->write(e, e_end, [&](auto ed) {
+    dset_edges->write(e, e_end, [&](auto ed) {
         return boost::get(vertex_ids, boost::target(ed, g));
     });
 
-    log->debug("Graph saved.");
+    spdlog::get("data_io")->debug("Graph saved.");
 }
 
 /** This function writes the results of all functions in a named tuple,
