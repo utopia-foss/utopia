@@ -307,12 +307,23 @@ What is this business with the configuration files and how can you actually chan
   - In it, to keep things sorted, create another directory named ``test``
   - Inside of the ``~/utopia_cfgs/SandPile/test/`` folder create an empty ``run.yml`` file
 
+.. hint::
+
+    You can create a directory and an empty plain text file right from the terminal:
+
+    .. code-block:: console
+
+        $ mkdir -p ~/utopia_cfgs/SandPile/test
+        $ touch ~/utopia_cfgs/SandPile/test/run.yml
+
+    The created file can then be opened in the text editor of your choice.
+
 Now, copy the following lines into it:
 
 .. code-block:: yaml
 
-  ---
   # The run.yml configuration file for a test simulation of the SandPile model.
+  ---
   parameter_space:
     # Number of simulation steps
     num_steps: 2000
