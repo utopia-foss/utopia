@@ -1,5 +1,5 @@
-<!-- Set the title to: "Update support/<tag>" -->
-<!-- Replace TAG with the actual version numbers everywhere -->
+<!-- Set the title to: "Update support/TAG" -->
+<!-- Replace TAG with the Ubuntu release name -->
 
 ### What does this MR do?
 

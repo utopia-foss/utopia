@@ -12,7 +12,7 @@ _fill this in_
 - [ ] Implemented / improved the model
 - [ ] Added or adapted model tests
    - [ ] Python tests
-   - [ ] ~~C++ tests~~ __(optional)__
+   - [ ] ~~C++ tests~~ _(optional)_
    - [ ] Added model to `test:models` job in [`.gitlab-ci.yml`](.gitlab-ci.yml)
    - [ ] Checked [test code coverage](README.md#evaluating-test-code-coverage) on new and adjusted code
 - [ ] Implemented plotting functions
@@ -23,6 +23,7 @@ _fill this in_
 - [ ] Reasonably up-to-date with current master
 - [ ] Pipeline passing without warnings
 - [ ] Squash option set <!-- unless there's a good reason not to squash -->
+- [ ] Set labels to pick this MR into support branches <!-- if applicable -->
 - [ ] Approved by @ ... <!-- Add reviewer(s) here once no longer WIP -->
 
 
