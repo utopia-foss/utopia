@@ -7,7 +7,7 @@ if (POLICY CMP0074)
 endif ()
 
 # --- BOOST ---
-find_package(Boost 1.62 REQUIRED
+find_package(Boost 1.67 REQUIRED
              COMPONENTS unit_test_framework)
 
 # --- HDF5 ---
