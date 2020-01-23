@@ -12,9 +12,9 @@
 
 # search Python (different routines depending on CMake version)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
-    find_package(Python 3.6 REQUIRED)
+    find_package(Python 3.7 REQUIRED)
 else ()
-    find_package(PythonInterp 3.6 REQUIRED)
+    find_package(PythonInterp 3.7 REQUIRED)
     set (Python_EXECUTABLE ${PYTHON_EXECUTABLE})
 endif ()
 

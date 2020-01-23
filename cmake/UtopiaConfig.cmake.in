@@ -30,7 +30,7 @@ include(UtopiaAddModelTest)
 # but implicitly uses QUIET and REQUIRED.
 include(CMakeFindDependencyMacro)
 
-find_dependency(Boost 1.62
+find_dependency(Boost 1.67
                 COMPONENTS unit_test_framework)
 
 set(THREADS_PREFER_PTHREAD_FLAG)

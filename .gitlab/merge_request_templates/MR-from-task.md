@@ -18,6 +18,7 @@ _fill this in_
 - [ ] Reasonably up-to-date with current master
 - [ ] Pipeline passing without warnings
 - [ ] Squash option set <!-- unless there's a good reason not to squash -->
+- [ ] Set labels to pick this MR into support branches <!-- if applicable -->
 - [ ] Approved by @ ... <!-- Add reviewer(s) here once no longer WIP -->
 
 

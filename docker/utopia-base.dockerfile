@@ -1,11 +1,14 @@
 # NOTE ------------------------------------------------------------------------
 # IMPORTANT:
-#     Do not forget to increment the $BASE_IMAGE_VERSION variable in gitlab CI
-#     The version has the shape x.y, where x is incremented only for changes
-#     that are not backwards-compatible
+#     Do not forget to increment the $BASE_IMAGE_VERSION variable in the
+#     .gitlab-ci.yml when making changes to this file!
+#     The version is a simple counter that should be increment upon _any_
+#     change in this file. It should be reset to 1 when a new Ubuntu version
+#     is used.
 # -----------------------------------------------------------------------------
 
-FROM ubuntu:bionic
+ARG UBUNTU_VERSION
+FROM ubuntu:$UBUNTU_VERSION
 
 LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
 
