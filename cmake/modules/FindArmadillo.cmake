@@ -18,19 +18,12 @@
 # find the library itself
 find_library(Armadillo_LIBRARY
     NAMES armadillo
-
-    # NOTE: Use the hinting variable explicitly.
-    # This is not required for more recent versions of CMake,
-    # where policy CMP0074 was introduced,
-    # see https://cmake.org/cmake/help/latest/command/find_library.html
-    HINTS ${Armadillo_ROOT} ENV Armadillo_ROOT
     PATH_SUFFIXES lib
 )
 
 # find the header
 find_path(Armadillo_INCLUDE_DIR
     armadillo
-    HINTS ${Armadillo_ROOT} ENV Armadillo_ROOT
     PATH_SUFFIXES include
 )
 

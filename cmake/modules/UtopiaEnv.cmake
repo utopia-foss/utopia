@@ -10,13 +10,8 @@
 #                               shell configured with the virtual env.
 #
 
-# search Python (different routines depending on CMake version)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
-    find_package(Python 3.7 REQUIRED)
-else ()
-    find_package(PythonInterp 3.7 REQUIRED)
-    set (Python_EXECUTABLE ${PYTHON_EXECUTABLE})
-endif ()
+# Search for Python
+find_package(Python 3.7 REQUIRED)
 
 # search for a Bash environment
 find_package(UnixCommands)
