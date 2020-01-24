@@ -57,13 +57,12 @@ Otherwise, use the HTTPS address.
 To clone the repository, use the following command and add the chosen clone URL at the indicated place:
 
 ```bash
-git clone --recurse-submodules UTOPIA-CLONE-URL
+git clone UTOPIA-CLONE-URL
 ```
 
 After cloning, there will be a new `utopia`
 directory (mirroring this repository) inside your top-level `Utopia` directory.
 
-_Note:_ Utopia uses [Git Submodules](Git-submodules); with the `--recurse-submodules` option, the submodule repositories are automatically cloned alongside the `utopia` repository.
 
 
 #### 2 — Install dependencies
@@ -457,8 +456,8 @@ of it.
 | [HDF5](HDF5)         | >= 1.10.4  | ‡ |
 | [Boost](Boost)       | >= 1.67    | ‡ |
 | [Armadillo](arma)    | >= 8.400   | |
-| [yaml-cpp](yamlcpp)  | >= 0.6.2   | Included as submodule |
-| [spdlog](spdlog)     | >= 1.0     | Included as submodule |
+| [yaml-cpp](yamlcpp)  | >= 0.6.2   | |
+| [spdlog](spdlog)     | >= 1.3     | |
 | [Python3](Python3)   | >= 3.7     | ‡ |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
@@ -535,21 +534,6 @@ make all -j4
     cmake ..
     ```
 
-* If at some point the `spdlog` and `yaml-cpp` dependencies are updated, you
-    might need to update the git **submodules**. To get the current version, call:
-
-    ```bash
-    git submodule update
-    ```
-
-    This will perform a `git checkout` of the specified commit in all
-    submodules. To fetch data of submodules that were not previously available
-    on your branch, call the following command:
-
-    ```bash
-    git submodule update --init --recursive
-    ```
-
 * **Anaconda** ships its own version of the HDF5 library which is _not_
     compatible with Utopia. To tell CMake where to find the correct version of
     the library, add the following argument (without the comments!) to the
@@ -584,7 +568,6 @@ make all -j4
 [dantro]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro
 
 [LGPL]: https://www.gnu.org/licenses/lgpl-3.0.en.html
-[Git-submodules]: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 [Ubuntu-packages]: https://packages.ubuntu.com
 [docker]: https://www.docker.com/
 [Homebrew]: https://brew.sh/
