@@ -3,6 +3,9 @@
 #include <chrono>
 #include <numeric>
 #include <string>
+#include <limits>
+#include <sstream>
+#include <iomanip>
 
 #include <yaml-cpp/yaml.h>
 
@@ -52,11 +55,15 @@ void test_MonitorManager_and_Monitor(){
     Monitor mmm("mmm", mm);
     Monitor n("n", std::make_shared<MonitorManager>(rm));
 
+    // Define floats
+    const double a_double = 3.578;
+    const std::array<float, 3> an_array{.1, .2, .3};
+
     // Set some values
     m.set_entry("an_int", 1);  // Is set to another value below!
-    mm.set_entry("a_double", [](){return 3.578;});
+    mm.set_entry("a_double", a_double);
     mn.set_entry("a_vector", [](){return std::vector<int>{1,2,3};});
-    mn.set_entry("an_array", [](){return std::array<float, 3>{{.1,.2,.3}};});
+    mn.set_entry("an_array", an_array);
     mmm.set_entry("a_string", [](){return "string";});
 
     // Check that the data is emited in the desired form
@@ -84,13 +91,34 @@ void test_MonitorManager_and_Monitor(){
     m.set_entry("hopefully_not_written!", "undesired_info");
     rm.emit_if_enabled();
 
+    // Prepare expected output for floats
+    constexpr auto prec_float = std::numeric_limits<float>::max_digits10;
+    constexpr auto prec_double = std::numeric_limits<double>::max_digits10;
+    std::stringstream double_sstr;
+    double_sstr << std::setprecision(prec_double) <<  a_double;
+    std::stringstream float_sstr;
+    float_sstr << std::setprecision(prec_float)
+               << "[" << an_array[0] << ", "
+               << an_array[1] << ", "
+               << an_array[2] << "]";
+
     // Assert that the std::cout buffer only contains content from the first
     // emit operation
     std::string expected_output = "!!map "
                                   "{m.an_int: 3,"
-                                  " m.mm.a_double: 3.578,"
+                                  " m.mm.a_double: "
+                                  #ifdef PRECISION_OUTPUT
+                                    + double_sstr.str() + ","
+                                  #else
+                                    "3.578,"
+                                  #endif
                                   " m.mn.a_vector: [1, 2, 3],"
-                                  " m.mn.an_array: [0.1, 0.2, 0.3],"
+                                  " m.mn.an_array: "
+                                  #ifdef PRECISION_OUTPUT
+                                    + float_sstr.str() + ","
+                                  #else
+                                    "[0.1, 0.2, 0.3],"
+                                  #endif
                                   " m.mm.mmm.a_string: string,"
                                   " m.hopefully_written: needed_info,"
                                   " m.hopefully_again_written: additional_info"

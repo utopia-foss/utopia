@@ -2,9 +2,6 @@
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 variables:
-  # Load submodules and submodules of submodules by default
-  GIT_SUBMODULE_STRATEGY: recursive
-
   # For __deployment__, the Utopia version
   UTOPIA_VERSION: "1.0"
   # NOTE Currently unused, but should be used in docker image deployment.

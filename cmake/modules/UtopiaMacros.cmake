@@ -18,6 +18,12 @@ else ()
     find_package(Armadillo MODULE REQUIRED)
 endif()
 
+# --- spdlog ---
+find_package(spdlog 1.3 REQUIRED)
+
+# --- yaml-cpp ---
+find_package(yaml-cpp 0.6.2 REQUIRED)
+
 # --- Threads (NOTE: required by spdlog on Ubuntu 18.04) ---
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_package(Threads REQUIRED)

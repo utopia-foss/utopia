@@ -30,8 +30,13 @@ include(UtopiaAddModelTest)
 # but implicitly uses QUIET and REQUIRED.
 include(CMakeFindDependencyMacro)
 
+# BOOST
 find_dependency(Boost 1.67
                 COMPONENTS unit_test_framework)
+# SPDLOG
+find_dependency(spdlog 1.3)
+# YAML-CPP
+find_dependency(yaml-cpp 0.6.2)
 
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_dependency(Threads)
@@ -51,20 +56,6 @@ endif()
 find_dependency(HDF5 1.10
                 COMPONENTS C HL)
 include(RegisterHDF5)
-
-# --- Include Submodules ---
-# Make sure we actually find the submodules and no other installation
-
-find_dependency(spdlog
-                CONFIG
-                NO_DEFAULT_PATH
-                PATHS @PACKAGE_CMAKE_INSTALL_PREFIX@
-                      @PACKAGE_spdlog_config_dir@)
-find_dependency(yaml-cpp
-                CONFIG
-                NO_DEFAULT_PATH
-                PATHS @PACKAGE_CMAKE_INSTALL_PREFIX@
-                      @PACKAGE_yaml-cpp_config_dir@)
 
 # --- Include our target file ---
 # (Makes targets Utopia::<target> available)
