@@ -43,3 +43,9 @@ set_tests_properties(DATAIO_hdfattribute_test_write PROPERTIES FIXTURES_SETUP H5
 set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES FIXTURES_REQUIRED H5IO)
 set_tests_properties(DATAIO_hdfdataset_test_write PROPERTIES FIXTURES_SETUP H5IO)
 set_tests_properties(DATAIO_hdfdataset_test_read PROPERTIES FIXTURES_REQUIRED H5IO)
+
+# Tell monitor test if new output precision is required
+target_compile_definitions(DATAIO_monitor_test
+    PRIVATE
+      $<$<VERSION_GREATER:${yaml-cpp_VERSION},0.6.2>:PRECISION_OUTPUT>
+)
