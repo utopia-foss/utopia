@@ -59,7 +59,7 @@ target_include_directories(utopia INTERFACE
 # NOTE: Plugins might also be located in system paths, so they have to be
 #       linked *first* such that their include directories are searched first.
 target_link_libraries(utopia INTERFACE
-    spdlog
+    spdlog::spdlog
     yaml-cpp
     Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
     armadillo
@@ -78,7 +78,6 @@ target_compile_definitions(utopia INTERFACE
 enable_testing()
 
 # Include subdirectories
-add_subdirectory(plugins/vendor)
 add_subdirectory(doc)
 add_subdirectory(src/utopia/models)
 add_subdirectory(python)
