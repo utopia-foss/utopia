@@ -456,8 +456,8 @@ of it.
 | [HDF5](HDF5)         | >= 1.10.4  | ‡ |
 | [Boost](Boost)       | >= 1.67    | ‡ |
 | [Armadillo](arma)    | >= 8.400   | |
-| [yaml-cpp](yamlcpp)  | >= 0.6.2   | |
-| [spdlog](spdlog)     | >= 1.3     | |
+| [yaml-cpp](yamlcpp)  | >= 0.6.2   | ‡ |
+| [spdlog](spdlog)     | >= 1.3     | ‡ |
 | [Python3](Python3)   | >= 3.7     | ‡ |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
