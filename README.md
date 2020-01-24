@@ -76,8 +76,8 @@ Have a look at the [troubleshooting](#troubleshooting) section to see how to add
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
-            libboost-dev libboost-test-dev libhdf5-dev \
-            pkg-config python3-dev python3-pip python3-venv
+            libboost-dev libboost-test-dev libhdf5-dev libspdlog-dev \
+            libyaml-cpp-dev pkg-config python3-dev python3-pip python3-venv
 ```
 
 Further, we recommend to install the following optional packages:
@@ -101,7 +101,7 @@ As package manager on macOS, we recommend [Homebrew](Homebrew).
 
 ```bash
 brew update
-brew install armadillo boost cmake doxygen hdf5 pkg-config python3
+brew install armadillo boost cmake doxygen hdf5 pkg-config python3 spdlog yaml-cpp
 ```
 
 Further, we recommend to install the following optional packages:
