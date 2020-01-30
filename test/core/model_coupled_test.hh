@@ -23,6 +23,12 @@ public:
     /// store the level as a member
     const unsigned int _level;
 
+    /// Whether the prolog was performed
+    bool _prolog_run;
+
+    /// Whether the epilog was performed
+    bool _epilog_run;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -32,7 +38,9 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         // Store level
-        _level(get_as<unsigned int>("level", this->_cfg))
+        _level(get_as<unsigned int>("level", this->_cfg)),
+        _prolog_run(false),
+        _epilog_run(false)
     {
         this->_log->info("DoNothingModel initialized. Level: {}", _level);
     }
@@ -45,6 +53,21 @@ public:
 
     /// Data write method (does nothing here)
     void write_data () {}
+
+    /// The prolog
+    void prolog () {
+        this->__prolog();
+
+        _prolog_run = true;
+    }
+
+    /// The epilog
+    void epilog () {
+        this->__epilog();
+
+        _epilog_run = true;
+    }
+
 };
 
 
@@ -65,6 +88,12 @@ public:
     /// submodel: DoNothingModel
     DoNothingModel lazy;
 
+    /// Whether the prolog was performed
+    bool _prolog_run;
+
+    /// Whether the epilog was performed
+    bool _epilog_run;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -76,7 +105,9 @@ public:
         // Store level
         _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
-        lazy("lazy", *this)
+        lazy("lazy", *this),
+        _prolog_run(false),
+        _epilog_run(false)
     {
         this->_log->info("OneModel initialized. Level: {}", _level);
     }
@@ -100,6 +131,8 @@ public:
 
         // call the own default prolog
         this->__prolog();
+
+        _prolog_run = true;
     }
 
     /// Epilog (call the epilog of DoNothing)
@@ -109,6 +142,8 @@ public:
 
         // call the own default epilog
         this->__epilog();
+
+        _epilog_run = true;
     }
 
 };
@@ -134,6 +169,12 @@ public:
     /// submodel: DoNothing
     DoNothingModel sub_lazy;
 
+    /// Whether the prolog was performed
+    bool _prolog_run;
+
+    /// Whether the epilog was performed
+    bool _epilog_run;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -146,7 +187,9 @@ public:
         _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
         sub_one("one", *this),
-        sub_lazy("lazy", *this)
+        sub_lazy("lazy", *this),
+        _prolog_run(false),
+        _epilog_run(false)
     {
         this->_log->info("AnotherModel initialized. Level: {}", _level);
     }
@@ -155,7 +198,6 @@ public:
     void perform_step ()
     {
         sub_one.iterate();
-        sub_lazy.iterate();
     }
 
     /// Monitor data (do nothing here)
@@ -168,20 +210,25 @@ public:
     void prolog () {
         // call the submodels prolog
         sub_one.prolog();
-        sub_lazy.epilog();
+
+        // run the sub_lazy model in its entire length
+        sub_lazy.run();
 
         // call the own default prolog
         this->__prolog();
+
+        _prolog_run = true;
     }
 
     /// Epilog (call the epilog on all submodels)
     void epilog () {
         // call the submodels epilog
         sub_one.epilog();
-        sub_lazy.epilog();
 
         // call the own default epilog
         this->__epilog();
+
+        _epilog_run = true;
     }
 
 };
@@ -204,6 +251,18 @@ public:
     /// submodel: AnotherModel
     AnotherModel sub_another;
 
+    /// Whether the prolog was performed
+    bool _prolog_run;
+
+    /// Whether the epilog was performed
+    bool _epilog_run;
+
+    /// Iterate model one to this time
+    Time _stop_iterate_one;
+
+    /// Start iterating model another at this time
+    Time _start_iterate_another;
+
 public:
     /// Create RootModel with initial state
     template<class ParentModel>
@@ -216,7 +275,12 @@ public:
         _level(get_as<unsigned int>("level", this->_cfg)),
         // Submodel initialization
         sub_one("one", *this),
-        sub_another("another", *this)
+        sub_another("another", *this),
+        _prolog_run(false),
+        _epilog_run(false),
+        _stop_iterate_one(get_as<Time>("stop_iterate_one", this->_cfg)),
+        _start_iterate_another(get_as<Time>("start_iterate_another", this->_cfg))
+
     {
         this->_log->info("RootModel initialized. Level: {}", _level);
     }
@@ -224,8 +288,26 @@ public:
     /// Perform a single step, i.e.: iterate the submodels
     void perform_step ()
     {
-        sub_one.iterate();
-        sub_another.iterate();
+        if (this->_time < _stop_iterate_one) {
+            sub_one.iterate();
+        }
+        else if (this->_time == _stop_iterate_one) {
+            sub_one.iterate();
+            sub_one.epilog();
+        }
+
+
+        if (this->_time == _start_iterate_another) {
+            if (sub_another._prolog_run) {
+                throw std::runtime_error("Prolog of sub_another has been run "
+                    "before its due time!");
+            }
+            sub_another.prolog();
+            sub_one.iterate();
+        }
+        else if (this->_time > _start_iterate_another) {
+            sub_one.iterate();
+        }
     }
 
     /// Monitor data (do nothing here)
@@ -238,19 +320,26 @@ public:
     void prolog () {
         // call the submodels prolog
         sub_one.prolog();
-        sub_another.prolog();
 
         // call the own default prolog
         this->__prolog();
+
+        _prolog_run = true;
     }
 
     /// Epilog (call the epilog on all submodels)
     void epilog () {
-        sub_one.epilog();
+        if (not sub_one._epilog_run) {
+            throw std::runtime_error("Epilog of sub_one has not been run "
+                "at its due time!");
+        }
+
         sub_another.epilog();
 
         // call the own default epilog
         this->__epilog();
+
+        _epilog_run = true;
     }
 
 };

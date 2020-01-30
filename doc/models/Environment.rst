@@ -250,13 +250,6 @@ set correctly.
                                        "some_other_glob_parameter"});
             // _envm.track_states({"some_heterogeneous_parameter",
                                        "some_other_het_parameter"});
-
-            // Write the initial data of the env model
-            if (_envm.get_write_start() == 0) {
-                _envm.write_data();
-                // NOTE Need this because env model is never run, but only
-                //      iterated
-            }
         }
 
 .. note::
@@ -292,6 +285,31 @@ You can access the parameter the following way
         // use the synchronized some_global_parameter
 
 With this, your model is ready to use and just needs to be configured.
+
+Eventually, coupled models require manual writing of the prolog and epilog
+
+.. code-block:: cpp
+
+    /// Call the prolog of the sub-models and the model defaults
+    void prolog () {
+        _envm.prolog(); // prolog of the submodel
+        // NOTE the prolog has to be called before starting the iteration of a 
+        //      submodel. This can be at any time. Usually it will be here.
+
+        this->__prolog();; // default prolog
+    }
+
+    /// Call the epilog of the sub-models
+    /** NOTE this overwrites the default of your model's epilog. So make 
+     *  sure, that everything that needs to be done is done.   
+     */
+    void epilog () {
+        _envm.epilog(); // epilog of the submodel
+        // NOTE the epilog should be called at the end of the submodel's 
+        //      iteration. This can be at any time. Usually it will be here.
+
+        this->__epilog(); // default epilog
+    }
 
 
 Configuring the Environment model
