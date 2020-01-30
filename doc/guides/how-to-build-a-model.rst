@@ -274,7 +274,6 @@ computing resources. As this data is communicated to the frontend via
 
 For examples, check out the ``monitor`` function of the ``CopyMe`` model.
 
-
 Finished!
 ---------
 Congratulations, you have build a new model! :)
@@ -285,3 +284,45 @@ can be accepted as a model within *Utopia*, e.g. that it can be merged into
 *Utopia*'s ``master`` branch.
 
 Have fun implementing your own *Utopia* model! :) 
+
+Coupling of models - the post model era
+---------------------------------------
+
+.. note::
+    This is an advanced feature.
+    Only go forward to couple models if each of them is tested individually. 
+
+Once you have your own model implemented, you might want to consider to couple two or more models.
+It is absolutely intended to do so, even in complicated hierarchy.
+Every model is placed one level below its parent model (the `pseudo parent` at the top), which it is given at initialization.
+Hence, the child model is a member of the parent model and the configuration is passed through the parent.
+
+Operating coupled models usually requires a couple of additional thoughts:
+
+* The parent model has to `iterate` or `run` the child model as per your design; this can be at any time, in parallel, faster or slower.
+* For every model, the `run()` command includes the iteration until maximum time and three additional operations:
+
+  #.
+    The ``prolog``. 
+    A function that is to be called before the first iteration of this model.
+    Its default function includes the writing of the initial state.
+  #. 
+    The ``epilog``.
+    A function that is called after the last iteration of this model.
+    It should be directly thereafter, but it does not have to be.
+    Check with the model's documentation.
+  #. 
+    The `breakpoint`.
+    The model may receive a signal to stop iteration, e.g. due to a break condition or the user interrupting the simulation run.
+    Upon that signal, the ``stop_now`` flag is set to ``true``, indicating that the iteration should stop and the model should shut down.
+    A grace period (default: 2s, configurable via frontend) is given; after that, the model process is killed, which may lead to loss of data.
+    If – for special reasons – a system of coupled models needs to perform a specific task at the breakpoint, the flag may be queries using ``this->stop_now.load()``.
+    Be aware that time-intensive tasks should *not* be carried out after the breakpoint; the aim is to swiftly take down the model object.
+    Also note that this flag is not part of the public interface and may change unexpectedly.
+    
+  These operations must be handled manually if the child-model is only iterated.
+  That means, call the `prolog` before the first iteration, call the `epilog` after the last iteration, and set a breakpoint if you are performing several iterations in a row.
+  Note, that the maximum time is equal for all models.
+  However, per iteration a model can surpass the maximum time.
+
+For further information, see the :doc:`Environment model <../models/Environment>`, that is intended to be used as a child-model and includes a guide how to use it.

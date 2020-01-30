@@ -31,11 +31,13 @@ The ``Model`` Base Class
 * Utopia Models are specializations of this base class
 * It provides commonly needed functionality (see below) and allows control by the frontend.
 * This common interface also allows *nesting* of models, thus allowing a model hierarchy.
-* The following three methods allow specialization of the model:
+* The following methods allow specialization of the model:
 
     * ``perform_step``: Performs the iteration step. You have total freedom here.
     * ``write_data``: Specifies the data that is to be stored to the associated HDF5 file.
     * ``monitor``: (Optional) Provides :ref:`monitoring data <feature_monitor>` to the frontend to control the simulation
+    * ``prolog``: (Optional) Provides the possibility to perform a task before the model's first iteration. By default this includes writing of the initial state.
+    * ``epilog``: (Optional) Provides the possibility to perform a task after the model's last iteration.
 
 * Model traits can be used to specify the default types used by the model, e.g. the random number generator.
 * 📚
@@ -101,6 +103,9 @@ Monitoring the state of the model
 
 
 .. _feature_model_config:
+
+
+
 
 Model Configuration
 ^^^^^^^^^^^^^^^^^^^

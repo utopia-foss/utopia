@@ -431,6 +431,19 @@ public:
 
 
     // -- Simulation control --------------------------------------------------
+    /// A function that is to be called before starting the iteration of a model
+    /** See __prolog() for default tasks
+     */
+    virtual void prolog () {
+        __prolog();
+    } 
+
+    /// A function that is to be called after the last iteration of a model
+    /** See __epilog() for default tasks
+     */
+    virtual void epilog () {
+        __epilog();
+    }
 
     /// Iterate one (time) step of this model
     /** Increment time, perform step, emit monitor data, and write data.
@@ -493,19 +506,8 @@ public:
         // be left upon receiving of a signal.
         __attach_sig_handlers();
 
-        // Decide on whether the initial state needs to be written
-        if constexpr (_write_mode == WriteMode::basic) {
-            if (_write_start == _time) {
-                _log->info("Writing initial state ...");
-                __write_data();
-            }
-        }
-        else if constexpr (_write_mode == WriteMode::manual) {
-            __write_data();
-        }
-        else if constexpr (_write_mode == WriteMode::managed) {
-            _datamanager(static_cast<Derived&>(*this));
-        }
+        // call the prolog of the model
+        prolog();
 
         // Now, let's go repeatedly iterate the model ...
         _log->info("Running from current time  {}  to  {}  ...",
@@ -519,7 +521,11 @@ public:
                 throw GotSignal(received_signum.load());
             }
         }
+
         _log->info("Run finished. Current time:  {}", _time);
+
+        // call the epilog of the model
+        epilog();
     }
 
 
@@ -561,11 +567,48 @@ protected:
         impl().write_data();
     }
 
+    /// Write the initial state
+    void __write_initial_state () {
+        // Select the required WriteMode
+        // Decide on whether the initial state needs to be written
+        if constexpr (_write_mode == WriteMode::basic) {
+            if (_write_start == _time) {
+                _log->info("Writing initial state ...");
+                __write_data();
+            }
+        }
+        else if constexpr (_write_mode == WriteMode::manual) {
+            __write_data();
+        }
+        else if constexpr (_write_mode == WriteMode::managed) {
+            _datamanager(static_cast<Derived&>(*this));
+        }
+
+    }
+
     /// Increment time
     /** \param dt Time increment, defaults to 1
      */
     void increment_time (const Time dt=1) {
         _time += dt;
+    }
+
+    /// The default prolog of a model
+    /** Default tasks:
+     *      1. call __write_initial_state
+     */
+    void __prolog () {
+        __write_initial_state();
+
+        this->_log->debug("Prolog finished.");
+    }
+
+    /// The default epilog of a model
+    /** Default tasks:
+     *      None
+     */
+    void __epilog () {
+        this->_log->debug("Epilog finished.");
     }
 
 
