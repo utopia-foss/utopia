@@ -6,7 +6,7 @@ Utopia is a comprehensive modelling framework for complex and evolving environme
 It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 <!-- TODO Write more here ... -->
 
-Utopia is free software and licensed under the [GNU Lesser General Public License Version 3](LGPL) or any later version.
+Utopia is free software and licensed under the [GNU Lesser General Public License Version 3][LGPL] or any later version.
 For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
 
 #### Contents of this README
@@ -29,7 +29,7 @@ For the copyright notice and the list of copyright holders, see [`COPYING.md`](C
 The following instructions will install Utopia into a development environment
 on your machine.
 
-If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image](Utopia-docker); see [below](#utopia-via-docker) for more information.
+If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
 
 
 ### Step-by-step Instructions
@@ -39,7 +39,7 @@ _Note:_ Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
 ⚠️ If you encounter difficulties, have a look at the [**troubleshooting section**](#troubleshooting).
-If this does not resolve your installation problems, [please file an issue in the GitLab project](Utopia-new-issue).
+If this does not resolve your installation problems, [please file an issue in the GitLab project][Utopia-new-issue].
 
 
 #### 1 — Clone Utopia
@@ -50,7 +50,7 @@ there as well.
 
 In your terminal, enter the `Utopia` directory you just created.
 
-Now, get a clone URL via the _Clone_ button in the top right-hand corner of the [Utopia project page](Utopia).  
+Now, get a clone URL via the _Clone_ button in the top right-hand corner of the [Utopia project page][Utopia].  
 If you are a developer or CCEES group member, you should [get an SSH key registered](#ssh-repository-access) with the GitLab and use the SSH address.
 Otherwise, use the HTTPS address.
 
@@ -68,7 +68,7 @@ directory (mirroring this repository) inside your top-level `Utopia` directory.
 #### 2 — Install dependencies
 Install the third-party dependencies using a package manager.
 
-_Note:_ If you have [Anaconda](Anaconda) installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
+_Note:_ If you have [Anaconda][Anaconda] installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
 However, notice that there might be issues during [the configuration step](#4-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
@@ -96,8 +96,8 @@ First, install the Apple Command Line Tools:
 xcode-select --install
 ```
 
-As package manager on macOS, we recommend [Homebrew](Homebrew).
-(If you prefer to use [MacPorts](MacPorts), notice that some packages might need to be installed differently.)
+As package manager on macOS, we recommend [Homebrew][Homebrew].
+(If you prefer to use [MacPorts][MacPorts], notice that some packages might need to be installed differently.)
 
 ```bash
 brew update
@@ -161,12 +161,12 @@ To make sure that Utopia works as expected on your machine, [build and carry out
 
 
 ### Utopia via Docker
-[Docker](docker) is a free OS-level virtualization software.
+[Docker][docker] is a free OS-level virtualization software.
 It allows to run any application in a closed environment container.
 
 If you do not intend to develop models with Utopia, the Utopia docker image is a way to _run_ Utopia models and evaluate them without having to go through the installation procedure.
 
-The image and instructions on how to create a container from it can be found on the [`ccees/utopia` docker hub page](Utopia-docker).
+The image and instructions on how to create a container from it can be found on the [`ccees/utopia` docker hub page][Utopia-docker].
 
 
 
@@ -175,7 +175,7 @@ The image and instructions on how to create a container from it can be found on 
 
 ## Quickstart
 This section gives a glimpse into working with Utopia.
-It's not more than a glimpse; after playing around with this, [consult the documentation](#utopia-documentation) to gain access to more information material, and especially: the [**Utopia Tutorial**](Utopia-tutorial).
+It's not more than a glimpse; after playing around with this, [consult the documentation](#utopia-documentation) to gain access to more information material, and especially: the [**Utopia Tutorial**][Utopia-tutorial].
 
 
 ### How to run a model?
@@ -218,7 +218,7 @@ utopia --help
 utopia run --help
 ```
 
-Best place to continue from here is the [tutorial](Utopia-tutorial).
+Best place to continue from here is the [tutorial][Utopia-tutorial].
 
 
 
@@ -230,7 +230,7 @@ This Readme only covers the very basics.
 For all further documentation, tutorials, guides, model descriptions, frequently asked questions and more, you should consult the actual Utopia documentation.
 
 The latest build (corresponding to the latest commit to `master`) is available
-[online](Utopia-docs).
+[online][Utopia-docs].
 
 See [below](#building-the-documentation-locally) on how to build the documentation locally.
 
@@ -250,7 +250,7 @@ and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding
 ### New to Utopia? How do I implement a model?
 Aside from exploring the already existing models, you should check out the guides in the [documentation](#utopia-documentation)) which will get you started for implementing your own, fancy, new Utopia model. 🎉
 
-**For members of the CCEES group,** there is the internal [models repository](Models); this is the home of your model.
+**For members of the CCEES group,** there is the internal [models repository][Models]; this is the home of your model.
 
 ### Building the documentation locally
 To build the documentation locally, navigate to the `build` directory and run
@@ -259,8 +259,8 @@ To build the documentation locally, navigate to the `build` directory and run
 make doc
 ```
 
-The [Sphinx](Sphinx)-built user documentation will then be located at `build/doc/html/`.
-The C++ [doxygen](doxygen)-documentation can be found at `build/doc/doxygen/html/`.
+The [Sphinx][Sphinx]-built user documentation will then be located at `build/doc/html/`.
+The C++ [doxygen][doxygen]-documentation can be found at `build/doc/doxygen/html/`.
 Open the respective `index.html` files to browse the documentation.
 
 ### Build Types
@@ -358,7 +358,7 @@ from that directory, as some of the tests rely on auxilary files which are
 located relative to the executable.
 
 For invoking individual Python tests, there are no targets specified.
-However, [pytest](pytest-usage) gives you control over which tests are invoked:
+However, [pytest][pytest-usage] gives you control over which tests are invoked:
 
 ```bash
 cd python
@@ -380,7 +380,7 @@ For retrieving this information on your machine, follow the instructions below.
 
 ##### Python code coverage
 The Python code coverage is only relevant for the `utopya` package.
-It can be analyzed using the [`pytest-cov`](pytest-cov)
+It can be analyzed using the [`pytest-cov`][pytest-cov]
 extension for `pytest`, which is installed into the `utopia-env` alongside the
 other dependencies.  
 When running `make test_utopya`, the code coverage is tracked by default and
@@ -409,7 +409,7 @@ python -m pytest -v utopya/test/test_multiverse.py --cov=utopya.multiverse --cov
 2. Execute the tests. Simply call the test commands listed in the previous
     sections.
 
-3. Run the coverage result utility [`gcovr`](gcovr).
+3. Run the coverage result utility [`gcovr`][gcovr].
 
     First, install it via `pip`. If you want your host system to be unaffected,
     enter the Utopia virtual environment first.
@@ -451,23 +451,23 @@ of it.
 | GCC                  | >= 9       | Full C++17 support required |
 | _or:_ clang          | >= 9       | Full C++17 support required |
 | _or:_ Apple LLVM     | >= 9       | Full C++17 support required |
-| [CMake](cmake)       | >= 3.13    | ‡ |
+| [CMake][cmake]       | >= 3.13    | ‡ |
 | pkg-config           | >= 0.29    | |
-| [HDF5](HDF5)         | >= 1.10.4  | ‡ |
-| [Boost](Boost)       | >= 1.67    | ‡ |
-| [Armadillo](arma)    | >= 8.400   | |
-| [yaml-cpp](yamlcpp)  | >= 0.6.2   | ‡ |
-| [spdlog](spdlog)     | >= 1.3     | ‡ |
-| [Python3](Python3)   | >= 3.7     | ‡ |
+| [HDF5][HDF5]         | >= 1.10.4  | ‡ |
+| [Boost][Boost]       | >= 1.67    | ‡ |
+| [Armadillo][arma]    | >= 8.400   | |
+| [yaml-cpp][yamlcpp]  | >= 0.6.2   | ‡ |
+| [spdlog][spdlog]     | >= 1.3     | ‡ |
+| [Python3][Python3]   | >= 3.7     | ‡ |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
 The version numbers noted above are those made available by the Ubuntu release that Utopia is tested against.
 Only version requirements that are marked with a `‡` are _enforced_ by the Utopia build system.
 
-If you encounter difficulties with any of these dependencies, please [file an issue in the GitLab project](Utopia-new-issue).
+If you encounter difficulties with any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
 
 To get Utopia running on a system with an earlier Ubuntu version, the above dependencies still need to be fulfilled.
-You can use the [Ubuntu Package Search](Ubuntu-packages) to find the versions available on your system.
+You can use the [Ubuntu Package Search][Ubuntu-packages] to find the versions available on your system.
 If a required version is not available, private package repositories may help to install a more recent version of a dependency.
 
 If you cannot achieve these dependencies on your current installation, there is the option to use the Utopia [support branches](#support-branches), which provide compatibility with earlier versions of selected dependencies.
@@ -481,9 +481,9 @@ These packages and their dependencies are _automatically_ installed into a virtu
 
 | Software                 | Version    | Comments                        |
 | ------------------------ | ---------- | ------------------------------- |
-| [Sphinx](Sphinx)         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace](paramspace) | >= 2.3     | Makes parameter sweeps easy     |
-| [dantro](dantro)         | >= 0.10.1  | Work with and plot hierarchically organized data _(not on PyPI!)_ |
+| [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
+| [paramspace][paramspace] | >= 2.3     | Makes parameter sweeps easy     |
+| [dantro][dantro]         | >= 0.10.1  | Work with and plot hierarchically organized data _(not on PyPI!)_ |
 
 
 #### Recommended
@@ -491,9 +491,9 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 
 | Software              | Version | Comments                          |
 | --------------------- | ------- | --------------------------------- |
-| [doxygen](doxygen)    | >= 1.8  | Builds the C++ code documentation |
-| [graphviz](graphviz)  | >= 2.40 | Used by doxygen to create dependency diagrams |
-| [ffmpeg](ffmpeg)      | >= 4.1  | Used for creating videos |
+| [doxygen][doxygen]    | >= 1.8  | Builds the C++ code documentation |
+| [graphviz][graphviz]  | >= 2.40 | Used by doxygen to create dependency diagrams |
+| [ffmpeg][ffmpeg]      | >= 4.1  | Used for creating videos |
 
 
 ### Support Branches
