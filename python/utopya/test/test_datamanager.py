@@ -13,10 +13,10 @@ from paramspace import ParamSpace
 from utopya import Multiverse, DataManager
 import utopya.datagroup as udg
 import utopya.datacontainer as udc
+from utopya.datamanager import _condense_thresh_func
 
 # Local constants
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
-SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
 LARGE_SWEEP_CFG_PATH = resource_filename('test', 'cfg/large_sweep_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
@@ -48,20 +48,6 @@ def dm_after_single(mv_kwargs) -> DataManager:
 
     # Run a sweep
     mv.run_single()
-    
-    # Return the data manager
-    return mv.dm
-
-@pytest.fixture
-def dm_after_sweep(mv_kwargs) -> DataManager:
-    """Initialises a Multiverse with a DataManager, runs a simulation with
-    output going into a temporary directory, then returns the DataManager."""
-    # Initialise the Multiverse
-    mv_kwargs['run_cfg_path'] = SWEEP_CFG_PATH
-    mv = Multiverse(**mv_kwargs)
-
-    # Run a sweep
-    mv.run_sweep()
     
     # Return the data manager
     return mv.dm
@@ -130,13 +116,12 @@ def test_load_single(dm_after_single):
     assert write_every == uni['cfg']['write_every']
     assert dset.shape[0] == (uni['cfg']['num_steps'] // write_every) + 1
 
-
-def test_load_sweep(dm_after_sweep):
+def test_load_sweep(dm_after_large_sweep):
     """Tests the loading of simulation data for a sweep"""
-    dm = dm_after_sweep
+    dm = dm_after_large_sweep
 
     # Load and print a tree of the loaded data
-    dm.load_from_cfg(print_tree=True)
+    dm.load_from_cfg(print_tree='condensed')
 
     # Check that the config is loaded as expected
     assert 'cfg' in dm
@@ -168,3 +153,9 @@ def test_load_sweep(dm_after_sweep):
         assert isinstance(dset, (udc.NumpyDC, udc.XarrayDC))
         assert dset.shape == (uni['cfg']['num_steps'] + 1, 1000)
         assert np.issubdtype(dset.dtype, float)
+
+def test_condense_thresh_func():
+    """Tests the function that evaluates the condense threshold"""
+    # Call the function for different parameter combinations to cover all cases
+    for l, n, t in zip([1, 4, 5], [42, 42, 42], [42, 42, 142]):
+        _condense_thresh_func(level=l, num_items=n, total_item_count=t)

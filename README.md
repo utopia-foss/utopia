@@ -483,7 +483,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | ------------------------ | ---------- | ------------------------------- |
 | [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
 | [paramspace][paramspace] | >= 2.3     | Makes parameter sweeps easy     |
-| [dantro][dantro]         | >= 0.10.1  | Work with and plot hierarchically organized data _(not on PyPI!)_ |
+| [dantro][dantro]         | >= 0.11    | Work with and plot hierarchically organized data |
 
 
 #### Recommended
