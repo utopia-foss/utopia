@@ -17,6 +17,27 @@ import utopya.datagroup as udg
 log = logging.getLogger(__name__)
 
 # Local constants
+def _condense_thresh_func(*, level, num_items, total_item_count) -> int:
+    """Dynamically computes the condensation threshold for the current
+    element.
+    """
+    # For high item counts, always condense
+    if total_item_count > 100: # NOTE This is along one recursion branch!
+        return 7 # shows first three and last three
+
+    # Now, distinguish by level
+    if level == 1:
+        # Level of the universes 0, ..., N
+        if num_items > 3:
+            return 3
+
+    elif level >= 4:
+        # Level of the model data, e.g. multiverse/0/data/dummy/...
+        if num_items > 15:
+            return 5
+
+    # All other cases: do not condense
+    return None
 
 # -----------------------------------------------------------------------------
 
@@ -50,3 +71,9 @@ class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
                           unlabelled_data=udc.NumpyDC,
                           labelled_data=udc.XarrayDC,
                           array_of_yaml_strings=udc.XarrayYamlDC)
+
+    # Condensed tree representation: maximum level
+    _COND_TREE_MAX_LEVEL = 10
+
+    # Condensed tree representation: threshold parameter
+    _COND_TREE_CONDENSE_THRESH = lambda _, **kws: _condense_thresh_func(**kws)

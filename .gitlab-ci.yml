@@ -418,6 +418,12 @@ test:cli:
     - utopia run dummy --note write_sparse --num-steps 5 --write-every 2
     - utopia run dummy --note write_last --num-steps 5 --write-start 5
     
+    # Test the printing of the data tree
+    - utopia run dummy --full-data-tree
+    - sleep 1.1 && utopia eval dummy --full-data-tree
+    - utopia run dummy --suppress-data-tree
+    - sleep 1.1 && utopia eval dummy --suppress-data-tree
+
     # Test the plotting capabilities
     - utopia run dummy --note plt0 --no-plot
     - sleep 1.1 && utopia eval dummy  # should create the corresponding plots

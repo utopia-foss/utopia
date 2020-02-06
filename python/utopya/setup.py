@@ -15,8 +15,9 @@ INSTALL_DEPS = [
     'pytest>=3.4.0',
     'pytest-cov>=2.5.1',
 
-    # From private repositories:
-    'dantro>=0.10.1'
+    'dantro~=0.11'
+    # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
+    # details on the compatible release clause.
     # NOTE Versions need also be set in python/CMakeLists.txt
 ]
 
