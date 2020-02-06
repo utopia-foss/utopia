@@ -8,7 +8,7 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.10.1)
+python_find_package(PACKAGE dantro VERSION 0.11.0)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
