@@ -2,6 +2,7 @@
 """This is the command line interface for Utopia"""
 
 import sys
+import traceback
 import argparse
 import readline
 
@@ -665,7 +666,7 @@ if __name__ == '__main__':
         log.success("All done.\n")
         sys.exit()
 
-    # Now in interactive plotting mode ...  . . . . . . . . . . . . . . . . . .
+    # Interactive Plotting . . . . . . . . . . . . . . . . . . . . . . . . . .
     # Carry over all argvs relevant for the eval subparser
     argv = [arg for arg in sys.argv[2:]]
 
@@ -680,9 +681,6 @@ if __name__ == '__main__':
             YELLOW = '\033[33m'
             MAGENTA = '\033[35m'
             CYAN = '\033[36m'
-        
-        log.hilight("Interactive plotting.")
-        log.info("Use Cmd+C to exit.")
 
         # Create a new argument list for querying the user. For that, remove
         # the model name, and `--interactive` from the given list of argvs.
@@ -724,8 +722,8 @@ if __name__ == '__main__':
         print("new_args:", new_args)
 
         # Check that bad arguments were not used
-        disallowed_args = ('run_cfg_path', 'run_dir_path', 'set_cfg',
-                           'debug', 'cluster_mode',
+        disallowed_args = ('run_cfg_path', 'run_dir_path',
+                           'set_cfg', 'cluster_mode',
                            'suppress_data_tree', 'full_data_tree')
         bad_args = [arg for arg in disallowed_args
                     if getattr(new_args, arg) != p_eval.get_default(arg)]
@@ -734,14 +732,22 @@ if __name__ == '__main__':
                       "for the (already-initialized) Multiverse cannot be "
                       "specified again!")
             log.info("Remove the offending argument(s) ({}) and try again. "
-                     "Consult --help to find out the available "
-                     "plotting-related arguments."
+                     "Consult --help to find out the available plotting-"
+                     "related arguments. The --debug flag is supported."
                      "".format(", ".join(bad_args)))
             raise ValueError("")
 
         return new_argv, new_args
 
+    # While in interactive mode, the following loop is carried out repeatedly.
+    # A counter variable is used to 
+    iap_session = 0
+
     while args.interactive:
+        print("")
+        log.hilight("--- Interactive plotting session %d ---", iap_session)
+        log.note("Use Cmd+C to exit.")
+
         try:
             argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args)
 
@@ -753,11 +759,35 @@ if __name__ == '__main__':
             print("")
             continue
 
-        # Create a new PlotManager
-        log.progress("Setting up new PlotManager ...")
+        # Generate update dicts
+        _, update_plots_cfg = {}, {} # FIXME
 
-        # Perform plotting
+        # Create a new PlotManager and increment the session counter
+        mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
+                              raise_exc=args.debug)
+        iap_session += 1
+        
+        # Now, try to plot:
+        try:
+            mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+                                plot_only=args.plot_only,
+                                **update_plots_cfg)
 
+        except Exception:
+            print("")
+            log.error("Caught an error during plotting!")
+            traceback.print_exc()
+            log.warning("Remaining in interactive plotting mode ...")
+            log.note("Remove --debug flag to ignore error and hide traceback.")
+            continue
+
+        except KeyboardInterrupt:
+            print("")
+            log.warning("Interrupted current plotting session. Remaining in "
+                        "interactive plotting mode ...")
+            continue
+
+        # End of while loop
 
     # If this point is reached, interactive plotting was exited
     print("\n")
