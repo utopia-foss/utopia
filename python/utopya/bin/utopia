@@ -8,7 +8,7 @@ import argparse
 # Top level parsers
 parser = argparse.ArgumentParser(
     description="Welcome to the Utopia command line interface.",
-    epilog="Utopia  Copyright (C) 2016 – 2019  TS-CCEES Utopia Developers\n"
+    epilog="Utopia  Copyright (C) 2016 – 2020  TS-CCEES Utopia Developers\n"
            "This program comes with ABSOLUTELY NO WARRANTY.\n"
            "This is free software, and you are welcome to redistribute it\n"
            "under certain conditions. Please refer to the copyright notice\n"

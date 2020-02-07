@@ -6,7 +6,7 @@ or any later version.
 ## Copyright Notice
 
     Utopia — Comprehensive Modelling Framework for Complex Environmental Systems
-    Copyright (C) 2016 – 2019  TS-CCEES Utopia Developers
+    Copyright (C) 2016 – 2020  TS-CCEES Utopia Developers
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
