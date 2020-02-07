@@ -3,6 +3,7 @@
 
 import sys
 import argparse
+import readline
 
 # Define the CLI --------------------------------------------------------------
 # Top level parsers
@@ -341,16 +342,20 @@ p_eval_plt.add_argument('--plot-only',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here.")
-p_eval_plt.add_argument('--run-cfg-path',
-    default=None, nargs='?',
-    help="Path to the run configuration. Can be used to change the "
-         "configuration of DataManager and PlotManager.")
+p_eval_plt.add_argument('--interactive',
+    action='store_true',
+    help="If given, the CLI will not be quit after plotting, but will wait "
+         "for user input to perform the plotting routines anew.")
 
 # misc
 p_eval.add_argument('--debug',
     action='store_true',
     help="If given, configures the PlotManager such that it raises exceptions "
          "instead of warning.")
+p_eval.add_argument('--run-cfg-path',
+    default=None, nargs='?',
+    help="Path to the run configuration. Can be used to change the "
+         "configuration of DataManager and PlotManager.")
 p_eval.add_argument('--set-cfg',
     default=None, nargs='+', type=str,
     help="Sets key-value pairs in the meta configuration. Example: foo.bar=42 "
@@ -652,8 +657,108 @@ if __name__ == '__main__':
 
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
-                        plot_only=args.plot_only,
-                        **update_plots_cfg)
+    if not args.interactive:
+        mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+                            plot_only=args.plot_only,
+                            **update_plots_cfg)
 
-    log.success("All done.\n")
+        log.success("All done.\n")
+        sys.exit()
+
+    # Now in interactive plotting mode ...  . . . . . . . . . . . . . . . . . .
+    # Carry over all argvs relevant for the eval subparser
+    argv = [arg for arg in sys.argv[2:]]
+
+    def prompt_for_new_plot_args(*, old_argv: list, old_args) -> tuple:
+        """Given some old arguments, prompts for new ones and returns a new
+        list of argument values and the parsed argparse namespace result.
+        """
+        class ANSIesc:
+            RESET = '\033[0m'
+            BOLD = '\033[1m'
+            GREEN = '\033[32m'
+            YELLOW = '\033[33m'
+            MAGENTA = '\033[35m'
+            CYAN = '\033[36m'
+        
+        log.hilight("Interactive plotting.")
+        log.info("Use Cmd+C to exit.")
+
+        # Create a new argument list for querying the user. For that, remove
+        # the model name, and `--interactive` from the given list of argvs.
+        prefix_argv = ('--interactive', args.model_name)
+        to_query = [arg for arg in old_argv if arg not in prefix_argv]
+        to_query_str = " ".join(to_query) + (" " if to_query else "")
+
+        # Now, setup the startup hook with a callable that inserts those
+        # arguments that shall be editable by the user. Configure readline to
+        # allow tab completion for file paths after certain delimiters.
+        readline.set_startup_hook(lambda: readline.insert_text(to_query_str))
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer_delims(' \t\n=')
+
+        # Generate the prompt and store the result, stripping whitespace
+        prompt_str = ("\n{ansi.CYAN}${ansi.MAGENTA} "
+                      "utopia eval --interactive {} "
+                      "{ansi.RESET}".format(args.model_name, ansi=ANSIesc))
+        input_res = input(prompt_str).strip()
+        print("")
+        print("input_res:", repr(input_res))
+
+        # Reset the startup hook to do nothing
+        readline.set_startup_hook()
+
+        # Prepare the new list of argument values.
+        add_argv = input_res.split(' ') if input_res else []
+        new_argv = list(prefix_argv) + add_argv
+        print("new_argv:", new_argv)
+        
+        # ... and parse it to the eval subparser, converting SystemExit to a
+        # ValueError to allow handling in outer scope.
+        try:
+            new_args = p_eval.parse_args(new_argv)
+
+        except SystemExit:
+            raise ValueError("")
+
+        print("new_args:", new_args)
+
+        # Check that bad arguments were not used
+        disallowed_args = ('run_cfg_path', 'run_dir_path', 'set_cfg',
+                           'debug', 'cluster_mode',
+                           'suppress_data_tree', 'full_data_tree')
+        bad_args = [arg for arg in disallowed_args
+                    if getattr(new_args, arg) != p_eval.get_default(arg)]
+        if bad_args:
+            log.error("During interactive plotting, arguments that are used "
+                      "for the (already-initialized) Multiverse cannot be "
+                      "specified again!")
+            log.info("Remove the offending argument(s) ({}) and try again. "
+                     "Consult --help to find out the available "
+                     "plotting-related arguments."
+                     "".format(", ".join(bad_args)))
+            raise ValueError("")
+
+        return new_argv, new_args
+
+    while args.interactive:
+        try:
+            argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args)
+
+        except KeyboardInterrupt:
+            break
+
+        except ValueError:
+            # Prompt again
+            print("")
+            continue
+
+        # Create a new PlotManager
+        log.progress("Setting up new PlotManager ...")
+
+        # Perform plotting
+
+
+    # If this point is reached, interactive plotting was exited
+    print("\n")
+    log.success("Left interactive plotting mode.\n")
