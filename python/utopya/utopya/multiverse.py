@@ -1033,7 +1033,7 @@ class FrozenMultiverse(Multiverse):
             and isinstance(run_dir, str)
             and os.path.isabs(run_dir)):
             
-            raise NotImplementedError
+            raise NotImplementedError("use_meta_cfg_from_run_dir")
             
             # Find the meta config backup file and load it
             # Alternatively, create it from the singular backup files ...
