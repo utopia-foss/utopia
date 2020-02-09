@@ -9,16 +9,16 @@ INSTALL_DEPS = [
     'matplotlib>=3.1',
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
+
     'paramspace>=2.3',
+    'dantro~=0.11',  # NOTE Version need also be set in python/CMakeLists.txt
+    # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
+    # details on the compatible release clause.
     
     # Required for testing:
     'pytest>=3.4.0',
     'pytest-cov>=2.5.1',
-
-    'dantro~=0.11'
-    # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
-    # details on the compatible release clause.
-    # NOTE Versions need also be set in python/CMakeLists.txt
+    'psutil>=5.6.7'
 ]
 
 # .............................................................................

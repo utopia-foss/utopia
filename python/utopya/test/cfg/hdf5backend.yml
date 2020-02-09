@@ -1,0 +1,53 @@
+# Configuration file for the hdf5 backend tests
+---
+default_mv_init_kwargs:
+  worker_manager:
+    # Don't work in parallel
+    num_workers: 1
+
+    # CAN use a shorter poll delay here to poll more frequently. This is only
+    # relevant when the simulation is very short (less than a few seconds)
+    poll_delay: 0.1   # Default: 50ms
+
+  parameter_space:
+    num_steps: &default_num_steps 100000
+    seed: 42
+
+    HdfBench:
+      # Only need the basic benchmark
+      benchmarks:
+        - basic
+
+
+# Define a number of test cases, which each will create a separate universe
+test_cases:
+  # Case 0
+  - # Specify memory limits (in bytes) to test against
+    #   RSS: Resident Set Size: non-swapped physical memory a process uses
+    max_rss: !expr 200 * 1024*1024
+    #   VMS: Virtual Memory Size (optional)
+    max_vms: !expr inf
+
+
+  # Case 1
+  - max_rss: !expr 200 * 1024*1024 
+
+    # Update uni config for this test case
+    uni_cfg:
+      basic:
+        write_shape: [10]
+
+
+  # Case 2
+  - max_rss: !expr 200 * 1024*1024
+
+    uni_cfg:
+      benchmarks:
+        - with_chunks
+
+      with_chunks:
+        setup_func: setup_nd_with_chunks
+        write_func: write_const
+        write_shape: [1024]
+        chunks: [128, 1024]
+        const_val: 42.
