@@ -21,6 +21,7 @@ def cfg() -> dict:
 
 # -----------------------------------------------------------------------------
 
+@pytest.mark.skip("Reactivate when issue #149 is resolved.")
 def test_memory_usage_write(cfg):
     """Tests the memory usage of individual Utopia processes to assert that it
     does not grow beyond a certain limit.
