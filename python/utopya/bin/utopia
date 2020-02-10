@@ -2,13 +2,163 @@
 """This is the command line interface for Utopia"""
 
 import sys
+import traceback
 import argparse
+from typing import Tuple
 
+# Define helper functions -----------------------------------------------------
+
+def parse_update_args(args: argparse.Namespace, *,
+                      mode: str) -> Tuple[dict, dict]:
+    """Parses the given namespace, extracting update dictionaries for the
+    Multiverse and the plots configuration
+    
+    Args:
+        args (argparse.Namespace): The arguments to extract info from
+        mode (str): The mode argument. Can be ``run`` or ``eval``
+    
+    Returns:
+        Tuple[dict, dict]: Multiverse update config and plots update config
+    """
+    # Set an empty update dict. It will hold adjustments to the given configs
+    update_dict = {}
+    update_plots_cfg = {}
+    # NOTE The following updates to the update_dict rely on it being mutable
+
+    # In debug mode, set a number of configuration keys
+    if args.debug:
+        # Set model log level to DEBUG
+        add_item('debug', add_to=update_dict,
+                 key_path=['parameter_space', 'log_levels', 'model'])
+        
+        # Let PlotManager raise exceptions
+        add_item(True, add_to=update_dict,
+                 key_path=['plot_manager', 'raise_exc'])
+
+        # Let WorkerManager raise exceptions
+        add_item('raise', add_to=update_dict,
+                 key_path=['worker_manager', 'nonzero_exit_handling'])
+
+
+    # Additional arguments relevant in run mode
+    if mode == 'run':
+        # If a model_note was given, add it to the paths
+        if args.note:
+            add_item(args.note, add_to=update_dict,
+                     key_path=['paths', 'model_note'])
+
+        # The WorkerManager's non-zero exit handling, if in debug mode
+        if args.sim_errors:
+            add_item(args.sim_errors, add_to=update_dict,
+                     key_path=['worker_manager', 'nonzero_exit_handling'])
+
+        # Number of simulation steps
+        if args.num_steps is not None:
+            add_item(args.num_steps, add_to=update_dict,
+                     key_path=['parameter_space', 'num_steps'],
+                     is_valid= lambda v: v >= 0,
+                     ErrorMsg= lambda v: ValueError("Argument --num-steps "
+                                                    "needs to be positive, "
+                                                    "was {}.".format(v)))
+
+        # The root-level write_every parameter
+        if args.write_every is not None:
+            add_item(args.write_every, add_to=update_dict,
+                     key_path=['parameter_space', 'write_every'],
+                     is_valid= lambda v: v >= 1,
+                     ErrorMsg= lambda v: ValueError("Argument --write-every "
+                                                    "needs to be >= 1, "
+                                                    "was {}.".format(v)))
+        
+        # The root-level write_start parameter
+        if args.write_start is not None:
+            add_item(args.write_start, add_to=update_dict,
+                     key_path=['parameter_space', 'write_start'],
+                     is_valid= lambda v: v >= 0,
+                     ErrorMsg= lambda v: ValueError("Argument --write-start "
+                                                    "needs to be >= 0, "
+                                                    "was {}.".format(v)))
+
+        # Set seeds to a parameter dimension object
+        if args.num_seeds is not None:
+            add_item(args.num_seeds,
+                     value_func=lambda v: ParamDim(default=42, range=[v]),
+                     add_to=update_dict,
+                     key_path=['parameter_space', 'seed'],
+                     is_valid= lambda v: bool(v > 1),
+                     ErrorMsg= lambda v: ValueError("Argument --num-seeds "
+                                                    "needs to be > 1, "
+                                                    "was {}.".format(v)))
+
+            # Make it, by default, perform a sweep
+            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
+
+        # Set the perform_sweep parameter
+        if args.single:
+            add_item(False, add_to=update_dict, key_path=['perform_sweep'])
+
+        elif args.sweep:
+            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
+
+        # Set the cluster mode flag
+        if args.cluster_mode:
+            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
+
+        # Set general configuration entries
+        if args.set_model_params:
+            # Make sure the parameter space entry is available
+            if not update_dict.get('parameter_space'):
+                update_dict['parameter_space'] = dict()
+
+            # Make sure the model-related entry is available
+            if not update_dict['parameter_space'].get(args.model_name):
+                update_dict['parameter_space'][args.model_name] = dict()
+
+            add_from_kv_pairs(*args.set_model_params,
+                              add_to=update_dict['parameter_space'][args.model_name])
+
+        if args.set_params:
+            # Make sure the parameter space entry is available
+            if not update_dict.get('parameter_space'):
+                update_dict['parameter_space'] = dict()
+
+            add_from_kv_pairs(*args.set_params,
+                              add_to=update_dict['parameter_space'])
+    
+        if args.set_cfg:
+            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+        
+        if args.update_plots_cfg:
+            try:
+                add_from_kv_pairs(*args.update_plots_cfg,
+                                  add_to=update_plots_cfg)
+            except ValueError:
+                update_plots_cfg = load_yml(*args.update_plots_cfg)
+
+
+    # Adjustments in eval mode
+    elif mode == 'eval':
+        if args.set_cfg:
+            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+    
+        if args.update_plots_cfg:
+            add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
+
+        if args.cluster_mode:
+            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
+
+    else:
+        raise ValueError("Bad mode '{}'! Needs be: run or eval".format(mode))
+
+    return update_dict, update_plots_cfg
+
+
+# -----------------------------------------------------------------------------
 # Define the CLI --------------------------------------------------------------
 # Top level parsers
 parser = argparse.ArgumentParser(
     description="Welcome to the Utopia command line interface.",
-    epilog="Utopia  Copyright (C) 2016 – 2019  TS-CCEES Utopia Developers\n"
+    epilog="Utopia  Copyright (C) 2016 – 2020  TS-CCEES Utopia Developers\n"
            "This program comes with ABSOLUTELY NO WARRANTY.\n"
            "This is free software, and you are welcome to redistribute it\n"
            "under certain conditions. Please refer to the copyright notice\n"
@@ -298,7 +448,8 @@ p_run_plt.add_argument('--no-plot',
 p_run_plt.add_argument('--plot-only',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
-         "that match the names given here.")
+         "that match the names given here. This can also be used to activate "
+         "plots that are disabled in the specified plot configuration.")
 
 # misc
 p_run.add_argument('--suppress-data-tree',
@@ -340,17 +491,24 @@ p_eval_plt.add_argument('--update-plots-cfg',
 p_eval_plt.add_argument('--plot-only',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
-         "that match the names given here.")
-p_eval_plt.add_argument('--run-cfg-path',
+         "that match the names given here. This can also be used to activate "
+         "plots that are disabled in the specified plot configuration.")
+p_eval_plt.add_argument('--interactive',
+    action='store_true',
+    help="If given, the CLI will load the data and then wait for user input "
+         "to specify the plotting-related arguments. ")
+p_eval_plt.add_argument('--debug',
+    action='store_true',
+    help="If given, configures the PlotManager such that it raises exceptions "
+         "instead of warning (and proceeding to plot). If given while in "
+         "interactive plotting mode, a traceback is printed but interactive "
+         "plotting mode is _not_ quit.")
+
+# misc
+p_eval.add_argument('--run-cfg-path',
     default=None, nargs='?',
     help="Path to the run configuration. Can be used to change the "
          "configuration of DataManager and PlotManager.")
-
-# misc
-p_eval.add_argument('--debug',
-    action='store_true',
-    help="If given, configures the PlotManager such that it raises exceptions "
-         "instead of warning.")
 p_eval.add_argument('--set-cfg',
     default=None, nargs='+', type=str,
     help="Sets key-value pairs in the meta configuration. Example: foo.bar=42 "
@@ -370,16 +528,16 @@ p_eval.add_argument('--cluster-mode',
     help="Enables cluster mode. Note that for plotting, this information is "
          "not yet taken into account!")
 
+# CLI defined now.
+# -----------------------------------------------------------------------------
 
-# .............................................................................
-# CLI defined now. Parse the given arguments...
+# Parse the arguments now. Exit directly, if no mode subcommand was given.
 args = parser.parse_args()
 
 if args.mode is None:
     parser.print_help()
     sys.exit()
 
-# -----------------------------------------------------------------------------
 # If continuing further, need some imports
 from dantro.logging import getLogger
 log = getLogger(__name__)  # TODO Make this controllable!
@@ -389,7 +547,7 @@ from paramspace import ParamDim
 import utopya
 from utopya.tools import pformat, load_yml, add_item
 from utopya.cltools import (deploy_user_cfg, register_models, copy_model_files,
-                            add_from_kv_pairs)
+                            add_from_kv_pairs, prompt_for_new_plot_args)
 from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
 
 
@@ -472,138 +630,12 @@ if __name__ == '__main__':
         # End here.
         sys.exit()
 
+
     # Run & eval subcommands ..................................................
     # Prepare arguments for Multiverse . . . . . . . . . . . . . . . . . . . . 
 
     log.info("Parsing additional command line arguments ...")
-
-    # Set an empty update dict. It will hold adjustments to the given configs
-    update_dict = {}
-    update_plots_cfg = {}
-    # NOTE The following updates to the update_dict rely on it being mutable
-
-    # In debug mode, set a number of configuration keys
-    if args.debug:
-        # Set model log level to DEBUG
-        add_item('debug', add_to=update_dict,
-                 key_path=['parameter_space', 'log_levels', 'model'])
-        
-        # Let PlotManager raise exceptions
-        add_item(True, add_to=update_dict,
-                 key_path=['plot_manager', 'raise_exc'])
-
-        # Let WorkerManager raise exceptions
-        add_item('raise', add_to=update_dict,
-                 key_path=['worker_manager', 'nonzero_exit_handling'])
-
-
-    # Additional arguments relevant in run mode
-    if args.mode == 'run':
-        # If a model_note was given, add it to the paths
-        if args.note:
-            add_item(args.note, add_to=update_dict,
-                     key_path=['paths', 'model_note'])
-
-        # The WorkerManager's non-zero exit handling, if in debug mode
-        if args.sim_errors:
-            add_item(args.sim_errors, add_to=update_dict,
-                     key_path=['worker_manager', 'nonzero_exit_handling'])
-
-        # Number of simulation steps
-        if args.num_steps is not None:
-            add_item(args.num_steps, add_to=update_dict,
-                     key_path=['parameter_space', 'num_steps'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --num-steps "
-                                                    "needs to be positive, "
-                                                    "was {}.".format(v)))
-
-        # The root-level write_every parameter
-        if args.write_every is not None:
-            add_item(args.write_every, add_to=update_dict,
-                     key_path=['parameter_space', 'write_every'],
-                     is_valid= lambda v: v >= 1,
-                     ErrorMsg= lambda v: ValueError("Argument --write-every "
-                                                    "needs to be >= 1, "
-                                                    "was {}.".format(v)))
-        
-        # The root-level write_start parameter
-        if args.write_start is not None:
-            add_item(args.write_start, add_to=update_dict,
-                     key_path=['parameter_space', 'write_start'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --write-start "
-                                                    "needs to be >= 0, "
-                                                    "was {}.".format(v)))
-
-        # Set seeds to a parameter dimension object
-        if args.num_seeds is not None:
-            add_item(args.num_seeds,
-                     value_func=lambda v: ParamDim(default=42, range=[v]),
-                     add_to=update_dict,
-                     key_path=['parameter_space', 'seed'],
-                     is_valid= lambda v: bool(v > 1),
-                     ErrorMsg= lambda v: ValueError("Argument --num-seeds "
-                                                    "needs to be > 1, "
-                                                    "was {}.".format(v)))
-
-            # Make it, by default, perform a sweep
-            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
-
-        # Set the perform_sweep parameter
-        if args.single:
-            add_item(False, add_to=update_dict, key_path=['perform_sweep'])
-
-        elif args.sweep:
-            add_item(True, add_to=update_dict, key_path=['perform_sweep'])
-
-        # Set the cluster mode flag
-        if args.cluster_mode:
-            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
-
-        # Set general configuration entries
-        if args.set_model_params:
-            # Make sure the parameter space entry is available
-            if not update_dict.get('parameter_space'):
-                update_dict['parameter_space'] = dict()
-
-            # Make sure the model-related entry is available
-            if not update_dict['parameter_space'].get(args.model_name):
-                update_dict['parameter_space'][args.model_name] = dict()
-
-            add_from_kv_pairs(*args.set_model_params,
-                              add_to=update_dict['parameter_space'][args.model_name])
-
-        if args.set_params:
-            # Make sure the parameter space entry is available
-            if not update_dict.get('parameter_space'):
-                update_dict['parameter_space'] = dict()
-
-            add_from_kv_pairs(*args.set_params,
-                              add_to=update_dict['parameter_space'])
-    
-        if args.set_cfg:
-            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-        
-        if args.update_plots_cfg:
-            try:
-                add_from_kv_pairs(*args.update_plots_cfg,
-                                  add_to=update_plots_cfg)
-            except ValueError:
-                update_plots_cfg = load_yml(*args.update_plots_cfg)
-
-
-    # Adjustments in eval mode
-    if args.mode == 'eval':
-        if args.set_cfg:
-            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-    
-        if args.update_plots_cfg:
-            add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
-
-        if args.cluster_mode:
-            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
-
+    update_dict, update_plots_cfg = parse_update_args(args, mode=args.mode)
 
     # Finished with generating the update dict; give some info on it
     if update_dict:
@@ -652,8 +684,84 @@ if __name__ == '__main__':
 
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
-                        plot_only=args.plot_only,
-                        **update_plots_cfg)
+    if not getattr(args, 'interactive', False):
+        mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+                            plot_only=args.plot_only,
+                            **update_plots_cfg)
 
-    log.success("All done.\n")
+        log.success("All done.\n")
+        sys.exit()
+
+    # Interactive Plotting . . . . . . . . . . . . . . . . . . . . . . . . . .
+    # Carry over all argvs relevant for the eval subparser
+    argv = [arg for arg in sys.argv[2:]]
+
+    # While in interactive mode, the following loop is carried out repeatedly.
+    # A counter variable is used to 
+    iap_session = 0
+
+    while args.interactive:
+        print("")
+        log.hilight("--- Interactive plotting session %d ---", iap_session)
+        log.note("Use Cmd+C to exit.")
+
+        try:
+            argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args,
+                                                  parser=p_eval)
+
+        except (KeyboardInterrupt, EOFError):
+            # Quit interactive plotting
+            # NOTE EOFError is invoked by builtins.input when the input is read
+            #      from a stream that is not the standard input stream.
+            break
+
+        except (ValueError, SystemExit):
+            # ... just prompt again. Error message was shown in prompt function
+            continue
+
+        # Generate update dicts
+        _, update_plots_cfg = parse_update_args(args, mode='eval')
+
+        if update_plots_cfg:
+            log.note("Updates to plot configuration:\n\n%s",
+                     pformat(update_plots_cfg))
+
+        # Create a new PlotManager and increment the session counter. Use a
+        # custom output directory (inside the regular eval directory) and
+        # include the session number into it.
+        mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
+                              raise_exc=args.debug)
+        iap_session += 1
+        
+        # Now, try to plot:
+        try:
+            mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+                                plot_only=args.plot_only,
+                                **update_plots_cfg)
+        
+        except KeyboardInterrupt:
+            print("")
+            log.warning("Interrupted current plotting session. Remaining in "
+                        "interactive plotting mode ...")
+            continue
+
+        except Exception as exc:
+            if args.debug:
+                log.error("An exception occured during interactive plotting!")
+                traceback.print_exc()
+                log.note("Remove --debug flag to hide traceback.")
+            else:
+                log.error("An exception occured during interactive plotting! "
+                          "%s: %s",
+                          exc.__class__.__name__, str(exc))
+                log.note("Add --debug flag to show traceback.")
+
+            log.warning("Remaining in interactive plotting mode ...")
+
+            continue
+
+        # End of while loop
+
+    # If this point is reached, interactive plotting was exited
+    print("\n")
+    log.success("Left interactive plotting mode.\n")

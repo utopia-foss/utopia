@@ -148,13 +148,11 @@ class Multiverse:
         # Prepare the executable
         self._prepare_executable(**self.meta_cfg['executable_control'])
 
-
-        # Create a data manager
+        # Create a DataManager instance
         self._dm = DataManager(self.dirs['run'],
                                name=self.model_name + "_data",
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
-
 
         # Create a WorkerManager instance and its associated reporter
         self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
@@ -163,14 +161,8 @@ class Multiverse:
                                                report_dir=self.dirs['run'],
                                                **self.meta_cfg['reporter'])
 
-
         # And instantiate the PlotManager with the model-specific plot config
-        self._pm = PlotManager(
-                        dm=self.dm,
-                        base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
-                        update_base_cfg=self.info_bundle.paths.get('base_plots'),
-                        plots_cfg=self.info_bundle.paths.get('default_plots'),
-                        **self.meta_cfg['plot_manager'])
+        self._pm = self._setup_pm()
 
         log.progress("Initialized Multiverse.\n")
 
@@ -349,6 +341,26 @@ class Multiverse:
         self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
         log.success("Finished parameter sweep. Wohoo. :)")
+
+    def renew_plot_manager(self, **update_kwargs):
+        """Tries to set up a new PlotManager. If this succeeds, the old one is
+        discarded and the new one is associated with this Multiverse.
+        
+        Args:
+            **update_kwargs: Passed on to PlotManager.__init__
+        """
+        log.debug("Creating new PlotManager ...")
+        try:
+            pm = self._setup_pm(**update_kwargs)
+
+        except Exception as exc:
+            raise ValueError("Failed setting up a new PlotManager! The old "
+                             "PlotManager remains."
+                             "") from exc
+
+        self._pm = pm
+        log.progress("Renewed PlotManager.\n")
+
 
     # Helpers .................................................................
 
@@ -600,6 +612,22 @@ class Multiverse:
             self.dirs[subdir] = subdir_path
 
         log.debug("Created subdirectories:  %s", self._dirs)
+
+    def _setup_pm(self, **update_kwargs) -> PlotManager:
+        """Helper function to setup a PlotManager instance"""
+        paths = self.info_bundle.paths
+        pm_kwargs = copy.deepcopy(self.meta_cfg['plot_manager'])
+
+        if update_kwargs:
+            pm_kwargs = recursive_update(pm_kwargs, update_kwargs)
+
+        pm = PlotManager(dm=self.dm,
+                         base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
+                         update_base_cfg=paths.get('base_plots'),
+                         plots_cfg=paths.get('default_plots'),
+                         **pm_kwargs)
+
+        return pm
 
     def _perform_backup(self, *, cfg_parts: dict,
                         backup_cfg_files: bool=True,
@@ -1005,7 +1033,7 @@ class FrozenMultiverse(Multiverse):
             and isinstance(run_dir, str)
             and os.path.isabs(run_dir)):
             
-            raise NotImplementedError
+            raise NotImplementedError("use_meta_cfg_from_run_dir")
             
             # Find the meta config backup file and load it
             # Alternatively, create it from the singular backup files ...

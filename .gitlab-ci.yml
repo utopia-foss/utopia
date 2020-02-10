@@ -419,6 +419,7 @@ test:cli:
     - utopia run dummy --note write_last --num-steps 5 --write-start 5
     
     # Test the printing of the data tree
+    # NOTE Need to sleep here because the eval directory will already exist
     - utopia run dummy --full-data-tree
     - sleep 1.1 && utopia eval dummy --full-data-tree
     - utopia run dummy --suppress-data-tree
@@ -428,7 +429,6 @@ test:cli:
     - utopia run dummy --note plt0 --no-plot
     - sleep 1.1 && utopia eval dummy  # should create the corresponding plots
 
-    # Need to sleep here because the eval directory will already exist
     - utopia run dummy --note plt1
     - utopia run dummy --note plt2 --plot-only states
     - utopia run dummy --note plt3
@@ -437,6 +437,19 @@ test:cli:
         --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
     - utopia run dummy --note plt5
         --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml 
+
+    # Test the interactive plotting mode, piping mock input to it
+    # None of these should lead to an exit code other than 0
+    - sleep 1.1 && utopia eval --interactive dummy
+        <<< $'\n--plot-only states\n--plot-only state_mean --debug'
+    - sleep 1.1 && utopia eval --interactive dummy
+        <<< $'--debug\n--debug --update-plots-cfg state_mean.foo=bar'
+    - sleep 1.1 && utopia eval --interactive dummy
+        <<< $'--plot-only some_non_existing_plot --debug'
+    - sleep 1.1 && utopia eval --interactive dummy
+        <<< $'--plot-only some_non_existing_plot --debug'
+    - sleep 1.1 && utopia eval --interactive dummy
+        <<< $'some offending arguments\n--help'
     
     # Test the setting of parameters and config parameters from CLI
     - utopia run dummy --set-model-params foo=3 bar=2.0

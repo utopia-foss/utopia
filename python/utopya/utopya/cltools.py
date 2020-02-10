@@ -4,7 +4,9 @@ import os
 import re
 import glob
 import logging
-from typing import Callable, Dict, Sequence, Tuple
+import argparse
+import readline
+from typing import Callable, Dict, Sequence, Tuple, List
 from pkg_resources import resource_filename
 
 from .multiverse import Multiverse
@@ -18,6 +20,22 @@ log = logging.getLogger(__name__)
 
 USER_CFG_HEADER_PATH = resource_filename('utopya', 'cfg/user_cfg_header.yml')
 BASE_CFG_PATH = resource_filename('utopya', 'cfg/base_cfg.yml')
+
+class ANSIesc:
+    """Some selected ANSI escape codes; usable in format strings"""
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    DIM = '\033[2m'
+    UNDERLINE = '\033[4m'
+
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
 
 # -----------------------------------------------------------------------------
 
@@ -664,3 +682,79 @@ def copy_model_files(*, model_name: str,
 
     # All done now.
     print("\nFinished.")
+
+
+def prompt_for_new_plot_args(*, old_argv: List[str],
+                             old_args: argparse.Namespace,
+                             parser: argparse.ArgumentParser,
+                             ) -> Tuple[dict, argparse.Namespace]:
+    """Given some old arguments, prompts for new ones and returns a new
+    list of argument values and the parsed argparse namespace result.
+    
+    Args:
+        old_argv (List[str]): The old argument value list
+        old_args (argparse.Namespace): The old set of parsed arguments
+        parser (argparse.ArgumentParser): The parser to use for evaluating the
+            newly specified argument value list
+    
+    Returns:
+        Tuple[dict, argparse.Namespace]: The new argument values list and the
+            parsed argument namespace.
+    
+    Raises:
+        ValueError: Upon error in parsing the new arguments.
+    """
+    # Specify those arguments that may not be given in the prompt
+    DISALLOWED_ARGS = ('run_cfg_path', 'run_dir_path', 'set_cfg',
+                       'cluster_mode', 'suppress_data_tree', 'full_data_tree')
+
+    # Create a new argument list for querying the user. For that, remove
+    # the model name, and `--interactive` from the given list of argvs.
+    prefix_argv = ('--interactive', old_args.model_name)
+    to_query = [arg for arg in old_argv if arg not in prefix_argv]
+    to_query_str = " ".join(to_query) + (" " if to_query else "")
+
+    # Now, setup the startup hook with a callable that inserts those
+    # arguments that shall be editable by the user. Configure readline to
+    # allow tab completion for file paths after certain delimiters.
+    readline.set_startup_hook(lambda: readline.insert_text(to_query_str))
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer_delims(' \t\n=')
+
+    # Generate the prompt and store the result, stripping whitespace
+    prompt_str = ("\n{ansi.CYAN}${ansi.MAGENTA} "
+                  "utopia eval --interactive {} "
+                  "{ansi.RESET}".format(old_args.model_name, ansi=ANSIesc))
+    input_res = input(prompt_str).strip()
+    print("")
+
+    # Reset the startup hook to do nothing
+    readline.set_startup_hook()
+
+    # Prepare the new list of argument values.
+    add_argv = input_res.split(' ') if input_res else []
+    new_argv = list(prefix_argv) + add_argv
+    
+    # ... and parse it to the eval subparser.
+    new_args = parser.parse_args(new_argv)
+    # NOTE This may raise SystemExit upon the --help argument or other
+    #      arguments that are not properly parsable.
+
+    # Check that bad arguments were not used
+    bad_args = [arg for arg in DISALLOWED_ARGS
+                if getattr(new_args, arg) != parser.get_default(arg)]
+    if bad_args:
+        print("{ansi.RED}During interactive plotting, arguments that are used "
+              "to update the Multiverse meta-configuration cannot be used!"
+              "{ansi.RESET}".format(ansi=ANSIesc))
+        print("{ansi.DIM}Remove the offending argument{} ({}) and try again. "
+              "Consult --help to find out the available plotting-related "
+              "arguments."
+              "{ansi.RESET}".format("s" if len(bad_args) != 1 else "", 
+                                    ", ".join(bad_args), ansi=ANSIesc))
+        raise ValueError("Cannot specify arguments that are used for updating "
+                         "the (already-in-use) meta-configuration of the "
+                         "current Multiverse instance. Disallowed arguments: "
+                         "{}".format(", ".join(DISALLOWED_ARGS)))
+
+    return new_argv, new_args

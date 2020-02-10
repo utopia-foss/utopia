@@ -1,9 +1,8 @@
 """The utopya package implements the frontend of Utopia"""
 
 # Specify the version
-__version__ = '0.6.0'
+__version__ = '0.7.0'
 # NOTE This needs to correspond to the one in setup.py
-# TODO single-source this!
 
 # Use the dantro-provided logging module (with additional log levels)
 from dantro.logging import getLogger

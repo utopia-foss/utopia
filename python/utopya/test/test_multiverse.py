@@ -222,6 +222,21 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
 
+def test_renew_plot_manager(mv_kwargs):
+    """Tests the renewal of PlotManager instances in the Multiverse"""
+    mv = Multiverse(**mv_kwargs)
+    initial_pm = mv.pm
+
+    # Try to renew it (with a bad config). The old one should remain
+    with pytest.raises(ValueError, match="Failed setting up"):
+        mv.renew_plot_manager(foo="bar")
+
+    assert mv.pm is initial_pm
+
+    # Again, this time it should work
+    mv.renew_plot_manager()
+    assert mv.pm is not initial_pm
+
 def test_cluster_mode(mv_kwargs, cluster_env):
     """Tests cluster mode basics like: resolution of parameters, creation of
     the run directory, ...
@@ -393,3 +408,9 @@ def test_FrozenMultiverse(mv_kwargs, cluster_env):
     FrozenMultiverse(**mv_kwargs, run_dir=os.path.relpath(mv.dirs['run'],
                                                           start=os.getcwd()),
                      data_manager=dict(out_dir="eval/{timestamp:}_7"))
+
+
+    with pytest.raises(NotImplementedError, match="use_meta_cfg_from_run_dir"):
+        FrozenMultiverse(**mv_kwargs, run_dir="/some/path/to/a/run_dir",
+                         use_meta_cfg_from_run_dir=True,
+                         data_manager=dict(out_dir="eval/{timestamp:}_7"))
