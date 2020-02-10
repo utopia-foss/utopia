@@ -21,7 +21,7 @@ endif()
 # Now, ready to install utopya
 
 # -- utopya --
-python_find_package(PACKAGE utopya VERSION 0.6)
+python_find_package(PACKAGE utopya VERSION 0.7)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
