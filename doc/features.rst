@@ -360,6 +360,13 @@ The ``utopia`` Command Line Interface (CLI)
         utopia run MyModel --num-steps 1000 --set-params log_levels.model=debug --set-model-params my_param=12.345
 
 * **Debug Mode:** by adding the ``--debug`` flag, logger verbosity is increased and errors are raised; this makes debugging easier.
+* **Interactive Plotting:** for ``utopia eval``, pass the ``--interactive`` flag to not quit the CLI after the plotting routine has finished.
+
+    * The CLI will then give the option to change the plotting-related arguments, e.g. which plots are to be created or from which configuration file they should be created.
+    * The already-loaded data is kept in memory and thus speeds-up the creation of plots, especially when large amounts of data are to be loaded.
+    * *Not to confused with* the feature to work interactively with ``utopya`` using the Python interface, e.g. via IPython or Jupyter Notebook.
+      See :ref:`below <feature_utopya_interactive>` for more info on that feature.
+
 * **Copying a model:** The CLI helps a lot with that by copying all relevant files, renaming them, and even refactoring them. Copying between Utopia projects is also possible.
 
     .. code-block:: bash

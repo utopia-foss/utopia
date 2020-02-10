@@ -125,8 +125,9 @@ Don't bother with the simulation output for now; that will be addressed soon.
 * ``utopia run dummy --no-plot`` will run the model without creating any plots. It can be useful if you are only interested in the data created or the terminal output.
 * ``utopia eval dummy`` loads the data of the previous simulation of the named model and performs the default evaluation on it
 * ``utopia eval dummy --plot-only state_mean`` only creates the plot with the specified name
+* ``utopia eval dummy --interactive`` starts an interactive plotting session
 
-Notice that ``utopia eval`` uses the ``eval`` subcommand. You can run ``utopia -h`` to see what other subcommands are available.
+Notice that ``utopia eval`` uses the ``eval`` subcommand. You can run ``utopia --help`` to see what other subcommands are available.
 
 Now you should be reasonably warmed-up with the CLI. Let's get to running an actual simulation.
 
@@ -588,6 +589,11 @@ Now check out the run directory, where a new directory inside ``eval`` (with the
 
 Feel free to customize the plot configuration by changing parameters in your ``plots.yml`` file. To find out which configuration parameters are available, check out the base plot configuration for the model.
 
+.. note::
+
+    To avoid loading the data into memory upon each invocation of ``utopia eval``, you can use the ``--interactive`` option to enter into interactive plotting mode.
+    There, you can change the arguments given to ``utopia eval`` and repeatedly create plots without discarding the data from memory.
+
 As an example, let's now adjust the configuration a bit:
 
 .. code-block:: yaml
@@ -604,7 +610,12 @@ Enjoy the plot! :)
 
 .. note::
 
-  You can run the CLI in debug mode, which will produce tracebacks and help you understand what's going on: ``utopia eval <model_name> --debug --plots-cfg <path/to/plots.yml>``.
+  You can run the CLI in debug mode, which will produce tracebacks and help you understand what's going on:
+
+  .. code-block:: console
+
+    utopia eval <model_name> --debug --plots-cfg <path/to/plots.yml>
+
   This is very useful when you run into errors in the plot functions, as the program then stops and gives you more information on what went wrong.
 
 .. warning::
@@ -1064,6 +1075,7 @@ Your learned the basics of:
 
 Summed up, you learned how to use the *Utopia* tool and the concepts that can be applied to all other models.
 
+
 How to continue from here?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 The skills you learned in this tutorial are general enough that you can apply them to any model, following the philosophy: If you know how to boil water to cook some pasta you also know how to cook rice.
@@ -1072,6 +1084,7 @@ Of course, you will need to adjust some parameters.
 So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
 
 And, perhaps you even want to write your own *Utopia* model. Just follow the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
+
 
 What if I have more questions?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
