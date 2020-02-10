@@ -680,6 +680,8 @@ class WorkerManagerReporter(Reporter):
         
         # Calculate statistics
         d = OrderedDict()
+        d['total (wall)']= np.sum(rts) / self._wm.num_workers
+        d['total (CPU)'] = np.sum(rts)
         d['mean']        = np.mean(rts)
         d[' (last 50%)'] = np.mean(rts[-len(rts)//2:])
         d[' (last 20%)'] = np.mean(rts[-len(rts)//5:])
