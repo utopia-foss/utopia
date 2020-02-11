@@ -1,6 +1,6 @@
 # Configuration file for the hdf5 backend tests
 ---
-default_mv_init_kwargs:
+default_mv_kwargs:
   worker_manager:
     # Don't work in parallel
     num_workers: 1
