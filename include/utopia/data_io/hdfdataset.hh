@@ -18,11 +18,13 @@
 #include <hdf5_hl.h>
 
 #include "../core/utils.hh"
+
 #include "hdfattribute.hh"
 #include "hdfbufferfactory.hh"
 #include "hdfchunking.hh"
 #include "hdftypefactory.hh"
 #include "hdfutilities.hh"
+#include "hdfdataspace.hh"
 
 namespace Utopia
 {
@@ -66,8 +68,10 @@ class HDFDataset
         hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
         H5Pset_create_intermediate_group(group_plist, 1);
 
-        hid_t   type  = HDFTypeFactory::type< Datatype >(typesize);
-        hsize_t tsize = H5Tget_size(type);
+        HDFTypeFactory< Datatype > typeobject(typesize);
+
+        hsize_t tsize = typeobject.size();
+
 
         // this is something different than typesize, which has meaning for
         // arrays only
@@ -93,32 +97,34 @@ class HDFDataset
                 H5Pset_deflate(plist, _compress_level);
             }
 
+
             // make dataspace
-            hid_t dspace = H5Screate_simple(
-                _rank, _current_extent.data(), _capacity.data());
+            _filespace.open(_rank, _current_extent, _capacity);
+            
             // create dataset and return
             dset = H5Dcreate(_parent_object->get_id(),
                              _path.c_str(),
-                             type,
-                             dspace,
+                             typeobject.get_id(),
+                             _filespace.get_id(),
                              group_plist,
                              plist,
                              H5P_DEFAULT);
+
         }
         else
         {
+
             // make dataspace
-            hid_t dspace = H5Screate_simple(
-                _rank, _current_extent.data(), _capacity.data());
+            _filespace.open(_rank, _current_extent, _capacity);
 
             // can create the dataset right away
             dset = H5Dcreate(_parent_object->get_id(),
                              _path.c_str(),
-                             type,
-                             dspace,
+                             typeobject.get_id(),
+                             _filespace.get_id(),
                              group_plist,
                              H5P_DEFAULT,
-                             H5P_DEFAULT);
+                             H5P_DEFAULT);            
         }
 
         // set fill value to initialize empty values in the dataset
@@ -128,53 +134,6 @@ class HDFDataset
         _address                       = _info.addr;
         (*_referencecounter)[_address] = 1;
         return dset;
-    }
-
-    /**
-     * @brief      Helper for selecting subset of dataset
-     *
-     * @param      offset  The offset
-     * @param      stride  The stride
-     * @param      block   The block
-     * @param      count   The count
-     *
-     * @return     the dataset subset vector, consisting of dspace and memspace
-     */
-    std::pair< hid_t, hid_t >
-    __select_dataset_subset__(std::vector< hsize_t > count,
-                              std::vector< hsize_t > stride = {})
-    {
-        // select the new slab we just added for writing.
-        hid_t filespace = H5Dget_space(_dataset);
-
-        hid_t  memspace = H5Screate_simple(_rank, count.data(), NULL);
-        herr_t err      = 0;
-        if (stride.size() == 0)
-        {
-            err = H5Sselect_hyperslab(filespace,
-                                      H5S_SELECT_SET,
-                                      _offset.data(),
-                                      NULL,
-                                      count.data(),
-                                      NULL);
-        }
-        else
-        {
-            err = H5Sselect_hyperslab(filespace,
-                                      H5S_SELECT_SET,
-                                      _offset.data(),
-                                      stride.data(),
-                                      count.data(),
-                                      NULL);
-        }
-
-        if (err < 0)
-        {
-            throw std::runtime_error("Dataset " + _path +
-                                     ": Selecting hyperslab failed!");
-        }
-
-        return { filespace, memspace };
     }
 
     /**
@@ -202,7 +161,7 @@ class HDFDataset
      */
     template < typename T >
     herr_t
-    __write_container__(T&& data, hid_t memspace, hid_t filespace)
+    __write_container__(T&& data)
     {
         using value_type_1 =
             typename Utils::remove_qualifier_t< T >::value_type;
@@ -219,10 +178,13 @@ class HDFDataset
             {
                 _dataset = __create_dataset__< base_type >(0);
             }
+
+            HDFTypeFactory< base_type > type(0ul);
+
             return H5Dwrite(_dataset,
-                            HDFTypeFactory::type< base_type >(0),
-                            memspace,
-                            filespace,
+                            type.get_id(),
+                            _memspace.get_id(),
+                            _filespace.get_id(),
                             H5P_DEFAULT,
                             data.data());
         }
@@ -252,10 +214,12 @@ class HDFDataset
                 std::end(data),
                 [](auto& value) -> value_type_1& { return value; });
 
+            HDFTypeFactory< base_type > type(typesize);
+
             return H5Dwrite(_dataset,
-                            HDFTypeFactory::type< base_type >(typesize),
-                            memspace,
-                            filespace,
+                            type.get_id(),
+                            _memspace.get_id(),
+                            _filespace.get_id(),
                             H5P_DEFAULT,
                             buffer.data());
         }
@@ -272,7 +236,7 @@ class HDFDataset
      */
     template < typename T >
     herr_t
-    __write_stringtype__(T data, hid_t memspace, hid_t filespace)
+    __write_stringtype__(T data)
     {
         // Since std::string cannot be written directly,
         // (only const char*/char* can), a buffer pointer has been added
@@ -297,11 +261,14 @@ class HDFDataset
         {
             _dataset = __create_dataset__< const char* >(len);
         }
+
+        HDFTypeFactory< const char* > type(len);
+
         // use that strings store data in consecutive memory
         return H5Dwrite(_dataset,
-                        HDFTypeFactory::type< const char* >(len),
-                        memspace,
-                        filespace,
+                        type.get_id(),
+                        _memspace.get_id(),
+                        _filespace.get_id(),
                         H5P_DEFAULT,
                         buffer);
     }
@@ -319,7 +286,7 @@ class HDFDataset
      */
     template < typename T >
     herr_t
-    __write_pointertype__(T data, hid_t memspace, hid_t filespace)
+    __write_pointertype__(T data)
     {
         // result types removes pointers, references, and qualifiers
         using basetype = Utils::remove_qualifier_t< T >;
@@ -329,10 +296,12 @@ class HDFDataset
             _dataset = __create_dataset__< basetype >(0);
         }
 
+        HDFTypeFactory< basetype > type(0);
+
         return H5Dwrite(_dataset,
-                        HDFTypeFactory::type< basetype >(),
-                        memspace,
-                        filespace,
+                        type.get_id(),
+                        _memspace.get_id(),
+                        _filespace.get_id(),
                         H5P_DEFAULT,
                         data);
     }
@@ -349,7 +318,7 @@ class HDFDataset
      */
     template < typename T >
     herr_t
-    __write_scalartype__(T data, hid_t memspace, hid_t filespace)
+    __write_scalartype__(T data)
     {
         // because we just write a scalar, the shape tells basically that
         // the attribute is pointlike: 1D and 1 entry.
@@ -359,10 +328,12 @@ class HDFDataset
             _dataset = __create_dataset__< T >(0);
         }
 
+        HDFTypeFactory< basetype > type(0);
+
         return H5Dwrite(_dataset,
-                        HDFTypeFactory::type< basetype >(),
-                        memspace,
-                        filespace,
+                        type.get_id(),
+                        _memspace.get_id(),
+                        _filespace.get_id(),
                         H5P_DEFAULT,
                         &data);
     }
@@ -374,7 +345,7 @@ class HDFDataset
     // overloaded to allow for automatic buffer creation or a buffer argument.
     template < typename Type >
     herr_t
-    __read_container__(Type& buffer, hid_t memspace, hid_t filespace)
+    __read_container__(Type& buffer)
     {
         using value_type_1 =
             Utils::remove_qualifier_t< typename Type::value_type >;
@@ -411,14 +382,14 @@ class HDFDataset
             // everything is fine.
 
             // get type the attribute has internally
-            hid_t type = H5Dget_type(_dataset);
+            HDFTypeFactory<void> type(*this);
 
             // check if type given in the buffer is std::array.
             // If it is, the user knew that the data stored there
             // has always the same length, otherwise she does not
             // know and thus it is assumed that the data is variable
             // length.
-            if (H5Tget_class(type) == H5T_ARRAY)
+            if (type.category() == H5T_ARRAY)
             {
                 // check if std::array is given as value_type,
                 // if not adjust sizes
@@ -434,13 +405,15 @@ class HDFDataset
                 }
 
                 return H5Dread(_dataset,
-                               type,
-                               memspace,
-                               filespace,
+                               type.get_id(),
+                               _memspace.get_id(),
+                               _filespace.get_id(),
                                H5P_DEFAULT,
                                buffer.data());
+                
+
             }
-            else if (H5Tget_class(type) == H5T_STRING)
+            else if (type.category() == H5T_STRING)
             {
                 if constexpr (!Utils::is_string_v< value_type_1 >)
                 {
@@ -475,16 +448,15 @@ class HDFDataset
                      *               - put them into final buffer
                      * Mind that the buffer is preallocated to the correct size
                      */
-                    hid_t vlentype = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(vlentype, H5T_VARIABLE);
+                    HDFTypeFactory<std::string> vlentype(0ul);
 
-                    if (H5Tequal(vlentype, type))
+                    if (H5Tequal(vlentype.get_id(), type.get_id()))
                     {
                         std::vector< char* > temp_buffer(buffer.size());
                         herr_t               err = H5Dread(_dataset,
-                                             type,
-                                             memspace,
-                                             filespace,
+                                             type.get_id(),
+                                             _memspace.get_id(),
+                                             _filespace.get_id(),
                                              H5P_DEFAULT,
                                              &temp_buffer[0]);
 
@@ -518,16 +490,16 @@ class HDFDataset
                     {
                         // get size of the type, set up intermediate string
                         // buffer, adjust its size
-                        auto        s = H5Tget_size(type) / sizeof(char);
+                        auto        s = type.size() / sizeof(char);
                         std::string temp_buffer;
 
                         temp_buffer.resize(buffer.size() * s);
 
                         // actual read
                         herr_t err = H5Dread(_dataset,
-                                             type,
-                                             memspace,
-                                             filespace,
+                                             type.get_id(),
+                                             _memspace.get_id(),
+                                             _filespace.get_id(),
                                              H5P_DEFAULT,
                                              &temp_buffer[0]);
 
@@ -552,15 +524,15 @@ class HDFDataset
                 }
             }
             // variable length arrays
-            else if (H5Tget_class(type) == H5T_VLEN)
+            else if (type.category() == H5T_VLEN)
             {
                 // if
                 std::vector< hvl_t > temp_buffer(buffer.size());
 
                 herr_t err = H5Dread(_dataset,
-                                     type,
-                                     memspace,
-                                     filespace,
+                                     type.get_id(),
+                                     _memspace.get_id(),
+                                     _filespace.get_id(),
                                      H5P_DEFAULT,
                                      temp_buffer.data());
 
@@ -598,10 +570,11 @@ class HDFDataset
         else // no nested container or container of strings, but one containing
              // simple types
         {
+            HDFTypeFactory<void> type(*this);
             return H5Dread(_dataset,
-                           H5Dget_type(_dataset),
-                           memspace,
-                           filespace,
+                           type.get_id(),
+                           _memspace.get_id(),
+                           _filespace.get_id(),
                            H5P_DEFAULT,
                            buffer.data());
         }
@@ -613,14 +586,18 @@ class HDFDataset
      */
     template < typename Type >
     auto
-    __read_stringtype__(Type& buffer, hid_t memspace, hid_t filespace)
+    __read_stringtype__(Type& buffer)
     {
-        hid_t type = H5Dget_type(_dataset);
+        HDFTypeFactory<void> type(*this);
 
-        buffer.resize(buffer.size() * H5Tget_size(type));
+        buffer.resize(buffer.size() * type.size());
         // read data
-        return H5Dread(
-            _dataset, type, memspace, filespace, H5P_DEFAULT, buffer.data());
+        return H5Dread(_dataset,
+                       type.get_id(),
+                       _memspace.get_id(),
+                       _filespace.get_id(),
+                       H5P_DEFAULT,
+                       buffer.data());
     }
 
     /// read pointertype.
@@ -629,12 +606,15 @@ class HDFDataset
      */
     template < typename Type >
     auto
-    __read_pointertype__(Type buffer, hid_t memspace, hid_t filespace)
+    __read_pointertype__(Type buffer)
     {
+
+        HDFTypeFactory<void> type(*this);
+
         return H5Dread(_dataset,
-                       H5Dget_type(_dataset),
-                       memspace,
-                       filespace,
+                       type.get_id(),
+                       _memspace.get_id(),
+                       _filespace.get_id(),
                        H5P_DEFAULT,
                        buffer);
     }
@@ -642,12 +622,14 @@ class HDFDataset
     /// read scalar type, trivial
     template < typename Type >
     auto
-    __read_scalartype__(Type& buffer, hid_t memspace, hid_t filespace)
+    __read_scalartype__(Type& buffer)
     {
+        HDFTypeFactory<void> type(*this);
+
         return H5Dread(_dataset,
-                       H5Dget_type(_dataset),
-                       memspace,
-                       filespace,
+                       type.get_id(),
+                       _memspace.get_id(),
+                       _filespace.get_id(),
                        H5P_DEFAULT,
                        &buffer);
     }
@@ -760,10 +742,50 @@ class HDFDataset
      *         The string in the held pairs is for path of the attribute, the
      *         variant for the data.
      */
-    std::vector< std::pair< std::string, typename HDFTypeFactory::Variant > >
+    std::vector< std::pair< std::string, typename HDFTypeFactory<void>::Variant > >
         _attribute_buffer;
 
+    /**
+     * @brief file dataspace identifier
+     * 
+     */
+    HDFDataspace _filespace;
+
+    /**
+     * @brief memory dataspace identifier
+     * 
+     */
+    HDFDataspace _memspace;
+
   public:
+
+    /**
+     * @brief Get the type object
+     * 
+     * @return hid_t 
+     */
+    hid_t get_type()
+    {
+        return H5Dget_type(_dataset);
+    }
+
+    /**
+     * @brief Get the memory dataspace id 
+     * 
+     * @return hid_t 
+     */
+    HDFDataspace get_memspace(){
+        return _memspace;
+    }
+
+    /**
+     * @brief Get the file dataspace id 
+     * 
+     * @return hid_t 
+     */
+    HDFDataspace get_filespace(){
+        return _filespace;
+    }
     /**
      * @brief Returns the attribute buffer of this dataset
      */
@@ -1028,6 +1050,11 @@ class HDFDataset
                 --(*_referencecounter)[_address];
                 _dataset = -1;
             }
+
+            // close dataspaces
+            _filespace.close();
+            _memspace.close();
+
         }
         // do nothing if dataset is invalid, i.e. if (!valid) is true.
         // reason: close() is called in destructor, but the object is
@@ -1063,6 +1090,9 @@ class HDFDataset
         _path             = path;
         _referencecounter = parent_object.get_referencecounter();
 
+        // open with H5S_ALL
+        _filespace.open();
+        _memspace.open();
         // Try to find the dataset in the parent_object
         // If it is there, open it.
         // Else: postphone the dataset creation to the first write
@@ -1079,10 +1109,9 @@ class HDFDataset
             _dataset =
                 H5Dopen(_parent_object->get_id(), _path.c_str(), H5P_DEFAULT);
             // get dataspace and read out rank, extend, capacity
-            hid_t dataspace = H5Dget_space(_dataset);
-            _rank           = H5Sget_simple_extent_ndims(dataspace);
-            _current_extent.resize(_rank, 0);
-            _capacity.resize(_rank, 0);
+            _filespace.open(*this);
+
+            _rank           = _filespace.rank();
             _chunksizes.resize(_rank, 0);
             // get chunksizes
             hid_t creation_plist = H5Dget_create_plist(_dataset);
@@ -1100,11 +1129,12 @@ class HDFDataset
             }
             H5Pclose(creation_plist);
 
-            // get topology of dataset
-            H5Sget_simple_extent_dims(
-                dataspace, _current_extent.data(), _capacity.data());
-            H5Sclose(dataspace);
+            // temporary workaround for type inconsistentcy: 
+            // arma::row used by dataspace and std::vector by dataset, and chunksize algo
+            auto[size, capacity] = _filespace.get_properties();
 
+            _current_extent.assign(size.begin(), size.end());
+            _capacity.assign(capacity.begin(), capacity.end());
             _offset = _current_extent;
 
             // Update info and reference counter
@@ -1151,6 +1181,7 @@ class HDFDataset
     swap(HDFDataset& other)
     {
         using std::swap;
+        using Utopia::DataIO::swap;
         swap(_parent_object, other._parent_object);
         swap(_path, other._path);
         swap(_dataset, other._dataset);
@@ -1165,6 +1196,8 @@ class HDFDataset
         swap(_address, other._address);
         swap(_referencecounter, other._referencecounter);
         swap(_attribute_buffer, other._attribute_buffer);
+        swap(_filespace, other._filespace);
+        swap(_memspace, other._memspace);
     }
 
     /**
@@ -1179,8 +1212,10 @@ class HDFDataset
     write(T&& data, [[maybe_unused]] std::vector< hsize_t > shape = {})
     {
         // dataset does not yet exist
-        hid_t memspace  = H5S_ALL;
-        hid_t filespace = H5S_ALL;
+        _memspace.close();
+        _filespace.close();
+        _memspace.open();
+        _filespace.open();
 
         if (_dataset == -1)
         {
@@ -1396,7 +1431,15 @@ class HDFDataset
 
             // get file and memory spaces which represent the selection to write
             // at
-            std::tie(filespace, memspace) = __select_dataset_subset__(counts);
+            _filespace.open(*this);
+
+            _memspace.open(_rank, counts, {});
+
+            _filespace.select_slice(_offset, // start
+                                    arma::Row< hsize_t >(_offset) +
+                                        arma::Row< hsize_t >(counts), // end
+                                    {} //stride
+                                    );
 
             _current_extent = _new_extent;
         }
@@ -1404,8 +1447,7 @@ class HDFDataset
         // everything is prepared, we can write the data
         if constexpr (Utils::is_container_v< std::decay_t< T > >)
         {
-            herr_t err = __write_container__(
-                std::forward< T >(data), memspace, filespace);
+            herr_t err = __write_container__(std::forward< T >(data));
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1415,7 +1457,7 @@ class HDFDataset
         else if constexpr (Utils::is_string_v< std::decay_t< T > >)
         {
             herr_t err = __write_stringtype__(
-                std::forward< T >(data), memspace, filespace);
+                std::forward< T >(data));
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1425,8 +1467,7 @@ class HDFDataset
         else if constexpr (std::is_pointer_v< std::decay_t< T > > and
                            !Utils::is_string_v< std::decay_t< T > >)
         {
-            herr_t err = __write_pointertype__(
-                std::forward< T >(data), memspace, filespace);
+            herr_t err = __write_pointertype__(std::forward< T >(data));
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1435,8 +1476,7 @@ class HDFDataset
         }
         else
         {
-            herr_t err = __write_scalartype__(
-                std::forward< T >(data), memspace, filespace);
+            herr_t err = __write_scalartype__(std::forward< T >(data));
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -1446,6 +1486,7 @@ class HDFDataset
 
         // this adds information about the shape and properties of the dataset
         __add_topology_attributes__();
+
     }
 
     /**
@@ -1495,12 +1536,13 @@ class HDFDataset
      * value.
      *
      * @warning When no custom offset vector is given, and one reuses the
-     * dataset for multiple writes, it is assumed that the size of the data written 
-     * varies only in the first dimension. Envisage this as stacking
-     * rectangular blocks of varying height but equal width and depth. 
+     * dataset for multiple writes, it is assumed that the size of the data
+     * written varies only in the first dimension. Envisage this as stacking
+     * rectangular blocks of varying height but equal width and depth.
      * The reason is that it is rather difficult to automatically
      * determine the offset such that the user can do arbitrary writes
-     * without any overwrites of existing data or storage inefficiencies occuring.
+     * without any overwrites of existing data or storage inefficiencies
+     * occuring.
      * @tparam T type held by the boost::multi_array, automatically determined
      * from argument
      * @tparam d dimensionality of the boost::multi_array, automatically
@@ -1514,10 +1556,12 @@ class HDFDataset
     write_nd(const boost::multi_array< T, d >& data,
              std::vector< hsize_t >            offset = {})
     {
-
-        // create memory spaces
-        hid_t memspace  = H5S_ALL;
-        hid_t filespace = H5S_ALL;
+        // create dataspaces
+        _memspace.close();
+        _filespace.close();
+        
+        _memspace.open();
+        _filespace.open();
 
         // for logging stuff
         const auto log = spdlog::get("data_io");
@@ -1722,8 +1766,14 @@ class HDFDataset
 
                 // get file and memory spaces which represent the selection to
                 // write at
-                std::tie(filespace, memspace) =
-                    __select_dataset_subset__(counts);
+                _filespace.open(*this);
+
+                _memspace.open(_rank, counts, {});
+
+                _filespace.select_slice(_offset,
+                                        arma::Row< hsize_t >(_offset) +
+                                            arma::Row< hsize_t >(counts),
+                                        {});
 
                 // update the current extent
                 _current_extent = _new_extent;
@@ -1750,10 +1800,12 @@ class HDFDataset
                 _dataset = __create_dataset__< T >(0);
             }
 
+            HDFTypeFactory< T > type(0ul);
+
             herr_t err = H5Dwrite(_dataset,
-                                  HDFTypeFactory::type< T >(),
-                                  memspace,
-                                  filespace,
+                                  type.get_id(),
+                                  _memspace.get_id(),
+                                  _filespace.get_id(),
                                   H5P_DEFAULT,
                                   data.data());
 
@@ -1782,11 +1834,13 @@ class HDFDataset
                            buffer.data(),
                            [](auto&& str) { return str.c_str(); });
 
+
+            HDFTypeFactory< const char* > type(0ul);
             // write the buffer
             herr_t err = H5Dwrite(_dataset,
-                                  HDFTypeFactory::type< const char* >(),
-                                  memspace,
-                                  filespace,
+                                  type.get_id(),
+                                  _memspace.get_id(),
+                                  _filespace.get_id(),
                                   H5P_DEFAULT,
                                   buffer.data());
 
@@ -1809,12 +1863,14 @@ class HDFDataset
                 {
                     _dataset = __create_dataset__< T >(typesize);
                 }
+                
                 // write the buffer not needed here
+                HDFTypeFactory< T > type(typesize);
 
                 herr_t err = H5Dwrite(_dataset,
-                                      HDFTypeFactory::type< T >(typesize),
-                                      memspace,
-                                      filespace,
+                                      type.get_id(),
+                                      _memspace.get_id(),
+                                      _filespace.get_id(),
                                       H5P_DEFAULT,
                                       data.data());
                 if (err < 0)
@@ -1860,11 +1916,13 @@ class HDFDataset
                             };
                         });
 
+                    HDFTypeFactory< T > type(typesize);
+
                     // write the buffer
                     herr_t err = H5Dwrite(_dataset,
-                                          HDFTypeFactory::type< T >(typesize),
-                                          memspace,
-                                          filespace,
+                                          type.get_id(),
+                                          _memspace.get_id(),
+                                          _filespace.get_id(),
                                           H5P_DEFAULT,
                                           buffer.data());
 
@@ -1909,11 +1967,13 @@ class HDFDataset
                                        return hvl_t{ v.size(), v.data() };
                                    });
 
+                    HDFTypeFactory< T > type(typesize);
+
                     // write the buffer
                     herr_t err = H5Dwrite(_dataset,
-                                          HDFTypeFactory::type< T >(typesize),
-                                          memspace,
-                                          filespace,
+                                          type.get_id(),
+                                          _memspace.get_id(),
+                                          _filespace.get_id(),
                                           H5P_DEFAULT,
                                           buffer.data());
 
@@ -1954,19 +2014,25 @@ class HDFDataset
                                      ": Dataset id is invalid");
         }
 
+        _filespace.close();
+        _memspace.close();
+
         // variables needed for reading
         std::vector< hsize_t > readshape; // shape vector for read, either
                                           // _current_extent or another shape
-        hid_t       filespace = 0;
-        hid_t       memspace  = 0;
+
+        // _filespace = 0;
+        // _memspace  = 0;
+
         std::size_t size      = 1;
 
         // read entire dataset
         if (start.size() == 0)
         {
             readshape = _current_extent;
-            filespace = H5S_ALL;
-            memspace  = H5S_ALL;
+
+            _filespace.open();
+            _memspace.open();
 
             // make flattened size of data to read
             for (auto& s : readshape)
@@ -2007,8 +2073,10 @@ class HDFDataset
             }
 
             readshape = count;
-            std::tie(filespace, memspace) =
-                __select_dataset_subset__(count, stride);
+
+            _memspace.open(_rank, count, {});
+            _filespace.open(*this);
+            _filespace.select_slice(start, end, stride);
         }
 
         // Below the actual reading happens
@@ -2018,7 +2086,7 @@ class HDFDataset
         if constexpr (Utils::is_container_v< Type >)
         {
             Type   buffer(size);
-            herr_t err = __read_container__(buffer, memspace, filespace);
+            herr_t err = __read_container__(buffer);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -2034,7 +2102,7 @@ class HDFDataset
             std::string buffer; // resized in __read_stringtype__ because this
                                 // as a scalar
             buffer.resize(size);
-            herr_t err = __read_stringtype__(buffer, memspace, filespace);
+            herr_t err = __read_stringtype__(buffer);
             if (err < 0)
             {
                 throw std::runtime_error("Dataset " + _path +
@@ -2050,7 +2118,7 @@ class HDFDataset
                 new Utils::remove_qualifier_t< Type >[size]);
 
             herr_t err =
-                __read_pointertype__(buffer.get(), memspace, filespace);
+                __read_pointertype__(buffer.get());
 
             if (err < 0)
             {
@@ -2062,7 +2130,7 @@ class HDFDataset
         else // reading scalar types is simple enough
         {
             Type   buffer(0);
-            herr_t err = __read_scalartype__(buffer, memspace, filespace);
+            herr_t err = __read_scalartype__(buffer);
             if (err < 0)
             {
                 std::runtime_error("Dataset " + _path +
@@ -2090,7 +2158,9 @@ class HDFDataset
         _new_extent(other._new_extent), _compress_level(other._compress_level),
         _info(other._info), _address(other._address),
         _referencecounter(other._referencecounter),
-        _attribute_buffer((other._attribute_buffer))
+        _attribute_buffer((other._attribute_buffer)), 
+        _filespace(other._filespace),
+        _memspace(other._memspace)
     {
         (*_referencecounter)[_address] += 1;
     }
@@ -2168,6 +2238,20 @@ swap(HDFDataset< HDFObject >& lhs, HDFDataset< HDFObject >& rhs)
 {
     lhs.swap(rhs);
 }
+
+
+/**
+ * @brief Get file dataspace id from dset
+ * 
+ * @tparam HDFObject automatically determined
+ * @param dset dataset to get the file dataspace of
+ * @return hid_t dataspace id
+ */
+template<typename HDFObject>
+hid_t open_dataspace(HDFDataset<HDFObject>& dset){
+    return H5Dget_space(dset.get_id());
+}
+
 /*! \} */ // end of group HDF5
 /*! \} */ // end of group DataIO
 

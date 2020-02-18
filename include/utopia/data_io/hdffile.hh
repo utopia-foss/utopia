@@ -114,6 +114,7 @@ class HDFFile
     void
     open(std::string path, std::string access)
     {
+
         if (check_validity(H5Iis_valid(_file), _path))
         {
             throw std::runtime_error(

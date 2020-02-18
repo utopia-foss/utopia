@@ -15,7 +15,7 @@
 #include <utopia/data_io/data_manager/write_task.hh>
 
 #include <thread>
-#include "dataio_test.hh"
+#include "testtools.hh"
 
 
 namespace utf = boost::unit_test;
@@ -34,13 +34,22 @@ using Simpletask = Task<Builder, Writer>;
 using Decider = std::function<bool(Model&)>;
 using Trigger = std::function<bool(Model&)>;
 
+struct Fix
+{
+    void setup () { Utopia::setup_loggers();     spdlog::get("data_mngr")->set_level(spdlog::level::debug);
+}
+};
+
+BOOST_AUTO_TEST_SUITE(Suite,
+                      *boost::unit_test::fixture<Fix>())
+
 
 // this tests the constructor which builts a new
 BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 {
     using namespace Utopia::Utils; // enable output operators defined in
 
-    Utopia::setup_loggers();
+
 
     // needed for all the structors
     Model model("fixture_1");
@@ -213,7 +222,7 @@ BOOST_AUTO_TEST_CASE(datamanager_tuplelike_constructor)
 
 BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
 {
-    Utopia::setup_loggers();
+
     // needed for all the structors
     Model model("fixture_3");
 
@@ -480,9 +489,7 @@ BOOST_AUTO_TEST_CASE(datamanager_customize_association)
 
 BOOST_AUTO_TEST_CASE(datamanager_call_operator_default)
 {
-    // init loggers
-    Utopia::setup_loggers();
-    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
+
 
     using BGB =
       std::function<std::shared_ptr<HDFGroup>(std::shared_ptr<HDFGroup> &&)>;
@@ -637,8 +644,7 @@ BOOST_AUTO_TEST_CASE(default_datamananger_written_data_check)
 // which are used here when changing this!
 BOOST_AUTO_TEST_CASE(datamanager_call_operator_custom)
 {
-    Utopia::setup_loggers();
-    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
+
 
     using BGB = std::function<std::shared_ptr<HDFGroup>(Model&)>;
     using W = std::function<void(
@@ -931,9 +937,7 @@ BOOST_AUTO_TEST_CASE(custom_datamananger_written_data_check)
 
 BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
 {
-    // init loggers
-    Utopia::setup_loggers();
-    spdlog::get("data_mngr")->set_level(spdlog::level::debug);
+
 
     using Task = Default::DefaultWriteTask<Model>;
 
@@ -1434,3 +1438,4 @@ BOOST_AUTO_TEST_CASE(datamanager_config_written_data_check)
         }
     }
 }
+BOOST_AUTO_TEST_SUITE_END()

@@ -7,7 +7,7 @@
 #include <utopia/data_io/hdfgroup.hh>
 #include <utopia/data_io/hdffile.hh>
 
-#include "dataio_test.hh"
+#include "testtools.hh"
 
 using namespace Utopia;
 using namespace Utopia::DataIO;

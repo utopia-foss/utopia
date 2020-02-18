@@ -15,8 +15,8 @@ set(TESTS_DATAIO
     hdfchunking_test
     hdftypefactory_test
     hdffile_test
-    hdfattribute_test_read
     hdfattribute_test_write
+    hdfattribute_test_read
     hdfattribute_test_lifecycle
     hdfdataset_test_lifecycle
     hdfgroup_test_lifecycle
@@ -29,6 +29,7 @@ set(TESTS_DATAIO
     datamanager_test
     factory_test
     hdf_ndim_io_test
+    hdfdataspace_test
     )
 
 # Add DATAIO_-prefixed test targets

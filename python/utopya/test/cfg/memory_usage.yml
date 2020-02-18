@@ -24,13 +24,13 @@ test_cases:
   # Case 0
   - # Specify memory limits (in bytes) to test against
     #   RSS: Resident Set Size: non-swapped physical memory a process uses
-    max_rss: !expr 200 * 1024*1024
+    max_rss: !expr 15 *1024*1024
     #   VMS: Virtual Memory Size (optional)
     max_vms: !expr inf
 
 
   # Case 1
-  - max_rss: !expr 200 * 1024*1024 
+  - max_rss: !expr 15 *1024*1024 
 
     # Update uni config for this test case
     uni_cfg:
@@ -39,7 +39,7 @@ test_cases:
 
 
   # Case 2
-  - max_rss: !expr 200 * 1024*1024
+  - max_rss: !expr 15 *1024*1024
 
     uni_cfg:
       benchmarks:

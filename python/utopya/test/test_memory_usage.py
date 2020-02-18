@@ -85,7 +85,6 @@ def gather_memory_info(model: Model, *,
 
 # -----------------------------------------------------------------------------
 
-@pytest.mark.skip("Reactivate when issue #149 is resolved.")  # TODO
 def test_hdf5_write(cfg):
     """Tests the memory usage of the HDFDataset::write method using the
     HdfBench model.
