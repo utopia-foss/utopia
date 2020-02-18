@@ -13,7 +13,7 @@
 #include <utopia/data_io/hdfdataset.hh> // for messing around with datasets
 #include <utopia/data_io/hdffile.hh>    // for buiding model mock class
 
-#include "dataio_test.hh"
+#include "testtools.hh"
 
 namespace utf = boost::unit_test;
 using namespace std::literals;
@@ -69,6 +69,13 @@ struct Fixture
     using GModel = GraphModel<G>;
     GModel gmodel = GModel("graphmodel", 1024, 4096);
 };
+
+struct Fix
+{
+    void setup () { Utopia::setup_loggers(); }
+};
+
+BOOST_AUTO_TEST_SUITE(Suite, *boost::unit_test::fixture< Fix >())
 
 // test write functionality without any additional stuff
 BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic, Fixture,
@@ -326,7 +333,7 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_basic_read,
                      *boost::unit_test::tolerance(1e-16))
 {
 
-    Utopia::setup_loggers();
+    
     HDFFile file("writetaskfactory_testmodel.h5", "r");
     auto basic_group = file.open_group("/basic");
     auto task2_dset = basic_group->open_dataset("cell_dset");
@@ -456,7 +463,7 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_basic_read,
 BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration)
 {
     // std::this_thread::sleep_for(15s);
-    Utopia::setup_loggers();
+    
     Model model("writetaskfactory_testmodel_integration",
                 "datamanager_test_factory.yml", 128, 32, {4, 6, 6.28},
                 {15, 34.314});
@@ -541,7 +548,7 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration)
 BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration_read_result,
                      *boost::unit_test::tolerance(1e-16))
 {
-    Utopia::setup_loggers();
+    
     HDFFile file("writetaskfactory_testmodel_integration.h5", "r");
 
     auto agentgroup = file.open_group("/Agents");
@@ -596,11 +603,12 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration_read_result,
                                           6})),
                    boost::test_tools::per_element());
     }
+
+    file.close();
 }
 
 BOOST_AUTO_TEST_CASE(datamanager_factory_test)
 {
-    // std::this_thread::sleep_for(30s);
     Model model("datamanagerfactory_testmodel_integration",
                 "datamanager_test_factory.yml", 128, 32, {4, 6, 6.28},
                 {15, 34.314});
@@ -700,7 +708,7 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test)
 
 BOOST_AUTO_TEST_CASE(datamanager_factory_test_read)
 {
-    Utopia::setup_loggers();
+    
     HDFFile file("datamanagerfactory_testmodel_integration.h5", "r");
 
     auto agentgroup = file.open_group("/Agents");
@@ -754,3 +762,5 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test_read)
                    boost::test_tools::per_element());
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END()

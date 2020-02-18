@@ -12,6 +12,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utopia/core/utils.hh>
 #include <vector>
@@ -66,7 +67,7 @@ namespace DataIO
  *	         }
  */
 bool
-check_validity(htri_t valid, std::string object_name)
+check_validity(htri_t valid, const std::string_view object_name)
 {
     if (valid > 0)
     {
@@ -75,7 +76,7 @@ check_validity(htri_t valid, std::string object_name)
 
     else if (valid < 0)
     {
-        throw std::runtime_error("Object " + object_name + ": " +
+        throw std::runtime_error("Object " + std::string(object_name) + ": " +
                                  "Error in validity check");
         return false;
     }

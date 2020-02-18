@@ -17,6 +17,7 @@
 #include <hdf5_hl.h>
 
 #include "hdfbufferfactory.hh"
+#include "hdfdataspace.hh"
 #include "hdftypefactory.hh"
 
 namespace Utopia
@@ -57,15 +58,16 @@ class HDFAttribute
     hid_t
     __create_attribute__(hsize_t typesize = 0)
     {
-        hid_t dspace = H5Screate_simple(_shape.size(), _shape.data(), nullptr);
+        _dataspace.open(_shape.size(), _shape, {});
+
+        HDFTypeFactory< result_type > type(typesize);
 
         hid_t atr = H5Acreate2(_parent_object->get_id(),
                                _name.c_str(),
-                               HDFTypeFactory::type< result_type >(typesize),
-                               dspace,
+                               type.get_id(),
+                               _dataspace.get_id(), // dspace
                                H5P_DEFAULT,
                                H5P_DEFAULT);
-        H5Sclose(dspace);
         return atr;
     }
 
@@ -94,9 +96,9 @@ class HDFAttribute
                 _attribute = __create_attribute__< base_type >(0);
             }
 
-            return H5Awrite(_attribute,
-                            HDFTypeFactory::type< base_type >(0),
-                            attribute_data.data());
+            HDFTypeFactory< base_type > type(0ul);
+
+            return H5Awrite(_attribute, type.get_id(), attribute_data.data());
         }
         // when stringtype or containertype is stored in a container, then
         // we have to buffer. bufferfactory handles how to do this in detail
@@ -118,9 +120,9 @@ class HDFAttribute
                     std::end(attribute_data),
                     [](auto& value) -> value_type_1& { return value; });
 
-                return H5Awrite(_attribute,
-                                HDFTypeFactory::type< base_type >(s),
-                                buffer.data());
+                HDFTypeFactory< base_type > type(s);
+
+                return H5Awrite(_attribute, type.get_id(), buffer.data());
             }
             else
             {
@@ -134,9 +136,8 @@ class HDFAttribute
                     std::end(attribute_data),
                     [](auto& value) -> value_type_1& { return value; });
 
-                return H5Awrite(_attribute,
-                                HDFTypeFactory::type< base_type >(0),
-                                buffer.data());
+                HDFTypeFactory< base_type > type(0ul);
+                return H5Awrite(_attribute, type.get_id(), buffer.data());
             }
         }
     }
@@ -169,9 +170,11 @@ class HDFAttribute
         {
             _attribute = __create_attribute__< const char* >(len);
         }
+
+        HDFTypeFactory< const char* > type(len);
+
         // use that strings store data in consecutive memory
-        return H5Awrite(
-            _attribute, HDFTypeFactory::type< const char* >(len), buffer);
+        return H5Awrite(_attribute, type.get_id(), buffer);
     }
 
     // Function for writing pointer types, shape of the array has to be given
@@ -182,17 +185,14 @@ class HDFAttribute
     {
         // result types removes pointers, references, and qualifiers
         using basetype = Utils::remove_qualifier_t< Type >;
-        // std::cout << _name << ", type for pointer is  " <<
-        // typeid(basetype).name()
-        //   << ", int type is " << typeid(int).name() << std::endl;
 
         if (_attribute == -1)
         {
             _attribute = __create_attribute__< basetype >();
         }
 
-        return H5Awrite(
-            _attribute, HDFTypeFactory::type< basetype >(), attribute_data);
+        HDFTypeFactory< basetype > type(0ul);
+        return H5Awrite(_attribute, type.get_id(), attribute_data);
     }
 
     // function for writing a scalartype.
@@ -208,8 +208,8 @@ class HDFAttribute
             _attribute = __create_attribute__< Type >();
         }
 
-        return H5Awrite(
-            _attribute, HDFTypeFactory::type< basetype >(), &attribute_data);
+        HDFTypeFactory< basetype > type(0ul);
+        return H5Awrite(_attribute, type.get_id(), &attribute_data);
     }
 
     // Container reader.
@@ -248,7 +248,7 @@ class HDFAttribute
             // everything is fine.
 
             // get type the attribute has internally
-            hid_t type = H5Aget_type(_attribute);
+            HDFTypeFactory< void > type(*this);
 
             // check if type given in the buffer is std::array.
             // If it is, the user knew that the data stored there
@@ -257,13 +257,14 @@ class HDFAttribute
             // length.
             if constexpr (Utils::is_array_like_v< value_type_1 >)
             {
-                return H5Aread(_attribute, type, buffer.data());
+                return H5Aread(_attribute, type.get_id(), buffer.data());
             }
             else
             {
                 std::vector< hvl_t > temp_buffer(buffer.size());
 
-                herr_t err = H5Aread(_attribute, type, temp_buffer.data());
+                herr_t err =
+                    H5Aread(_attribute, type.get_id(), temp_buffer.data());
 
                 // turn the varlen buffer into the desired type.
                 // Cumbersome, but necessary...
@@ -297,10 +298,12 @@ class HDFAttribute
                 if constexpr (Utils::is_string_v< value_type_1 >)
                 {
                     // get type the attribute has internally
-                    hid_t                type = H5Aget_type(_attribute);
+                    HDFTypeFactory< void > type(*this);
+
                     std::vector< char* > temp_buffer(buffer.size());
 
-                    herr_t err = H5Aread(_attribute, type, temp_buffer.data());
+                    herr_t err =
+                        H5Aread(_attribute, type.get_id(), temp_buffer.data());
 
                     // turn temp_buffer into the desired datatype and return
                     for (std::size_t i = 0; i < buffer.size(); ++i)
@@ -313,9 +316,9 @@ class HDFAttribute
                 else // others are straight forward
                 {
                     // get type the attribute has internally
-                    hid_t type = H5Aget_type(_attribute);
+                    HDFTypeFactory< void > type(*this);
 
-                    return H5Aread(_attribute, type, buffer.data());
+                    return H5Aread(_attribute, type.get_id(), buffer.data());
                 }
             }
         }
@@ -329,13 +332,14 @@ class HDFAttribute
     __read_stringtype__(Type& buffer)
     {
         // get type the attribute has internally
-        hid_t type = H5Aget_type(_attribute);
+
+        HDFTypeFactory< void > type(*this);
 
         // resize buffer to the size of the type
-        buffer.resize(H5Tget_size(type));
+        buffer.resize(type.size());
 
         // read data
-        return H5Aread(_attribute, type, buffer.data());
+        return H5Aread(_attribute, type.get_id(), buffer.data());
     }
 
     // read pointertype. Either this is given by the user, or
@@ -344,7 +348,9 @@ class HDFAttribute
     auto
     __read_pointertype__(Type buffer)
     {
-        return H5Aread(_attribute, H5Aget_type(_attribute), buffer);
+        HDFTypeFactory< void > type(*this);
+
+        return H5Aread(_attribute, type.get_id(), buffer);
     }
 
     // read scalar type, trivial
@@ -352,7 +358,9 @@ class HDFAttribute
     auto
     __read_scalartype__(Type& buffer)
     {
-        return H5Aread(_attribute, H5Aget_type(_attribute), &buffer);
+        HDFTypeFactory< void > type(*this);
+
+        return H5Aread(_attribute, type.get_id(), &buffer);
     }
 
   protected:
@@ -369,24 +377,58 @@ class HDFAttribute
     /**
      * @brief      size of the attributes dataspace
      */
-    std::vector< hsize_t > _shape;
+    std::vector<hsize_t> _shape;
 
     /**
      * @brief      reference to id of parent object: dataset or group
      */
     HDFObject* _parent_object;
 
+    /**
+     * @brief Dataspace object that manages topology of data written and read
+     *
+     */
+    HDFDataspace _dataspace;
+
   public:
+    /**
+     * @brief Exchange states between caller and argument
+     *
+     * @param other
+     */
     void
     swap(HDFAttribute& other)
     {
         using std::swap;
+        using Utopia::DataIO::swap;
         swap(_attribute, other._attribute);
         swap(_name, other._name);
         swap(_shape, other._shape);
         swap(_parent_object, other._parent_object);
+        swap(_dataspace, other._dataspace);
     }
 
+    /**
+     * @brief Get the file-dataspace object
+     *
+     * @return HDFDataspace
+     */
+    HDFDataspace
+    get_filespace()
+    {
+        return _dataspace;
+    }
+
+    /**
+     * @brief Get the type object
+     *
+     * @return hid_t
+     */
+    hid_t
+    get_type()
+    {
+        return H5Aget_type(_attribute);
+    }
     /**
      * @brief      Get underlying ID of attribute
      *
@@ -429,7 +471,10 @@ class HDFAttribute
         {
             H5Aclose(_attribute);
             _attribute = -1;
+
         }
+
+        _dataspace.close();
     }
 
     /**
@@ -440,18 +485,12 @@ class HDFAttribute
     auto
     get_shape()
     {
-        if (!check_validity(H5Iis_valid(_attribute), _name))
-        {
-            throw std::runtime_error(
-                "Trying to get shape from invalid attribute " + _name);
-        }
-        // get dataspace: 'Form' of the data stored in the attribute
-        hid_t dspace = H5Aget_space(_attribute);
+        // the below is done to retain vector type for _shape member, 
+        // which otherwise would break interface due to type change.
+        auto shape = _dataspace.size();
+        _shape.assign(shape.begin(), shape.end());
 
-        // get shape -> same thing as numpy array's shape
-        _shape.resize(H5Sget_simple_extent_ndims(dspace));
-        H5Sget_simple_extent_dims(dspace, _shape.data(), nullptr);
-        H5Sclose(dspace);
+
         return _shape;
     }
 
@@ -477,6 +516,11 @@ class HDFAttribute
                 _attribute = H5Aopen(
                     _parent_object->get_id(), _name.c_str(), H5P_DEFAULT);
 
+                // README (regarding usage of this in constructors): the usage
+                // of *this is save here, because we always have a valid object
+                // of type HDFDataspace even in ctor given that this is neither
+                // a derived class nor we call a virtual function
+                _dataspace.open(*this);
                 get_shape();
             }
             else
@@ -929,6 +973,20 @@ void
 swap(HDFAttribute< ParentObject1 >& lhs, HDFAttribute< ParentObject2 >& rhs)
 {
     lhs.swap(rhs);
+}
+
+/**
+ * @brief Get file dataspace id from attribute
+ *
+ * @tparam HDFObject automatically determined
+ * @param attribute attribute to get the file dataspace of
+ * @return hid_t dataspace id
+ */
+template < typename HDFObject >
+hid_t
+open_dataspace(HDFAttribute< HDFObject >& attribute)
+{
+    return H5Aget_space(attribute.get_id());
 }
 /*! \} */ // end of group HDF5
 /*! \} */ // end of group DataIO
