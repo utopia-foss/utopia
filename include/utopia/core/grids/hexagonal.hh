@@ -87,7 +87,7 @@ public:
     /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    MultiIndex midx_of(const IndexType&) const override {
+    MultiIndex midx_of(const IndexType) const override {
         throw std::runtime_error("The HexagonalGrid::midx_of method is not "
                                  "yet implemented!");
         return {};
@@ -96,7 +96,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    SpaceVec barycenter_of(const IndexType&) const override {
+    SpaceVec barycenter_of(const IndexType) const override {
         throw std::runtime_error("The HexagonalGrid::barycenter_of method "
                                  "is not yet implemented!");
         return {};
@@ -105,7 +105,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    SpaceVec extent_of(const IndexType&) const override {
+    SpaceVec extent_of(const IndexType) const override {
         throw std::runtime_error("The HexagonalGrid::extent_of method is not "
                                  "yet implemented!");
         return {};
@@ -116,7 +116,7 @@ public:
       * 
       * \note    This method does not perform bounds checking of the given ID!
       */
-    std::vector<SpaceVec> vertices_of(const IndexType&) const override {
+    std::vector<SpaceVec> vertices_of(const IndexType) const override {
         throw std::runtime_error("The HexagonalGrid::vertices_of method is "
                                  "not yet implemented!");
         return {};

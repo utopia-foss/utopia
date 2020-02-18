@@ -128,7 +128,7 @@ public:
     /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    MultiIndex midx_of(const IndexType& id) const override {
+    MultiIndex midx_of(const IndexType id) const override {
         static_assert(dim <= 2, "MultiIndex only implemented for 1D and 2D!");
 
         if constexpr (dim == 1) {
@@ -143,7 +143,7 @@ public:
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    SpaceVec barycenter_of(const IndexType& id) const override {
+    SpaceVec barycenter_of(const IndexType id) const override {
         // Offset on grid + offset within cell
         return (midx_of(id) % _cell_extent) + (_cell_extent/2.);
         // NOTE The %-operator performs element-wise multiplication
@@ -152,7 +152,7 @@ public:
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    SpaceVec extent_of(const IndexType&) const override {
+    SpaceVec extent_of(const IndexType) const override {
         return _cell_extent;
     }
 
@@ -163,7 +163,7 @@ public:
       *
       * \note   This method does not perform bounds checking of the given ID!
       */
-    std::vector<SpaceVec> vertices_of(const IndexType& id) const override {
+    std::vector<SpaceVec> vertices_of(const IndexType id) const override {
         static_assert(dim == 2,
                       "SquareGrid::vertices_of is only implemented for 2D!");
 
@@ -466,7 +466,7 @@ protected:
                                                     nb_params);
 
         if (this->is_periodic()) {
-            return [this, distance, nb_size](const IndexType& root_id){
+            return [this, distance, nb_size](const IndexType root_id){
                 static_assert((dim >= 1 and dim <= 2),
                     "VonNeumann neighborhood is implemented only for 1D or 2D "
                     "space!");
@@ -535,7 +535,7 @@ protected:
         }
 
         else { // Space is non-periodic
-            return [this, distance, nb_size](const IndexType& root_id){
+            return [this, distance, nb_size](const IndexType root_id){
                 static_assert(((dim == 1) or (dim == 2)),
                     "VonNeumann neighborhood is implemented only for 1D or 2D "
                     "space!");
@@ -643,7 +643,7 @@ protected:
 
     /// The Von-Neumann neighborhood for periodic grids
     NBFuncID<Base> _nb_vonNeumann_periodic = 
-        [this](const IndexType& root_id)
+        [this](const IndexType root_id)
     {
         static_assert((dim >= 1 and dim <= 2),
             "VonNeumann neighborhood is implemented only for 1D or 2D space!");
@@ -670,7 +670,7 @@ protected:
 
     /// The Von-Neumann neighborhood for non-periodic grids
     NBFuncID<Base> _nb_vonNeumann_nonperiodic = 
-        [this](const IndexType& root_id)
+        [this](const IndexType root_id)
     {
         static_assert(((dim == 1) or (dim == 2)),
             "VonNeumann neighborhood is only implemented in 1 or 2 dimensions "
@@ -738,7 +738,7 @@ protected:
                                                     nb_params);
 
         if (this->is_periodic()) {
-            return [this, distance, nb_size](const IndexType& root_id){
+            return [this, distance, nb_size](const IndexType root_id){
                 static_assert(dim == 2,
                               "Moore neighborhood is only available in 2D!");
         
@@ -778,7 +778,7 @@ protected:
             };  // End of lambda definition for periodic space
         }
         else {  // Space is non-periodic
-            return [this, distance, nb_size](const IndexType& root_id){
+            return [this, distance, nb_size](const IndexType root_id){
                 static_assert(dim == 2,
                               "Moore neighborhood is only available in 2D!");
 
@@ -820,7 +820,7 @@ protected:
 
     /// Moore neighbors for periodic 2D grid
     NBFuncID<Base> _nb_Moore_periodic = 
-       [this](const IndexType& root_id)
+       [this](const IndexType root_id)
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
@@ -844,7 +844,7 @@ protected:
 
     /// Moore neighbors for non-periodic 2D grid
     NBFuncID<Base> _nb_Moore_nonperiodic = 
-        [this](const IndexType& root_id)
+        [this](const IndexType root_id)
     {
         static_assert(dim == 2, "Moore neighborhood is only available in 2D!");
 
@@ -919,7 +919,7 @@ protected:
      * \return void
      */
     template<DimType axis, bool periodic>
-    void add_neighbors_in_(const IndexType& root_id,
+    void add_neighbors_in_(const IndexType root_id,
                            IndexContainer& neighbor_ids) const
     {
         // Assure the number of dimensions is supported
@@ -979,7 +979,7 @@ protected:
      * \return void
      */
     template<DimType axis, bool periodic>
-    void add_low_val_neighbor_in_(const IndexType& root_id,
+    void add_low_val_neighbor_in_(const IndexType root_id,
                                   const DistType distance,
                                   IndexContainer& neighbor_ids) const
     {
@@ -1031,7 +1031,7 @@ protected:
      * \return void
      */
     template<DimType axis, bool periodic>
-    void add_high_val_neighbor_in_(const IndexType& root_id,
+    void add_high_val_neighbor_in_(const IndexType root_id,
                                    const DistType distance,
                                    IndexContainer& neighbor_ids) const
     {

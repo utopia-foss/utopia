@@ -47,7 +47,7 @@ std::string nb_mode_to_string(const NBMode& nb_mode) {
 
 /// Type of the neighborhood calculating function
 template<class Grid>
-using NBFuncID = std::function<IndexContainer(const IndexType&)>;
+using NBFuncID = std::function<IndexContainer(const IndexType)>;
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -143,7 +143,7 @@ public:
     // .. Neighborhood interface ..............................................
 
     /// Returns the indices of the neighbors of the cell with the given ID
-    IndexContainer neighbors_of(const IndexType& id) const {
+    IndexContainer neighbors_of(const IndexType id) const {
         return _nb_func(id);
     }
 
@@ -182,17 +182,17 @@ public:
     /// Returns the multi-index of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual MultiIndex midx_of(const IndexType&) const = 0;
+    virtual MultiIndex midx_of(const IndexType) const = 0;
 
     /// Returns the barycenter of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual SpaceVec barycenter_of(const IndexType&) const = 0;
+    virtual SpaceVec barycenter_of(const IndexType) const = 0;
 
     /// Returns the extent of the cell with the given ID
     /** \note This method does not perform bounds checking of the given ID!
       */
-    virtual SpaceVec extent_of(const IndexType&) const = 0;
+    virtual SpaceVec extent_of(const IndexType) const = 0;
 
     /// Returns the vertices of the cell with the given ID
     /** Consult the derived class implementation's documentation on the order
@@ -200,7 +200,7 @@ public:
       *
       * \note   This method does not perform bounds checking of the given ID!
       */
-    virtual std::vector<SpaceVec> vertices_of(const IndexType&) const = 0;
+    virtual std::vector<SpaceVec> vertices_of(const IndexType) const = 0;
 
     /// Return the ID of the cell covering the given point in physical space
     /** Cells are interpreted as covering half-open intervals in space, i.e.,
@@ -280,7 +280,7 @@ protected:
                                             const Config&) const = 0;
 
     /// A neighborhood function for empty neighborhood
-    NBFuncID<Self> _nb_empty = [](const IndexType&) {
+    NBFuncID<Self> _nb_empty = [](const IndexType) {
         IndexContainer idcs{};
         idcs.reserve(0);
         return idcs;
