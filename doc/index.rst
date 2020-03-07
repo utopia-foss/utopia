@@ -69,6 +69,8 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
    :glob:
 
    Copyright Information <COPYING>
+   Contribution Guide <CONTRIBUTING>
+   Code of Conduct <CODE_OF_CONDUCT>
    Documentation Examples <examples>
 
 * :ref:`Page Index <genindex>`
