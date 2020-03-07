@@ -56,3 +56,5 @@ __pycache__
 # Ignore _copied_ version of root-level readme & copyright files
 doc/README.md
 doc/COPYING.md
+doc/CONTRIBUTING.md
+doc/CODE_OF_CONDUCT.md
