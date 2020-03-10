@@ -600,12 +600,12 @@ int main() {
             "   ", true)
         );
         
-        assert(not check_error_message<std::invalid_argument>(
-            "invalid boundary cell argument does NOT throw for periodic grid",
+        assert(check_error_message<std::invalid_argument>(
+            "invalid boundary cell argument does ALSO throw for periodic grid",
             [&](){
                 gdec_p.boundary_cells("not a valid argument");
             },
-            "", "   ", true)
+            "Invalid value for argument `select` in call to method", "   ", true)
         );
         
         std::cout << "Success." << std::endl << std::endl;
