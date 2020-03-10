@@ -266,10 +266,6 @@ public:
         static_assert(dim <= 2,
             "SquareGrid::boundary_cells only implemented for 1D and 2D!");
 
-        // For periodic space, this is easy:
-        if (this->is_periodic()) {
-            return {};
-        }
         // else: non-periodic space
 
         // The target set all IDs are to be emplaced in
@@ -283,6 +279,10 @@ public:
                     "Available arguments (for currently selected "
                     "dimensionality) are: "
                     "'all', 'left', 'right'. Given value: '" + select + "'");
+            }
+            // For periodic space, this is easy:
+            if (this->is_periodic()) {
+                return {};
             }
 
             // Left boundary (consists only of one cell)
@@ -306,6 +306,11 @@ public:
                     "dimensionality) are: "
                     "'all', 'left', 'right', 'bottom', 'top'. Given value: '"
                     + select + "'");
+            }
+            
+            // For periodic space, this is easy:
+            if (this->is_periodic()) {
+                return {};
             }
 
             // NOTE It is important to use the hinting features of std::set
