@@ -43,6 +43,8 @@ data_manager:
       active: true
       associate_with_tasks:
         - write_y
+      args:
+        time: 0
 
     build_intervals: *intervals
 
@@ -50,6 +52,74 @@ data_manager:
   tasks: 
     write_x:
       active: true
+      decider: write_every_3rd
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+
+# this will result in a datamanagere where task 'write_x' is inactive and hence 
+# will be skipped
+data_manager0: 
+
+  # this builds the deciders
+  deciders: 
+    write_every_3rd: &every_3rd
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+      active: true
+      associate_with_tasks:
+        - write_x
+
+    write_every_5th:
+      type: slice
+      args: 
+        start: 30
+        stop: 50
+        step: 5
+      active: true
+      associate_with_tasks:
+        - write_y
+
+    write_intervals: &intervals
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+      active: true
+      associate_with_tasks:
+        - write_z
+
+  triggers:
+    build_every_3rd: *every_3rd
+
+    build_once:
+      type: once
+      active: true
+      associate_with_tasks:
+        - write_y
+      args:
+        time: 0
+
+    build_intervals: *intervals
+
+
+  tasks: 
+    write_x:
+      active: false
       decider: write_every_3rd
       trigger: build_every_3rd
 

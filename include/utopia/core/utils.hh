@@ -656,6 +656,15 @@ std::string str(T&& t){
 }
 
 
+/**
+ * @brief Represent a type that does nothing and represents nothing, hence can
+ * be used in metaprogramming whenever no action is desired.
+ *
+ */
+struct Nothing
+{
+};
+
 }
 }
 
