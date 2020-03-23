@@ -36,6 +36,8 @@ data_manager:
 
     build_once:
       type: once
+      args:
+        time: 0
       
     build_intervals:
       type: interval
@@ -60,3 +62,311 @@ data_manager:
       active: true
       decider: write_intervals
       trigger: build_intervals
+
+
+# this will result in a datamanagere where task 'write_x' is inactive and hence 
+# will be skipped
+data_manager0: 
+  # this builds the deciders
+  deciders:
+    write_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    write_every_5th:
+      type: slice
+      args: 
+        start: 30
+        stop: 50
+        step: 5
+
+    write_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  tasks: 
+    write_x:
+      active: false
+      decider: write_every_3rd
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+# this will trigger an exception about wrongly specified decider-task assoc
+data_manager1: 
+  # this builds the deciders
+  deciders:
+    write_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    write_every_5th:
+      type: slice
+      args: 
+        start: 30
+        stop: 50
+        step: 5
+
+    write_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  tasks: 
+    write_x:
+      active: true
+      decider: write_every_3rd_not_in_the_list
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+
+
+# this triggers an exception about 
+# 'deciders' not being a map
+data_manager2: 
+  deciders: ["a", "b", "c", "d"]
+
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+  tasks: 
+    write_x:
+      active: true
+      decider: write_every_3rd_not_in_the_list
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+# this triggers an eception about 
+# 'deciders', which obviously is missing, being a zombie node
+data_manager3:
+  nothing: "x"
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+  tasks: 
+    write_x:
+      active: true
+      decider: write_every_3rd_not_in_the_list
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+# this will trigger an exception about 'write_intervals' not having a 'type' node
+# 
+data_manager4:
+  deciders:
+    write_every_3rd:
+      type: slice
+
+    write_every_5th:
+      type: slice
+
+    write_intervals:
+      type: nothing
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+  tasks: 
+    write_x:
+      active: true
+      decider: write_every_3rd_not_in_the_list
+      trigger: build_every_3rd
+
+    write_y:
+      active: true
+      decider: write_every_5th
+      trigger: build_once
+
+    write_z:
+      active: true
+      decider: write_intervals
+      trigger: build_intervals
+
+# this will trigger an exception about 'tasks' not being a map
+data_manager5: 
+  # this builds the deciders
+  deciders:
+    write_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    write_every_5th:
+      type: slice
+      args: 
+        start: 30
+        stop: 50
+        step: 5
+
+    write_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  triggers:
+    build_every_3rd:
+      type: slice
+      args: 
+        start: 0
+        stop: 30
+        step: 3
+
+    build_once:
+      type: once
+      args:
+        time: 0
+      
+    build_intervals:
+      type: interval
+      args: 
+        intervals:
+          - [0, 10]
+          - [25, 30]
+          - [100, 115]
+
+  tasks: ["a", "b", "c", "d"]

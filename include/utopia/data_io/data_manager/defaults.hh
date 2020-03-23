@@ -4,6 +4,7 @@
 #include <boost/hana/ext/std/tuple.hpp>
 #include <boost/hana/fold.hpp>
 #include <boost/hana/zip.hpp>
+#include <unordered_map>
 
 #include "../cfg_utils.hh"
 #include "write_task.hh"
@@ -104,23 +105,25 @@ struct DefaultExecutionProcess
                     taskpair.second->build_basegroup(m.get_hdfgrp());
             }
         }
-
-        // FIXME: make this such that no dataset is built
-        // when the deciders do not write!
         for (auto& [name, trigger] : dm.get_triggers())
         {
             if ((*trigger)(m))
             {
                 for (auto& taskname : dm.get_trigger_task_map()[name])
                 {
-                    tasks[taskname]->active_dataset =
-                        tasks[taskname]->build_dataset(
-                            tasks[taskname]->base_group, m);
+                    // using this ref variable avoids recomputing 
+                    // 'taskname''s hash all the time, should give minor 
+                    // performance improvement
+                    auto& task = tasks[taskname];
 
-                    if (tasks[taskname]->write_attribute_basegroup)
+                    task->active_dataset =
+                        task->build_dataset(
+                            task->base_group, m);
+
+                    if (task->write_attribute_basegroup)
                     {
-                        tasks[taskname]->write_attribute_basegroup(
-                            tasks[taskname]->base_group, m);
+                        task->write_attribute_basegroup(
+                            task->base_group, m);
                     }
                 }
             }
@@ -132,12 +135,14 @@ struct DefaultExecutionProcess
             {
                 for (auto& taskname : dm.get_decider_task_map()[name])
                 {
-                    tasks[taskname]->write_data(tasks[taskname]->active_dataset,
+                    auto& task = tasks[taskname];
+
+                    task->write_data(task->active_dataset,
                                                 m);
-                    if (tasks[taskname]->write_attribute_active_dataset)
+                    if (task->write_attribute_active_dataset)
                     {
-                        tasks[taskname]->write_attribute_active_dataset(
-                            tasks[taskname]->active_dataset, m);
+                        task->write_attribute_active_dataset(
+                            task->active_dataset, m);
                     }
                 }
             }
@@ -154,14 +159,21 @@ template < typename Model >
 struct DefaultDecider
 {
 
-    /// A functor called in operator(), can be used for specialization
-    std::function< bool(Model&) > func;
-
     /// Invokes the boolean functor this decider is specialized with
     virtual bool
-    operator()(Model& m)
+    operator()(Model&)
     {
-        return func(m);
+        return false;
+    }
+
+    /**
+     * @brief Set the decider up from a given config node
+     *
+     * @param cfg config node containing arguments for this decider
+     */
+    virtual void
+    set_from_cfg(const Config&)
+    {
     }
 
     DefaultDecider()                      = default;
@@ -172,16 +184,6 @@ struct DefaultDecider
     DefaultDecider&
     operator=(DefaultDecider&&) = default;
 
-    /// Construct the decider from a configuration
-    DefaultDecider(const Config&) : DefaultDecider()
-    {
-    }
-
-    /// Construct the decider with a given functor
-    DefaultDecider(std::function< bool(Model&) > f) : func(f)
-    {
-    }
-
     virtual ~DefaultDecider() = default;
 };
 
@@ -189,44 +191,44 @@ struct DefaultDecider
 template < typename Model >
 struct IntervalDecider : DefaultDecider< Model >
 {
+
     /// The base class
     using Base = DefaultDecider< Model >;
 
     /// The sequence of intervals within to return true
     std::list< std::array< std::size_t, 2 > > intervals;
 
-    /**
-     * @brief Construct a new IntervalDecider object from a configuration
-     *
-     * @param cfg  The configuration to extract information from. Expects as
-     *             arguments a key ``intervals`` which is a sequence of pairs,
-     *             where each pair determines the half-open [start, end)
-     *             interval in which writing is to occur.
-     */
-    IntervalDecider(const Config& cfg) :
-        intervals(get_as< std::list< std::array< std::size_t, 2 > > >(
-            "intervals", cfg))
+    virtual bool
+    operator()(Model& m) override
     {
-        // Set the functor that evaluates the intervals given the time
-        this->func = [this](Model& m) -> bool {
-            if (intervals.size() != 0)
+        if (intervals.size() != 0)
+        {
+            // Check if within [start, end) interval
+            if (m.get_time() >= intervals.front()[0] and
+                m.get_time() < intervals.front()[1])
             {
-                // Check if within [start, end) interval
-                if (m.get_time() >= intervals.front()[0] and
-                    m.get_time() < intervals.front()[1])
-                {
-                    return true;
-                }
-
-                // Are at the end of the current interval; pop it, such that
-                // at next invocation the front is the new interval
-                if (m.get_time() == intervals.front()[1])
-                {
-                    intervals.pop_front();
-                }
+                return true;
             }
-            return false;
-        };
+
+            // Are at the end of the current interval; pop it, such that
+            // at next invocation the front is the new interval
+            if (m.get_time() == intervals.front()[1])
+            {
+                intervals.pop_front();
+            }
+        }
+        return false;
+    }
+    /**
+     * @brief Set the decider up from a given config node
+     *
+     * @param cfg config node containing arguments for this decider
+     */
+    virtual void
+    set_from_cfg(const Config& cfg) override
+    {
+        intervals = get_as< std::list< std::array< std::size_t, 2 > > >(
+            "intervals", cfg);
     }
 
     IntervalDecider()                       = default;
@@ -247,24 +249,30 @@ struct IntervalDecider : DefaultDecider< Model >
 template < typename Model >
 struct SliceDecider : DefaultDecider< Model >
 {
+    std::size_t start;
+    std::size_t stop;
+    std::size_t step;
+
     /// The type of the base decider class
     using Base = DefaultDecider< Model >;
 
-    /// Construct a SliceDecider with a given configuration
-    SliceDecider(const Config& cfg) :
-        // Set up using base class, passing a functor to it
-        Base([&cfg]() {
-            const auto start = get_as< std::size_t >("start", cfg);
-            const auto stop  = get_as< std::size_t >("stop", cfg);
-            const auto step  = get_as< std::size_t >("step", cfg);
-
-            // Create and return the functor that evaluates these slices
-            return [start, stop, step](Model& m) -> bool {
-                return ((m.get_time() >= start) and (m.get_time() < stop) and
-                        ((m.get_time() - start) % step == 0));
-            };
-        }())
+    virtual bool
+    operator()(Model& m) override
     {
+        return ((m.get_time() >= start) and (m.get_time() < stop) and
+                ((m.get_time() - start) % step == 0));
+    }
+    /**
+     * @brief Set the decider up from a given config node
+     *
+     * @param cfg config node containing arguments for this decider
+     */
+    virtual void
+    set_from_cfg(const Config& cfg) override
+    {
+        start = get_as< std::size_t >("start", cfg);
+        stop  = get_as< std::size_t >("stop", cfg);
+        step  = get_as< std::size_t >("step", cfg);
     }
 
     SliceDecider()                    = default;
@@ -285,26 +293,27 @@ struct OnceDecider : DefaultDecider< Model >
 {
     /// The type of the base decider class
     using Base = DefaultDecider< Model >;
+    std::size_t time;
 
-    /// Construct a OnceDecider from a configuration. Expects key ``time``.
-    OnceDecider(const Config& cfg) :
-        // Set up using base class, passing a functor to it
-        Base([&cfg]() {
-            const auto time = get_as< std::size_t >("time", cfg);
-
-            // Create and return the functor
-            return [time](Model& m) -> bool { return (m.get_time() == time); };
-        }())
+    virtual bool
+    operator()(Model& m) override
     {
+        return (m.get_time() == time);
+    }
+
+    /**
+     * @brief Set the decider up from a given config node
+     *
+     * @param cfg config node containing arguments for this decider
+     */
+    virtual void
+    set_from_cfg(const Config& cfg) override
+    {
+        time = get_as< std::size_t >("time", cfg);
     }
 
     /// Construct a OnceDecider that evaluates to true at time zero
-    OnceDecider() :
-        Base([]() {
-            return [](Model& m) -> bool { return (m.get_time() == 0); };
-        }())
-    {
-    }
+    OnceDecider() = default;
 
     OnceDecider(const OnceDecider&) = default;
     OnceDecider(OnceDecider&&)      = default;
@@ -324,13 +333,13 @@ struct AlwaysDecider : DefaultDecider< Model >
     /// The type of the base decider class
     using Base = DefaultDecider< Model >;
 
-    AlwaysDecider() : Base([](Model&) -> bool { return true; })
+    virtual bool
+    operator()(Model&) override
     {
+        return true;
     }
 
-    AlwaysDecider(const Config&) : Base([](Model&) -> bool { return true; })
-    {
-    }
+    AlwaysDecider() = default;
 
     AlwaysDecider(const AlwaysDecider&) = default;
     AlwaysDecider(AlwaysDecider&&)      = default;
@@ -370,8 +379,15 @@ struct CompositeDecider : DefaultDecider< Model >
             });
     }
 
-    /// Set up a composite decider from a configuration
-    CompositeDecider(const Config& cfg)
+    /**
+     * @brief Set the decider up from a given config node
+     * @warning The ordering of he decider nodes in the config needs to be the
+     *          same as the ordering of the arguments given to the constructor
+     *          of this class
+     * @param cfg config node containing arguments for this decider
+     */
+    virtual void
+    set_from_cfg(const Config& cfg) override
     {
         // BAD: User has to be smart about it, because it breaks
         // if args are not the same order as Deciders...
@@ -388,9 +404,9 @@ struct CompositeDecider : DefaultDecider< Model >
         // then iterate over the zipped confs and deciders and built the
         // deciders with their respective config
         boost::hana::for_each(boost::hana::zip(configs, held_deciders),
-                              [](auto& conf_dcd_pair) {
-                                  auto& [c, d] = conf_dcd_pair;
-                                  d            = std::decay_t< decltype(d) >(c);
+                              [](auto&& conf_dcd_pair) {
+                                  auto&& [c, d] = conf_dcd_pair;
+                                  d.set_from_cfg(c);
                               });
     }
 
@@ -429,14 +445,16 @@ struct SimpleCompositeDecider : DefaultDecider< Model >
         return slice_decider(m) or interval_decider(m);
     }
 
-    /// Set up a SimpleCompositeDecider from configuration node.
-    /** @details Expects keys ``slice`` and ``interval`` to pass to the
-     *         respective deciders
+    /**
+     * @brief Set the decider up from a given config node
+     *
+     * @param cfg config node containing arguments for this decider
      */
-    SimpleCompositeDecider(const Config& cfg) :
-        slice_decider(SliceDecider< Model >(cfg["slice"])),
-        interval_decider(IntervalDecider< Model >(cfg["interval"]))
+    virtual void
+    set_from_cfg(const Config& cfg) override
     {
+        slice_decider.set_from_cfg(cfg["slice"]);
+        interval_decider.set_from_cfg(cfg["interval"]);
     }
 
     SimpleCompositeDecider()                              = default;
@@ -449,7 +467,44 @@ struct SimpleCompositeDecider : DefaultDecider< Model >
 };
 
 // =============================================================================
-// ================================ Triggers ===================================
+// =========================== Default type maps  ==============================
+// =============================================================================
+
+/**
+ * @brief Map that names the deciders supplied by default such that they can be 
+ *        addressed in a config file. 
+ * @details This map does not provide decider objects
+ *          or pointers to them in itself, but functions which create 
+ *          shared_pointers to a particular decider function. This is made such 
+ *          that we can use dynamic polymorphism and do not have to resort to 
+ *          tuples.
+ * 
+ * @tparam Model A model type for which the deciders shall be employed.
+ */
+template < typename Model >
+static std::unordered_map<
+    std::string,
+    std::function< std::shared_ptr< DefaultDecider< Model > >() > >
+    default_decidertypes{
+        { std::string("default"),
+          []() { return std::make_shared< DefaultDecider< Model > >(); } },
+        { std::string("always"),
+          []() { return std::make_shared< AlwaysDecider< Model > >(); } },
+        { std::string("once"),
+          []() { return std::make_shared< OnceDecider< Model > >(); } },
+        { std::string("interval"),
+          []() { return std::make_shared< IntervalDecider< Model > >(); } },
+        { std::string("slice"),
+          []() { return std::make_shared< SliceDecider< Model > >(); } },
+        { std::string("simple_composite"),
+          []() {
+              return std::make_shared< SimpleCompositeDecider< Model > >();
+          } }
+    };
+
+// =============================================================================
+// ================================ Triggers
+// ===================================
 // =============================================================================
 
 /// The function to decide whether a writer's builder will be triggered -
@@ -477,21 +532,11 @@ using CompositeTrigger = CompositeDecider< Model, Deciders... >;
 template < typename Model >
 using SimpleCompositeTrigger = SimpleCompositeDecider< Model >;
 
-// =============================================================================
-// =========================== Default type maps  ==============================
-// =============================================================================
-
-/// Default decider types
-template < typename Model >
-auto default_decidertypes = std::make_tuple(
-    std::make_pair("default", DefaultDecider< Model >()),
-    std::make_pair("always", AlwaysDecider< Model >()),
-    std::make_pair("once", OnceDecider< Model >()),
-    std::make_pair("interval", IntervalDecider< Model >()),
-    std::make_pair("slice", SliceDecider< Model >()),
-    std::make_pair("simple_composite", SimpleCompositeDecider< Model >()));
-
-/// Default trigger types
+/**
+ * @brief Default trigger factories. Equal to deciders because while the 
+ *        task they fullfill is different, their functionality is not.
+ * @tparam Model Modeltype the triggers shall be used with
+ */
 template < typename Model >
 auto default_triggertypes = default_decidertypes< Model >;
 

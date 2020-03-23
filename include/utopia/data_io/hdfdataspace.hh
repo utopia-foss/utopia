@@ -4,7 +4,6 @@
 #include <armadillo>
 #include <stdexcept>
 
-#include <H5Spublic.h>
 #include <hdf5.h>
 
 #include "hdfutilities.hh"

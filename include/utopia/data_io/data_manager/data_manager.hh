@@ -4,12 +4,10 @@
 // stl includes for having shared_ptr, hashmap, vector, swap
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
-
-#include <boost/hana/ext/std/array.hpp>
-#include <boost/hana/ext/std/tuple.hpp>
-#include <boost/hana/for_each.hpp>
 
 // utopia includes
 #include "../../core/logging.hh"
@@ -82,8 +80,8 @@ struct DataManagerTraits
 /**
  * @brief Manage different tasks of writing out data from a source in a uniform
  *        yet flexible way.
- *         This is a class which, when being supplied with appropriate
- *         callables, manages their execution.
+ *        This is a class which, when being supplied with appropriate
+ *        callables, manages their execution.
  *
  *         ## Idea
  *         The entire process of writing data from a source to a location
@@ -150,26 +148,28 @@ class DataManager
     /// Map of task names to shared pointers of Tasks; supporting polymorphism
     using TaskMap = std::unordered_map< std::string, std::shared_ptr< Task > >;
 
+    /// Same as TaskMap, but using std::map such that ordering is preserved
+    using OrderedTaskMap = std::map< std::string, std::shared_ptr< Task > >;
+
     /// Map of decider names to decider functions
     using DeciderMap =
         std::unordered_map< std::string, std::shared_ptr< Decider > >;
+
+    /// Same as DeciderMap, but using std::map such that ordering is preserved
+    using OrderedDeciderMap =
+        std::map< std::string, std::shared_ptr< Decider > >;
 
     /// Map of trigger names to trigger functions
     using TriggerMap =
         std::unordered_map< std::string, std::shared_ptr< Trigger > >;
 
+    /// Same as TriggerMap, but using std::map such that ordering is preserved
+    using OrderedTriggerMap =
+        std::map< std::string, std::shared_ptr< Trigger > >;
+
     /// Map of decider/task names to a collection of task names
     using AssocsMap =
         std::unordered_map< std::string, std::vector< std::string > >;
-
-    /// Map for holding decider types by default constructed objects
-    using DeciderTypemap = std::unordered_map< std::string, Decider >;
-
-    /// Map for holding trigger types by default constructed objects
-    using TriggerTypemap = std::unordered_map< std::string, Trigger >;
-
-    /// Map for holding Task types by default constructed objects
-    using TaskTypemap = std::unordered_map< std::string, Task >;
 
   protected:
     /**
@@ -212,31 +212,9 @@ class DataManager
 
     // .. Construction Helpers ................................................
 
-    /**
-     * @brief Given a configuration node, sets up a (name -> object) map
-     *
-     * @tparam ObjMap    The map type to populate
-     * @tparam ObjTuple  The tuple of known objects
-     *
-     * @param cfg        The mapping that is to be iterated over. Keys on the
-     *                   top-level of this node will be the keys of the map
-     *                   that is returned by this method. For each key, another
-     *                   mapping is expected to provide arguments, e.g. whether
-     *                   the object is to be considered ``active``. If the name
-     *                   matches a name from ``known_objects``, that object is
-     *                   carried over. If a ``type`` key is available in the
-     *                   config of an object, it is used to construct a new
-     *                   object, with the option to pass the ``args`` mapping
-     *                   to its constructor.
-     *
-     * @param known_objects  A tuple of (name, object) pairs that is used as
-     *                   basis to populate the object mapping.
-     *
-     * @return ObjMap    The constructor name -> object map.
-     */
-    template < typename ObjMap, typename ObjTuple >
+    template < typename ObjMap, typename KnownObjectsMap >
     ObjMap
-    setup_from_config(const Config& cfg, ObjTuple&& known_objects)
+    _setup_from_config(const Config& cfg, KnownObjectsMap&& known_objects)
     {
         _log->debug("Setting up name -> object map from config node ...");
 
@@ -253,183 +231,168 @@ class DataManager
                                         to_string(cfg));
         }
 
-        // Compare size of yaml node to size of object tuple. Fewer configs
-        // than tuple elements is allowed, but not the other way round.
-        // FIXME: any smarter way to do this? node.size() gives 1!
-        std::size_t nodesize = 0;
-        for ([[maybe_unused]] auto& node_pair : cfg)
-        {
-            ++nodesize;
-        }
-
-        // Failing to catch this ends in segfaults ...
-        if (nodesize > std::tuple_size_v< std::decay_t< ObjTuple > >)
-        {
-            throw std::invalid_argument(
-                "DataManager config node specifies " +
-                std::to_string(nodesize) +
-                " objects, but argument tuple contains " +
-                std::to_string(std::tuple_size_v< std::decay_t< ObjTuple > >) +
-                " objects! Need to provide at least as many keys as there "
-                "are elements in the tuple. Given config: " +
-                to_string(cfg));
-        }
-
         // The name -> object map that is to be populated
         ObjMap map;
         _log->debug("Configuring DataManager objects ... (container size: {})",
-                    std::tuple_size_v< std::decay_t< ObjTuple > >);
+                    known_objects.size());
 
-        // FIXME: add security  for number of config nodes not matching number
-        // of arguments in tuples
-        // The following applies: allowed is less config nodes than tuples,
-        // but not the other way round. First iteration is to check that
-        // they are equal in size and throw if they are not.
-        //
-        //
-        // Iterate over the given configuration and populate the object map
-        boost::hana::for_each(known_objects, [&](const auto& named_object) {
-            auto [obj_name, object] = named_object;
+        // Go over the known objects and decide whether to retain them
+        // as they are or whether new objects need to be constructed from the
+        // known ones
+        // Depending on the name of the object, the name given in the
+        // configuration, and the configuration itself, decide on
+        // whether a new object needs to be constructed or can be
+        // retained from the known objects.
+        // If the configuration specifies a type, use that information
+        // to either construct a new object from given arguments or
+        // copy-construct one from an existing object
+        for (const auto& node_pair : cfg)
+        {
+            // Unpack the (key node, value node) pair, i.e. the name of the
+            // object that is to be configured and the corresponding
+            // configuration node
+            const auto  cfg_name = node_pair.first.as< std::string >();
+            const auto& obj_cfg  = node_pair.second;
 
-            _log->trace("  Object name:      {}", obj_name);
+            const auto type_name = get_as< std::string >("type", obj_cfg);
 
-            using ObjType = std::decay_t< decltype(object) >;
+            _log->debug("Attempting to build {} of type {} from config",
+                        cfg_name,
+                        type_name);
 
-            for (const auto& node_pair : cfg)
+            if (known_objects.find(type_name) == known_objects.end())
             {
-                // Unpack the (key node, value node) pair, i.e. the name of the
-                // object that is to be configured and the corresponding
-                // configuration node
-                const auto  name    = node_pair.first.as< std::string >();
-                const auto& obj_cfg = node_pair.second;
-
-                _log->trace("Configuration key:  {}", name);
-
-                // Go over the known objects and decide whether to retain them
-                // or whether new objects need to be constructed from the
-                // known ones
-
-                // Depending on the name of the object, the name given in the
-                // configuration, and the configuration itself, decide on
-                // whether a new object needs to be constructed or can be
-                // retained from the known objects. Start with the most
-                // specific case...
-
-                // If the configuration specifies a type, use that information
-                // to either construct a new object from given arguments or
-                // copy-construct one from an existing object
-                if (obj_cfg["type"] and
-                    obj_name == get_as< std::string >("type", obj_cfg))
+                throw std::invalid_argument("Error for node " + cfg_name +
+                                            ": No 'type' node given");
+            }
+            else
+            {
+                if (obj_cfg["args"])
                 {
-                    _log->trace("  Creating new object from known type '{}'"
-                                " ...",
-                                obj_name);
-
-                    // Determine whether to build with arguments or using the
-                    // copy constructor
-                    if (obj_cfg["args"])
-                    {
-                        _log->trace("  ... using given arguments ...");
-
-                        // Need be config-constructible; otherwise throw
-                        if constexpr (std::is_constructible_v< ObjType,
-                                                               const Config& >)
-                        {
-                            // Construct from arguments, then associate
-                            map[name] =
-                                std::make_shared< ObjType >(obj_cfg["args"]);
-                        }
-                        else
-                        {
-                            throw std::invalid_argument(
-                                "Attempted to create "
-                                "an object with name '" +
-                                name +
-                                "' from the "
-                                "type of the known object of name '" +
-                                obj_name +
-                                "' and configuration arguments, but that "
-                                "type is not config-constructible! Either do "
-                                "not pass `args`, in which case the copy-"
-                                "constructor will be used, or implement a "
-                                "constructor that accepts a DataIO::Config&.");
-                        }
-                    }
-                    else
-                    {
-                        _log->trace("  ... using copy constructor ...");
-                        map[name] = std::make_shared< ObjType >(object);
-                    }
-                }
-
-                // If this object's name matches that given in the
-                // configuration, we want to retain that object (unless it is
-                // not marked active).
-                else if (obj_name == name)
-                {
-                    // Find out if it is marked active (default)
-                    if (get_as< bool >("active", obj_cfg, true))
-                    {
-                        _log->trace("  Adding object ...");
-                        map[name] = std::make_shared< ObjType >(object);
-                    }
-                    else
-                    {
-                        _log->trace("  Not marked active. Skipping ...");
-                    }
+                    _log->debug("  ... using given arguments from config ...");
+                    map[cfg_name] =
+                        known_objects[type_name](); // default construct
+                    map[cfg_name]->set_from_cfg(obj_cfg["args"]);
                 }
                 else
                 {
-                    _log->warn("No match for config key '{}' found!", name);
-                }
 
-                // else: No match for this config key. Do not add an entry.
+                    // if no args is given, do a default build because this
+                    // not all of the deciders/triggers need an args node
+                    _log->debug("... constructing {} of type {} without "
+                                "config args because no node 'args' is "
+                                "given for it in the config.",
+                                cfg_name,
+                                type_name);
+
+                    map[cfg_name] = known_objects[type_name]();
+                }
             }
-        });
+        }
 
         return map;
     }
 
     /**
-     * @brief Given a configuration, builds an association map
+     * @brief Check which tasks supplied to the datamanager are active and shall
+     *        be retained, using the config node provided
      *
-     * @tparam NCMap Type of the map that is represented by ``lookup_key``
-     *
-     * @param cfg               The mapping to iterate over
-     * @param map_to_associate
-     * @param lookup_key
-     *
-     * @return AssocsMap
+     * @param task_cfg config node defining tasks
+     * @param tasks unordered map naming pointers to tasks
+     * @return TaskMap 'tasks' map filtered by activity
      */
-    template < typename NCMap >
-    AssocsMap
-    associate_from_config(const Config& cfg,
-                          NCMap&&       map_to_associate,
-                          std::string   lookup_key)
+    TaskMap
+    _filter_tasks_from_config(const Config& task_cfg, TaskMap& tasks)
     {
-        if (not cfg)
+        // map to use in the end
+        TaskMap map;
+
+        if (not task_cfg)
         {
-            throw std::invalid_argument("Received a zombie node for task "
-                                        "association with lookup key '" +
-                                        lookup_key + "'!");
+            throw std::invalid_argument(
+                "Error: data_manager config node needs to contain a node "
+                "'tasks' which it apparently is missing ");
         }
-        else if (not cfg.IsMap())
+        if (not task_cfg.IsMap())
         {
-            throw std::invalid_argument("Expected a mapping for task -> " +
-                                        lookup_key + " association, got:\n" +
-                                        to_string(cfg));
+            throw std::invalid_argument("Expected a mapping for DataManager "
+                                        "task filtering, got:\n" +
+                                        to_string(task_cfg));
         }
 
-        _log->info("Building task to {} associations from given config ...",
-                   lookup_key);
+        for (const auto& node_pair : task_cfg)
+        {
+            // Unpack the (key node, value node) pair, i.e. the name of the
+            // object that is to be configured and the corresponding
+            // configuration node
+            const auto  cfg_name = node_pair.first.as< std::string >();
+            const auto& obj_cfg  = node_pair.second;
 
-        // The association pairs: task name -> decider/trigger name
-        // This is an intermediary container that is later translated into the
-        // actual association map.
-        std::vector< std::pair< std::string, std::string > > assoc_pairs;
+            _log->debug("Investigating task {} and checking if it is active ",
+                        cfg_name);
 
-        // Iterate over the given configuration node
-        for (const auto& node_pair : cfg)
+            if (get_as< bool >("active", obj_cfg))
+            {
+
+                _log->debug("Task '{}' was marked as active; will be kept.",
+                            cfg_name);
+
+                if (tasks.find(cfg_name) == tasks.end())
+                {
+                    throw std::invalid_argument(
+                        "Error, no task supplied to the datamanager is named " +
+                        cfg_name);
+                }
+                else
+                {
+                    map[cfg_name] = tasks[cfg_name];
+                }
+            }
+            else
+            {
+                // skip inactive tasks
+                _log->debug("Task '{}' was marked as not active; skipping.",
+                            cfg_name);
+                continue;
+            }
+        }
+
+        return map;
+    }
+
+    /**
+     * @brief Given a configuration, builds an association map.
+     * @tparam DTMap automatically determined
+     * @param task_cfg  The mapping to iterate as given by the config.
+     *                  It holds the tasks and names the decider and trigger
+     *                  and the task is associated to and tells if it is active
+     *                  or not.
+     * @param dt_map  Map that holds names->decider/trigger mapping. Used to
+     *                check if the names in the config indeed match some known
+     *                decider/trigger.
+     * @param lookup_key  Key which names the mapping used for association, i.e.,
+     *                    "decider" or "trigger".
+     * @return AssocsMap  Map that associates the given deciders/triggers with a
+     *                    vector of names that name tasks.
+     */
+    template < typename DTMap >
+    AssocsMap
+    _associate_from_config(const Config& task_cfg,
+                           DTMap&&       dt_map,
+                           std::string   lookup_key)
+    {
+        AssocsMap map;
+
+        // error checking regarding the task_cfg node is done in the
+        // _filter_tasks function, and hence does not need to be repeated here
+
+        _log->debug("Building task to {} associations from given config ...",
+                    lookup_key);
+
+        // Iterate over the given configuration node, pull out the name of the
+        // task and the name of the associated decider/trigger, and put the
+        // AssocsMap together from this
+        for (const auto& node_pair : task_cfg)
         {
             // Unpack the (key node, value node) pair
             const auto  task_name = node_pair.first.as< std::string >();
@@ -445,21 +408,37 @@ class DataManager
                             task_name);
                 continue;
             }
+
             // Get the name of the trigger or decider to associate to
-            const auto associate_to =
+
+            const auto dt_to_associate_to =
                 get_as< std::string >(lookup_key, task_cfg);
 
-            // Construct the association pairs
-            assoc_pairs.push_back(std::make_pair(task_name, associate_to));
-            _log->debug("Associating task '{}' to {} '{}'.",
-                        task_name,
-                        lookup_key,
-                        associate_to);
+            // Find erroneous config namings for deciders/triggers
+            if (dt_map.find(dt_to_associate_to) == dt_map.end())
+            {
+                this->_log->info(" Error for decider/trigger: {}",
+                                 dt_to_associate_to);
+                throw std::invalid_argument(
+                    "Error when trying to associate tasks to deciders or "
+                    "triggers: "
+                    "Name in config does not match the name of a "
+                    "decider/trigger known to the datamanager");
+            }
+            else
+            {
+                // dt_to_associate_to exists in the dt_map, we're good
+                map[dt_to_associate_to].push_back(task_name);
+
+                _log->debug("Associating task '{}' to {} '{}'.",
+                            task_name,
+                            lookup_key,
+                            dt_to_associate_to);
+            }
         }
 
         // Use the helper function to build the actual association map
-        return _DMUtils::build_task_association_map< AssocsMap >(
-            _tasks, map_to_associate, assoc_pairs);
+        return map;
     }
 
   public:
@@ -479,188 +458,6 @@ class DataManager
     {
         _execution_process(
             *this, std::forward< Model >(model), std::forward< Args >(args)...);
-    }
-
-    /**
-     * @brief  Register a new task and its name with the DataManager
-     *        No task named ``name`` may already be registered
-     *
-     * @tparam Tsk       Type of the task to register
-     *
-     * @param  name      Name of the task to register
-     * @param  new_task  Task object to register
-     *
-     * @note   Might not remain in the public interface
-     */
-    template < typename Tsk >
-    void
-    register_task(const std::string& name, Tsk&& new_task)
-    {
-        if (_tasks.find(name) != _tasks.end())
-        {
-            throw std::invalid_argument("A task named '" + name +
-                                        "' is "
-                                        "already registered!");
-        }
-        _tasks[name] = std::make_shared< Task >(std::forward< Tsk >(new_task));
-    }
-
-    /**
-     * @brief  Register a new decider and its name with the DataManager
-     *         No decider named ``name`` may already be registered
-     *
-     * @tparam Dcd         Type of the decider to register
-     *
-     * @param  name        Name of the new decider
-     * @param  new_decider New decider object to register
-     *
-     * @note   Might not remain in the public interface
-     */
-    template < typename Dcd >
-    void
-    register_decider(const std::string& name, Dcd&& new_decider)
-    {
-        if (_deciders.find(name) != _deciders.end())
-        {
-            throw std::invalid_argument("A decider named '" + name +
-                                        "' is "
-                                        "already registered!");
-        }
-        _deciders[name] =
-            std::make_shared< Decider >(std::forward< Dcd >(new_decider));
-    }
-
-    /**
-     * @brief  Register a new trigger and its name with the DataManager
-     *         No trigger named ``name`` may already be registered
-     *
-     * @tparam Trgr         Type of the trigger to register
-     *
-     * @param  name         Name of the new trigger
-     * @param  new_trigger  New trigger object to register
-     *
-     * @note   Might not remain in the public interface
-     */
-    template < typename Trgr >
-    void
-    register_trigger(const std::string& name, Trgr&& new_trigger)
-    {
-        if (_triggers.find(name) != _triggers.end())
-        {
-            throw std::invalid_argument("A trigger named '" + name +
-                                        "' is "
-                                        "already registered!");
-        }
-        _triggers[name] =
-            std::make_shared< Trigger >(std::forward< Trgr >(new_trigger));
-    }
-
-    /**
-     * @brief Associate a task with an existing decider
-     *
-     * @warning This does NOT take care of disassociating the task from a
-     *          potentially already existing association!
-     *
-     * @note  Might not remain in the public interface or might change its
-     *        interface in order to automatically remove a previous association
-     *
-     * @param task_name     Name of the task to reassociate
-     * @param decider_name  Name of the decider to associate the task to
-     * @param old_decider_name  Old decider name that should be disassociated
-     */
-    void
-    link_task_to_decider(std::string task_name,
-                         std::string decider_name,
-                         std::string old_decider_name = "")
-    {
-        if (old_decider_name.size())
-        {
-            // Remove existing association
-            _decider_task_map.at(old_decider_name)
-                .erase(
-                    std::remove_if(
-                        _decider_task_map[old_decider_name].begin(),
-                        _decider_task_map[old_decider_name].end(),
-                        [&](const std::string& s) { return s == task_name; }),
-                    _decider_task_map[old_decider_name].end());
-        }
-        // else: _Assume_ no previous association. // FIXME Ensure.
-
-        // Add new association
-        _decider_task_map[decider_name].push_back(task_name);
-    }
-
-    /**
-     * @brief Associate a task with an existing trigger
-     *
-     * @warning This does NOT take care of disassociating the task from a
-     *          potentially already existing association!
-     *
-     * @note  Might not remain in the public interface or might change its
-     *        interface in order to automatically remove a previous association
-     *
-     * @param task_name     Name of the task to reassociate
-     * @param trigger_name  Name of the trigger to associate the task to
-     * @param old_trigger_name  Old trigger name that should be disassociated
-     */
-    void
-    link_task_to_trigger(std::string task_name,
-                         std::string trigger_name,
-                         std::string old_trigger_name = "")
-    {
-        if (old_trigger_name.size())
-        {
-            // Remove existing association
-            _trigger_task_map.at(old_trigger_name)
-                .erase(
-                    std::remove_if(
-                        _trigger_task_map[old_trigger_name].begin(),
-                        _trigger_task_map[old_trigger_name].end(),
-                        [&](const std::string& s) { return s == task_name; }),
-                    _trigger_task_map[old_trigger_name].end());
-        }
-        // else: _Assume_ no previous association. // FIXME Ensure.
-
-        // Add new association
-        _trigger_task_map[trigger_name].push_back(task_name);
-    }
-
-    /**
-     * @brief Register a decider->trigger->task procedure after construction
-     *        This will invoke the respective ``register_*`` and
-     *         ``link_task_to_*`` methods.
-     *
-     * @note   It is not possible to use config information here; that has to
-     *         happen during construction.
-     *
-     * @tparam Tsk          The task object type to register
-     * @tparam Dcd          The decider object type to register
-     * @tparam Trgr         The trigger object type to register
-     *
-     * @param task_name     Name under which the task is to be registered
-     * @param task          The task to add
-     * @param decider_name  Name under which the decider is to be registered
-     * @param decider       The decider to add
-     * @param trigger_name  Name under which the trigger is to be registered
-     * @param trigger       The trigger to add
-     */
-    template < typename Tsk, typename Dcd, typename Trgr >
-    void
-    register_procedure(const std::string& task_name,
-                       Tsk&&              task,
-                       const std::string& decider_name,
-                       Dcd&&              decider,
-                       const std::string& trigger_name,
-                       Trgr&&             trigger)
-    {
-        // Register
-        register_task(task_name, task);
-        register_decider(decider_name, decider);
-        register_trigger(trigger_name, trigger);
-
-        // Associate
-        link_task_to_decider(task_name, decider_name);
-        link_task_to_trigger(task_name, trigger_name);
     }
 
     // .. Getters .............................................................
@@ -780,139 +577,85 @@ class DataManager
     // .. Constructors ........................................................
 
     /**
-     * @brief Construct a new DataManager object from tuple of task definitions
+     * @brief Construct DataManager using a config node
+     * @details Arguments are an unordered_map that assigns names to
+     *          shared_ptrs of tasks, and two other unordered_maps that assign
+     *          names to factory functions for producing shared_ptrs to Deciders
+     *          and triggers. This factory function approach enables us to use
+     *          dynamic polymorphism on the deciders and triggers. This ability
+     *          is not useful for tasks however, because they are designed to
+     *          receive their functionality from the outside via passing them
+     *          function objects on construction. Hence it is forgone here.
      *
-     * @param model     The model this DataManager is to be associated with
-     * @param cfg       The data manager configuration
-     * @param tasks     Tuple of (name, Task) tuples
-     * TODO
+     * @param cfg  Configuration node that contains datamanager config options
+     * @param tasks unordered_map containing name->shared_ptr_to_task mapping
+     * @param deciders map associating names to factory functions producing
+     *                 shared_ptr_to_deciders
+     * @param triggers map associating names to factory functions producing
+     *                 shared_ptr_to_triggers
+     * @param execproc Function object that determines the execution process of
+     *                 the datamanager, i.e., how the deciders, triggers and
+     *                 tasks work together to produce the output data
      */
-    template < class Tasks,
-               class Deciders,
-               class Triggers,
-               class ExecProcess,
-               std::enable_if_t<
-                   Utils::is_tuple_like_v< std::decay_t< Tasks > > and
-                       Utils::is_tuple_like_v< std::decay_t< Deciders > > and
-                       Utils::is_tuple_like_v< std::decay_t< Triggers > > and
-                       is_callable_object_v< std::decay_t< ExecProcess > >,
-                   int > = 0 >
-    DataManager(const Config& cfg,
-                Tasks&&       tasks,
-                Deciders&&    deciders,
-                Triggers&&    triggers,
-                ExecProcess&& execproc) :
+    DataManager(
+        const Config& cfg,
+        TaskMap       tasks,
+        std::unordered_map< std::string,
+                            std::function< std::shared_ptr< Decider >() > >
+            deciders,
+        std::unordered_map< std::string,
+                            std::function< std::shared_ptr< Trigger >() > >
+                         triggers,
+        ExecutionProcess execproc) :
         // Get the global data manager logger
-        _log(spdlog::get("data_mngr"))
-
-        // setup tasks, deciders and triggers from the given args and the config
-        ,
-        _tasks(setup_from_config< TaskMap >(cfg["tasks"], tasks)),
-        _deciders(setup_from_config< DeciderMap >(cfg["deciders"], deciders)),
-        _triggers(setup_from_config< TriggerMap >(cfg["triggers"], triggers))
-
-        // Set up task association mappings from the config
-        ,
+        _log(spdlog::get("data_mngr")),
+        _tasks(_filter_tasks_from_config(cfg["tasks"], tasks)),
+        _deciders(_setup_from_config< DeciderMap >(cfg["deciders"], deciders)),
+        _triggers(_setup_from_config< TriggerMap >(cfg["triggers"], triggers)),
+        // Create maps: decider/trigger -> vector of task names
         _decider_task_map(
-            associate_from_config(cfg["tasks"], _deciders, "decider")),
+            _associate_from_config(cfg["tasks"], _deciders, "decider")),
         _trigger_task_map(
-            associate_from_config(cfg["tasks"], _triggers, "trigger")),
+            _associate_from_config(cfg["tasks"], _triggers, "trigger")),
         _execution_process(execproc)
     {
-        _log->info("DataManager setup with {} task(s), {} decider(s), and "
-                   "{} trigger(s).",
-                   _tasks.size(),
-                   _decider_task_map.size(),
-                   _trigger_task_map.size());
+        // nothing remains to be done here
     }
 
     /**
-     * @brief Construct a new DataManager object
-     *         This constructor needs to be supplied with arbitrary
-     *         tuplelike objects containing pairs of (name, decider),
-     *         (name, trigger), and (name, task) respectivly. They all need to
-     *         be of the same length.
-     *
-     * @tparam M Type of the model
-     * @tparam Deciders Tuple or array of pairs/tuples. Each pairs/tuple
-     *         contains (name, Decider)
-     * @tparam Triggers Tuple or array of pairs/tuples. Each pairs/tuple
-     *         contains (name, Trigger)
-     * @tparam Tasks Tuple or array of pairs/tuples. Each pairs/tuple
-     *         contains (name, Task)
-     *
-     * @param model     The model this DataManager is to be associated with
-     * @param tasks     Container of (name, Task) pairs
-     * @param deciders  Container of (name, decider function) pairs
-     * @param triggers  Container of (name, trigger function) pairs
-     * @param task_decider_assocs  Container of task -> decider association
-     *                  pairs, i.e. (task name, decider name) pairs
-     * @param task_trigger_assocs  Container of task -> trigger association
-     *                  pairs, i.e. (task name, trigger name) pairs
+     * @brief Construct DataManager without config node from passed mappings
+     *        only. If the last two arguments are not given, it is assumed that
+     *        tasks, deciders, triggers  are of equal length and are to be
+     *        associated in a one-to-one way in the order given. This order
+     *        dependencey is also the reason why we make use of 'OrderedTaskMap'
+     *        (an std::map) here.
+     * @param tasks map that assigns names to shared_ptrs to tasks
+     * @param deciders map that assigns names to shared_ptrs to deciders
+     * @param triggers map that assigns names to shared_ptrs to triggers
+     * @param execproc Function object that determines the execution process of
+     *                 the datamanager, i.e., how the deciders, triggers and
+     *                 tasks work together to produce the the output data
+     * @param decider_task_assocs Map that assigns each task a decider function
+     *                            by name: taskname->decidername
+     * @param trigger_task_assocs Map that assigns each task a trigger function
+     *                            by name: taskname->triggername
      */
-    template < class Tasks,
-               class Deciders,
-               class Triggers,
-               class ExecProcess,
-               std::enable_if_t<
-                   Utils::is_tuple_like_v< std::decay_t< Tasks > > and
-                       Utils::is_tuple_like_v< std::decay_t< Deciders > > and
-                       Utils::is_tuple_like_v< std::decay_t< Triggers > > and
-                       is_callable_object_v< std::decay_t< ExecProcess > >,
-                   int > = 0 >
-    DataManager(Tasks&&       tasks,
-                Deciders&&    deciders,
-                Triggers&&    triggers,
-                ExecProcess&& execproc,
-                std::vector< std::pair< std::string, std::string > >
-                    task_decider_assocs = {},
-                std::vector< std::pair< std::string, std::string > >
-                    task_trigger_assocs = {}) :
+    DataManager(OrderedTaskMap                       tasks,
+                OrderedDeciderMap                    deciders,
+                OrderedTriggerMap                    triggers,
+                ExecutionProcess                     execproc,
+                std::map< std::string, std::string > decider_task_assocs = {},
+                std::map< std::string, std::string > trigger_task_assocs = {}) :
         // Get the global data manager logger
-        _log(spdlog::get("data_mngr"))
-
-        // Unpack tasks, deciders, and triggers into the respective containers
-        ,
-        _tasks(_DMUtils::unpack_shared< TaskMap, Task >(tasks)),
-        _deciders(_DMUtils::unpack_shared< DeciderMap, Decider >(deciders)),
-        _triggers(_DMUtils::unpack_shared< TriggerMap, Trigger >(triggers))
-
+        _log(spdlog::get("data_mngr")),
+        _tasks(TaskMap(tasks.begin(), tasks.end())),
+        _deciders(DeciderMap(deciders.begin(), deciders.end())),
+        _triggers(TriggerMap(triggers.begin(), triggers.end())),
         // Create maps: decider/trigger -> vector of task names
-        ,
-        _decider_task_map([&]() {
-            // Check if there would be issues in 1-to-1 association
-            if (task_decider_assocs.size() == 0 and
-                Utils::get_size_v< Deciders > != Utils::get_size_v< Tasks >)
-            {
-                throw std::invalid_argument(
-                    "deciders size != tasks size! You have to disambiguate "
-                    "the association of deciders and tasks by "
-                    "supplying an explicit task_decider_assocs argument if "
-                    "you want to have an unequal number of tasks and "
-                    "deciders.");
-            }
-            // FIXME _tasks and _deciders are not necessarily ordered in the
-            //       same way!
-
-            return _DMUtils::build_task_association_map< AssocsMap >(
-                _tasks, _deciders, task_decider_assocs);
-        }()),
-        _trigger_task_map([&]() {
-            // Check if there would be issues in 1-to-1 association
-            if (task_trigger_assocs.size() == 0 and
-                Utils::get_size_v< Triggers > != Utils::get_size_v< Tasks >)
-            {
-                throw std::invalid_argument(
-                    "triggers size != tasks size! You have to disambiguate "
-                    "the association of triggers and tasks by "
-                    "supplying an explicit task_trigger_assocs argument if "
-                    "you want to have an unequal number of tasks and "
-                    "triggers.");
-            }
-
-            return _DMUtils::build_task_association_map< AssocsMap >(
-                _tasks, _triggers, task_trigger_assocs);
-        }()),
+        _decider_task_map(_DMUtils::build_task_association_map< AssocsMap >(
+            tasks, deciders, decider_task_assocs)),
+        _trigger_task_map(_DMUtils::build_task_association_map< AssocsMap >(
+            tasks, triggers, trigger_task_assocs)),
         _execution_process(execproc)
     {
         _log->info("DataManager setup with {} task(s), {} decider(s), and "
@@ -951,80 +694,6 @@ class DataManager
  *  \}  // endgroup DataManager
  */
 
-// ++ Helpers and Deduction Guides ++++++++++++++++++++++++++++++++++++++++++++
-
-/**
- * @brief Exchange the state of 'lhs' and 'rhs' DataManager instances
- *
- * @tparam Traits  The (matching) traits of both DataManagers
- */
-template < typename Traits >
-void
-swap(DataManager< Traits >& lhs, DataManager< Traits >& rhs)
-{
-    lhs.swap(rhs);
-}
-
-/**
- * @brief determine the common type of the elements in named tuplelike object,
- *        i.e., a tuplelike object containing pairs of (name, object).
- *
- * @tparam Ts
- */
-template < typename... Ts >
-struct determine_common_type_in_named_tpl
-{
-    using type =
-        std::common_type_t< std::decay_t< std::tuple_element_t< 1, Ts > >... >;
-};
-
-/// Deduction guides for DataManager tuple (+cfg) constructor
-template <
-    class Tasks,
-    class Deciders,
-    class Triggers,
-    class ExecProcess,
-    std::enable_if_t< Utils::is_tuple_like_v< std::decay_t< Tasks > > and
-                          Utils::is_tuple_like_v< std::decay_t< Deciders > > and
-                          Utils::is_tuple_like_v< std::decay_t< Triggers > > and
-                          is_callable_object_v< std::decay_t< ExecProcess > >,
-                      int > = 0 >
-DataManager(const Config& cfg,
-            Tasks&&       tasks,
-            Deciders&&    deciders,
-            Triggers&&    triggers,
-            ExecProcess&& execproc)
-    ->DataManager< DataManagerTraits<
-        Utils::apply_t< determine_common_type_in_named_tpl, Tasks >,
-        Utils::apply_t< determine_common_type_in_named_tpl, Deciders >,
-        Utils::apply_t< determine_common_type_in_named_tpl, Triggers >,
-        std::decay_t< ExecProcess > > >;
-
-/// Deduction guides for DataManager tuple constructor
-template <
-    class Tasks,
-    class Deciders,
-    class Triggers,
-    class ExecProcess,
-    std::enable_if_t< Utils::is_tuple_like_v< std::decay_t< Tasks > > and
-                          Utils::is_tuple_like_v< std::decay_t< Deciders > > and
-                          Utils::is_tuple_like_v< std::decay_t< Triggers > > and
-                          is_callable_object_v< std::decay_t< ExecProcess > >,
-                      int > = 0 >
-DataManager(Tasks&&       tasks,
-            Deciders&&    deciders,
-            Triggers&&    triggers,
-            ExecProcess&& execproc,
-            std::vector< std::pair< std::string, std::string > >
-                task_decider_assocs = {},
-            std::vector< std::pair< std::string, std::string > >
-                task_trigger_assocs = {})
-    ->DataManager< DataManagerTraits<
-        Utils::apply_t< determine_common_type_in_named_tpl, Tasks >,
-        Utils::apply_t< determine_common_type_in_named_tpl, Deciders >,
-        Utils::apply_t< determine_common_type_in_named_tpl, Triggers >,
-        std::decay_t< ExecProcess > > >;
-
 // ++ Default DataManager +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /**
@@ -1049,7 +718,7 @@ using DefaultDataManager =
                                     Default::DefaultDecider< Model >,
                                     Default::DefaultTrigger< Model >,
                                     Default::DefaultExecutionProcess > >;
-}
+} // namespace Default
 
 /**
  *  \}  // endgroup DataManager

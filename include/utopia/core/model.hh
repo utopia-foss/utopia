@@ -316,6 +316,7 @@ public:
 
             _log->info("Invoking DataManager task factory ...");
 
+
             _datamanager = DataIO::DataManagerFactory<Derived>()(
                 dm_cfg, std::forward_as_tuple(w_args...)
             );

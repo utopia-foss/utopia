@@ -37,8 +37,8 @@ namespace DataIO
  * @brief Encapsulate a task for writing data to a destination.
  *        Containes a callable 'writer' responisible for writing data to a held
  *        dataset. Contains a callabel 'build_dataset' which builds or opens a
- * dataset for writing to in a held HDFGroup. A WriteTask is bound to a group
- *        for its entire lifetime.
+ *        dataset for writing to in a held HDFGroup. A WriteTask is bound to a 
+ *        group for its entire lifetime.
  * @tparam BGB Basegroup builder type, automatically determined
  * @tparam DW Data writer type, automatically determined
  * @tparam DB Dataset builder type, automatically deterimned
@@ -46,7 +46,7 @@ namespace DataIO
  * @tparam AWD Dataset attribute writer type, automatically determined
  */
 template < class BGB, class DW, class DB, class AWG, class AWD >
-struct WriteTask
+struct WriteTask final // inheriting from this thing is useless, hence can be final
 {
     using BasegroupBuilder       = BGB;
     using Writer                 = DW;
@@ -224,7 +224,7 @@ struct WriteTask
     /**
      * @brief Destroy the writer Task object
      */
-    virtual ~WriteTask() = default;
+    ~WriteTask() = default;
 };
 
 /**

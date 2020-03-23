@@ -227,7 +227,7 @@ class MonitorManager
     }
 
     /// Returns true if the emission is enabled
-    /* @detail This function can be used as a more performative way to checking
+    /* @details This function can be used as a more performative way to checking
      *         whether it makes sense to collect monitor entries; it makes only
      *         sense to collect entries, if the emission will actually performed
      *         in the current time step.

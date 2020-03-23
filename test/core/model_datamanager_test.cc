@@ -1,3 +1,4 @@
+#include "utopia/core/utils.hh"
 #define BOOST_TEST_MODULE model_test_writemode
 // stl
 #include <chrono>
@@ -51,7 +52,7 @@ struct Fixture
             "state_writer_x2", // this is for finding name
             [](auto&& model) -> decltype(auto) { return model.state(); },
             [](auto&& thing) -> decltype(auto) { return thing * 2; },
-            "empty",
+            Utopia::Utils::Nothing{},
             std::make_tuple("Content_x2", "state times two is contained"))
 
     );
@@ -81,8 +82,6 @@ BOOST_FIXTURE_TEST_CASE(model_datamanager_integration,
                std::vector<std::string>{"state_writer_x2"});
     //    boost::test_tools::per_element());
 
-    // check trigger-task-associations
-    using Utopia::Utils::operator<<;
 
     BOOST_TEST(datamanager.get_trigger_task_map()["build_slice"] ==
                    std::vector<std::string>{"state_writer"},
