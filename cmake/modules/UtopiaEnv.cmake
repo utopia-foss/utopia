@@ -86,7 +86,7 @@ if (NOT PYTHON_PACKAGE_pip_FOUND)
     execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade pip
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
-    
+
     # FIXME does not fail, e.g. without internet connection
     if (NOT RETURN_VALUE EQUAL "0")
         message(WARNING
@@ -95,14 +95,14 @@ if (NOT PYTHON_PACKAGE_pip_FOUND)
 endif()
 
 # setuptools
-python_find_package(PACKAGE setuptools VERSION 39.0)
+python_find_package(PACKAGE setuptools VERSION 41.2)
 if (NOT PYTHON_PACKAGE_setuptools_FOUND)
     message(STATUS "Installing or upgrading setuptools ...")
 
     execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade setuptools
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
-    
+
     if (NOT RETURN_VALUE EQUAL "0")
         message(WARNING
                     "Error upgrading setuptools inside utopia-env: ${RETURN_VALUE}")
@@ -117,7 +117,7 @@ if (NOT PYTHON_PACKAGE_wheel_FOUND)
     execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade wheel
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
-    
+
     if (NOT RETURN_VALUE EQUAL "0")
         message(WARNING
                     "Error upgrading setuptools inside utopia-env: ${RETURN_VALUE}")

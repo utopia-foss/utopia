@@ -14,7 +14,7 @@ INSTALL_DEPS = [
     'dantro~=0.11',  # NOTE Version need also be set in python/CMakeLists.txt
     # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
     # details on the compatible release clause.
-    
+
     # Required for testing:
     'pytest>=3.4.0',
     'pytest-cov>=2.5.1',
@@ -58,6 +58,7 @@ setup(
                   '<Yunus.Sevinchan@iup.uni-heidelberg.de>'),
     classifiers=[
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Topic :: Utilities'
