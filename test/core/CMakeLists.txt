@@ -21,6 +21,7 @@ set(TESTS_CORE
     agent_manager_integration_test
     agent_test
     apply_test
+    assert_is_functional_test
     cell_manager_test
     cell_manager_integration_test
     dependency_test
