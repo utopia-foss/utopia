@@ -9,13 +9,34 @@ find_package(HDF5 1.10 REQUIRED COMPONENTS C HL)
 include(RegisterHDF5)
 
 # --- Armadillo ---
-# use the config if possible
+# Use the config if possible
+# NOTE: Do not check version here because an incompatible version would lead to
+#       CMake trying again in MODULE mode below!
 find_package(Armadillo CONFIG QUIET)
-# fall back to our module if no target is defined
+# If found, check again with version specified
 if (TARGET armadillo)
+    find_package(Armadillo 9.600 CONFIG REQUIRED)
     message (STATUS "Found Armadillo from CMake config at: ${Armadillo_DIR}")
+# Fall back to our module if no target is defined
 else ()
     find_package(Armadillo MODULE REQUIRED)
+    # Check for required Armadillo features because version cannot be determined
+    message(VERBOSE "Unable to determine the version of Armadillo. Checking "
+                    "features by compiling a simple test program...")
+    try_compile(Armadillo_SUPPORT
+                ${PROJECT_BINARY_DIR}/cmake/arma_features
+                ${CMAKE_CURRENT_LIST_DIR}/../scripts/arma_features.cc
+                LINK_LIBRARIES armadillo
+                CXX_STANDARD 17
+                OUTPUT_VARIABLE Armadillo_COMPILE_OUTPUT
+    )
+    if (NOT Armadillo_SUPPORT)
+        message(SEND_ERROR "Armadillo does not support the required features! "
+                           "Please install a supported version. Compiler "
+                           "output of version test program:\n"
+                           "${Armadillo_COMPILE_OUTPUT}"
+        )
+    endif()
 endif()
 
 # --- spdlog ---
