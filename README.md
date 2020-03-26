@@ -455,7 +455,7 @@ of it.
 | pkg-config           | >= 0.29    | |
 | [HDF5][HDF5]         | >= 1.10.4  | ‡ |
 | [Boost][Boost]       | >= 1.67    | ‡ |
-| [Armadillo][arma]    | >= 8.400   | |
+| [Armadillo][arma]    | >= 9.600   | ‡ |
 | [yaml-cpp][yamlcpp]  | >= 0.6.2   | ‡ |
 | [spdlog][spdlog]     | >= 1.3     | ‡ |
 | [Python3][Python3]   | >= 3.7     | ‡ |
