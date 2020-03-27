@@ -60,7 +60,7 @@ class GraphGroup(dtr.groups.GraphGroup):
     from it.
     """
     # Let new groups contain only time series
-    _GG_GROUP_CLS = TimeSeriesGroup
+    _NEW_GROUP_CLS = TimeSeriesGroup
 
     # Define allowed member container types
     _ALLOWED_CONT_TYPES = (TimeSeriesGroup, XarrayDC)
