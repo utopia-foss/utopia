@@ -240,7 +240,7 @@ Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
                         / ((2. * num_edges) - deg_ignore);
 
                 if (distr(rng) <= prob){
-                    // Check whether the nodes are already connected
+                    // Check whether the vertices are already connected
                     if (not boost::edge(new_vertex, *v, g).second){
                         // create an edge between the two vertices
                         deg_ignore = boost::out_degree(*v, g);

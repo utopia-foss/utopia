@@ -301,7 +301,7 @@ create_graph_group(const Graph&                       g,
     // Create the group for the graph and store metadata in its attributes
     auto grp = parent_grp->open_group(name);
 
-    grp->add_attribute("content", "network");
+    grp->add_attribute("content", "graph");
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("allows_parallel", boost::allows_parallel_edges(g));
 
@@ -577,7 +577,7 @@ save_edge_properties(Graph&&                            g,
                                                      adaptor_tuple);
 }
 
-// TODO add functions here to open datasets for edge or node attributes.
+// TODO add functions here to open datasets for edge or vertex attributes.
 
 /*! \} */ // end of group GraphUtilities
 /*! \} */ // end of group DataIO

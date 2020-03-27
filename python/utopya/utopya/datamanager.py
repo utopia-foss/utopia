@@ -53,7 +53,7 @@ class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
 
     # Register known group types
     _DATA_GROUP_CLASSES = dict(MultiverseGroup=udg.MultiverseGroup,
-                               NetworkGroup=udg.NetworkGroup)
+                               GraphGroup=udg.GraphGroup)
 
     # Tell the HDF5 loader which container class to use
     _HDF5_DSET_DEFAULT_CLS = udc.XarrayDC
@@ -62,7 +62,8 @@ class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
     _HDF5_MAP_FROM_ATTR = "content"
 
     # The mapping of different content values to a data group type
-    _HDF5_GROUP_MAP = dict(network=udg.NetworkGroup,
+    _HDF5_GROUP_MAP = dict(network=udg.GraphGroup,
+                           graph=udg.GraphGroup,
                            time_series=udg.TimeSeriesGroup,
                            time_series_heterogeneous=udg.HeterogeneousTimeSeriesGroup)
 

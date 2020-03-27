@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
     // Test that the group attributes are set correctly
     HDFAttribute ggrp_attr(*ggrp, "content");
     auto attr_content = std::get<1>(ggrp_attr.read<std::string>());
-    BOOST_TEST(attr_content == "network");
+    BOOST_TEST(attr_content == "graph");
     ggrp_attr.close();
 
     ggrp_attr.open(*ggrp, "is_directed");

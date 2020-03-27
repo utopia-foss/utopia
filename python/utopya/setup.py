@@ -11,7 +11,7 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.3',
-    'dantro~=0.11',  # NOTE Version need also be set in python/CMakeLists.txt
+    'dantro~=0.12',  # NOTE Version need also be set in python/CMakeLists.txt
     # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
     # details on the compatible release clause.
 

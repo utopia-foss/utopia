@@ -55,7 +55,7 @@ class HeterogeneousTimeSeriesGroup(dtr.groups.HeterogeneousTimeSeriesGroup):
     _NEW_CONTAINER_CLS = XarrayDC
 
 
-class NetworkGroup(dtr.groups.NetworkGroup):
+class GraphGroup(dtr.groups.GraphGroup):
     """This group is meant to manage network data and create a NetworkX graph
     from it.
     """
