@@ -45,7 +45,7 @@ First things first: include the header of the Environment model:
 
 .. code-block:: cpp
 
-    #include "../Environment/Environment.hh"
+    #include <utopia/models/Environment/Environment.hh>
 
 Create your Environment's global parameter. Here, you add those parameters
 that you consider part of the environment.

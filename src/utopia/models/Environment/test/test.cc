@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <iostream>
+#include <boost/test/unit_test.hpp>
 
 #include "../Environment.hh"
 #include "../env_param_func_collection.hh"
@@ -55,7 +56,11 @@ void test_add_env_func(Model& model) {
 
     // Use getter
     double my_param = model.get_parameter("some_glob_parameter");
-    (void)(my_param);
+    BOOST_TEST(my_param == 0.);
+
+    // use setter
+    model.set_parameter("some_glob_parameter", 100.);
+    BOOST_TEST(model.get_parameter("some_glob_parameter") == 100.);
 
     // Iterate
     model.iterate();

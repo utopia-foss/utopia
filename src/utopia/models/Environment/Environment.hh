@@ -405,6 +405,11 @@ public:
         return this->_params.get_env(param_name);
     }
 
+    /// Change the current value of the parameter with param_name
+    void set_parameter(const std::string& param_name, double value) {
+        this->_params.set_env(param_name, value);
+    }
+
     /// Return a const reference to the cell manager
     const auto& cm() const {
         return this->_cm;
