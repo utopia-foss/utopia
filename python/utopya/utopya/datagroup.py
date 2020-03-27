@@ -56,21 +56,21 @@ class HeterogeneousTimeSeriesGroup(dtr.groups.HeterogeneousTimeSeriesGroup):
 
 
 class GraphGroup(dtr.groups.GraphGroup):
-    """This group is meant to manage network data and create a NetworkX graph
+    """This group is meant to manage graph data and create a NetworkX graph
     from it.
     """
     # Let new groups contain only time series
-    _NEW_GROUP_CLS = TimeSeriesGroup
+    _GG_GROUP_CLS = TimeSeriesGroup
 
     # Define allowed member container types
     _ALLOWED_CONT_TYPES = (TimeSeriesGroup, XarrayDC)
 
     # Expected names for the containers that hold vertex/edge information
-    _NWG_node_container = "_vertices"
-    _NWG_edge_container = "_edges"
+    _GG_node_container = "_vertices"
+    _GG_edge_container = "_edges"
 
     # Expected _group_ attribute names determining the type of graph
-    _NWG_attr_directed = "is_directed"
-    _NWG_attr_parallel = "allows_parallel"
-    _NWG_attr_node_prop = "is_vertex_property"
-    _NWG_attr_edge_prop = "is_edge_property"
+    _GG_attr_directed = "is_directed"
+    _GG_attr_parallel = "allows_parallel"
+    _GG_attr_node_prop = "is_vertex_property"
+    _GG_attr_edge_prop = "is_edge_property"
