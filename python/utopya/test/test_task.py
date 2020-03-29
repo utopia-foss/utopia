@@ -8,7 +8,8 @@ from functools import partial
 import numpy as np
 import pytest
 
-from utopya.task import Task, WorkerTask, TaskList, enqueue_lines, parse_yaml_dict
+from utopya.task import (Task, WorkerTask, TaskList,
+                         enqueue_lines, parse_yaml_dict)
 
 
 # Fixtures ----------------------------------------------------------------
@@ -36,7 +37,7 @@ def workertasks() -> TaskList:
 
 def test_task_init():
     """Test task initialization"""
-    Task() # will get a UID as name
+    Task()  # will get a UID as name
     Task(name=0)
     Task(name=1, priority=1000)
     Task(name=2, priority=1000.01)
@@ -81,7 +82,7 @@ def test_task_properties(tasks):
 def test_workertask_init():
     """Tests the WorkerTask class"""
     WorkerTask(name=0, worker_kwargs=dict(foo="bar"))
-    
+
     with pytest.warns(UserWarning, match="`worker_kwargs` given but also"):
         WorkerTask(name=0, setup_kwargs=dict(foo="bar"),
                    worker_kwargs=dict(foo="bar"))
@@ -97,7 +98,7 @@ def test_workertask_invalid_args():
     """Test for invalid argument to the WorkerTask"""
     # It should not be possible to spawn a worker with non-tuple arguments
     t = WorkerTask(name=0, worker_kwargs=dict(args="python -c 'hello hello'"))
-    
+
     with pytest.raises(TypeError):
         t.spawn_worker()
 
@@ -108,11 +109,18 @@ def test_workertask_invalid_args():
     with pytest.raises(ValueError, match="Was told to `save_streams` but"):
         t.spawn_worker()
 
+    # Test args pointing to a missing path
+    t = WorkerTask(name=2,
+                   worker_kwargs=dict(args=("/i/do/not/exist", "--arg1")))
+    with pytest.raises(FileNotFoundError,
+                       match="No executable found for task '2'!"):
+        t.spawn_worker()
+
 def test_workertask_streams(tmpdir):
     """Tests the read_ and save_streams methods of the WorkerTask"""
     save_path = tmpdir.join("out.log")
 
-    t = WorkerTask(name="stream_test", 
+    t = WorkerTask(name="stream_test",
                    worker_kwargs=dict(args=("echo", "foo\nbar\nbaz"),
                                       read_stdout=True,
                                       stdout_parser="yaml_dict",
@@ -126,7 +134,7 @@ def test_workertask_streams(tmpdir):
 
     # Now spawn the worker
     t.spawn_worker()
-    
+
     # Wait until done
     while t.worker.poll() is None:
         # Delay the while loop
@@ -172,7 +180,7 @@ def test_workertask_streams_stderr(tmpdir):
                        'print("end")')
     # This should create four lines, though not necessarily in that order
 
-    t = WorkerTask(name="stderr_test", 
+    t = WorkerTask(name="stderr_test",
                    worker_kwargs=dict(args=write_to_stderr,
                                       read_stdout=True,
                                       stdout_parser="yaml_dict",
@@ -265,7 +273,7 @@ def test_enqueue_json():
     enqueue_json(queue=q,
                  stream=io.BytesIO(bytes("!!map {\"foo\": 123}", 'utf-8')))
     assert q.get_nowait()[1] == dict(foo=123)
-    
+
     # Something not matching the start string should yield no parsed object
     enqueue_json(queue=q,
                  stream=io.BytesIO(bytes("1", 'utf-8')))
