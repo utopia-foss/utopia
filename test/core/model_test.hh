@@ -12,7 +12,7 @@ using TestModelTypes = ModelTypes<DefaultRNG, data_write_mode>;
 /// Test model with simple update rule
 /** Holds a vector of doubles and increments its entries by the boundary
  *  condition vector or 1 otherwise.
- *  
+ *
  *  This also tests whether inheritance from the base Model class works as
  *  desired.
  */
@@ -49,7 +49,7 @@ public:
     template<class ParentModel, class... WriterArgs>
     TestModel (const std::string name,
                const ParentModel &parent_model,
-               const Data& initial_state, 
+               const Data& initial_state,
                WriterArgs&&... writer_args)
     :
         // Pass arguments to the base class constructor
@@ -78,17 +78,13 @@ public:
 
     /// Monitor the mean of the state
     void monitor () {
-        this->_monitor.set_entry("state_mean", [this](){
-            const double sum = std::accumulate(this->_state.begin(),
-                                               this->_state.end(),
-                                               0);
-            return sum / this->_state.size();
-        });
+        this->_monitor.set_entry("state_mean", compute_mean_state());
     }
 
     /// Do nothing yet
     void write_data () {
         _dset_state->write(_state);
+        _dset_mean->write(compute_mean_state());
     }
 
     // Set model boundary condition
@@ -108,6 +104,13 @@ public:
     std::shared_ptr<DataSet> get_dset_mean () {
         return _dset_mean;
     }
+
+    double compute_mean_state () const {
+        const double sum = std::accumulate(this->_state.begin(),
+                                           this->_state.end(),
+                                           0);
+        return sum / this->_state.size();
+    }
 };
 
 
@@ -118,6 +121,8 @@ class TestModelWithIterate :
 {
 private:
     using Data = TestModel::Data;
+
+    using Parent = TestModel<Utopia::WriteMode::basic>;
 
 public:
     /// Create TestModel with initial state
@@ -131,31 +136,22 @@ public:
     { }
 
     /// Iterate twice for checking this implementation
+    /** \warning Doing this is NOT recommended! If you absolutely need to do
+      *          this, be careful that you invoke the parent method such that
+      *          all the required procedures take place
+      */
     void iterate () {
+        // Invoke the parent method
+        Parent::iterate();
+
+        // ... and additionally perform the step once more, just for testing...
         this->perform_step();
-        this->perform_step();
+        // NOTE This is of course something useless to do, because this will
+        //      not be account for when writing data. This is only done for
+        //      testing anyway ...
     }
 };
 
 } // namespace Utopia
-
-
-/// Compare two containers
-template<typename A, typename B>
-bool compare_containers (const A& a, const B& b)
-{
-    if (a.size() != b.size())
-        return false;
-    
-    std::vector<bool> res(a.size());
-    std::transform(a.begin(), a.end(), b.begin(),
-        res.begin(),
-        [](const auto x, const auto y) { return x == y; }
-    );
-
-    return std::all_of(res.begin(), res.end(),
-        [](const auto x){ return x; }
-    );
-}
 
 #endif // UTOPIA_TEST_MODEL_TEST_HH

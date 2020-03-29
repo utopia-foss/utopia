@@ -437,7 +437,7 @@ public:
      */
     virtual void prolog () {
         __prolog();
-    } 
+    }
 
     /// A function that is to be called after the last iteration of a model
     /** See __epilog() for default tasks
