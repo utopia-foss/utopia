@@ -1,7 +1,7 @@
 """The utopya package implements the frontend of Utopia"""
 
 # Specify the version
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 # NOTE This needs to correspond to the one in setup.py
 
 # Use the dantro-provided logging module (with additional log levels)
@@ -18,21 +18,21 @@ coloredlogs.install(logger=log,
                     level=DEFAULT_LOG_LEVEL,
                     fmt="%(levelname)-8s %(module)-15s %(message)s",
                     level_styles=dict(
-                        trace=dict(color=242),              # grey
-                        debug=dict(color=242),              # grey
-                        remark=dict(color=246),             # grey
-                        note=dict(color=23),                # faint blue
+                        trace=dict(faint=True),
+                        debug=dict(faint=True),
+                        remark=dict(color=246),  # grey
+                        note=dict(color='cyan'),
                         info=dict(bright=True),
                         progress=dict(color='green'),
                         hilight=dict(color='yellow', bold=True),
                         success=dict(color='green', bold=True),
-                        warning=dict(color=202, bold=True), # orange
+                        warning=dict(color=202, bold=True),  # orange
                         error=dict(color='red'),
                         critical=dict(color='red', bold=True)
                         ),
                     field_styles=dict(
-                        levelname=dict(color='black', bold=True),
-                        module=dict(color=242, faint=True)
+                        levelname=dict(bold=True, faint=True),
+                        module=dict(faint=True)
                         ))
 
 log.debug("Logging configured.")
