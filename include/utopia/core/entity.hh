@@ -66,17 +66,17 @@ struct EntityTraits {
 
 
 /// An entity is a slightly specialized state container
-/** \details  It can be extended with the use of tags and can be associated with
-  *          so-called "custom links". These specializations are carried into
-  *          the entity by means of the EntityTraits struct.
-  *          An entity is embedded into the EntityManager, where the
-  *          discretization allows assigning a position in space to the
-  *          entity.
-  *          The entity itself does not know anything about that ...
+/** It can be extended with the use of tags and can be associated with
+  * so-called "custom links". These specializations are carried into the
+  * entity by means of the EntityTraits struct.
+  * An entity is embedded into the EntityManager, where the discretization
+  * allows assigning a position in space to the entity.
+  * The entity itself does not need to know anything about that ...
   *
+  * \tparam  Derived The type of the derived class (for CRTP)
   * \tparam  _Traits Valid \ref EntityTraits, specializing this entity.
   */
-template<typename _Traits>
+template<typename Derived, typename _Traits>
 class Entity :
     public StateContainer<typename _Traits::State, _Traits::mode>,
     public _Traits::Tags
@@ -90,7 +90,7 @@ public:
     using Traits = _Traits;
 
     /// The type of this entity
-    using Self = Entity<Traits>;
+    using Self = Entity<Derived, Traits>;
 
     /// The type of the state of this entity
     using State = typename Traits::State;
@@ -107,7 +107,7 @@ public:
      *  links to other entities of the same type easier.
      */
     using CustomLinkContainers =
-        typename Traits::template CustomLinks<EntityContainer<Self>>;
+        typename Traits::template CustomLinks<EntityContainer<Derived>>;
 
 
 private:

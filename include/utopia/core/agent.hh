@@ -28,14 +28,14 @@ using AgentTraits = EntityTraits<StateType,
 
 
 /// An agent is a slightly specialized state container
-/** \details  It can be extended with the use of tags and can be associated with
-  *          so-called "custom links". These specializations are carried into
-  *          the agent by means of the AgentTraits struct.
-  *          An agent is embedded into the Utopia::AgentManager, which has
-  *          knowledge of the Utopia::Space an agent is embedded in. This
-  *          allows assigning a position in space to the agent. The agent
-  *          holds this position as a private member and requires the
-  *          AgentManager to set it.
+/** It can be extended with the use of tags and can be associated with
+  * so-called "custom links". These specializations are carried into the agent
+  * by means of the AgentTraits struct.
+  *
+  * An agent is embedded into the Utopia::AgentManager, which has knowledge of
+  * the Utopia::Space an agent is embedded in. This allows assigning a
+  * position in space to the agent. The agent holds this position as a private
+  * member and requires the AgentManager to set it.
   *
   * \tparam Traits  Valid Utopia::EntityTraits, describing the type of agent
   * \tparam Space   The Utopia::Space in which the agent lives; this is only
@@ -53,16 +53,19 @@ class Agent<Traits,
             Space,
             std::enable_if_t<Traits::mode != Update::sync>>
 :
-    public Entity<Traits>
+    public Entity<Agent<Traits, Space>, Traits>
 {
 public:
+    /// The type of this agent
+    using Self = Agent<Traits, Space>;
+
     /// The type of the state
     using State = typename Traits::State;
 
     /// The type of the position vector
     using Position = typename Space::SpaceVec;
 
-    /// Make the agent manager a friend of this class
+    /// Make the agent manager a (template) friend of this class
     template<class T, class M>
     friend class AgentManager;
 
@@ -80,7 +83,7 @@ public:
            const State initial_state,
            const Position& initial_pos)
     :
-        Entity<Traits>(id, initial_state),
+        Entity<Self, Traits>(id, initial_state),
         _pos(initial_pos)
     {}
 
@@ -114,16 +117,19 @@ class Agent<Traits,
             Space,
             std::enable_if_t<Traits::mode == Update::sync>>
 :
-    public Entity<Traits>
+    public Entity<Agent<Traits, Space>, Traits>
 {
 public:
+    /// The type of this agent
+    using Self = Agent<Traits, Space>;
+
     /// The type of the state
     using State = typename Traits::State;
 
     /// The type of the position vector
     using Position = typename Space::SpaceVec;
 
-    /// Make the agent manager a friend
+    /// Make the agent manager a (template) friend
     template<class T, class M>
     friend class AgentManager;
 
@@ -144,7 +150,7 @@ public:
           const State& initial_state,
           const Position& initial_pos)
     :
-        Entity<Traits>(id, initial_state),
+        Entity<Self, Traits>(id, initial_state),
         _pos(initial_pos),
         _pos_new(initial_pos)
     {}
@@ -166,7 +172,7 @@ public:
      */
     void update () {
         // Update the state as defined in the Entity class
-        Entity<Traits>::update();
+        Entity<Self, Traits>::update();
 
         // Update the position
         _pos = _pos_new;
