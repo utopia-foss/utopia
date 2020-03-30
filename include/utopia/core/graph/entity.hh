@@ -13,7 +13,7 @@ namespace Utopia {
  */
 
 /// GraphEntityTraits are mainly just another name for Utopia::EntityTraits
-/** The only difference is that the update_mode is restricted as default to  
+/** The only difference is that the update_mode is restricted as default to
  *  Update::manual and a default constructor is required.
  */
 template<typename StateType,
@@ -33,14 +33,17 @@ using GraphEntityTraits = EntityTraits<StateType,
   * A graph entity should be used as the base class for a Vertex and
   * an Edge that is placed on a boost::graph graph object.
   *
-  * \tparam Traits  Valid Utopia::EntityTraits, describing the type of graph 
+  * \tparam Traits  Valid Utopia::EntityTraits, describing the type of graph
   *                 entity
   */
 template<typename Traits>
 class GraphEntity :
-    public Entity<Traits>
+    public Entity<GraphEntity<Traits>, Traits>
 {
 public:
+    /// The type of this GraphEntity
+    using Self = GraphEntity<Traits>;
+
     /// The type of the state
     using State = typename Traits::State;
 
@@ -52,18 +55,18 @@ public:
     /// Construct a graph entity with empty initial state
     GraphEntity()
     :
-        Entity<Traits>(id_counter++, State{})
+        Entity<Self, Traits>(id_counter++, State{})
     {};
 
     /// Construct a graph entity with initial state
     GraphEntity(const State& initial_state)
     :
-        Entity<Traits>(id_counter++, initial_state)
+        Entity<Self, Traits>(id_counter++, initial_state)
     {};
 
     /// Copy-construct a graph entity
     GraphEntity(const GraphEntity& ge):
-        Entity<Traits>(id_counter++, ge.state) 
+        Entity<Self, Traits>(id_counter++, ge.state)
     {};
 
     /// Copy-assign a graph entity
