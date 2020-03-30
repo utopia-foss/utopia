@@ -63,8 +63,8 @@ constexpr WriteMode DefaultWriteMode = WriteMode::basic;
 
 
 /// Wrapper struct for defining model class data types
-/** \details Using the template parameters, derived classes can specify the
- *          types they desire to use.
+/** Using the template parameters, derived classes can specify the types they
+ *  desire to use.
  *
  *  \tparam RNGType               The RNG class to use
  *  \tparam data_write_mode       Mode in which data is written in model class
@@ -205,9 +205,9 @@ private:
 public:
     // -- Constructor ---------------------------------------------------------
 
-    /// Constructor
-    /** \details Uses information from a parent model to create an instance of
-     *          this model.
+    /// Constructs a Model instance
+    /** Uses information from a parent model to create an instance of this
+     *  model.
      *
      *  \tparam ParentModel The parent model's type
      *
@@ -377,10 +377,10 @@ public:
     }
 
     /// Return the number of remaining `write_data` calls this model will make
-    /** \details The 'remaining' refers to the current time being included into
-      *         the calculation, e.g.: when writing every time, currently at
-      *         time == 42 and time_max == 43, it will return the value 2,
-      *         i.e. for the write operations at times 42 and 43
+    /** The 'remaining' refers to the current time being included into the
+      * calculation, e.g.: when writing every time, currently at time == 42
+      * and time_max == 43, it will return the value 2, i.e. for the write
+      * operations at times 42 and 43
       */
     hsize_t get_remaining_num_writes() const {
 
@@ -437,7 +437,7 @@ public:
      */
     virtual void prolog () {
         __prolog();
-    } 
+    }
 
     /// A function that is to be called after the last iteration of a model
     /** See __epilog() for default tasks
@@ -497,10 +497,10 @@ public:
     }
 
     /// Run the model from the current time to the maximum time
-    /** \details This repeatedly calls the iterate method until the maximum time
-      *         is reached. Additionally, it calls the __write_data method to
-      *         allow it to write the initial state. In write mode `basic`,
-      *         this is only done if `_write_start == _time`.
+    /** This repeatedly calls the iterate method until the maximum time is
+      * reached. Additionally, it calls the ``__write_data`` method to allow
+      * it to write the initial state. In write mode ``basic``, this is only
+      * done if ``_write_start == _time``.
       */
     void run () {
         // First, attach the signal handler, such that the while loop below can
@@ -539,10 +539,9 @@ protected:
     }
 
     /// Monitor information in the terminal
-    /* \details The child implementation of this function will only be called if
-     *         the monitor manager has determined that an emission will occur,
-     *         because it only makes sense to collect data if it will be
-     *         emitted in this step.
+    /* The child implementation of this function will only be called if the
+     * monitor manager has determined that an emission will occur, because it
+     * only makes sense to collect data if it will be emitted in this step.
      */
     void __monitor () {
         if (_monitor.get_monitor_manager()->emit_enabled()) {
@@ -563,7 +562,6 @@ protected:
 
     /// Write data; calls the implementation's write_data method
     void __write_data () {
-
         _log->trace("Calling write_data ...");
         impl().write_data();
     }
@@ -630,10 +628,10 @@ public:
 
     /** @brief Create a new dataset within the given group
      *
-     * @details The capacity - the shape of the dataset - is calculated
-     *         automatically from the num_steps and write_every parameter.
-     *         Additionally, dataset attributes are set that carry information
-     *         on dimension labels and coordinates.
+     * The capacity - the shape of the dataset - is calculated automatically
+     * from the num_steps and write_every parameter. Additionally, dataset
+     * attributes are set that carry information on dimension labels and
+     * coordinates.
      *
      * @note  The attributes are only written for the `time` dimension, as that
      *        is the only one that is known in this method. Furthermore, this
@@ -694,10 +692,10 @@ public:
 
     /** @brief Create a new dataset within the model's base data group
      *
-     * @details The capacity - the shape of the dataset - is calculated
-     *         automatically from the num_steps and write_every parameter.
-     *         Additionally, dataset attributes are set that carry information
-     *         on dimension labels and coordinates.
+     * The capacity - the shape of the dataset - is calculated automatically
+     * from the num_steps and write_every parameter. Additionally, dataset
+     * attributes are set that carry information on dimension labels and
+     * coordinates.
      *
      * @note  The attributes are only written for the `time` dimension, as that
      *        is the only one that is known in this method. Furthermore, this
@@ -731,9 +729,9 @@ public:
 
     /** @brief Create a dataset storing data from a CellManager
      *
-     * @details The required capacity - the shape of the dataset - is
-     *         calculated using both data from the model and the CellManager.
-     *         Additionally, dimension and coordinate labels are added.
+     * The required capacity - the shape of the dataset - is calculated using
+     * both data from the model and the CellManager. Additionally, dimension
+     * and coordinate labels are added.
      *
      * @note   For the time dimension, the coordinates assume that data is
      *         written the first time at time 0 and then every _write_every.
@@ -812,13 +810,11 @@ private:
 
 
 /// A class to use at the top level of the model hierarchy as a mock parent
-/** \details It is especially useful when initializing a top-level model as then
- *          the model constructor that expects a Model-class-like object can
- *          be used.
- *          This class also takes care to load and hold a configuration file,
- *          to create a HDFFile for output, and to initialize a shared RNG. A
- *          template parameter exists that allows customization of the RNG
- *          class.
+/** It is especially useful when initializing a top-level model as the
+ *  the model constructor that expects a Model-class-like object can be used.
+ *  This class also takes care to load and hold a configuration file, to
+ *  create a HDFFile for output, and to initialize a shared RNG. A template
+ *  parameter exists that allows customization of the RNG class.
  *
  *  \tparam RNG The RNG type to use
  */
@@ -857,10 +853,10 @@ protected:
 
 public:
     /// Constructor that only requires path to a config file
-    /** \details From the config file, all necessary information is extracted,
-     *          i.e.: the path to the output file ('output_path') and the seed
-     *          of the shared RNG ('seed'). These keys have to be located at
-     *          the top level of the configuration file.
+    /** From the config file, all necessary information is extracted, i.e.:
+     *  the path to the output file ('output_path') and the seed of the shared
+     *  RNG ('seed'). These keys have to be located at the top level of the
+     *  configuration file.
      *
      *  \param cfg_path The path to the YAML-formatted configuration file
      */
@@ -976,9 +972,9 @@ public:
     }
 
     /// The maximum time value as it can be found in the config
-    /** @details Currently, this reads the `num_steps` key, but this might be
-     *          changed in the future to allow continuous time steps.
-     */
+    /** Currently, this reads the `num_steps` key, but this might be changed
+      * in the future to allow continuous time steps.
+      */
     Time get_time_max() const {
         return get_as<Time>("num_steps", _cfg);
     }
