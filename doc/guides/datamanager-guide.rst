@@ -19,7 +19,7 @@ Overview
 The Datamanager layer exists to allow the user to write any data from the model
 under any conditions she defines to the hard disk, without having to fiddle with
 HDF5. In fact, it is build such that it is largely independent of HDF5, and in
-general tried to relie on a minimal set of assumptions. Its goal is, in agreement
+general tried to rely on a minimal set of assumptions. Its goal is, in agreement
 with the general Utopia setup, usability without restrictivity, i.e., the most
 common tasks are made easy, but you always can dive into the code and change
 and customize everything to solve your specific problem should the need arise.
@@ -56,7 +56,7 @@ As an aside, the execution process can be customized, too!
 Structure
 ---------
 
-The implementation of thhe entire Datamanager layer is comprised of two core parts:
+The implementation of the entire Datamanager layer is comprised of two core parts:
 
 * the ``DataManager`` class, which manages ``WriteTasks``. This class is indepenent
   of HDF5, hence could be used with your favorite csv-library, some other binary format

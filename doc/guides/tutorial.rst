@@ -845,7 +845,7 @@ Parameter sweeps
 ^^^^^^^^^^^^^^^^
 Often times when analyzing a model, it becomes necessary to compare the behaviour of the model for different sets of parameters. For example, in the case of the ``ForestFire`` model, one would want to extract the effect of the ``p_lightning`` parameter on the cluster size, and run different simulations for different values of these parameters to achieve that.
 
-Another use case for running multiple simulations is that you might want to generate some statistics by averaging over mutliple simulation runs. To that end, one would change the ``seed`` parameter that is used to initialize the random number generator; by choosing a different seed, the sequence of random numbers in the probabilistic functions is changed.
+Another use case for running multiple simulations is that you might want to generate some statistics by averaging over multiple simulation runs. To that end, one would change the ``seed`` parameter that is used to initialize the random number generator; by choosing a different seed, the sequence of random numbers in the probabilistic functions is changed.
 
 .. note::
 
