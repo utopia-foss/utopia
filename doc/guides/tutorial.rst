@@ -21,7 +21,7 @@ Alternatively, you can use the **Utopia docker image**, which does not require a
 Note that some parts of the tutorial are not relevant when using Utopia from within the docker container.
 
 Also note, that this guide does not go into how building your own model in *Utopia* works; for that, please refer to :doc:`how-to-build-a-model`.
-Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia*, as covered by this tutorial.
+Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia* and the work flow of Git projects, as covered by this tutorial and the :doc:`Greenhorn Guide <greenhorn-guide>`, respectively.
 
 So far for an introduction. Let's dive in! 🤓
 
@@ -1083,7 +1083,10 @@ Of course, you will need to adjust some parameters.
 
 So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
 
-And, perhaps you even want to write your own *Utopia* model. Just follow the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
+And, perhaps you even want to write your own *Utopia* model. To that end you should work with the features given by GitLab.
+If you have never heard of GitLab or worked with it and you don't know what a master nor a branch is and even less what is meant by committing or merging, continue with the :doc:`Greenhorn Guide <greenhorn-guide>`. 
+
+After mastering that guide, a good starting point for the actual implementation of your own model is the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
 
 
 What if I have more questions?
