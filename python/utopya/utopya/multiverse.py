@@ -5,18 +5,15 @@ The Multiverse supplies the main user interface of the frontend.
 import os
 import time
 import copy
-import glob
 import re
 import logging
 from tempfile import TemporaryDirectory
 from shutil import copy2
 from pkg_resources import resource_filename
-from typing import Union
 
 import paramspace as psp
 
-from .model_registry import (MODELS, ModelInfoBundle,
-                             get_info_bundle, load_model_cfg)
+from .model_registry import ModelInfoBundle, get_info_bundle, load_model_cfg
 from .cfg import get_cfg_path as _get_cfg_path
 from .datamanager import DataManager
 from .workermanager import WorkerManager
@@ -30,22 +27,24 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
+
 class Multiverse:
     """The Multiverse is where a single simulation run is orchestrated from.
-    
+
     It spawns multiple universes, each of which represents a single simulation
     of the selected model with the parameters specified by the meta
     configuration.
-    
+
     The WorkerManager takes care to perform these simulations in parallel, the
     DataManager allows loading the created data, and the PlotManager handles
     plotting of that data.
-    
+
     Attributes:
-        BASE_META_CFG_PATH (TYPE): Description
-        RUN_DIR_TIME_FSTR (str): Description
-        USER_CFG_SEARCH_PATH (TYPE): Description
-        UTOPYA_BASE_PLOTS_PATH (TYPE): Description
+        BASE_META_CFG_PATH (str): Where the multiverse base configuration is
+            located; defaults to ``utopya/cfg/base_cfg.yml``
+        RUN_DIR_TIME_FSTR (str): The format string to generate timestamps
+        USER_CFG_SEARCH_PATH (str): Where to look for user configuration files
+        UTOPYA_BASE_PLOTS_PATH (str): Where utopya defines base plot configs
     """
 
     # Where the default meta configuration can be found
@@ -67,7 +66,7 @@ class Multiverse:
                  run_cfg_path: str=None, user_cfg_path: str=None,
                  **update_meta_cfg):
         """Initialize the Multiverse.
-        
+
         Args:
             model_name (str, optional): The name of the model to run
             info_bundle (ModelInfoBundle, optional): The model information
@@ -242,7 +241,7 @@ class Multiverse:
             self.run_sweep()
         else:
             self.run_single()
-    
+
     def run_single(self):
         """Runs a single simulation.
 
@@ -277,7 +276,7 @@ class Multiverse:
         Note that (currently) each Multiverse instance can _not_ perform
         multiple runs!
         """
-        
+
         # Get the parameter space from the config
         pspace = self.meta_cfg['parameter_space']
 
@@ -345,7 +344,7 @@ class Multiverse:
     def renew_plot_manager(self, **update_kwargs):
         """Tries to set up a new PlotManager. If this succeeds, the old one is
         discarded and the new one is associated with this Multiverse.
-        
+
         Args:
             **update_kwargs: Passed on to PlotManager.__init__
         """
@@ -361,13 +360,12 @@ class Multiverse:
         self._pm = pm
         log.progress("Renewed PlotManager.\n")
 
-
     # Helpers .................................................................
 
     def _create_meta_cfg(self, *, run_cfg_path: str, user_cfg_path: str,
                          update_meta_cfg: dict) -> dict:
         """Create the meta configuration from several parts and store it.
-        
+
         The final configuration dict is built from up to four components,
         where one is always recursively updating the previous level:
             1. base: the default configuration, which is always present
@@ -387,12 +385,12 @@ class Multiverse:
 
         The parts are recorded in the `cfg_parts` dict and returned such that
         a backup can be created.
-        
+
         Args:
             run_cfg_path (str): path to run_config
             user_cfg_path (str): path to the user_config file
             update_meta_cfg (dict): will be used to update the resulting dict
-        
+
         Returns:
             dict: dict of the parts that were needed to create the meta config.
                 The dict-key corresponds to the part name, the value is the
@@ -482,7 +480,7 @@ class Multiverse:
                                         copy.deepcopy(update_meta_cfg))
             # NOTE using deep copy to make sure that usage of the dict will not
             #      interfere with the Multiverse's meta config
-        
+
         # Make `parameter_space` a ParamSpace object
         pspace = meta_tmp['parameter_space']
         meta_tmp['parameter_space'] = psp.ParamSpace(pspace)
@@ -500,7 +498,7 @@ class Multiverse:
 
     def _create_run_dir(self, *, out_dir: str, model_note: str=None) -> None:
         """Create the folder structure for the run output.
-        
+
         For the chosen model name and current timestamp, the run directory
         will be of form <timestamp>_<model_note> and be part of the following
         directory tree:
@@ -517,7 +515,7 @@ class Multiverse:
                 model_b
                     180301-125412_my_first_sim
                     180301-125413_my_second_sim
-        
+
         If running in cluster mode, the cluster parameters are resolved and
         used to determine the name of the simulation. The pattern then does not
         include a timestamp as each node might return not quite the same value.
@@ -529,15 +527,15 @@ class Multiverse:
             {timestamp}_{job id*}_{cluster}_{job account}_{job name}_{note}
 
         Args:
-            out_dir (str): The base output directory, where all Utopia output 
+            out_dir (str): The base output directory, where all Utopia output
                 is stored.
             model_note (str, optional): The note to add to the run directory
                 of the current run.
-        
+
         Raises:
             RuntimeError: If the simulation directory already existed. This
                 should not occur, as the timestamp is unique. If it occurs,
-                you either started two simulations very close to each other or 
+                you either started two simulations very close to each other or
                 something is seriously wrong. Strange time zone perhaps?
         """
         # Define a list of format string parts, starting with timestamp
@@ -558,7 +556,7 @@ class Multiverse:
             # available that was supplied from environment variables
             fstr_kwargs = {k: v for k, v in rcps.items()
                            if k not in ('custom_out_dir',)}
-        
+
             # Parse timestamp and model note separately
             timestr = time.strftime(self.RUN_DIR_TIME_FSTR,
                                     time.gmtime(rcps['timestamp']))
@@ -678,7 +676,7 @@ class Multiverse:
                 elif isinstance(val, dict):
                     log.debug("Dumping %s config dict ...", part_name)
                     write_yml(val, path=_path)
-            
+
             log.note("Backed up all involved configuration files.")
 
         # If enabled, back up the executable as well
@@ -696,22 +694,36 @@ class Multiverse:
 
         Note that ``run_from_tmpdir`` requires the executable to be relocatable
         to another location, i.e. be position-independent.
-        
+
         Args:
             run_from_tmpdir (bool, optional): Whether to copy the executable
                 to a temporary directory that goes out of scope once the
                 Multiverse instance goes out of scope.
-        
-        Returns:
-            None
+
+        Raises:
+            FileNotFoundError: On missing file at model binary path
+            PermissionError: On wrong access rights of file at the binary path
         """
         binpath = self.info_bundle.paths['binary']
-        
+
+        # Make sure it exists and is executable
+        if not os.path.isfile(binpath):
+            raise FileNotFoundError("No file found at the specified binary "
+                                    "path for model '{}'! Did you build it?\n"
+                                    "Expected file at:  {}"
+                                    "".format(self.model_name, binpath))
+
+        elif not os.access(binpath, os.X_OK):
+            raise PermissionError("The specified binary for model '{}' is not "
+                                  "executable. Did you set the correct access "
+                                  "rights?\nBinary path:  {}"
+                                  "".format(self.model_name, binpath))
+
         if run_from_tmpdir:
             self._tmpdir = TemporaryDirectory(prefix=self.model_name)
             tmp_binpath = os.path.join(self._tmpdir.name,
                                        os.path.basename(binpath))
-            
+
             log.info("Copying executable to temporary directory ...")
             log.debug("  Original:   %s", binpath)
             log.debug("  Temporary:  %s", tmp_binpath)
@@ -724,10 +736,10 @@ class Multiverse:
         """This resolves the cluster parameters, e.g. by setting parameters
         depending on certain environment variables. This function is called by
         the resolved_cluster_params property.
-        
+
         Returns:
             dict: The resolved cluster configuration parameters
-        
+
         Raises:
             ValueError: If a required environment variable was missing or empty
         """
@@ -834,7 +846,7 @@ class Multiverse:
 
         if 'num_procs' in resolved:
             resolved['num_procs'] = int(resolved['num_procs'])
-        
+
         if 'timestamp' in resolved:
             resolved['timestamp'] = int(resolved['timestamp'])
 
@@ -855,16 +867,16 @@ class Multiverse:
     def _add_sim_task(self, *, uni_id_str: str, uni_cfg: dict,
                       is_sweep: bool) -> None:
         """Helper function that handles task assignment to the WorkerManager.
-        
+
         This function creates a WorkerTask that will perform the following
         actions __once it is grabbed and worked at__:
           - Create a universe (folder) for the task (simulation)
           - Write that universe's configuration to a yaml file in that folder
           - Create the correct arguments for the call to the model binary
-        
+
         To that end, this method gathers all necessary arguments and registers
         a WorkerTask with the WorkerManager.
-        
+
         Args:
             uni_id_str (str): The zero-padded uni id string
             uni_cfg (dict): given by ParamSpace. Defines how many simulations
@@ -872,7 +884,7 @@ class Multiverse:
             is_sweep (bool): Flag is needed to distinguish between sweeps
                 and single simulations. With this information, the forwarding
                 of a simulation's output stream can be controlled.
-        
+
         Raises:
             RuntimeError: If adding the simulation task failed
         """
@@ -880,10 +892,10 @@ class Multiverse:
                            model_binpath: str, uni_cfg: dict,
                            uni_basename: str) -> dict:
             """The callable that will setup everything needed for a universe.
-            
+
             This is called before the worker process starts working on the
             universe.
-            
+
             Args:
                 worker_kwargs (dict): the current status of the worker_kwargs
                     dictionary; is always passed to a task setup function
@@ -893,7 +905,7 @@ class Multiverse:
                     which is then needed by the model
                 uni_basename (str): Basename of the universe to use for folder
                     creation, i.e.: zero-padded universe number, e.g. uni0042
-            
+
             Returns:
                 dict: kwargs for the process to be run when task is grabbed by
                     Worker.
@@ -970,9 +982,9 @@ class Multiverse:
         log.debug("Added simulation task: %s.", uni_basename)
 
 
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 
 class FrozenMultiverse(Multiverse):
     """A frozen Multiverse is like a Multiverse, but frozen.
@@ -989,12 +1001,12 @@ class FrozenMultiverse(Multiverse):
                  run_dir: str=None, run_cfg_path: str=None,
                  user_cfg_path: str=None,
                  use_meta_cfg_from_run_dir: bool=False, **update_meta_cfg):
-        """Initializes the FrozenMultiverse from a model name and the name 
+        """Initializes the FrozenMultiverse from a model name and the name
         of a run directory.
-        
+
         Note that this also takes arguments to specify the run configuration to
         use.
-        
+
         Args:
             model_name (str): The name of the model to load. From this, the
                 model output directory is determined and the run_dir will be
@@ -1021,7 +1033,7 @@ class FrozenMultiverse(Multiverse):
                                             info_bundle=info_bundle)
         log.progress("Initializing FrozenMultiverse for '%s' model ...",
                      self.model_name)
-        
+
         # Initialize property-managed attributes
         self._meta_cfg = None
         self._dirs = dict()
@@ -1032,9 +1044,9 @@ class FrozenMultiverse(Multiverse):
         if (    use_meta_cfg_from_run_dir
             and isinstance(run_dir, str)
             and os.path.isabs(run_dir)):
-            
+
             raise NotImplementedError("use_meta_cfg_from_run_dir")
-            
+
             # Find the meta config backup file and load it
             # Alternatively, create it from the singular backup files ...
             # log.info("Trying to load meta configuration from given absolute "
@@ -1098,12 +1110,12 @@ class FrozenMultiverse(Multiverse):
         to __init__.
 
         Overwrites the method from the parent Multiverse class.
-        
+
         Args:
             out_dir (str): The output directory
             run_dir (str): The run directory to use
             **__: ignored
-        
+
         Raises:
             IOError: No directory found to use as run directory
             TypeError: When run_dir was not a string
@@ -1121,7 +1133,7 @@ class FrozenMultiverse(Multiverse):
             dirs = [d for d in sorted(os.listdir(model_dir))
                     if  os.path.isdir(os.path.join(model_dir, d))
                     and re.match(r'\d{6}-\d{6}_?.*', os.path.basename(d))]
-            
+
             # Use the latest to choose the run directory
             run_dir = os.path.join(model_dir, dirs[-1])
 
@@ -1148,7 +1160,7 @@ class FrozenMultiverse(Multiverse):
             raise TypeError("Argument run_dir needs to be None, an absolute "
                             "path, or a path relative to the model output "
                             "directory, but it was: {}".format(run_dir))
-            
+
         # Check if the directory exists
         if not os.path.isdir(run_dir):
             raise IOError("No run directory found at '{}'!"

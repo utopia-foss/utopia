@@ -75,15 +75,15 @@ def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO,
 def parse_yaml_dict(line: str, *, start_str: str="!!map") -> Union[None, dict]:
     """A yaml parse function that can be passed to enqueue_lines. It only tries
     parsing the line if it starts with the provided start string.
-    
+
     It tries to decode the line, and parse it as a yaml. If that fails, it
     will still try to decode the string. If that fails yet again, the
     unchanged line will be returned.
-    
+
     Args:
         line (str): The line to decode, assumed byte-string, utf8-encoded
         start_str (str, optional): Description
-    
+
     Returns:
         Union[None, dict]: either the decoded dict, or, if that failed:
     """
@@ -95,7 +95,7 @@ def parse_yaml_dict(line: str, *, start_str: str="!!map") -> Union[None, dict]:
     # Try to load the object, ensuring it is a dict
     try:
         obj = dict(yaml.load(line))
-    
+
     except Exception as err:
         # Failed to do that, regardless why; be verbose about it
         log.warning("Got %s while trying to parse line '%s': %s",
@@ -112,7 +112,7 @@ def parse_yaml_dict(line: str, *, start_str: str="!!map") -> Union[None, dict]:
 
 class Task:
     """The Task is a container for a task handled by the WorkerManager.
-    
+
     It aims to provide the necessary interfaces for the WorkerManager to easily
     associate tasks with the corresponding workers and vice versa.
     """
@@ -125,7 +125,7 @@ class Task:
                  callbacks: Dict[str, Callable]=None,
                  progress_func: Callable=None):
         """Initialize a Task object.
-        
+
         Args:
             name (str, optional): The task's name. If none is given, the
                 generated uuid will be used.
@@ -143,7 +143,7 @@ class Task:
         # Carry over arguments attributes
         self._name = str(name) if name else None
         self._priority = priority if priority is not None else np.inf
-        
+
         # Create a unique ID
         self._uid = uuid.uuid1()
 
@@ -162,7 +162,7 @@ class Task:
         if self._name is not None:
             return self._name
         return str(self.uid)
-    
+
     @property
     def uid(self) -> int:
         """The task's unique ID"""
@@ -202,20 +202,20 @@ class Task:
 
     def __hash__(self) -> int:
         return hash(self.uid)
-    
+
     def __str__(self) -> str:
         return "Task<uid: {}, priority: {}>".format(self.uid, self.priority)
 
     # Rich comparisons, needed in PriorityQueue
     # NOTE only need to implement __lt__, __le__, and __eq__, the others are
     # created by calling the methods with swapped arguments.
-    
+
     def __lt__(self, other):
         return bool(self.order_tuple < other.order_tuple)
-    
+
     def __le__(self, other):
         return bool(self.order_tuple <= other.order_tuple)
-    
+
     def __eq__(self, other):
         return bool(self is other)
         # NOTE we trust 'uuid' that the IDs are unique therefore different
@@ -239,11 +239,11 @@ class Task:
 class WorkerTask(Task):
     """A specialisation of the Task class that is aimed at use in the
     WorkerManager.
-    
+
     It is able to spawn a worker process, executing the task. Task execution
     is non-blocking. At the same time, the worker's stream can be read in via
     another non-blocking thread.
-    
+
     Attributes:
         profiling (dict): Profiling information of this WorkerTask
         setup_func (Callable): The setup function to use before this task is
@@ -270,7 +270,7 @@ class WorkerTask(Task):
                  **task_kwargs):
         """Initialize a WorkerTask object, a specialization of a task for use
         in the WorkerManager.
-        
+
         Args:
             setup_func (Callable, optional): The function to call before the
                 worker process is spawned
@@ -281,7 +281,7 @@ class WorkerTask(Task):
                 used for the worker_kwargs.
             **task_kwargs: Arguments to be passed to Task.__init__, including
                 the callbacks dictionary.
-        
+
         Raises:
             ValueError: If neither `setup_func` nor `worker_kwargs` were given
         """
@@ -291,7 +291,7 @@ class WorkerTask(Task):
         # Check the argument values
         if setup_func:
             setup_kwargs = setup_kwargs if setup_kwargs else dict()
-        
+
         elif worker_kwargs:
             if setup_kwargs:
                 warnings.warn("`worker_kwargs` given but also `setup_kwargs` "
@@ -319,7 +319,7 @@ class WorkerTask(Task):
         log.debug("  With setup function?  %s", bool(setup_func))
 
     # Properties ..............................................................
-    
+
     @property
     def worker(self) -> subprocess.Popen:
         """The associated worker process object or None, if not yet created."""
@@ -328,12 +328,12 @@ class WorkerTask(Task):
     @worker.setter
     def worker(self, proc: subprocess.Popen):
         """Set the associated worker process of this task.
-        
+
         This can only be done once.
-        
+
         Args:
             proc (subprocess.Popen): The process to associate with this task.
-        
+
         Raises:
             RuntimeError: If a process was already associated.
         """
@@ -359,7 +359,7 @@ class WorkerTask(Task):
         worker spawned yet.
 
         Note that this invokes a poll to the worker process if one was spawned.
-        
+
         Returns:
             Union[int, None]: Current worker status. False, if there was no
                 worker associated yet.
@@ -370,14 +370,14 @@ class WorkerTask(Task):
         if self._worker_status is None:
             # No cached value yet; poll the worker
             poll_res = self.worker.poll()
-        
+
             if poll_res is not None:
                 # The worker finished. Save the exit status and finish up ...
                 self._worker_status = poll_res
                 self._finished()
 
             return poll_res
-        
+
         # Return the cached exit status
         return self._worker_status
 
@@ -398,16 +398,16 @@ class WorkerTask(Task):
     def spawn_worker(self) -> subprocess.Popen:
         """Spawn a worker process using subprocess.Popen and manage the
         corresponding queue and thread for reading the stdout stream.
-        
+
         If there is a setup_func, this function will be called first.
-        
+
         Afterwards, from the worker_kwargs returned by that function or from
         the ones given during initialisation (if not setup_func was given),
         the worker process is spawned and associated with this task.
-        
+
         Returns:
             subprocess.Popen: The created process object
-        
+
         Raises:
             RuntimeError: If a worker was already spawned for this task.
             TypeError: For invalid `args` argument
@@ -461,7 +461,7 @@ class WorkerTask(Task):
             q = queue.Queue()
             stdout = subprocess.PIPE
             stderr = subprocess.STDOUT
-            
+
         else:
             # No stream-reading is taking place; forward all streams to devnull
             stdout = stderr = subprocess.DEVNULL
@@ -471,12 +471,14 @@ class WorkerTask(Task):
         log.debug("Spawning worker process with args:\n  %s", args)
         try:
             proc = subprocess.Popen(args,
-                                    bufsize=1, # line buffered
+                                    bufsize=1,  # line buffered
                                     stdout=stdout, stderr=stderr,
                                     **popen_kwargs)
+
         except FileNotFoundError as err:
-            raise FileNotFoundError("Could not find command to execute! Did "
-                                    "you build your binary?") from err
+            raise FileNotFoundError("No executable found for task '{}'! "
+                                    "Process arguments:  {}"
+                                    "".format(self.name, repr(args))) from err
 
         # Save the approximate creation time (as soon as possible)
         self.profiling['create_time'] = time.time()
@@ -502,7 +504,7 @@ class WorkerTask(Task):
             # forwarded, which are used by the save_/forward_streams methods
             self.streams['out'] = dict(queue=q, thread=t,
                                        log=[], log_raw=[], log_parsed=[],
-                                       save=save_streams, save_path=None, 
+                                       save=save_streams, save_path=None,
                                        forward=forward_streams,
                                        forward_raw=forward_raw,
                                        log_level=streams_log_lvl,
@@ -512,7 +514,7 @@ class WorkerTask(Task):
             log.debug("Added thread to read worker %s's combined STDOUT and "
                       "STDERR.", self.name)
 
-            # If configured to save, save the 
+            # If configured to save, save the
             if save_streams:
                 if not save_streams_to:
                     raise ValueError("Was told to `save_streams` but did not "
@@ -533,7 +535,7 @@ class WorkerTask(Task):
                      max_num_reads: int=10,
                      forward_directly: bool=False) -> None:
         """Read the streams associated with this task's worker.
-        
+
         Args:
             stream_names (list, optional): The list of stream names to read.
                 If 'all' (default), will read all streams.
@@ -545,7 +547,7 @@ class WorkerTask(Task):
                 `forward_streams` method; this is done before the callback and
                 can be useful if the callback should not happen before the
                 streams are forwarded.
-        
+
         Returns:
             None
         """
@@ -635,15 +637,15 @@ class WorkerTask(Task):
     def save_streams(self, stream_names: list='all', *,
                      save_raw: bool=True, final: bool=False) -> None:
         """For each stream, checks if it is to be saved, and if yes: saves it.
-        
+
         The saving location is stored in the streams dict. The relevant keys
         are the `save` flag and the `save_path` string.
-        
+
         Note that this function does not save the whole stream log, but only
         those part of the stream log that have not already been saved. The
         position up to which the stream was saved is stored under the
         `lines_saved` key in the stream dict.
-        
+
         Args:
             stream_names (list, optional): The list of stream names to _check_.
                 If 'all' (default), will check all streams whether the `save`
@@ -654,7 +656,7 @@ class WorkerTask(Task):
             final (bool, optional): If True, this is regarded as the final
                 save operation for the stream, which will lead to additional
                 information being saved to the end of the log.
-        
+
         Returns:
             None
         """
@@ -724,17 +726,17 @@ class WorkerTask(Task):
     def forward_streams(self, stream_names: list='all',
                         forward_raw: bool=False) -> bool:
         """Forwards the streams to stdout, either via logging module or print
-        
+
         This function can be periodically called to forward the part of the
         stream logs that was not already forwarded to stdout.
 
         The information for that is stored in the stream dict. The log_level
         entry is used to determine whether the logging module should be used
         or (in case of None) the print method.
-        
+
         Args:
             stream_names (list, optional): The list of streams to print
-        
+
         Returns:
             bool: whether there was any output
         """
@@ -747,7 +749,7 @@ class WorkerTask(Task):
                 # print it to the parent process's stdout
                 for line in lines:
                     print(prefix, line)
-            
+
             else:
                 # use the logging module
                 for line in lines:
@@ -777,7 +779,7 @@ class WorkerTask(Task):
                 log.debug("Not forwarding stream '%s' ...", stream_name)
                 continue
             # else: this stream is to be forwarded
-            
+
             # Determine lines to write
             forward_raw = stream.get('forward_raw', True)
             stream_log = stream['log_raw'] if forward_raw else stream['log']
@@ -800,21 +802,21 @@ class WorkerTask(Task):
 
     def signal_worker(self, signal: str) -> tuple:
         """Sends a signal to this WorkerTask's worker.
-        
+
         Args:
             signal (str): The signal to send. Needs to be a valid signal name,
                 i.e.: available in python signal module.
-        
+
         Raises:
             ValueError: When an invalid `signal` argument was given
-        
+
         Returns:
             tuple: (signal: str, signum: int) sent to the worker
         """
         # Determine the signal number
         try:
             signum = SIGMAP[signal]
-        
+
         except KeyError as err:
             raise ValueError("No signal named '{}' available! Valid signals "
                              "are: {}".format(signal, ", ".join(SIGMAP.keys()))
@@ -852,7 +854,7 @@ class WorkerTask(Task):
         # Update profiling info
         self.profiling['end_time'] = time.time()
         self.profiling['run_time'] = (self.profiling['end_time']
-                                      - self.profiling['create_time']) 
+                                      - self.profiling['create_time'])
         # NOTE these are both approximate values as the worker process must
         # have ended prior to the call to this method
 
@@ -910,19 +912,19 @@ class TaskList:
 
     def append(self, val: Task):
         """Append a Task object to this TaskList
-        
+
         Args:
             val (Task): The task to add
-        
+
         Raises:
             RuntimeError: If TaskList object was locked
             TypeError: Tried to add a non-Task type object
             ValueError: Task already added to this TaskList
         """
-        
+
         if self._locked:
             raise RuntimeError("TaskList locked! Cannot append further tasks.")
-        
+
         elif not isinstance(val, Task):
             raise TypeError("TaskList can only be filled with "
                             "Task objects, got object of type {}, "

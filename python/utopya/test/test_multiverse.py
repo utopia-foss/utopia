@@ -1,9 +1,12 @@
 """Test the Multiverse class initialization and workings.
 
-As the Multiverse will always generate a folder structure, it needs to be taken care that these output folders are temporary and are deleted after the tests. This can be done with the tmpdir fixture of pytest.
+As the Multiverse will always generate a folder structure, it needs to be
+taken care that these output folders are temporary and are deleted after the
+tests. This can be done with the tmpdir fixture of pytest.
 """
 
 import os
+import copy
 import uuid
 import time
 from pkg_resources import resource_filename
@@ -98,7 +101,7 @@ def test_simple_init(mv_kwargs):
     mv_kwargs['user_cfg_path'] = None
     mv_kwargs['paths']['model_note'] = "_user_cfg_path_none"
     Multiverse(**mv_kwargs)
-    
+
     # No user config at default search location
     Multiverse.USER_CFG_SEARCH_PATH = "this_is_not_a_path"
     mv_kwargs['paths']['model_note'] = "_user_cfg_path_none_and_no_class_var"
@@ -174,6 +177,41 @@ def test_detect_doubled_folders(mv_kwargs):
         # NOTE this test assumes that the two calls are so close to each other
         #      that the timestamp is the same, that's why there are two calls
         #      so that the latest the second call should raise such an error
+
+def test_prepare_executable(mv_kwargs):
+    """Tests handling of the executable, i.e. copying to a temporary location
+    and emitting helpful error messages
+    """
+    mv_kwargs['executable_control'] = dict(run_from_tmpdir=False)
+    mv = Multiverse(**mv_kwargs)
+
+    # The dummy model should be available at this point, so _prepare_executable
+    # should have correctly set a binary path, but not in a temporary directory
+    assert mv._model_binpath is not None
+    assert mv._tmpdir is None
+    original_binpath = mv._model_binpath
+
+    # Now, let the executable be copied to a temporary location
+    mv._prepare_executable(run_from_tmpdir=True)
+    assert mv._model_binpath != original_binpath
+    assert mv._tmpdir is not None
+
+    # Adjust the info bundle for this Multiverse to use the temporary location
+    tmp_binpath = mv._model_binpath
+    mv._info_bundle = copy.deepcopy(mv.info_bundle)
+    mv._info_bundle.paths['binary'] = tmp_binpath
+
+    # With the executable in a temporary location, we can change its access
+    # rights to test the PermissionError
+    os.chmod(tmp_binpath, 0o600)
+    with pytest.raises(PermissionError, match="is not executable"):
+        mv._prepare_executable()
+
+    # Finally, remove that (temporary) file, to test the FileNotFound error
+    os.remove(tmp_binpath)
+    with pytest.raises(FileNotFoundError, match="Did you build it?"):
+        mv._prepare_executable()
+
 
 # Simulation tests ------------------------------------------------------------
 
