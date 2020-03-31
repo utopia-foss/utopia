@@ -27,15 +27,13 @@ def test_that_it_runs():
     # Load data using the DataManager and the default load configuration
     mv.dm.load_from_cfg(print_tree=True)
     # The `print_tree` flag creates output of which data was loaded
-    # NOTE can also use a shortcut to do all of the above, see test_output
+    # NOTE You can also use a shortcut to do all of the above, see test_output
 
-    # Assert that data was loaded, i.e. that data was written
+    # Assert that data was loaded, i.e., that data was written
     assert len(mv.dm)
 
 
-# NOTE The below test is an example of how to access data and write a test.
-#      You can adjust this to your needs and then remove the decorator to
-#      enable the test.
+# The below test is an example of how to access data and write a test.
 # TODO Adapt this to the data you are putting out
 def test_output(): 
     """Test that the output structure is correct"""
@@ -57,15 +55,21 @@ def test_output():
         uni_cfg = uni['cfg']
 
         # Check that all datasets are available
-        assert 'some_state' in data
-        assert 'some_trait' in data
+        assert 'some_state' in data['g_static']
+        assert 'some_trait' in data['g_static']
+        assert '_vertices' in data['g_static']
+        assert '_edges' in data['g_static']
+        assert 'some_state' in data['g_dynamic']
+        assert 'some_trait' in data['g_dynamic']
+        assert '_vertices' in data['g_dynamic']
+        assert '_edges' in data['g_dynamic']
 
         # It is very helpful to make use of the xarray functionality!
         # See:  http://xarray.pydata.org/en/stable/why-xarray.html
-        some_state = data['some_state']
+        some_state = data['g_static']['some_state']
         assert some_state.dims == ('time', 'vertex_idx')
-        
-        some_trait = data['some_trait']
+
+        some_trait = data['g_static']['some_trait']
         assert some_trait.dims == ('time', 'vertex_idx')
 
         # Can do further tests here ...

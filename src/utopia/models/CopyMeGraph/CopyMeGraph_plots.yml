@@ -9,12 +9,12 @@ some_state_mean:
   based_on: mean_cell_state_over_time
 
   # Specify the dataset within the CopyMeGraph output that is to be plotted
-  mean_of: some_state
+  mean_of: g_static/some_state
 
 some_trait_mean:
   based_on: mean_cell_state_over_time
 
-  mean_of: some_trait
+  mean_of: g_static/some_trait
 
 # Plots using the DAG framework ...............................................
 # Plot individual cell states over time using a generic plotting function
@@ -24,7 +24,30 @@ single_cell_states:
   # Select some single cells to plot the states of, tagging it 'y'
   select:
     y:
-      path: some_state
+      path: g_static/some_state
+      with_previous_result: true  # makes the select data available as first
+                                  # positional argument to the transform
+                                  # operation; and the result of the first
+                                  # transformation to the first argument of the
+                                  # second transformation, etc.
+      transform:
+        - .sel: {vertex_idx: [0, 1, 2, 4, 8]}
+        - increment
+
+  helpers:
+    set_title:
+      title: Individual Cell States
+
+# Perform the same plot with the data from the graph group 'g_dynamic'. In this
+# case, the data is loaded as a `TimeSeriesGroup` (and not as Xarray) which
+# also supports important xarray-methods such as coordinate access using .sel.
+single_cell_states_dynamic:
+  based_on: time_series.uni
+
+  # Select some single cells to plot the states of, tagging it 'y'
+  select:
+    y:
+      path: g_dynamic/some_state
       with_previous_result: true  # makes the select data available as first
                                   # positional argument to the transform
                                   # operation; and the result of the first
@@ -45,7 +68,7 @@ mean_state_and_trait:
   # Select the state and trait and average it spatially
   select:
     state_mean: &mean_xy
-      path: some_state
+      path: g_static/some_state
       transform:
         - .mean: { dim: vertex_idx }
           with_previous_result: true  # ... to use the result of the select
@@ -54,7 +77,7 @@ mean_state_and_trait:
 
     trait_mean:
       <<: *mean_xy
-      path: some_trait
+      path: g_static/some_trait
 
   # Combine the mean values into a xr.Dataset and tag it with 'y'
   transform:
@@ -85,7 +108,7 @@ some_universe_plot:
 
   select:
     scatter:
-      path: some_state
+      path: g_static/some_state
       with_previous_result: true
       transform:
         - .mean: { dim: vertex_idx }
