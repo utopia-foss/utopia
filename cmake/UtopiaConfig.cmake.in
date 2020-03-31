@@ -20,6 +20,7 @@ include(UtopiaPython)
 include(UtopiaFrontendModelRegistry)
 
 include(UtopiaAddCoverageFlags)
+include(UtopiaEnableParallel)
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)
@@ -40,6 +41,11 @@ find_dependency(yaml-cpp 0.6.2)
 
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_dependency(Threads)
+
+# TBB (Only if found previously)
+if (@TBB_FOUND@)
+    find_dependency(TBB 2018.5)
+endif()
 
 # --- Include Dependencies with custom CMake setup ---
 
