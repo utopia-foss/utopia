@@ -4,8 +4,8 @@ parameter_space:
   num_steps: 3
 
   Hierarnet: !model
-    model_name: Hierarnet
+    model_name: CopyMeGraph
 
-    create_network:
-      num_vertices: 13
+    create_graph:
+      num_vertices: 10
       mean_degree: 2
