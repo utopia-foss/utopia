@@ -146,12 +146,7 @@ some_multiverse_plot:
 
   # specify further arguments here
 
-# Facet Grid plot for a sweep over 'seed' and 'some_parameter'
-# This plot function is extremely versatile because it automatically layouts 
-# your multidimensional data and chooses an adequate plot type.
-# Just set `col`umn, `row`, and/or `hue` to a dimension name and the figure
-# will show the data correspondingly. 
-# Play around a bit to get to know the possibilities. :)
+# Facet Grid plot for a sweep over some_parameter' and another dimension
 some_facet_grid_state_plot:
   based_on: some_facet_grid_plot
   enabled: false

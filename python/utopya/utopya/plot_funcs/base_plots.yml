@@ -307,6 +307,8 @@
 # -----------------------------------------------------------------------------
 # -- DAG-based plots ----------------------------------------------------------
 # -----------------------------------------------------------------------------
+# -- Generic Multiverse or Universe plots -------------------------------------
+# .. Time series ..............................................................
 .dag.generic.time_series:
   module: .dag.time_series
   plot_func: time_series
@@ -316,7 +318,11 @@
   style:
     <<: *default_style
 
+### Start ---- Facet Grid
 # .. Facet Grid ...............................................................
+# For conveniently plotting high-dimensional data, using dantro.
+# For more info, have a look at the dantro docs:
+#   https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html
 .dag.generic.facet_grid:
   module: dantro.plot_creators.ext_funcs.generic
   plot_func: facet_grid
@@ -325,3 +331,4 @@
     <<: *default_helpers
   style:
     <<: *default_style
+### End ---- Facet Grid
