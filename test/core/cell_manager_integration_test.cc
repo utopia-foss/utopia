@@ -7,6 +7,7 @@
 using namespace Utopia::Test;
 
 int main() {
+    Utopia::setup_loggers();
     try {
         std::cout << "Initializing pseudo parent ..." << std::endl;
         Utopia::PseudoParent pp("cell_manager_integration_test.yml");

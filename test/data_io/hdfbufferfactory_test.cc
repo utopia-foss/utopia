@@ -1,19 +1,12 @@
-/**
- * @brief Tests the functionality of HDFBufferfactory
- *
- * @file hdfbufferfactory_test.cc
-
- */
-
-#include <cassert>
+#define BOOST_TEST_MODULE HDFBUFFERFACTORY_TEST
 #include <list>
 #include <string>
 #include <vector>
 
-#include <hdf5.h>
-
 #include <utopia/data_io/hdfbufferfactory.hh>
 #include <utopia/data_io/hdfgroup.hh>
+
+#include <boost/test/included/unit_test.hpp>
 
 using namespace Utopia::DataIO;
 struct Test
@@ -23,7 +16,8 @@ struct Test
     std::string c;
 };
 
-int main()
+
+BOOST_AUTO_TEST_CASE(hdfbufferfactory_test)
 {
     std::vector<Test> data(100);
     int i = 0;
@@ -43,10 +37,10 @@ int main()
         data.begin(), data.end(),
         [](auto& complicated_value) { return complicated_value.a; });
 
-    assert(plain_buffer.size() == data.size());
+    BOOST_TEST(plain_buffer.size() == data.size());
     for (std::size_t l = 0; l < data.size(); ++l)
     {
-        assert(plain_buffer[l] == data[l].a);
+        BOOST_TEST(plain_buffer[l] == data[l].a);
     }
 
     std::vector<std::list<int>> data_lists(100);
@@ -76,16 +70,14 @@ int main()
         data_vectors.begin(), data_vectors.end(),
         [](auto& vector) -> std::vector<int>& { return vector; });
 
-    assert(complex_buffer.size() == data_vectors.size());
+    BOOST_TEST(complex_buffer.size() == data_vectors.size());
     for (std::size_t l = 0; l < data_vectors.size(); ++l)
     {
-        assert(data_vectors[l].size() == complex_buffer[l].len);
+        BOOST_TEST(data_vectors[l].size() == complex_buffer[l].len);
         for (std::size_t i = 0; i < data_vectors[i].size(); ++i)
         {
-            assert(data_vectors[l][i] ==
+            BOOST_TEST(data_vectors[l][i] ==
                    reinterpret_cast<int*>(complex_buffer[l].p)[i]);
         }
     }
-
-    return 0;
 }

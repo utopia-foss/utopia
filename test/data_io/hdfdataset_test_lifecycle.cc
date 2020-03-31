@@ -1,9 +1,4 @@
-/**
- * @brief Tests the constructors of HDFDataset and the associated reference counting.
- *
- * @file hdfdataset_test_lifecycle.cc
- */
-#include <cassert>
+#define BOOST_TEST_MODULE dataset_lifecycle_test
 #include <cmath>
 #include <cstdio>
 #include <iostream>
@@ -16,101 +11,117 @@
 #include <utopia/data_io/hdfgroup.hh>
 #include <utopia/data_io/hdfutilities.hh>
 
+#include <boost/test/included/unit_test.hpp>
+
 using namespace Utopia::DataIO;
 using namespace std::literals::chrono_literals;
-using hsizevec = std::vector<hsize_t>;
+using hsizevec = std::vector< hsize_t >;
 
-bool operator==(HDFGroup& a, HDFGroup& b)
+template < class LHS, class RHS >
+void
+check_hdfdatasets(LHS& lhs, RHS& rhs)
 {
-    if (a.get_path() != b.get_path() or a.get_address() != b.get_address())
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    BOOST_TEST(lhs.get_path() == rhs.get_path());
+    BOOST_TEST(lhs.get_C_id() == rhs.get_C_id());
+    BOOST_TEST(lhs.get_parent_id().get_id() == rhs.get_parent_id().get_id());
+    BOOST_TEST(lhs.get_rank() == rhs.get_rank());
+    BOOST_TEST(lhs.get_capacity() == rhs.get_capacity());
+    BOOST_TEST(lhs.get_current_extent() == rhs.get_current_extent());
+    BOOST_TEST(lhs.get_chunksizes() == rhs.get_chunksizes());
+    BOOST_TEST(lhs.get_compresslevel() == rhs.get_compresslevel());
 }
 
-template <class LHS, class RHS>
-void assert_hdfdatasets(LHS& lhs, RHS& rhs)
+BOOST_AUTO_TEST_CASE(dataset_lifecycle_test)
 {
-    assert(lhs.get_path() == rhs.get_path());
-    assert(lhs.get_id() == rhs.get_id());
-    assert(lhs.get_address() == rhs.get_address());
-    assert(lhs.get_referencecounter().get() == rhs.get_referencecounter().get());
-    assert(&lhs.get_parent() == &rhs.get_parent());
-    assert(lhs.get_parent() == rhs.get_parent());
-    assert(lhs.get_rank() == rhs.get_rank());
-    assert(lhs.get_capacity() == rhs.get_capacity());
-    assert(lhs.get_current_extent() == rhs.get_current_extent());
-    assert(lhs.get_chunksizes() == rhs.get_chunksizes());
-    assert(lhs.get_compresslevel() == rhs.get_compresslevel());
-}
-
-int main()
-{
+    Utopia::setup_loggers();
     HDFFile file("dataset_test_lifetime.h5", "w");
+    spdlog::get("data_io")->set_level(spdlog::level::info);
 
-    HDFGroup lifecyclegroup(file, "/lifecycletest");
-    std::vector<int> data(100, 42);
+    HDFGroup           lifecyclegroup(file, "/lifecycletest");
+    std::vector< int > data(100, 42);
 
-    HDFDataset first(lifecyclegroup, "first", {100}, {10}, 5);
-
-    HDFDataset first_simple(lifecyclegroup, "first_simple", {}, {10});
+    HDFDataset first(lifecyclegroup, "first", { 100 }, { 10 }, 5);
+    BOOST_TEST(first.get_refcount() == -1);
 
     first.write(data.begin(), data.end(), [](int& value) { return value; });
-    first_simple.write(data.begin(), data.end(), [](int& value) { return value; });
+    BOOST_TEST(first.get_refcount() == 1);
 
-    assert(check_validity(H5Iis_valid(first.get_id()), first.get_path()));
-    assert(check_validity(H5Iis_valid(first_simple.get_id()), first_simple.get_path()));
+    first.add_attribute("testattribute_for_refcount", first.get_refcount());
+    BOOST_TEST(first.get_refcount() == 1);
 
-    assert((*first_simple.get_referencecounter())[first_simple.get_address()] == 1);
+    HDFDataset copied(first);
+    check_hdfdatasets(first, copied);
+    BOOST_TEST(first.get_refcount() == 2);
+    BOOST_TEST(copied.get_refcount() == 2);
 
-    assert((*first.get_referencecounter())[first.get_address()] == 1);
+    HDFDataset copy_assigned = first;
+    check_hdfdatasets(first, copy_assigned);
+    BOOST_TEST(first.get_refcount() == 3);
+    BOOST_TEST(copy_assigned.get_refcount() == 3);
 
-    // copy constructor
-    auto copied_first(first);
-    assert((*copied_first.get_referencecounter())[copied_first.get_address()] == 2);
-    assert_hdfdatasets(first, copied_first);
+    HDFDataset moved(std::move(copied));
+    check_hdfdatasets(first, moved);
+    BOOST_TEST(first.get_refcount() == 3);
+    BOOST_TEST(moved.get_refcount() == 3);
 
-    // copy assignment
-    auto second = first;
-    assert((*second.get_referencecounter())[second.get_address()] == 3);
-    assert_hdfdatasets(first, second);
+    HDFDataset move_assigend = std::move(moved);
+    check_hdfdatasets(first, move_assigend);
+    BOOST_TEST(first.get_refcount() == 3);
+    BOOST_TEST(move_assigend.get_refcount() == 3);
 
-    // move assignment
-    auto crosscheck(first); // this is needed  for checks
-    auto moveassign_from_first = std::move(first);
-    assert((*moveassign_from_first.get_referencecounter())[moveassign_from_first.get_address()] == 4);
-    assert_hdfdatasets(crosscheck, moveassign_from_first);
+    move_assigend.close();
+    copy_assigned.close();
+    BOOST_TEST(first.get_refcount() == 1);
 
-    // move constructor
-    auto moveconst_second(std::move(second));
-    assert((*moveconst_second.get_referencecounter())[moveconst_second.get_address()] == 4);
-    assert_hdfdatasets(crosscheck, moveconst_second);
+    HDFDataset second(lifecyclegroup, "second", { 100 }, { 10 }, 5);
 
-    lifecyclegroup.close();
-    file.close();
-    file.open("dataset_test_lifetime.h5", "r+");
-    lifecyclegroup.open(file, "/lifecycletest");
+    second.add_attribute("testattribute for buffer1", "one");
+    second.add_attribute("testattribute for buffer2", "two");
+    BOOST_TEST(second.get_refcount() == -1);
 
-    // test open method
-    HDFDataset<HDFGroup> opened_dataset;
-    opened_dataset.open(lifecyclegroup, "first");
-    assert(check_validity(H5Iis_valid(opened_dataset.get_id()), opened_dataset.get_path()));
-    assert(opened_dataset.get_current_extent() == hsizevec{100});
-    assert(opened_dataset.get_chunksizes() == hsizevec{10});
-    assert(opened_dataset.get_capacity() == hsizevec{100});
+    second.write(data);
+    BOOST_TEST(second.get_refcount() == 1);
 
-    // test simple open method
-    HDFDataset<HDFGroup> opened_dataset_simple;
-    opened_dataset_simple.open(lifecyclegroup, "first_simple");
-    assert(check_validity(H5Iis_valid(opened_dataset_simple.get_id()),
-                          opened_dataset_simple.get_path()));
-    assert(opened_dataset_simple.get_current_extent() == hsizevec{100});
-    assert(opened_dataset_simple.get_chunksizes() == hsizevec{10});
-    assert(opened_dataset_simple.get_capacity() == hsizevec{H5S_UNLIMITED});
+    // create two datasets to test swap
+    HDFDataset x(lifecyclegroup, "x", { 2000, 100 }, { 10, 12 }, 7);
 
-    return 0;
+    x.add_attribute("testattr_x", "I iz X");
+
+    HDFDataset y(lifecyclegroup, "y", { 1000, 200, 10 }, { 20, 3, 7 }, 2);
+    y.add_attribute("testattr_y", "I iz Y");
+
+    swap(x, y);
+
+    BOOST_TEST(x.get_path() == "y");
+    BOOST_TEST(y.get_path() == "x");
+
+    BOOST_TEST(x.get_rank() == 3);
+    BOOST_TEST(y.get_rank() == 2);
+
+    BOOST_TEST(x.get_current_extent() == (std::vector< hsize_t >{ }),
+               boost::test_tools::per_element());
+    BOOST_TEST(y.get_current_extent() == (std::vector< hsize_t >{  }),
+               boost::test_tools::per_element());
+
+    BOOST_TEST(x.get_compresslevel() == 2);
+    BOOST_TEST(y.get_compresslevel() == 7);
+
+    BOOST_TEST(x.get_capacity() == (std::vector< hsize_t >{ 1000, 200, 10 }),
+               boost::test_tools::per_element());
+    BOOST_TEST(y.get_capacity() == (std::vector< hsize_t >{ 2000, 100 }),
+               boost::test_tools::per_element());
+
+    BOOST_TEST(x.get_offset() == (std::vector< hsize_t >{ 0, 0, 0 }),
+               boost::test_tools::per_element());
+    BOOST_TEST(y.get_offset() == (std::vector< hsize_t >{ 0, 0 }),
+               boost::test_tools::per_element());
+    BOOST_TEST(
+        x.get_attribute_buffer() ==
+        (std::vector< std::pair< std::string, typename HDFType::Variant > >{
+            { "testattr_y", "I iz Y" } }));
+
+    BOOST_TEST(
+        y.get_attribute_buffer() ==
+        (std::vector< std::pair< std::string, typename HDFType::Variant > >{
+            { "testattr_x", "I iz X" } }));
 }

@@ -36,11 +36,11 @@ using DefaultBaseGroupBuilder =
 /// Type of the default data writer
 template < typename Model >
 using DefaultDataWriter =
-    std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&, Model&) >;
+    std::function< void(std::shared_ptr< HDFDataset >&, Model&) >;
 
 /// Type of the default dataset builder
 template < typename Model >
-using DefaultBuilder = std::function< std::shared_ptr< HDFDataset< HDFGroup > >(
+using DefaultBuilder = std::function< std::shared_ptr< HDFDataset >(
     std::shared_ptr< HDFGroup >&, Model&) >;
 
 /// Type of the default attribute writer for groups
@@ -51,7 +51,7 @@ using DefaultAttributeWriterGroup =
 /// Type of the default attribute writer for datasets
 template < typename Model >
 using DefaultAttributeWriterDataset =
-    std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&, Model&) >;
+    std::function< void(std::shared_ptr< HDFDataset >&, Model&) >;
 
 /**
  * @brief  A default WriteTask definition

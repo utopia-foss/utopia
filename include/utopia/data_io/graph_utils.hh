@@ -45,8 +45,8 @@ namespace GraphUtilsHelper{
  *         Pair containing [vertex dataset, edge dataset]
  */
 template <typename Graph>
-std::pair<std::shared_ptr<HDFDataset<HDFGroup>>,
-          std::shared_ptr<HDFDataset<HDFGroup>>>
+std::pair<std::shared_ptr<HDFDataset>,
+          std::shared_ptr<HDFDataset>>
 setup_graph_containers(const Graph& g, const std::shared_ptr<HDFGroup>& grp)
 {
     // Collect some information on the graph

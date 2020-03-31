@@ -288,7 +288,7 @@ struct DerivedTask : public BasicTask
 /// Vertex struct containing some properties
 struct Vertex
 {
-    int         test_int;
+    int test_int;
     double      test_double;
     std::size_t id;
 
@@ -549,8 +549,10 @@ struct GraphModel
 unsigned int
 get_objects_count(HDFFile& file, unsigned int category)
 {
-    return H5Fget_obj_count(file.get_id(), category);
+    return H5Fget_obj_count(file.get_C_id(), category);
 }
+
+
 
 } // namespace DataIO
 } // namespace Utopia

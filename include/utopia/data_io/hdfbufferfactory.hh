@@ -11,9 +11,10 @@
 #include <vector>
 
 #include <hdf5.h>
+
 #include <boost/multi_array.hpp>
 
-#include "hdftypefactory.hh"
+#include "hdftype.hh"
 #include "hdfutilities.hh"
 
 namespace Utopia
@@ -38,6 +39,14 @@ namespace DataIO
  */
 class HDFBufferFactory
 {
+  private:
+
+    /**
+     * @brief For logging all kinds of stuff
+     * 
+     */
+    std::shared_ptr< spdlog::logger > _log;
+
   public:
     /**
      * @brief      function for converting source data into variable length
@@ -89,6 +98,7 @@ class HDFBufferFactory
         using T = Utils::remove_qualifier_t< decltype(adaptor(*begin)) >;
         if constexpr (Utils::is_container_v< T >)
         {
+            
             // set up buffer
             if constexpr (Utils::is_array_like_v< T >)
             {

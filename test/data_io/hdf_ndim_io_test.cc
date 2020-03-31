@@ -1,9 +1,10 @@
+#include "utopia/core/utils.hh"
 #define BOOST_TEST_MODULE HDF5_WRITE_ND_IO_TEST
 
-#include <exception>
-#include <vector>
 #include <array>
+#include <exception>
 #include <list>
+#include <vector>
 
 #include <boost/mpl/vector.hpp>
 #include <boost/multi_array.hpp>
@@ -32,12 +33,19 @@ template < typename T >
 std::ostream&
 operator<<(std::ostream& out, std::vector< T > const& vec)
 {
-    out << "[";
-    for (std::size_t i = 0; i < vec.size() - 1; ++i)
+    if (vec.size() == 0)
     {
-        out << vec[i] << ",";
+        out << "[]" << std::endl;
     }
-    out << vec[vec.size() - 1] << "]";
+    else
+    {
+        out << "[";
+        for (auto it = vec.begin(); it != vec.end(); ++it)
+        {
+            out << *it << ",";
+        }
+        out << "]" << std::endl;
+    }
     return out;
 }
 
@@ -45,12 +53,19 @@ template < typename T >
 std::ostream&
 operator<<(std::ostream& out, std::list< T > const& l)
 {
-    out << "[";
-    for (auto it = l.begin(); it != std::next(l.begin(), l.size() - 1); ++it)
+    if (l.size() == 0)
     {
-        out << *it << ",";
+        out << "[]" << std::endl;
     }
-    out << *(l.rbegin()) << "]";
+    else
+    {
+        out << "[";
+        for (auto it = l.begin(); it != l.end(); ++it)
+        {
+            out << *it << ",";
+        }
+        out << "]" << std::endl;
+    }
     return out;
 }
 
@@ -65,7 +80,7 @@ operator<<(std::ostream& out, std::array< T, d > const& arr)
         out << arr[i] << ",";
     }
 
-    out << (d - 1 >= 0 ? std::to_string(arr[d - 1]) : std::string("")) << "]";
+    out << "]" << std::endl;
     return out;
 }
 
@@ -90,10 +105,16 @@ make_data(Ts... ts)
         // return std::to_string(i) + std::to_string(j) + std::to_string(k);
         return (std::to_string(ts) + ...);
     }
-    else if constexpr (std::is_same_v< T, std::array< int, sizeof...(Ts) > >)
+    else if constexpr (Utopia::Utils::is_array_like_v<T>)
     {
-        return std::array< int, sizeof...(Ts) >{ { static_cast< int >(
-            ts)... } };
+
+        if constexpr (sizeof...(Ts) == 0){
+            return T{};
+        }
+        else{
+            return T{ { static_cast< int >(
+                ts)... } };
+        }
     }
     else if constexpr (std::is_same_v< T, std::vector< int > >)
     {
@@ -111,11 +132,11 @@ make_data(Ts... ts)
 
 /**
  * @brief Make fill values for data that is not written explicitly
- * 
- * @tparam T 
- * @return T 
+ *
+ * @tparam T
+ * @return T
  */
-template < typename T>
+template < typename T >
 T
 make_filler()
 {
@@ -125,11 +146,11 @@ make_filler()
         // return std::to_string(i) + std::to_string(j) + std::to_string(k);
         return "\0";
     }
-    else{
-        return make_data<T>();
+    else
+    {
+        return make_data< T >();
     }
 }
-
 
 /**
  * @brief Create a name for a given type T
@@ -174,7 +195,6 @@ BOOST_TEST_SPECIALIZED_COLLECTION_COMPARE(std::list< int >);
 BOOST_TEST_SPECIALIZED_COLLECTION_COMPARE(std::vector< std::vector< int > >);
 BOOST_TEST_SPECIALIZED_COLLECTION_COMPARE(std::vector< std::list< int > >);
 
-
 /**
  * @brief Struct which acts as a factory that produces the necessary data for
  * each test.
@@ -192,10 +212,12 @@ struct Fixture
 
     Cube array = Cube(boost::extents[10][7][4]);
 
-    Fixture() 
+    Fixture()
     {
         // get the utopia loggers which are needed for the test
         Utopia::setup_loggers();
+        spdlog::get("data_io")->set_level(spdlog::level::debug);
+
         // initialize data
         for (int i = 0; i < 10; ++i)
         {
@@ -215,33 +237,37 @@ struct Fixture
 // example for how to use the BOOST_FIXTURE_TEMPLATE_TEST_CASE_MACRO
 // https://stackoverflow.com/questions/22065225/execute-one-test-case-several-times-with-different-fixture-each-time
 using typelist = boost::mpl::vector< Fixture< double >
-                                    //  ,Fixture< std::string >,
-                                    //  Fixture< std::array< int, 3 > >,
-                                    //  Fixture< std::vector< int > >,
-                                    //  Fixture< std::list< int > > 
+                                      ,Fixture< std::string >
+                                      ,Fixture< std::array< int, 3 > >
+                                      ,Fixture< std::vector< int > >
+                                      ,Fixture< std::list< int > >
                                      >;
 
 // write a single multi_array in a dataset which has enough space for it but not
 // more, no extension of dataset or so
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_limited, T, typelist, T)
 {
-    HDFFile file("ndtest_limited_"+create_name_for_type<typename T::Type>()+".h5", "w");
-    auto dataset = file.open_dataset("/"+create_name_for_type< typename T::Type >(), {10, 7, 4});
+    HDFFile file("ndtest_limited_" +
+                     create_name_for_type< typename T::Type >() + ".h5",
+                 "w");
+    auto    dataset = file.open_dataset(
+        "/" + create_name_for_type< typename T::Type >(), { 10, 7, 4 });
     dataset->write_nd(T::array);
-    BOOST_TEST(dataset->get_capacity() ==
-               (std::vector< hsize_t >{ 10, 7, 4 }));
+    BOOST_TEST(dataset->get_capacity() == (std::vector< hsize_t >{ 10, 7, 4 }));
     BOOST_TEST(dataset->get_current_extent() ==
-                (std::vector< hsize_t >{ 10, 7, 4 }));
+               (std::vector< hsize_t >{ 10, 7, 4 }));
     BOOST_TEST(dataset->get_offset() == (std::vector< hsize_t >{ 0, 0, 0 }));
 }
 
 BOOST_TEST_DECORATOR(*boost::unit_test::tolerance(2e-15));
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_limited, T, typelist, T)
 {
-    HDFFile file("ndtest_limited_"+create_name_for_type<typename T::Type>()+".h5", "r");
+    HDFFile file("ndtest_limited_" +
+                     create_name_for_type< typename T::Type >() + ".h5",
+                 "r");
 
     auto [shape, data] =
-        file.open_dataset("/"+create_name_for_type< typename T::Type >())
+        file.open_dataset("/" + create_name_for_type< typename T::Type >())
             ->template read< std::vector< typename T::Type > >();
 
     BOOST_TEST(shape == (std::vector< hsize_t >{ 10, 7, 4 }));
@@ -253,9 +279,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_limited, T, typelist, T)
 // Test appending to a dataset
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_append, T, typelist, T)
 {
-    HDFFile file("ndtest_append_"+create_name_for_type<typename T::Type>()+".h5", "w");
+    HDFFile file("ndtest_append_" + create_name_for_type< typename T::Type >() +
+                     ".h5",
+                 "w");
 
-    auto dataset = file.open_dataset("/"+create_name_for_type<typename T::Type>());
+    auto dataset =
+        file.open_dataset("/" + create_name_for_type< typename T::Type >());
     // first write
     dataset->write_nd(T::array);
 
@@ -263,8 +292,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_append, T, typelist, T)
                (std::vector< hsize_t >(3, H5S_UNLIMITED)));
     BOOST_TEST(dataset->get_current_extent() ==
                (std::vector< hsize_t >{ 10, 7, 4 }));
-    BOOST_TEST(dataset->get_offset() ==
-               (std::vector< hsize_t >{ 0, 0, 0 }));
+    BOOST_TEST(dataset->get_offset() == (std::vector< hsize_t >{ 0, 0, 0 }));
 
     // then append two times with different data
 
@@ -287,8 +315,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_append, T, typelist, T)
                (std::vector< hsize_t >(3, H5S_UNLIMITED)));
     BOOST_TEST(dataset->get_current_extent() ==
                (std::vector< hsize_t >{ 20, 7, 4 }));
-    BOOST_TEST(dataset->get_offset() ==
-               (std::vector< hsize_t >{ 10, 0, 0 }));
+    BOOST_TEST(dataset->get_offset() == (std::vector< hsize_t >{ 10, 0, 0 }));
 
     // append once more and check parameter correctness
     typename T::Cube appended(boost::extents[10][12][4]);
@@ -311,14 +338,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_append, T, typelist, T)
                (std::vector< hsize_t >(3, H5S_UNLIMITED)));
     BOOST_TEST(dataset->get_current_extent() ==
                (std::vector< hsize_t >{ 30, 12, 4 }));
-    BOOST_TEST(dataset->get_offset() ==
-               (std::vector< hsize_t >{ 20, 0, 0 }));
+    BOOST_TEST(dataset->get_offset() == (std::vector< hsize_t >{ 20, 0, 0 }));
 }
 
 BOOST_TEST_DECORATOR(*boost::unit_test::tolerance(2e-15));
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append, T, typelist, T)
 {
-    HDFFile file("ndtest_append_"+create_name_for_type<typename T::Type>()+".h5", "r");
+    HDFFile file("ndtest_append_" + create_name_for_type< typename T::Type >() +
+                     ".h5",
+                 "r");
 
     // make expected data
     typename T::Cube expected(boost::extents[30][12][4]);
@@ -334,10 +362,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append, T, typelist, T)
             }
         }
 
-        for (int j = 7; j < 12; ++j){            
+        for (int j = 7; j < 12; ++j)
+        {
             for (int k = 0; k < 4; ++k)
             {
-            expected[i][j][k] = make_filler<typename T::Type>();
+                expected[i][j][k] = make_filler< typename T::Type >();
             }
         }
     }
@@ -353,10 +382,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append, T, typelist, T)
             }
         }
 
-        for(int j = 7; j < 12; ++j){
-                        for (int k = 0; k < 4; ++k)
+        for (int j = 7; j < 12; ++j)
+        {
+            for (int k = 0; k < 4; ++k)
             {
-            expected[i][j][k] = make_filler<typename T::Type>();
+                expected[i][j][k] = make_filler< typename T::Type >();
             }
         }
     }
@@ -374,7 +404,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append, T, typelist, T)
     }
 
     auto [shape, data] =
-        file.open_dataset("/"+create_name_for_type<typename T::Type>())
+        file.open_dataset("/" + create_name_for_type< typename T::Type >())
             ->template read< std::vector< typename T::Type > >();
 
     BOOST_TEST(shape == (std::vector< hsize_t >{ 30, 12, 4 }));
@@ -423,8 +453,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append_subdim, T, typelist, T)
     HDFFile file("ndtest_append_subdim_" +
                      create_name_for_type< typename T::Type >() + ".h5",
                  "r");
-    auto    dataset = file.open_dataset(
-        "/" + create_name_for_type< typename T::Type >());
+    auto    dataset =
+        file.open_dataset("/" + create_name_for_type< typename T::Type >());
 
     typename T::Cube expected(boost::extents[12][12][4]);
 
@@ -445,11 +475,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append_subdim, T, typelist, T)
         {
             for (int k = 0; k < 4; ++k)
             {
-                expected[i][j][k] = make_filler<typename T::Type>();
+                expected[i][j][k] = make_filler< typename T::Type >();
             }
         }
     }
-    
 
     for (int i = 10; i < 12; ++i)
     {
@@ -476,7 +505,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_append_subdim, T, typelist, T)
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_custom_offset, T, typelist, T)
 {
     HDFFile file("ndtest_custom_offset_" +
-                     create_name_for_type< typename T::Type >()+".h5",
+                     create_name_for_type< typename T::Type >() + ".h5",
                  "w");
 
     auto dataset = file.open_dataset(
@@ -527,17 +556,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(write_test_custom_offset, T, typelist, T)
     BOOST_TEST(dataset->get_offset() == (std::vector< hsize_t >{ 11, 4, 0 }));
 }
 
-
 BOOST_TEST_DECORATOR(*boost::unit_test::tolerance(2e-15));
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_custom_offset, T, typelist, T)
 {
     HDFFile file("ndtest_custom_offset_" +
-                     create_name_for_type< typename T::Type >()+".h5",
+                     create_name_for_type< typename T::Type >() + ".h5",
                  "r");
 
-    auto dataset = file.open_dataset(
-        "/" + create_name_for_type< typename T::Type >());
-
+    auto dataset =
+        file.open_dataset("/" + create_name_for_type< typename T::Type >());
 
     // make expected data
     typename T::Cube expected(boost::extents[12][8][4]);
@@ -553,18 +580,16 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_custom_offset, T, typelist, T)
         }
     }
 
-
     for (int i = 0; i < 10; ++i)
     {
         for (int j = 7; j < 8; ++j)
         {
             for (int k = 0; k < 4; ++k)
             {
-                expected[i][j][k] = make_filler<typename T::Type>();
+                expected[i][j][k] = make_filler< typename T::Type >();
             }
         }
     }
-    
 
     // data we added to the original dataset
     for (std::size_t i = 10; i < 12; ++i)
@@ -592,8 +617,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(read_test_custom_offset, T, typelist, T)
     // read data and check correctness
 
     auto [shape, data] =
-        dataset
-            ->template read< std::vector< typename T::Type > >();
+        dataset->template read< std::vector< typename T::Type > >();
 
     BOOST_TEST(shape == (std::vector< hsize_t >{ 12, 8, 4 }));
     BOOST_TEST(data == (std::vector< typename T::Type >(
@@ -607,7 +631,7 @@ correct_message_overstep_capacity(const std::runtime_error& ex)
 {
     BOOST_CHECK_EQUAL(
         ex.what(),
-        std::string("Error in error1_scalar, capacity 10 at index 0 of 3 is "
+        std::string("Error in /error1_scalar, capacity 10 at index 0 of 3 is "
                     "too small for new extent 20"));
     return true;
 }
@@ -626,8 +650,8 @@ correct_message_dimensions_wrong(const std::invalid_argument& ex)
 // this test is here to check that the most common exceptions are thrown
 BOOST_AUTO_TEST_CASE(test_exceptions)
 {
-    HDFFile file("ndtest_exception_check_" + create_name_for_type< int >()+".h5",
-                 "w");
+    HDFFile file(
+        "ndtest_exception_check_" + create_name_for_type< int >() + ".h5", "w");
 
     auto error_dataset1 = file.open_dataset(
         "/error1_" + create_name_for_type< int >(), { 10, 7, 4 });

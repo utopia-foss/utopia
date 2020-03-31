@@ -2,22 +2,20 @@
  * @brief This file provides a class which is responsible for the automatic
  *        conversion between C/C++ types and HDF5 type identifiers.
  *
- * @file hdftypefactory.hh
+ * @file hdftype.hh
  */
 #ifndef UTOPIA_DATAIO_HDFTYPEFACTORY_HH
 #define UTOPIA_DATAIO_HDFTYPEFACTORY_HH
 
-#include "utopia/data_io/hdfutilities.hh"
-#include <H5Ipublic.h>
-#include <H5Tpublic.h>
-#include <iostream>
-#include <type_traits>
 #include <variant>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
 #include <utopia/core/utils.hh>
+
+#include "hdfobject.hh"
+#include "hdfutilities.hh"
 
 namespace Utopia
 {
@@ -134,22 +132,19 @@ get_type< char >()
  *
  *
  */
-template < typename T >
-class HDFTypeFactory
+class HDFType final : public HDFObject< HDFCategory::datatype >
 {
   private:
-    /// H5 identifier
-    hid_t _type = -1;
-
-    /// Indentify if current type is mutable
-    /** @note Unfortunately, there is no HDF5-intrinsic way to check this
-     */
+    // identify if the type is mutable or not. Unfortunatelly there is no
+    // HDF5-intrinsic way to check this...
     bool _mutable = false;
 
-    /// Enumeration telling what class the type belongs to
+    // enumeration telling what class the type belongs to
     H5T_class_t _classid;
 
   public:
+    using Base = HDFObject< HDFCategory::datatype >;
+
     // typedef for variant type to store attributes in
     // all supported types are assembled into one variant here
     using Variant = std::variant< float,
@@ -181,21 +176,6 @@ class HDFTypeFactory
                                   std::vector< std::string >,
                                   std::string,
                                   const char* >;
-    /**
-     * @brief returns a HDF5 type created from a given C++ primitive type
-     *
-     * @param[in]  size  The size
-     *
-     * @tparam     T     type to convert ot a hdf5 type, for instance 'int'
-     *                   or 'std::vector<std::list<double>>'
-     *
-     * @return     hid_t HDF5 library type corresponding to the given c++ type.
-     */
-    inline hid_t
-    get_id() const
-    {
-        return _type;
-    }
 
     /**
      * @brief Get if the type is mutable or not
@@ -216,7 +196,7 @@ class HDFTypeFactory
      * @return auto type category of held type
      */
     inline auto
-    category() const
+    type_category() const
     {
         return _classid;
     }
@@ -229,7 +209,125 @@ class HDFTypeFactory
     inline std::size_t
     size() const
     {
-        return H5Tget_size(_type);
+        return H5Tget_size(get_C_id());
+    }
+
+    /**
+     * @brief Open the HDF5 type associated with an HDFObject, i.e., a
+     *        dataset or an attribute.
+     *
+     * @tparam T
+     * @param object
+     */
+    template < typename T >
+    void
+    open(T&& object)
+    {
+        this->_log->debug("Opening HDFType from existing object {}",
+                          object.get_path());
+
+        if (is_valid())
+        {
+            throw std::runtime_error(
+                "Error, cannot open HDFType while it's still bound to another "
+                "valid type object, close it first");
+        }
+
+        bind_to(open_type(object),
+                &H5Tclose, // we lock the type, hence no H5Tclose needed
+                "datatype of " + object.get_path());
+
+        _mutable = true;
+        _classid = H5Tget_class(get_C_id());
+    }
+
+    /**
+     * @brief Create an HDF datatype corresponding to the C datatype given as
+     * template argument
+     *
+     * @tparam T
+     * @param object_or_size size of the datatype in bytes, if not given,
+     * automatically determined: containers and strings become variable length
+     * size, everything else becomes scalar
+     */
+    template < typename T >
+    void
+    open(std::string name, hsize_t typesize)
+    {
+        this->_log->debug("Opening HDFType from scratch");
+
+        if (is_valid())
+        {
+            throw std::runtime_error(
+                "Error, cannot open HDFType '" + name + "' while it's still bound "
+                "to another valid type object! Close it first.");
+        }
+
+        // include const char* which is a  c-string
+        if constexpr (Utils::is_container_v< T >)
+        {
+            if (typesize == 0ul)
+            {
+                bind_to(H5Tvlen_create(
+                            Detail::get_type< typename T::value_type >()),
+                        &H5Tclose,
+                        name);
+            }
+            else
+            {
+                hsize_t dim[1] = { typesize };
+                bind_to(
+                    H5Tarray_create(
+                        Detail::get_type< typename T::value_type >(), 1, dim),
+                    &H5Tclose,
+                    name);
+            }
+            _mutable = true;
+        }
+        else if constexpr (Utils::is_string_v< T >)
+        {
+            hid_t type = H5Tcopy(H5T_C_S1);
+
+            if (typesize == 0)
+            {
+                H5Tset_size(type, H5T_VARIABLE);
+            }
+            else
+            {
+                H5Tset_size(type, typesize);
+            }
+            bind_to(std::move(type), &H5Tclose, name);
+
+            _mutable = true;
+        }
+        else
+        {
+            // native type objects like H5T_NATIVE_INT are interpreted as
+            // invalid by H5Iis_valid, hence at this point the `bind_to`
+            // function is not used, because it checks validity
+            _id.open(Detail::get_type< T >(),
+                     [](hid_t) -> herr_t { return 0; });
+            _path    = name;
+            _mutable = false;
+        }
+
+        _classid = H5Tget_class(get_C_id());
+    }
+
+    /**
+     * @brief Construct close from the given arguments
+     *
+     */
+     void
+    close() 
+    {
+
+        // everything that is obtained via H5Tcopy, H5Topen or H5Tcreate
+        // needs to be released explicitly. This is given by the _mutable
+        // flag
+        Base::close();
+        _mutable = false;
+        _classid = H5T_NO_CLASS;
     }
 
     /**
@@ -240,50 +338,49 @@ class HDFTypeFactory
      * @return true
      * @return false
      */
-    bool
-    is_valid() const
+    virtual bool
+    is_valid() const override
     {
-        // this distinction is important because identifiers like
+        // this distinction is important because identifiers are not always
+        // checkable via H5Iis_valid
         if (not(_classid == H5T_VLEN or _classid == H5T_ARRAY or
-                _classid == H5T_STRING))
+                _classid == H5T_STRING) and
+            not(get_C_id() == -1))
         {
             return true;
         }
         else
         {
-            return check_validity(H5Iis_valid(_type), "typefactory");
+            return Base::is_valid();
         }
     }
 
     /**
-     * @brief Construct HDFTypeFactory from the given arguments by move,
+     * @brief Construct HDFType from the given arguments by move,
      * deleted, because apparently incompatible with HDF5 C backend
      *
      */
-    HDFTypeFactory(HDFTypeFactory&& other)
+    HDFType(HDFType&& other) : Base(static_cast< Base&& >(other))
     {
+        _mutable = std::move(other._mutable);
+        _classid = std::move(other._classid);
 
-        _type          = std::move(other._type);
-        _mutable       = std::move(other._mutable);
-        _classid       = std::move(other._classid);
-        other._type    = -1;
         other._mutable = false;
         other._classid = H5T_NO_CLASS;
     }
 
     /**
-     * @brief Move assign the typefactory
+     * @brief Move assign the type
      *
-     * @return HDFTypeFactory&
+     * @return HDFType&
      */
-    HDFTypeFactory&
-    operator=(HDFTypeFactory&& other)
+    HDFType&
+    operator=(HDFType&& other)
     {
+        static_cast<Base&>(*this) = static_cast< Base&& >(other);
+        _mutable = std::move(other._mutable);
+        _classid = std::move(other._classid);
 
-        _type          = std::move(other._type);
-        _mutable       = std::move(other._mutable);
-        _classid       = std::move(other._classid);
-        other._type    = -1;
         other._mutable = false;
         other._classid = H5T_NO_CLASS;
 
@@ -291,139 +388,48 @@ class HDFTypeFactory
     }
 
     /**
-     * @brief Construct HDFTypeFactory from the given arguments by copy
+     * @brief Construct HDFType from the given arguments by copy
      *
      */
-    HDFTypeFactory(const HDFTypeFactory& other)
-    {
+    HDFType(const HDFType& other) =  default;
 
-        _type = other._type; // H5Tcopy(other._type);
-        if (other._mutable)
-        {
-            H5Iinc_ref(_type);
-        }
-        _mutable = true;
-        _classid = other._classid;
+    /**
+     * @brief Copy assign type
+     *
+     * @return HDFType&
+     */
+    HDFType&
+    operator=(const HDFType& other) = default;
+
+    /**
+     * @brief Destroy the HDFType object
+     *
+     */
+    virtual ~HDFType()
+    {
+        close();
     }
 
     /**
-     * @brief Copy assign typefactory
+     * @brief Construct HDFType from by default
      *
-     * @return HDFTypeFactory&
      */
-    HDFTypeFactory&
-    operator=(const HDFTypeFactory& other)
+    HDFType() : Base(), _mutable(false), _classid(H5T_NO_CLASS)
     {
-
-        _type = other._type; // H5Tcopy(other._type);
-        if (other._mutable)
-        {
-            H5Iinc_ref(_type);
-        }
-        _mutable = true;
-        _classid = other._classid;
-
-        return *this;
     }
 
     /**
-     * @brief Destroy the HDFTypeFactory object
-     *
-     */
-    ~HDFTypeFactory()
-    {
-        // everything that is obtained via H5Tcopy, H5Topen or H5Tcreate
-        // needs to be released explicitly
-        if (is_valid() and _mutable)
-        {
-            if (H5Iget_ref(_type) > 1)
-            {
-                H5Idec_ref(_type);
-            }
-            else
-            {
-                H5Tclose(_type);
-            }
-        }
-        _type    = -1;
-        _mutable = false;
-        _classid = H5T_NO_CLASS;
-    }
-
-    /**
-     * @brief Construct HDFTypeFactory from by default
-     *
-     */
-    HDFTypeFactory() = default;
-
-    /**
-     * @brief Construct HDFTypeFactory from the given arguments
+     * @brief Construct HDFType from the given arguments
      *
      * @param size Size of the type underlying the type to be created, or an
      * HDFdataset or attribute to determine the held datatype of
      */
-    template < typename V >
-    HDFTypeFactory(V&& object_or_size,
-                   std::enable_if_t< not std::is_same_v< HDFTypeFactory< T >,
-                                                         std::decay_t< V > >,
-                                     int > = 0)
+    template < typename T >
+    HDFType(T&& object_or_size,
+            std::enable_if_t< not std::is_same_v< HDFType, std::decay_t< T > >,
+                              int > = 0)
     {
-        // number passed
-        if constexpr (std::is_convertible_v< std::decay_t< V >, std::size_t >)
-        {
-            // include const char* which is a  c-string
-            if constexpr (Utils::is_container_v< T >)
-            {
-                if (object_or_size == 0ul)
-                {
-                    _type = H5Tvlen_create(
-                        Detail::get_type< typename T::value_type >());
-                }
-                else
-                {
-                    hsize_t dim[1] = { object_or_size };
-                    _type          = H5Tarray_create(
-                        Detail::get_type< typename T::value_type >(), 1, dim);
-                }
-                _mutable = true;
-            }
-            else if constexpr (Utils::is_string_v< T >)
-            {
-                if (object_or_size == 0)
-                {
-                    _type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(_type, H5T_VARIABLE);
-                }
-                else
-                {
-                    _type = H5Tcopy(H5T_C_S1);
-                    H5Tset_size(_type, object_or_size);
-                }
-
-                _mutable = true;
-            }
-            else
-            {
-                _type    = Detail::get_type< T >();
-                _mutable = false;
-            }
-        }
-        // HDFobject passed
-        else
-        {
-            if constexpr (std::is_pointer_v< std::decay_t< V > >)
-            {
-                _type = object_or_size->get_type();
-                H5Tlock(_type); // make sure that library does memory management
-            }
-            else
-            {
-                _type = object_or_size.get_type();
-                H5Tlock(_type); // make sure that library does memory management
-            }
-            _mutable = false;
-        }
-        _classid = H5Tget_class(_type);
+        open(object_or_size);
     }
 };
 
@@ -439,12 +445,11 @@ class HDFTypeFactory
  * @return true
  * @return false
  */
-template < typename T, typename U >
 bool
-operator==(const HDFTypeFactory< T >& lhs, const HDFTypeFactory< U >& rhs)
+operator==(const HDFType& lhs, const HDFType& rhs)
 {
-    auto equal = H5Tequal(lhs.get_id(), rhs.get_id()) &&
-                 lhs.category() == rhs.category();
+    auto equal = H5Tequal(lhs.get_C_id(), rhs.get_C_id()) &&
+                 lhs.type_category() == rhs.type_category();
     if (equal > 0)
     {
         return true;
@@ -460,9 +465,16 @@ operator==(const HDFTypeFactory< T >& lhs, const HDFTypeFactory< U >& rhs)
     }
 }
 
-template < typename T, typename U >
+/**
+ * @brief TODO
+ *
+ * @param lhs
+ * @param rhs
+ * @return true
+ * @return false
+ */
 bool
-operator!=(const HDFTypeFactory< T >& lhs, const HDFTypeFactory< U >& rhs)
+operator!=(const HDFType& lhs, const HDFType& rhs)
 {
     return not(lhs == rhs);
 }

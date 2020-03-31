@@ -24,9 +24,9 @@ using namespace Utopia::DataIO;
 
 // less messy type aliases
 using Writer = std::function< void(
-    Model&, Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >&) >;
+    Model&, Utopia::DataIO::HDFDataset&) >;
 using Builder =
-    std::function< Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >(
+    std::function< Utopia::DataIO::HDFDataset(
         Model&, Utopia::DataIO::HDFGroup&) >;
 
 using Simpletask = Task< Builder, Writer >;
@@ -37,8 +37,12 @@ using Trigger = Decider;
 
 struct Fix
 {
-    void setup () { Utopia::setup_loggers();     spdlog::get("data_mngr")->set_level(spdlog::level::debug);
-}
+    void
+    setup()
+    {
+        Utopia::setup_loggers();
+        spdlog::get("data_mngr")->set_level(spdlog::level::debug);
+    }
 };
 
 BOOST_AUTO_TEST_SUITE(Suite,
@@ -66,11 +70,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
         { { "t1"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_1");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 1, 2, 3 });
                 },
@@ -78,11 +82,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
           { "t2"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_2");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 4, 5, 6 });
                 },
@@ -127,12 +131,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
             { { "t1_2"s,
                 std::make_shared< Simpletask >(
                     [](Model& m, Utopia::DataIO::HDFGroup& g)
-                        -> Utopia::DataIO::HDFDataset<
-                            Utopia::DataIO::HDFGroup > {
+                        -> Utopia::DataIO::HDFDataset {
                         return *g.open_dataset("/" + m.name + "_1_2");
                     },
                     [](Model&,
-                       Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >&
+                       Utopia::DataIO::HDFDataset&
                            d) -> void {
                         d.write(std::vector< int >{ 1, 2, 3 });
                     },
@@ -169,11 +172,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
         { { "t1_2"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_1_2");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 1, 2, 3 });
                 },
@@ -181,11 +184,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
           { "t2_2"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_2_2");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 4, 5, 6 });
                 },
@@ -193,11 +196,11 @@ BOOST_AUTO_TEST_CASE(datamanager_basic_constructor)
           { "t3_2"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_2_2");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 4, 5, 6 });
                 },
@@ -251,11 +254,11 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
         { { "v1"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_1");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 1, 2, 3 });
                 },
@@ -263,11 +266,11 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
           { "v2"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_2");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 4, 5, 6 });
                 },
@@ -295,11 +298,11 @@ BOOST_AUTO_TEST_CASE(datamanager_lifecycle)
         { { "t1"s,
             std::make_shared< Simpletask >(
                 [](Model& m, Utopia::DataIO::HDFGroup& g)
-                    -> Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup > {
+                    -> Utopia::DataIO::HDFDataset {
                     return *g.open_dataset("/" + m.name + "_1");
                 },
                 [](Model&,
-                   Utopia::DataIO::HDFDataset< Utopia::DataIO::HDFGroup >& d)
+                   Utopia::DataIO::HDFDataset& d)
                     -> void {
                     d.write(std::vector< int >{ 1, 2, 3 });
                 },
@@ -388,12 +391,12 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_default)
 
     using BGB = std::function< std::shared_ptr< HDFGroup >(
         std::shared_ptr< HDFGroup > &&) >;
-    using W   = std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&,
+    using W   = std::function< void(std::shared_ptr< HDFDataset >&,
                                   Model&) >;
-    using B   = std::function< std::shared_ptr< HDFDataset< HDFGroup > >(
+    using B   = std::function< std::shared_ptr< HDFDataset >(
         std::shared_ptr< HDFGroup >&, Model&) >;
     using AWG = std::function< void(std::shared_ptr< HDFGroup >&, Model&) >;
-    using AWD = std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&,
+    using AWD = std::function< void(std::shared_ptr< HDFDataset >&,
                                     Model&) >;
 
     using Task = Utopia::DataIO::WriteTask< BGB, W, B, AWG, AWD >;
@@ -489,13 +492,13 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_default)
 
     // check that the dataset is a valid path in the file
     BOOST_REQUIRE(
-        path_exists(model.file.get_basegroup()->get_id(), "/datagroup/1"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "/datagroup/1"));
 
-    BOOST_REQUIRE(path_exists(dm.get_tasks()["wt1"]->base_group->get_id(),
+    BOOST_REQUIRE(path_exists(dm.get_tasks()["wt1"]->base_group->get_C_id(),
                               "testgroup/initial_dataset1_fixture_6") > 0);
 
     BOOST_REQUIRE(
-        path_exists(model.file.get_basegroup()->get_id(), "/datagroup2/2"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "/datagroup2/2"));
 
     // second writer/builder is never active here, hence not present
 }
@@ -556,14 +559,14 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_custom)
 
 
     using BGB = std::function< std::shared_ptr< HDFGroup >(Model&) >;
-    using W   = std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&,
+    using W   = std::function< void(std::shared_ptr< HDFDataset >&,
                                   Model&,
                                   double additionvalue) >;
-    using B   = std::function< std::shared_ptr< HDFDataset< HDFGroup > >(
+    using B   = std::function< std::shared_ptr< HDFDataset >(
         std::shared_ptr< HDFGroup >&, Model&) >;
     using AWG = std::function< void(
         std::shared_ptr< HDFGroup >&, Model&, std::string, std::string) >;
-    using AWD = std::function< void(std::shared_ptr< HDFDataset< HDFGroup > >&,
+    using AWD = std::function< void(std::shared_ptr< HDFDataset >&,
                                     Model&,
                                     std::string,
                                     std::string) >;
@@ -728,17 +731,17 @@ BOOST_AUTO_TEST_CASE(datamanager_call_operator_custom)
 
     // check that the dataset is a valid path in the file
     BOOST_REQUIRE(
-        path_exists(model.file.get_basegroup()->get_id(), "/datagroup/task_1"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "/datagroup/task_1"));
     BOOST_REQUIRE(
-        path_exists(model.file.get_basegroup()->get_id(), "/datagroup2/2"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "/datagroup2/2"));
 
     BOOST_REQUIRE(
-        path_exists(dm.get_tasks()["wt1"]->base_group->get_id(),
+        path_exists(dm.get_tasks()["wt1"]->base_group->get_C_id(),
                     "testgroup/initial_dataset_of_task_1_fixture_7_0") > 0);
     BOOST_REQUIRE(
-        path_exists(dm.get_tasks()["wt1"]->base_group->get_id(),
+        path_exists(dm.get_tasks()["wt1"]->base_group->get_C_id(),
                     "testgroup/initial_dataset_of_task_1_fixture_7_1") > 0);
-    BOOST_REQUIRE(path_exists(dm.get_tasks()["wt2"]->base_group->get_id(),
+    BOOST_REQUIRE(path_exists(dm.get_tasks()["wt2"]->base_group->get_C_id(),
                               "testgroup/initial_dataset2_fixture_7_0") > 0);
 }
 
@@ -1316,19 +1319,19 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
 
     // task1
     BOOST_TEST(
-        path_exists(model.file.get_basegroup()->get_id(), "datagroup/1"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "datagroup/1"));
 
     for (model.time = 0; model.time < 60; ++model.time)
     {
         if (model.time % 3 == 0 and model.time < 30)
         {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup/1/testgroup/initial_dataset1_" +
                                        std::to_string(model.time)));
         }
         else
         {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup/1/testgroup/initial_dataset1_" +
                                        std::to_string(model.time)) == false);
         }
@@ -1336,31 +1339,31 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
 
     // task2
     BOOST_TEST(
-        path_exists(model.file.get_basegroup()->get_id(), "datagroup2/2"));
-    BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+        path_exists(model.file.get_basegroup()->get_C_id(), "datagroup2/2"));
+    BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                            "datagroup2/2/testgroup/initial_dataset2_0"));
 
     //     // Task3
     BOOST_TEST(
-        path_exists(model.file.get_basegroup()->get_id(), "datagroup3/3"));
+        path_exists(model.file.get_basegroup()->get_C_id(), "datagroup3/3"));
 
     for (model.time = 0; model.time < 200; ++model.time)
     {
         if (model.time < 10)
         {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup3/3/testgroup/initial_dataset3_" +
                                        std::to_string(model.time)));
         }
         else if (model.time >= 25 and model.time < 30)
         {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup3/3/testgroup/initial_dataset3_" +
                                        std::to_string(model.time)));
         }
         else if (model.time >= 100 and model.time < 115)
         {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_id(),
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup3/3/testgroup/initial_dataset3_" +
                                        std::to_string(model.time)));
         }

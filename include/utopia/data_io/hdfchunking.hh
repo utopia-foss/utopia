@@ -7,6 +7,7 @@
 #include <hdf5.h>
 
 #include "../core/logging.hh"
+
 #include "hdfutilities.hh"
 
 namespace Utopia

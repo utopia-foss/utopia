@@ -6,6 +6,7 @@ using namespace Utopia;
 
 int main()
 {
+    Utopia::setup_loggers();
     try {
         // create pseudo models that will be used as "parent" for the model
         // initializations. Do so with the two different possible constructors

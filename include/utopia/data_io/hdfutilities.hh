@@ -14,10 +14,12 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <utopia/core/utils.hh>
 #include <vector>
 
 #include <hdf5.h>
+#include <hdf5_hl.h>
+
+#include <utopia/core/utils.hh>
 
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an
@@ -48,7 +50,8 @@ namespace DataIO
  *           0 if the object to check is invalid. This has to be taken into
  *           account in order to be able to track bugs or wrong usage properly.
  *           See here:
- *           https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h
+ *
+ https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.6/hdf5-1.6.7/src/unpacked/src/H5public.h
  *           which yields the following snippet:
  *
  *           Boolean type.  Successful return values are zero (false) or
@@ -134,6 +137,144 @@ path_exists(hid_t       loc_id,
     // Checked the full path. Can return the last return value now:
     return rv;
 }
+
+/**
+ * @brief Check if the path given relative to the object identified by 'id'
+ * exists and points to a valid hdf5 object
+ *
+ * @param id id of the starting point
+ * @param path path from the object identified by 'id' to the object to check
+ * @return auto > 0 if valid and existing, 0 if not
+ */
+auto
+path_is_valid(hid_t id, std::string path)
+{
+    auto test = H5LTpath_valid(id, path.c_str(), true);
+    if (test > 0)
+    {
+        return true;
+    }
+    else if (test == 0)
+    {
+        return false;
+    }
+    else
+    {
+        throw std::runtime_error("Error when checking path " + path);
+        return false;
+    }
+}
+
+/**
+ * @brief Enumerate the different HDF5 object types for use in
+ *        HDFObject class
+ */
+enum struct HDFCategory
+{
+    file      = H5I_FILE,
+    group     = H5I_GROUP,
+    datatype  = H5I_DATATYPE,
+    dataspace = H5I_DATASPACE,
+    dataset   = H5I_DATASET,
+    attribute = H5I_ATTR
+};
+
+/**
+ * @brief Turn category enum into a string that names it
+ *
+ * @tparam category
+ * @return std::string
+ */
+template < HDFCategory category >
+std::string
+category_to_string()
+{
+    switch (category)
+    {
+        case HDFCategory::file:
+            return "file";
+        case HDFCategory::group:
+            return "group";
+        case HDFCategory::datatype:
+            return "datatype";
+        case HDFCategory::dataspace:
+            return "dataspace";
+        case HDFCategory::dataset:
+            return "dataset";
+        case HDFCategory::attribute:
+            return "attribute";
+    }
+}
+
+/**
+ * @brief Use category and path variable of object to make a string that
+ * identifies the object it is applied to
+ *
+ * @tparam Object  automatically determined
+ * @param object object to determine info string for
+ * @return std::string category and path in the form "category `category` at
+ * `path`".
+ */
+template < class Object >
+std::string
+generate_object_name(const Object& object)
+{
+    return "category " + category_to_string< Object::category >() + " at '" +
+           object.get_path() + "'";
+}
+
+/**
+ * @brief Depending on object category, opens a dataset or attribute dataspace
+ *
+ * @tparam Object
+ * @param object
+ * @return hid_t
+ */
+template < typename Object >
+hid_t
+open_dataspace(Object&& object)
+{
+    if constexpr (std::decay_t< Object >::category == HDFCategory::dataset)
+    {
+        return H5Dget_space(object.get_C_id());
+    }
+    else if constexpr (std::decay_t< Object >::category ==
+                       HDFCategory::attribute)
+    {
+        return H5Aget_space(object.get_C_id());
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+/**
+ * @brief Depending on object category, invokes H5Dget_type or H5Aget_type
+ *
+ * @tparam Object
+ * @param object
+ * @return hid_t
+ */
+template < typename Object >
+hid_t
+open_type(Object&& object)
+{
+    if constexpr (std::decay_t< Object >::category == HDFCategory::dataset)
+    {
+        return H5Dget_type(object.get_C_id());
+    }
+    else if constexpr (std::decay_t< Object >::category ==
+                       HDFCategory::attribute)
+    {
+        return H5Aget_type(object.get_C_id());
+    }
+    else
+    {
+        return -1;
+    }
+}
+
 /*! \} */ // end of group HDF5
 /*! \} */ // end of group DataIO
 

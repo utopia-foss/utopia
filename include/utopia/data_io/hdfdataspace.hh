@@ -6,10 +6,11 @@
 
 #include <hdf5.h>
 
-#include "hdfutilities.hh"
-
 #include "../core/logging.hh"
 #include "../core/utils.hh"
+
+#include "hdfobject.hh"
+#include "hdfutilities.hh"
 
 namespace Utopia
 {
@@ -30,45 +31,28 @@ namespace DataIO
  *        resources.
  *
  */
-class HDFDataspace final
+class HDFDataspace final : public HDFObject< HDFCategory::dataspace >
 {
-  private:
-    /// H5 dataspace identifier
-    hid_t _dataspace = -1;
-
-    /// Pointer to logger used by this instance
-    std::shared_ptr< spdlog::logger > _log = spdlog::get("data_io");
-
-    // nonthrowing versions of functions
-
   public:
+    using Base = HDFObject< HDFCategory::dataspace >;
     /**
      * @brief Get thet dataspace's rank, i.e., number of dimensions
      *
      * @return auto rank of the dataspace
      */
     hsize_t
-    rank() const
+    rank()
     {
-        if (not is_valid())
+        if (is_valid())
         {
-
+            return H5Sget_simple_extent_ndims(get_C_id());
+        }
+        else
+        {
             throw std::runtime_error(
                 "Error, trying to get rank of invalid dataspace");
+            return 0;
         }
-
-        return H5Sget_simple_extent_ndims(_dataspace);
-    }
-
-    /**
-     * @brief Get the id object
-     *
-     * @return hid_t
-     */
-    hid_t
-    get_id() const
-    {
-        return _dataspace;
     }
 
     /**
@@ -78,22 +62,22 @@ class HDFDataspace final
      * @return auto pair containing (size, capacity) armadillo rowvectors
      */
     std::pair< arma::Row< hsize_t >, arma::Row< hsize_t > >
-    get_properties() const
+    get_properties()
     {
         if (not is_valid())
         {
             throw std::runtime_error(
                 "Error, trying to get properties of invalid dataspace," +
-                std::to_string(_dataspace));
+                std::to_string(get_C_id()));
         }
-        
+
         arma::Row< hsize_t > size;
-        size.resize(H5Sget_simple_extent_ndims(_dataspace));
+        size.resize(H5Sget_simple_extent_ndims(get_C_id()));
 
         arma::Row< hsize_t > capacity;
         capacity.resize(size.size());
 
-        H5Sget_simple_extent_dims(_dataspace, size.memptr(), capacity.memptr());
+        H5Sget_simple_extent_dims(get_C_id(), size.memptr(), capacity.memptr());
 
         return std::make_pair(size, capacity);
     }
@@ -105,7 +89,7 @@ class HDFDataspace final
      * size in each dimension
      */
     arma::Row< hsize_t >
-    size() const
+    size()
     {
         return get_properties().first;
     }
@@ -117,35 +101,28 @@ class HDFDataspace final
      * capacity in each dimension
      */
     arma::Row< hsize_t >
-    capacity() const
+    capacity()
     {
         return get_properties().second;
     }
 
     /**
      * @brief Open the dataspace - set it to be equivalent to any data that
-     *        later will be used to write or read. If the dataspace has been
-     *        opened before, then it has to be closed first.
+     *        later will be used to write or read.
      *
      */
     void
     open()
     {
-        if (is_valid())
-        {
-            throw std::runtime_error(
-                "Error, trying to open a dataspace that is already open");
-        }
-        else
-        {
-            _dataspace = H5S_ALL;
-        }
+
+        this->_log->debug("Opening dataspace, setting it to H5S_ALL");
+        // no explicit close function needed for H5S_ALL
+        _id.open(H5S_ALL, [](hid_t) -> herr_t { return 1; });
+        _path = "Dataspace_all";
     }
 
     /**
      * @brief Open the dataspace with an HDF5 object, i.e., dataset or attribute
-     *        If the dataspace has been opened before, then it has to be closed
-     *        first.
      *
      * @tparam Object
      * @param o HDF5 object to retrieve the dataspace for
@@ -154,82 +131,56 @@ class HDFDataspace final
     void
     open(Object&& object)
     {
-        if (is_valid())
-        {
-            throw std::runtime_error(
-                "Error, trying to open a dataspace that is already open");
-        }
-        else
-        {
-            // open_dataspace is defined for attribute and dataset
-            // in their respective headerfiles to provide uniform
-            // interface for both, such that we do not have to
-            // differentiate between them
-            _dataspace = open_dataspace(std::forward< Object >(object));
-        }
+
+        this->_log->debug(
+            "Opening dataspace of {}", generate_object_name(object));
+
+        // open_dataspace is defined for attribute and dataset
+        // in their respective headerfiles to provide uniform
+        // interface for both, such that we do not have to
+        // differentiate between them
+        bind_to(open_dataspace(std::forward< Object >(object)),
+                &H5Sclose,
+                object.get_path() + " dataspace");
+
+        _log = spdlog::get("data_io");
     }
 
     /**
      * @brief Open a new dataset of type 'simple', which is equivalent to a
      *        N-dimensional array of dimension N = 'rank', a given extent,
      *        and a given maximum capacity that in each dimension must be
-     *        greater or equal to the extent. If the dataspace has been
-     *        opened before, then it has to be closed first.
+     *        greater or equal to the extent.
      *
      * @param rank Dimension of the dataspace
      * @param extent Current extent of the dataspace
      * @param capacity Total capacity of the dataspace
      */
     void
-    open(hsize_t              rank,
+    open(std::string          name,
+         hsize_t              rank,
          arma::Row< hsize_t > extent,
          arma::Row< hsize_t > capacity)
     {
 
-        if (is_valid())
+        this->_log->debug("Opening dataspace from scratch with rank {}, extent "
+                          "{} and capacity {}",
+                          rank,
+                          Utils::str(extent),
+                          Utils::str(capacity));
+        if (capacity.size() == 0)
         {
-            throw std::runtime_error(
-                "Error, trying to open a dataspace that is already open");
+            bind_to(
+                H5Screate_simple(rank, extent.memptr(), NULL), &H5Sclose, name);
         }
         else
         {
-
-            if (capacity.size() == 0)
-            {
-                _dataspace = H5Screate_simple(rank, extent.memptr(), NULL);
-            }
-            else
-            {
-                _dataspace =
-                    H5Screate_simple(rank, extent.memptr(), capacity.memptr());
-            }
+            bind_to(H5Screate_simple(rank, extent.memptr(), capacity.memptr()),
+                    &H5Sclose,
+                    name);
         }
-    }
 
-    /**
-     * @brief Tells if this object represents a valid dataspace the HDF5 C
-     * library can use, and which has not been released
-     *
-     * @return true
-     * @return false
-     */
-    bool
-    is_valid() const
-    {
-        return check_validity(H5Iis_valid(_dataspace), "dataspace");
-    }
-
-    /**
-     * @brief Close the dataspace object and release its resources
-     */
-    void
-    close()
-    {
-        if (is_valid())
-        {
-            H5Sclose(_dataspace);
-            _dataspace = -1;
-        }
+        _log = spdlog::get("data_io");
     }
 
     /**
@@ -241,27 +192,22 @@ class HDFDataspace final
     std::pair< arma::Row< hsize_t >, arma::Row< hsize_t > >
     get_selection_bounds()
     {
+        arma::Row< hsize_t > start;
+        arma::Row< hsize_t > end;
 
-        if (not is_valid())
+        if (is_valid())
         {
-            throw std::runtime_error(
-                "Error, trying to get selection bounds for invalid dataspace");
+            hsize_t r = rank();
+            start.resize(r);
+            end.resize(r);
+
+            if (H5Sget_select_bounds(get_C_id(), start.memptr(), end.memptr()) <
+                0)
+            {
+                throw std::runtime_error(
+                    "Error, cannot get selection bounds of invalid dataspace");
+            }
         }
-
-        const hsize_t r = rank();
-
-        arma::Row< hsize_t > start(r, arma::fill::zeros);
-        arma::Row< hsize_t > end(r, arma::fill::zeros);
-
-        const herr_t err =
-            H5Sget_select_bounds(_dataspace, start.memptr(), end.memptr());
-
-        if (err < 0)
-        {
-            throw std::runtime_error(
-                "Error when trying to get selection bounds for dataspace");
-        }
-
         return std::make_pair(start, end);
     }
 
@@ -278,6 +224,13 @@ class HDFDataspace final
                  arma::Row< hsize_t > end,
                  arma::Row< hsize_t > stride)
     {
+
+        this->_log->debug(
+            "Selecting slice in dataspace with start={}, end={}, stride={}",
+            Utils::str(start),
+            Utils::str(end),
+            Utils::str(stride));
+
         if (not is_valid())
         {
             throw std::runtime_error(
@@ -288,9 +241,9 @@ class HDFDataspace final
 
         if ((start.n_elem != r) or (end.n_elem != r))
         {
-            throw std::runtime_error("Error, dimensionality of start and "
-                                     "end has to be the same as "
-                                     "the dataspace's rank");
+            throw std::runtime_error(
+                "Error, dimensionality of start and end has to be the same as "
+                "the dataspace's rank");
         }
         // stride may not be given, and hence we have to check for
         // it in order to correctly compute the counts vector: divison
@@ -308,16 +261,16 @@ class HDFDataspace final
             strideptr = stride.memptr();
         }
 
-        const herr_t err = H5Sselect_hyperslab(_dataspace,
-                                               H5S_SELECT_SET,
-                                               start.memptr(),
-                                               strideptr,
-                                               count.memptr(),
-                                               nullptr);
+        auto err = H5Sselect_hyperslab(get_C_id(),
+                                       H5S_SELECT_SET,
+                                       start.memptr(),
+                                       strideptr,
+                                       count.memptr(),
+                                       nullptr);
         if (err < 0)
         {
             throw std::runtime_error(
-                "Error when trying to select slice in dataset");
+                "Error when trying to select slice in dataspace");
         }
     }
 
@@ -328,16 +281,15 @@ class HDFDataspace final
     void
     select_all()
     {
+        this->_log->debug("Selecting everything in dataspace");
+
         if (not is_valid())
         {
             throw std::runtime_error(
                 "Error, trying to select everything of an invalid dataspace");
         }
 
-        release_selection();
-
-        const herr_t err = H5Sselect_all(_dataspace);
-
+        herr_t err = H5Sselect_all(get_C_id());
         if (err < 0)
         {
             throw std::runtime_error(
@@ -356,6 +308,10 @@ class HDFDataspace final
     void
     resize(arma::Row< hsize_t > new_size)
     {
+        this->_log->debug("Resizing dataset from {} to {}",
+                          Utils::str(size()),
+                          Utils::str(new_size));
+
         if (not is_valid())
         {
             throw std::runtime_error(
@@ -368,10 +324,10 @@ class HDFDataspace final
         auto new_capacity = arma::max(current_capacity, new_size);
 
         // resize the dataspace
-        const herr_t err = H5Sset_extent_simple(_dataspace,
-                                                new_size.size(),
-                                                new_size.memptr(),
-                                                current_capacity.memptr());
+        herr_t err = H5Sset_extent_simple(get_C_id(),
+                                          new_size.size(),
+                                          new_size.memptr(),
+                                          current_capacity.memptr());
 
         if (err < 0)
         {
@@ -386,13 +342,15 @@ class HDFDataspace final
     void
     release_selection()
     {
+        this->_log->debug("Releasing selection");
+
         if (not is_valid())
         {
             throw std::runtime_error(
                 "Cannot reset selection, dataspace is invalid");
         }
 
-        H5Sselect_none(_dataspace);
+        H5Sselect_none(get_C_id());
     }
 
     /**
@@ -440,11 +398,12 @@ class HDFDataspace final
      * @param extent
      * @param capacity
      */
-    HDFDataspace(hsize_t                rank,
+    HDFDataspace(std::string            name,
+                 hsize_t                rank,
                  std::vector< hsize_t > extent,
                  std::vector< hsize_t > capacity)
     {
-        open(rank, extent, capacity);
+        open(name, rank, extent, capacity);
     }
 
     /**
@@ -458,19 +417,16 @@ class HDFDataspace final
     HDFDataspace(Object&& object,
                  std::enable_if_t<
                      not std::is_same_v< std::decay_t< Object >, HDFDataspace >,
-                     int > = 0) :
-        _dataspace(open_dataspace(std::forward< Object >(object)))
+                     int > = 0)
     {
+        open(std::forward< Object >(object));
     }
 
     /**
      * @brief Destroy the HDFDataspace object
      *
      */
-    ~HDFDataspace()
-    {
-        close();
-    }
+    virtual ~HDFDataspace() = default;
 
     /**
      * @brief Swap state with argument
@@ -481,8 +437,8 @@ class HDFDataspace final
     swap(HDFDataspace& other)
     {
         using std::swap;
-        swap(_dataspace, other._dataspace);
-        swap(_log, other._log);
+        using Utopia::DataIO::swap;
+        swap(static_cast< Base& >(*this), static_cast< Base& >(other));
     }
 };
 
