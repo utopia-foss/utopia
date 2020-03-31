@@ -244,3 +244,16 @@ clusters_snapshot:
     cluster_id:
       - where: ['!=', 0]       # 0 is masked: not part of a cluster
       - mod: 20                # ... to match the tab20 color map
+
+
+# --- Generic Multidimensional Plotting ---------------------------------------
+# ... Facet Grid Plot .........................................................
+tree_density_facet_grids:
+  module: .dag.generic
+  plot_func: facet_grid
+  creator: multiverse
+  
+  select_and_combine:
+    fields:
+      y: tree_density
+    base_path: data/ForestFire
