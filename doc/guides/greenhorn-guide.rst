@@ -111,6 +111,8 @@ There are two things you should do before you start writing code:
 
 Well done! You are now on your own development branch. 🎉
 
+In the `How-to-build-a-model Guide <how-to-build-a-model>` you learn how to use the models that already exist in utopia, so you don't have to start your model implementation from scratch. 
+
 Remove *WIP*\ : The "this should be merged into the master!" phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -171,6 +173,9 @@ The commands below demonstrate a typical way of committing files to the reposito
 .. note::
 
   If you are wondering when to commit and how to write a good commit message, have a look at these `Version Control Best Practices <https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/best-practices>`_ and this `blog post <https://jasonmccreary.me/articles/when-to-make-git-commit/>`_.
+  
+  Before you can commit anything, git prompts you to provide your name and email address with the given commands.
+  When choosing your name, be aware that this name is immortalized in the git history (please choose your full name and a decent email address ;)).
 
 Global .gitignore
 """""""""""""""""

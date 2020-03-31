@@ -2,8 +2,8 @@
 How to Implement Your Own Model in Utopia
 =========================================
 
-After having been through the :doc:`README <../README>` and the
-:doc:`tutorial <tutorial>`, this guide is for creating a new model in *Utopia*.
+After having been through the :doc:`README <../README>`, the
+:doc:`tutorial <tutorial>`, and the :doc:`Greenhorn Guide <greenhorn-guide>`, this guide is for creating a new model in *Utopia*.
 
 .. note::
 
