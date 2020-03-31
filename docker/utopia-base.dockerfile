@@ -28,6 +28,7 @@ RUN apt-get update \
         libboost-test-dev \
         libhdf5-dev \
         libspdlog-dev \
+        libtbb-dev \
         libyaml-cpp-dev \
         locales \
         pkg-config \

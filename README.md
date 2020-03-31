@@ -84,7 +84,7 @@ Further, we recommend to install the following optional packages:
 
 ```bash
 apt update
-apt install ffmpeg graphviz doxygen
+apt install ffmpeg graphviz doxygen libtbb-dev
 ```
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
@@ -112,7 +112,7 @@ We recommend you use Homebrew. Here are the installation instructions for both:
 
     ```bash
     brew update
-    brew install ffmpeg graphviz doxygen
+    brew install ffmpeg graphviz doxygen tbb
     ```
 
 * **MacPorts**:
@@ -137,7 +137,7 @@ We recommend you use Homebrew. Here are the installation instructions for both:
     Further, we recommend to install the following optional packages:
 
     ```bash
-    port install doxygen ffmpeg graphviz
+    port install doxygen ffmpeg graphviz tbb
     ```
 
 #### 3 — Configure and build
@@ -530,6 +530,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 | [doxygen][doxygen]    | >= 1.8  | Builds the C++ code documentation |
 | [graphviz][graphviz]  | >= 2.40 | Used by doxygen to create dependency diagrams |
 | [ffmpeg][ffmpeg]      | >= 4.1  | Used for creating videos |
+| [TBB][tbb]            | >= 2018.5  | Intel parallelization library |
 
 
 ### Support Branches
@@ -624,3 +625,4 @@ make all -j4
 [gcovr]: https://gcovr.com/en/stable/
 [pytest-usage]: https://docs.pytest.org/en/latest/usage.html
 [pytest-cov]: https://github.com/pytest-dev/pytest-cov
+[tbb]: https://github.com/oneapi-src/oneTBB
