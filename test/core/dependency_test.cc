@@ -1,4 +1,5 @@
 // just include dependencies
+#include "utopia/core/logging.hh"
 #include <yaml-cpp/yaml.h>
 #include <hdf5.h>
 #include <boost/serialization/list.hpp>
@@ -20,6 +21,7 @@ void armadillo_test () {
 }
 
 int main () {
+    Utopia::setup_loggers();
     YAML::Node config;
     armadillo_test();
     return 0;

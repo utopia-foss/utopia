@@ -67,7 +67,7 @@ struct WriteTask final // inheriting from this thing is useless, hence can be fi
     /**
      * @brief pointer to the dataset which is currently active
      */
-    std::shared_ptr< HDFDataset< HDFGroup > > active_dataset;
+    std::shared_ptr< HDFDataset> active_dataset;
 
     /**
      * @brief Callable to write data

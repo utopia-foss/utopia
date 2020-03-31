@@ -82,7 +82,7 @@ template<
     typename SpaceType=DefaultSpace,
     typename ConfigType=Utopia::DataIO::Config,
     typename DataGroupType=Utopia::DataIO::HDFGroup,
-    typename DataSetType=Utopia::DataIO::HDFDataset<Utopia::DataIO::HDFGroup>,
+    typename DataSetType=Utopia::DataIO::HDFDataset,
     typename TimeType=std::size_t,
     typename MonitorType=Utopia::DataIO::Monitor,
     typename MonitorManagerType=Utopia::DataIO::MonitorManager

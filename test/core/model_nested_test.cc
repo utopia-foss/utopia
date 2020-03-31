@@ -8,6 +8,7 @@
 
 
 int main() {
+    Utopia::setup_loggers();
     try {
         // -- Setup model -- //
         // create a pseudo parent

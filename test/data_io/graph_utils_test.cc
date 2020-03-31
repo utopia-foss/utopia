@@ -264,9 +264,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_properties_vertices_2d, G,
     const auto vertex_desc_vals = std::make_tuple(
             std::make_tuple("id_test_int", "dim0_name",
                 std::make_tuple("id",
-                        [](auto& vd, auto& g){return g[vd].id;}),
+                        [](auto& vd, auto& g){return static_cast<std::size_t>(g[vd].id);}),
                 std::make_tuple("test_int",
-                        [](auto& vd, auto& g){return g[vd].test_int;})
+                        [](auto& vd, auto& g){return static_cast<std::size_t>(g[vd].test_int);})
             )
     );
 

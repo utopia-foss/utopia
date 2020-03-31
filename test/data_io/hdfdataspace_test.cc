@@ -1,7 +1,8 @@
+
 #define BOOST_TEST_MODULE dataspace_test
 
-#include <stdexcept>
 #include <list>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -10,8 +11,6 @@
 #include "utopia/core/logging.hh"
 #include "utopia/data_io/hdfutilities.hh"
 #include <utopia/data_io/hdfdataspace.hh>
-#include <utopia/data_io/hdffile.hh>
-#include "utopia/data_io/hdfdataset.hh"
 
 #include <utopia/core/utils.hh>
 
@@ -20,66 +19,83 @@
 using namespace Utopia::DataIO;
 using namespace Utopia::Utils;
 
+using Dataset = HDFObject< HDFCategory::dataset >;
+
 struct Fix
 {
-    void setup () { Utopia::setup_loggers(); }
+    void
+    setup()
+    {
+        Utopia::setup_loggers();
+        spdlog::get("data_io")->set_level(spdlog::level::debug);
+    }
 };
 
-BOOST_AUTO_TEST_SUITE(Suite,
-                      *boost::unit_test::fixture<Fix>())
+BOOST_AUTO_TEST_SUITE(Suite, *boost::unit_test::fixture< Fix >())
 
 BOOST_AUTO_TEST_CASE(dataspace_lifecycle)
 {
 
-    HDFFile file("dataspace_testfile.h5", "w");
+    hid_t file = H5Fcreate(
+        "dataspace_testfile.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-    auto dataset = file.open_dataset("/dataset");
+    hsize_t dims[1]    = { 10 };
+    hsize_t maxdims[1] = { 10 };
 
-    dataset->write(std::vector< double >(10, 3.14));
+    hid_t   space   = H5Screate_simple(1, dims, maxdims);
+    hid_t   dataset = H5Dcreate(file,
+                              "/dataset",
+                              H5T_NATIVE_DOUBLE,
+                              space,
+                              H5P_DEFAULT,
+                              H5P_DEFAULT,
+                              H5P_DEFAULT);
+    Dataset dset(std::move(dataset), &H5Dclose);
 
-    HDFDataspace dspace(2, { 10, 10 }, { 100, 100 });
+    std::vector< double > v(10, 3.14);
+    H5Dwrite(dset.get_C_id(),
+             H5T_NATIVE_DOUBLE,
+             H5S_ALL,
+             space,
+             H5P_DEFAULT,
+             v.data());
 
-    BOOST_TEST(dspace.size() == (std::vector< hsize_t >{ 10, 10 }),
+    HDFDataspace dspace("testdspace", 1, { 10 }, { 100 });
+
+    BOOST_TEST(dspace.size() == (std::vector< hsize_t >{ 10 }),
                boost::test_tools::per_element());
-    BOOST_TEST(dspace.capacity() == (std::vector< hsize_t >{ 100, 100 }),
+    BOOST_TEST(dspace.capacity() == (std::vector< hsize_t >{ 100 }),
                boost::test_tools::per_element());
-    BOOST_TEST(dspace.rank() == 2);
+    BOOST_TEST(dspace.rank() == 1);
+    BOOST_TEST(dspace.get_refcount() == 1);
 
     auto [size, capacity] = dspace.get_properties();
-    BOOST_TEST(size == (std::vector< hsize_t >{ 10, 10 }),
+    BOOST_TEST(size == (std::vector< hsize_t >{ 10 }),
                boost::test_tools::per_element());
-    BOOST_TEST(capacity == (std::vector< hsize_t >{ 100, 100 }),
-               boost::test_tools::per_element());
-
-    auto filespace = dataset->get_filespace();
-
-    BOOST_TEST(filespace.size() == (std::vector< hsize_t >{ 10 }),
-               boost::test_tools::per_element());
-    BOOST_TEST(filespace.capacity() ==
-                   (std::vector< hsize_t >{ H5S_UNLIMITED }),
+    BOOST_TEST(capacity == (std::vector< hsize_t >{ 100 }),
                boost::test_tools::per_element());
 
-    auto memspace = dataset->get_memspace();
-    BOOST_TEST(memspace.get_id() == H5S_ALL);
+    dspace.close();
+    BOOST_TEST(dspace.is_valid() == false);
 
-    filespace.close();
-    BOOST_TEST(filespace.is_valid() == false);
-
-    filespace.open(2, { 100, 500 }, { H5S_UNLIMITED, H5S_UNLIMITED });
-    BOOST_TEST(filespace.size() == (arma::Row< hsize_t >{ 100, 500 }),
+    dspace.open(
+        "new_filespace", 2, { 100, 500 }, { H5S_UNLIMITED, H5S_UNLIMITED });
+    BOOST_TEST(dspace.size() == (arma::Row< hsize_t >{ 100, 500 }),
                boost::test_tools::per_element());
-    BOOST_TEST(filespace.capacity() ==
+    BOOST_TEST(dspace.capacity() ==
                    (arma::Row< hsize_t >{ H5S_UNLIMITED, H5S_UNLIMITED }),
                boost::test_tools::per_element());
+    BOOST_TEST(dspace.get_refcount() == 1);
 
-    filespace.close();
-    filespace.open(*dataset);
-    BOOST_TEST(filespace.size() == (arma::Row< hsize_t >{ 10 }),
+    dspace.close();
+    dspace.open(dset);
+    BOOST_TEST(dspace.size() == (arma::Row< hsize_t >{ 10 }),
                boost::test_tools::per_element());
-    BOOST_TEST(filespace.capacity() == (arma::Row< hsize_t >{ H5S_UNLIMITED }),
+    BOOST_TEST(dspace.capacity() == (arma::Row< hsize_t >{ 10 }),
                boost::test_tools::per_element());
+    BOOST_TEST(dspace.get_refcount() == 1);
 
-    HDFDataspace dspace2(3, { 10, 10, 10 }, { 100, 100, 100 });
+    HDFDataspace dspace2("dspace2", 3, { 10, 10, 10 }, { 100, 100, 100 });
 
     swap(dspace, dspace2);
     BOOST_TEST(dspace.rank() == 3);
@@ -88,16 +104,38 @@ BOOST_AUTO_TEST_CASE(dataspace_lifecycle)
     BOOST_TEST(dspace.capacity() == (arma::Row< hsize_t >{ 100, 100, 100 }),
                boost::test_tools::per_element());
 
-    BOOST_TEST(dspace2.rank() == 2);
-    BOOST_TEST(dspace2.size() == (arma::Row< hsize_t >{ 10, 10 }),
+    BOOST_TEST(dspace2.rank() == 1);
+    BOOST_TEST(dspace2.size() == (arma::Row< hsize_t >{ 10 }),
                boost::test_tools::per_element());
-    BOOST_TEST(dspace2.capacity() == (arma::Row< hsize_t >{ 100, 100 }),
+    BOOST_TEST(dspace2.capacity() == (arma::Row< hsize_t >{ 10 }),
                boost::test_tools::per_element());
+
+    HDFDataspace dspace_copied(dspace2);
+    BOOST_TEST(dspace_copied.get_C_id() == dspace2.get_C_id());
+    BOOST_TEST(dspace_copied.get_path() == dspace2.get_path());
+    BOOST_TEST(dspace_copied.get_refcount() == 2);
+    BOOST_TEST(dspace2.get_refcount() == 2);
+
+    HDFDataspace dspace_copyassigned = dspace2;
+    BOOST_TEST(dspace_copyassigned.get_C_id() == dspace2.get_C_id());
+    BOOST_TEST(dspace_copyassigned.get_path() == dspace2.get_path());
+    BOOST_TEST(dspace_copyassigned.get_refcount() == 3);
+    BOOST_TEST(dspace2.get_refcount() == 3);
+
+    HDFDataspace dspace_moved(std::move(dspace_copied));
+
+    HDFDataspace dspace_moveassigned = std::move(dspace_moved);
+
+    H5Sclose(space);
+    H5Fclose(file);
+
+    // TODO: check reference counting stuff
 }
 
 BOOST_AUTO_TEST_CASE(dataspace_selection_and_resize)
 {
-    HDFDataspace dataspace(3, { 10, 20, 10 }, { 200, 300, 200 });
+    HDFDataspace dataspace(
+        "other_testspace", 3, { 10, 20, 10 }, { 200, 300, 200 });
 
     BOOST_TEST(dataspace.size() == (arma::Row< hsize_t >{ 10, 20, 10 }),
                boost::test_tools::per_element());
@@ -118,6 +156,7 @@ BOOST_AUTO_TEST_CASE(dataspace_selection_and_resize)
         end == (arma::Row< hsize_t >{ 19, 18, 19 }), // take steps into account
         boost::test_tools::per_element());
 
+    std::tie(begin, end) = dataspace.get_selection_bounds();
 
     dataspace.select_all();
 
@@ -132,7 +171,7 @@ BOOST_AUTO_TEST_CASE(dataspace_selection_and_resize)
 BOOST_AUTO_TEST_CASE(exception_test)
 {
     // exception testing goes here
-    HDFDataspace dspace(2, { 10, 20 }, { 100, 100 });
+    HDFDataspace dspace("testspace", 2, { 10, 20 }, { 100, 100 });
 
     dspace.close();
     BOOST_CHECK_EXCEPTION(
@@ -152,7 +191,7 @@ BOOST_AUTO_TEST_CASE(exception_test)
                 re.what() ==
                 std::string(
                     "Error, trying to get properties of invalid dataspace," +
-                    std::to_string(dspace.get_id())));
+                    std::to_string(dspace.get_C_id())));
         });
 
     BOOST_CHECK_EXCEPTION(
@@ -165,7 +204,7 @@ BOOST_AUTO_TEST_CASE(exception_test)
                     "Error, trying to select a slice in an invalid dataspace"));
         });
 
-    dspace.open(2, { 1, 2 }, { 2, 2 });
+    dspace.open("testdspace", 2, { 1, 2 }, { 2, 2 });
     dspace.release_selection();
     BOOST_CHECK_EXCEPTION(
         dspace.get_selection_bounds(),
@@ -174,7 +213,7 @@ BOOST_AUTO_TEST_CASE(exception_test)
             return (
                 re.what() ==
                 std::string(
-                    "Error when trying to get selection bounds for dataspace"));
+                    "Error, cannot get selection bounds of invalid dataspace"));
         });
 
     BOOST_CHECK_EXCEPTION(
@@ -202,7 +241,8 @@ BOOST_AUTO_TEST_CASE(exception_test)
         [](const std::runtime_error& re) {
             return (
                 re.what() ==
-                std::string("Error, trying to resize an invalid dataspace"));
+                std::string(
+                    "Error, trying to get properties of invalid dataspace,-1"));
         });
 
     BOOST_CHECK_EXCEPTION(
@@ -221,7 +261,7 @@ BOOST_AUTO_TEST_CASE(exception_test)
                 std::string("Error, trying to get rank of invalid dataspace"));
         });
 
-    dspace.open(2, { 1, 2 }, { 2, 2 });
+    dspace.open("testspace other", 2, { 1, 2 }, { 2, 2 });
     BOOST_CHECK_EXCEPTION(
         dspace.resize({ 100, 100 }),
         std::runtime_error,
@@ -236,6 +276,15 @@ BOOST_AUTO_TEST_CASE(exception_test)
             return (re.what() ==
                     std::string("Error, dimensionality of start and end has to "
                                 "be the same as the dataspace's rank"));
+        });
+
+    BOOST_CHECK_EXCEPTION(
+        dspace.open("testspace", 2, { 10, 10 }, { 1, 100 }),
+        std::runtime_error,
+        [](const std::runtime_error& re) {
+            return (re.what() ==
+                    std::string("Error: Cannot bind object to new "
+                                "identifier while the old is still valid"));
         });
 }
 

@@ -47,6 +47,8 @@ struct print_log_value< std::array< T, N > >
 } // namespace test_tools
 } // namespace boost
 
+
+
 // custom comparision operator for std::array, because of reasons... thx stl ...
 template < typename T, std::size_t N >
 bool
@@ -73,9 +75,14 @@ struct Fixture
     GModel gmodel = GModel("graphmodel", 1024, 4096);
 };
 
+
 struct Fix
 {
-    void setup () { Utopia::setup_loggers(); }
+    void
+    setup()
+    {
+        Utopia::setup_loggers();
+    }
 };
 
 BOOST_AUTO_TEST_SUITE(Suite, *boost::unit_test::fixture< Fix >())
@@ -89,7 +96,7 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     using G      = Graph_vertvecS_edgevecS_undir;
     using GModel = GraphModel< G >;
 
-    Utopia::setup_loggers();
+    
 
     model.get_logger()->info("writetaskfactory_basic");
 
@@ -134,11 +141,11 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     task->base_group     = task->build_basegroup(model.get_hdfgrp());
     task->active_dataset = task->build_dataset(task->base_group, model);
 
-    BOOST_TEST(check_validity(H5Iis_valid(task->base_group->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task->base_group->get_C_id()),
                               "/basic") == true);
     // write out data
     task->write_data(task->active_dataset, model);
-    BOOST_TEST(check_validity(H5Iis_valid(task->active_dataset->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task->active_dataset->get_C_id()),
                               "agent_dset") == true); // FIXME: this does not
 
     // these are default constructed functions which should not
@@ -184,13 +191,13 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     task2->base_group     = task2->build_basegroup(model.get_hdfgrp());
     task2->active_dataset = task2->build_dataset(task2->base_group, model);
 
-    BOOST_TEST(check_validity(H5Iis_valid(task2->base_group->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task2->base_group->get_C_id()),
                               "/basic") == true);
     // write out data and stuff
     task2->write_data(task2->active_dataset, model);
     task2->write_attribute_active_dataset(task2->active_dataset, model);
     task2->write_attribute_basegroup(task2->base_group, model);
-    BOOST_TEST(check_validity(H5Iis_valid(task2->active_dataset->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task2->active_dataset->get_C_id()),
                               "cell_dset") == true);
 
     auto [name_vertex, task_vertex] =
@@ -212,7 +219,7 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     task_vertex->active_dataset =
         task_vertex->build_dataset(task_vertex->base_group, gmodel);
 
-    BOOST_TEST(check_validity(H5Iis_valid(task_vertex->base_group->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task_vertex->base_group->get_C_id()),
                               "/graph") == true);
 
     // write out data and stuff
@@ -221,7 +228,7 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
                                                 gmodel);
     task_vertex->write_attribute_basegroup(task_vertex->base_group, gmodel);
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_vertex->active_dataset->get_id()),
+        check_validity(H5Iis_valid(task_vertex->active_dataset->get_C_id()),
                        "vertex_property_dataset") == true);
 
     auto [name_edge_source, task_edge_source] =
@@ -246,7 +253,7 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
         task_edge_source->build_dataset(task_edge_source->base_group, gmodel);
 
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_edge_source->base_group->get_id()),
+        check_validity(H5Iis_valid(task_edge_source->base_group->get_C_id()),
                        "/graph") == true);
 
     // // write out data and stuff
@@ -256,7 +263,7 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     task_edge_source->write_attribute_basegroup(task_edge_source->base_group,
                                                 gmodel);
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_edge_source->active_dataset->get_id()),
+        check_validity(H5Iis_valid(task_edge_source->active_dataset->get_C_id()),
                        "edge_property_dataset") == true);
 
     auto [name_edge_target, task_edge_target] =
@@ -281,13 +288,13 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
         task_edge_target->build_dataset(task_edge_target->base_group, gmodel);
 
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_edge_target->base_group->get_id()),
+        check_validity(H5Iis_valid(task_edge_target->base_group->get_C_id()),
                        "/graph") == true);
 
     // // write out data and stuff
     task_edge_target->write_data(task_edge_target->active_dataset, gmodel);
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_edge_target->active_dataset->get_id()),
+        check_validity(H5Iis_valid(task_edge_target->active_dataset->get_C_id()),
                        "edge_property_dataset") == true);
 
     // test graph-structure writing shortcuts
@@ -312,13 +319,13 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
 
     task_vertices->write_attribute_basegroup(task_vertices->base_group, gmodel);
 
-    BOOST_TEST(check_validity(H5Iis_valid(task_vertices->base_group->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task_vertices->base_group->get_C_id()),
                               "/graph_structure") == true);
 
     // // write out data and stuff
     task_vertices->write_data(task_vertices->active_dataset, gmodel);
     BOOST_TEST(
-        check_validity(H5Iis_valid(task_vertices->active_dataset->get_id()),
+        check_validity(H5Iis_valid(task_vertices->active_dataset->get_C_id()),
                        "vertices") == true);
 
     auto [name_edges, task_edges] =
@@ -338,12 +345,12 @@ BOOST_FIXTURE_TEST_CASE(writetaskfactory_basic,
     task_edges->active_dataset =
         task_edges->build_dataset(task_edges->base_group, gmodel);
 
-    BOOST_TEST(check_validity(H5Iis_valid(task_edges->base_group->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task_edges->base_group->get_C_id()),
                               "/graph_structure") == true);
 
     // write out data and stuff
     task_edges->write_data(task_edges->active_dataset, gmodel);
-    BOOST_TEST(check_validity(H5Iis_valid(task_edges->active_dataset->get_id()),
+    BOOST_TEST(check_validity(H5Iis_valid(task_edges->active_dataset->get_C_id()),
                               "edges") == true);
 
     // close the file again
@@ -829,5 +836,4 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test_read)
                    boost::test_tools::per_element());
     }
 }
-
 BOOST_AUTO_TEST_SUITE_END()

@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(writetask_write_functionality)
                                "some data in group"s + " "s + m.name);
       },
       // attribute writer
-      [](std::shared_ptr<HDFDataset<HDFGroup>>& dataset, Model& m) {
+      [](std::shared_ptr<HDFDataset>& dataset, Model& m) {
           dataset->add_attribute("some name dataset",
                                  "some data in dataset"s + " "s + m.name);
       });
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(writetask_write_functionality)
     wt.write_data(wt.active_dataset, model);
 
     // check that the dataset is a valid path in the file
-    BOOST_REQUIRE(path_exists(wt.base_group->get_id(),
+    BOOST_REQUIRE(path_exists(wt.base_group->get_C_id(),
                               "testgroup/initial_dataset_writetask_testmodel") >
                   0);
 
@@ -112,13 +112,13 @@ BOOST_AUTO_TEST_CASE(writetask_lifecycle)
 
     using BasegroupBuilder = std::function<std::shared_ptr<HDFGroup>(Model&)>;
     using Writer =
-      std::function<void(std::shared_ptr<HDFDataset<HDFGroup>>&, Model&)>;
-    using Builder = std::function<std::shared_ptr<HDFDataset<HDFGroup>>(
+      std::function<void(std::shared_ptr<HDFDataset>&, Model&)>;
+    using Builder = std::function<std::shared_ptr<HDFDataset>(
       std::shared_ptr<HDFGroup>&, Model&)>;
     using AttributeWriterGroup = std::function<void(
       std::shared_ptr<HDFGroup>&, std::string&, std::string&)>;
     using AttributeWriterDataset = std::function<void(
-      std::shared_ptr<HDFDataset<HDFGroup>>&, std::string, std::string)>;
+      std::shared_ptr<HDFDataset>&, std::string, std::string)>;
 
     using WT = WriteTask<BasegroupBuilder,
                          Writer,
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(writetask_lifecycle)
                                "some data in group1"s + " "s + a + b);
       },
       // attribute writer
-      [](std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
+      [](std::shared_ptr<HDFDataset>& dataset,
          std::string a,
          std::string b) {
           dataset->add_attribute("some name dataset1",
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(writetask_lifecycle)
                                "some data in group1"s + " "s + a + b);
       },
       // attribute writer
-      [](std::shared_ptr<HDFDataset<HDFGroup>>& dataset,
+      [](std::shared_ptr<HDFDataset>& dataset,
          std::string a,
          std::string b) {
           dataset->add_attribute("some name dataset2",

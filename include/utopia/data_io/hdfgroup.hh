@@ -7,7 +7,6 @@
  */
 #ifndef UTOPIA_DATAIO_HDFGROUP_HH
 #define UTOPIA_DATAIO_HDFGROUP_HH
-
 #include <string>
 #include <vector>
 
@@ -16,6 +15,8 @@
 
 #include "hdfattribute.hh"
 #include "hdfdataset.hh"
+#include "hdfobject.hh"
+#include "hdfutilities.hh"
 
 namespace Utopia
 {
@@ -36,107 +37,10 @@ namespace DataIO
  *          HDFFiles.
  *
  */
-class HDFGroup
+class HDFGroup final : public HDFObject< HDFCategory::group >
 {
-  protected:
-    hid_t _group;
-
-    std::string _path;
-
-    H5O_info_t _info;
-
-    haddr_t _address;
-
-    std::shared_ptr< std::unordered_map< haddr_t, int > > _referencecounter;
-
   public:
-    /**
-     * @brief      switch state of object with other's state
-     *
-     * @param      other  The other
-     */
-    void
-    swap(HDFGroup& other)
-    {
-        using std::swap;
-        swap(_group, other._group);
-        swap(_path, other._path);
-        swap(_info, other._info);
-        swap(_address, other._address);
-        swap(_referencecounter, other._referencecounter);
-    }
-
-    /**
-     * @brief      Get the path
-     *
-     * @return     std::string
-     */
-    std::string
-    get_path()
-    {
-        return _path;
-    }
-
-    /**
-     * @brief      Get the object ID
-     *
-     * @return     the ID of the group
-     */
-    hid_t
-    get_id()
-    {
-        return _group;
-    }
-
-    /**
-     * @brief      Get the referencecounter object
-     *
-     * @return     the reference counter
-     */
-    auto
-    get_referencecounter()
-    {
-        return _referencecounter;
-    }
-
-    /**
-     * @brief      Get the address object
-     *
-     * @return     the address
-     */
-    auto
-    get_address()
-    {
-        return _address;
-    }
-
-    /**
-     * @brief      prints info about the group to std::cout
-     */
-    void
-    info()
-    {
-        // get information from the hdf5 group
-        H5G_info_t info;
-        herr_t     err = H5Gget_info(_group, &info);
-
-        // if information is succesfully retrieved print out the information
-        if (err < 0)
-        {
-            throw std::runtime_error("Getting group information by calling "
-                                     "H5Gget_info failed!");
-        }
-
-        std::cout << "Group information:" << std::endl
-                  << "- Group id: " << _group << std::endl
-                  << "- Group path: " << _path << std::endl
-                  << "- Number of links in group: " << info.nlinks << std::endl
-                  << "- Current max. creation order value: " << info.max_corder
-                  << std::endl
-                  << "- Mounted files on the group: " << info.mounted
-                  << std::endl;
-    }
-
+    using Base = HDFObject< HDFCategory::group >;
     /**
      * @brief      write attribute
      *
@@ -149,28 +53,7 @@ class HDFGroup
     void
     add_attribute(std::string name, Attrdata attribute_data)
     {
-        HDFAttribute< HDFGroup >(*this, name).write(attribute_data);
-    }
-
-    /**
-     * @brief      close group
-     */
-    void
-    close()
-    {
-        if (check_validity(H5Iis_valid(_group), _path))
-        {
-            if ((*_referencecounter)[_address] == 1)
-            {
-                H5Gclose(_group);
-                _referencecounter->erase(_referencecounter->find(_address));
-            }
-            else
-            {
-                (*_referencecounter)[_address] -= 1;
-            }
-            _group = -1;
-        }
+        HDFAttribute(*this, name).write(attribute_data);
     }
 
     /**
@@ -180,50 +63,49 @@ class HDFGroup
      * @param parent
      * @param path
      */
-    template < typename HDFObject >
+    template < HDFCategory cat >
     void
-    open(HDFObject& parent, std::string path)
+    open(HDFObject< cat >& parent, std::string path)
     {
-        _path    = path;
-        _info    = H5O_info_t();
-        _address = 0;
 
-        _referencecounter = parent.get_referencecounter();
-
-        if (check_validity(path_exists(parent.get_id(), _path.c_str()), _path))
+        this->_log->debug(
+            "Opening group with path {} at parent {}", path, parent.get_path());
+        // check if given path exists in parent
+        if (path_is_valid(parent.get_C_id(), path))
         {
-            // open the already existing group
-            _group = H5Gopen(parent.get_id(), _path.c_str(), H5P_DEFAULT);
+            // manage new group using his class
+            bind_to(H5Gopen(parent.get_C_id(), path.c_str(), H5P_DEFAULT),
+                    &H5Gclose,
+                    path);
 
-            if (_group < 0)
+            if (get_C_id() < 0)
             {
                 throw std::runtime_error("Group opening for path '" + path +
                                          "' failed!");
             }
-
-            H5Oget_info(_group, &_info);
-            _address = _info.addr;
-            ++(*_referencecounter)[_address];
         }
         else
         { // group does not exist yet
             // create the group and intermediates
             hid_t group_plist = H5Pcreate(H5P_LINK_CREATE);
             H5Pset_create_intermediate_group(group_plist, 1);
-            _group = H5Gcreate(parent.get_id(),
-                               _path.c_str(),
-                               group_plist,
-                               H5P_DEFAULT,
-                               H5P_DEFAULT);
-            if (_group < 0)
+
+            // manage new group using his class
+            bind_to(H5Gcreate(parent.get_C_id(),
+                              path.c_str(),
+                              group_plist,
+                              H5P_DEFAULT,
+                              H5P_DEFAULT),
+                    &H5Gclose,
+                    path);
+
+            H5Pclose(group_plist);
+
+            if (get_C_id() < 0)
             {
                 throw std::runtime_error("Group creation for path '" + path +
                                          "' failed!");
             }
-            // get info and update reference counter
-            H5Oget_info(_group, &_info);
-            _address                       = _info.addr;
-            (*_referencecounter)[_address] = 1;
         }
     }
 
@@ -242,19 +124,19 @@ class HDFGroup
 
     /**
      * @brief      open a HDFDataset
-     * @tparam     HDFDataset<HDFGroup>  dataset type with parent type
+     * @tparam     HDFDataset  dataset type with parent type
      *
      * @param      path  The path of the HDFDataset
      *
      * @return     A std::shared_ptr pointing at the newly created dataset
      */
-    std::shared_ptr< HDFDataset< HDFGroup > >
+    std::shared_ptr< HDFDataset >
     open_dataset(std::string            path,
                  std::vector< hsize_t > capacity      = {},
                  std::vector< hsize_t > chunksizes    = {},
                  std::size_t            compresslevel = 0)
     {
-        return std::make_shared< HDFDataset< HDFGroup > >(
+        return std::make_shared< HDFDataset >(
             *this, path, capacity, chunksizes, compresslevel);
     }
 
@@ -266,12 +148,14 @@ class HDFGroup
     void
     delete_group(std::string path)
     {
+        this->_log->debug("Deleting group {} in {}", path, _path);
+
         // check if group exists in file. If it does, delete the link
         herr_t status = 1;
-        if (check_validity(path_exists(_group, path), path))
+        if (is_valid())
         {
             // group exists, can be deleted
-            status = H5Ldelete(_group, path.c_str(), H5P_DEFAULT);
+            status = H5Ldelete(get_C_id(), path.c_str(), H5P_DEFAULT);
             if (status < 0)
             {
                 throw std::runtime_error("Deletion of group at path '" + path +
@@ -291,23 +175,14 @@ class HDFGroup
      *
      * @param      other  The other
      */
-    HDFGroup(const HDFGroup& other) :
-        _group(other._group), _path(other._path), _info(other._info),
-        _address(other._address), _referencecounter(other._referencecounter)
-    {
-        (*_referencecounter)[_address] += 1;
-    }
+    HDFGroup(const HDFGroup& other) = default;
 
     /**
      * @brief      Construct a new HDFGroup object
      *
      * @param      other The other
      */
-    HDFGroup(HDFGroup&& other) : HDFGroup()
-    {
-        this->swap(other);
-    }
-
+    HDFGroup(HDFGroup&& other)  = default;
     /**
      * @brief      assignment operator
      *
@@ -316,12 +191,15 @@ class HDFGroup
      * @return     HDFGroup&
      */
     HDFGroup&
-    operator=(HDFGroup other)
-    {
-        this->swap(other);
-        return *this;
-    }
-
+    operator=(HDFGroup&& other) = default;
+    /**
+     * @brief Copy assignment operator
+     *
+     * @param other
+     * @return HDFGroup&
+     */
+    HDFGroup&
+    operator=(const HDFGroup& other) = default;
     /**
      * @brief      Construct a new HDFGroup object
      *
@@ -330,19 +208,17 @@ class HDFGroup
      *
      * @tparam     HDFObject  { description }
      */
-    template < typename HDFObject >
-    HDFGroup(HDFObject& parent, std::string path)
+    template < HDFCategory cat >
+    HDFGroup(HDFObject< cat >& parent, std::string path)
     {
         open(parent, path);
     }
 
     /**
-     * @brief      Destroy the HDFGroup object
+     * @brief Destroy the HDFGroup object
+     *
      */
-    virtual ~HDFGroup()
-    {
-        close();
-    }
+    virtual ~HDFGroup() = default;
 }; // namespace Utopia
 
 /**

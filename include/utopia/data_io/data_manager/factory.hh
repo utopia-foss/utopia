@@ -217,7 +217,7 @@ class TaskFactory
             dataset_builder =
                 [dataset_descriptor, path_builder, new_path](
                     auto&& group,
-                    auto&& model) -> std::shared_ptr< HDFDataset< HDFGroup > > {
+                    auto&& model) -> std::shared_ptr< HDFDataset > {
                 return group->open_dataset(
                     path_builder(new_path, model),
                     dataset_descriptor.dataset_capacity,
@@ -231,7 +231,7 @@ class TaskFactory
             dataset_builder =
                 [dataset_descriptor](
                     std::shared_ptr< HDFGroup >& group,
-                    Model&) -> std::shared_ptr< HDFDataset< HDFGroup > > {
+                    Model&) -> std::shared_ptr< HDFDataset > {
 
                 return group->open_dataset(
                     dataset_descriptor.path,
@@ -268,7 +268,7 @@ class TaskFactory
         if constexpr (typetag == TypeTag::vertex_property)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         std::shared_ptr< HDFDataset >& dataset,
                          Model&                                     m) -> void {
                 // Collect some information on the graph
                 auto& graph = get_source(m);
@@ -285,7 +285,7 @@ class TaskFactory
         else if constexpr (typetag == TypeTag::edge_property)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         std::shared_ptr< HDFDataset >& dataset,
                          Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
@@ -304,7 +304,7 @@ class TaskFactory
         {
 
             writer = [&getter, &get_source](
-                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         std::shared_ptr< HDFDataset >& dataset,
                          Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
@@ -321,7 +321,7 @@ class TaskFactory
                                                std::function< void() > >)
         {
             writer = [&getter, &get_source](
-                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         std::shared_ptr< HDFDataset >& dataset,
                          Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
@@ -342,7 +342,7 @@ class TaskFactory
                            typetag == TypeTag::vertex_descriptor)
         {
             writer = [&get_source](
-                         std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                         std::shared_ptr< HDFDataset >& dataset,
                          Model&                                     m) -> void {
                 auto& graph = get_source(m);
 
@@ -358,7 +358,7 @@ class TaskFactory
                            typetag == TypeTag::edge_descriptor)
         {
             writer =
-                [get_source](std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                [get_source](std::shared_ptr< HDFDataset >& dataset,
                              Model& m) -> void {
                 auto& graph = get_source(m);
 
@@ -508,7 +508,7 @@ class TaskFactory
         {
 
             datawriter = [getter, get_source](
-                             std::shared_ptr< HDFDataset< HDFGroup > >& dataset,
+                             std::shared_ptr< HDFDataset >& dataset,
                              Model& m) -> void {
                 dataset->write(
                     get_source(m).begin(), get_source(m).end(), getter);

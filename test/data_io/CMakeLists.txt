@@ -13,23 +13,29 @@ set(TESTS_DATAIO
     graph_utils_test
     hdfbufferfactory_test
     hdfchunking_test
-    hdftypefactory_test
+    hdftype_test
     hdffile_test
-    hdfattribute_test_write
-    hdfattribute_test_read
+    hdfattribute_test_functionality
     hdfattribute_test_lifecycle
+    hdfdataset_test_functionality
     hdfdataset_test_lifecycle
-    hdfgroup_test_lifecycle
-    hdfdataset_test_write
-    hdfdataset_test_read
     hdfintegration_test
-    hdfgroup_test
+    hdfgroup_test_functionality
+    hdfgroup_test_lifecycle
     monitor_test
     writetask_test
     datamanager_test
     factory_test
     hdf_ndim_io_test
     hdfdataspace_test
+    hdfobject_test
+    hdfidentifier_test
+
+    # this is a template for testing memory usage over time and intended for 
+    # closer scrutinization with sanitizers, valgrind or heap profilers.
+    # included here for it to be build conveniently upon need
+    
+    # memory_test
     )
 
 # Add DATAIO_-prefixed test targets
@@ -38,12 +44,6 @@ foreach(test ${TESTS_DATAIO})
                   GROUP dataio
                   SOURCES ${test}.cc)
 endforeach(test)
-
-# no matter how ctest is called, make sure of dependencies between these tests
-set_tests_properties(DATAIO_hdfattribute_test_write PROPERTIES FIXTURES_SETUP H5IO)
-set_tests_properties(DATAIO_hdfattribute_test_read PROPERTIES FIXTURES_REQUIRED H5IO)
-set_tests_properties(DATAIO_hdfdataset_test_write PROPERTIES FIXTURES_SETUP H5IO)
-set_tests_properties(DATAIO_hdfdataset_test_read PROPERTIES FIXTURES_REQUIRED H5IO)
 
 # Tell monitor test if new output precision is required
 target_compile_definitions(DATAIO_monitor_test

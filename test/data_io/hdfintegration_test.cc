@@ -1,10 +1,5 @@
-/**
- * @brief This file implements tests for checking if the parts of the  dataio
- *        module work together as intended
- *
- * @file hdfintegration_test.cc
- */
-#include <cassert>
+#include "utopia/core/logging.hh"
+#define BOOST_TEST_MODULE HDFINTEGRATION_TEST
 #include <iostream>
 #include <vector>
 
@@ -13,6 +8,7 @@
 #include <utopia/data_io/hdffile.hh>
 #include <utopia/data_io/hdfgroup.hh>
 
+#include <boost/test/included/unit_test.hpp>
 
 using namespace Utopia::DataIO;
 // for getting info
@@ -68,46 +64,46 @@ void read(std::vector<Teststruct>& data)
     auto dataset3 = group->open_dataset("dataset3");
 
     auto [shape1, values] = dataset1->read<std::vector<double>>();
-    assert(shape1 == std::vector<hsize_t>{data.size()});
+    BOOST_TEST(shape1 == std::vector<hsize_t>{data.size()});
 
-    assert(values.size() == data.size());
+    BOOST_TEST(values.size() == data.size());
     for (std::size_t i = 0; i < data.size(); ++i)
     {
-        assert(std::abs(values[i] - data[i].x) < 1e-16);
+        BOOST_TEST(std::abs(values[i] - data[i].x) < 1e-16);
     }
 
     auto [shape2, read_stringdata] = dataset2->read<std::vector<std::string>>();
-    assert(shape2 == std::vector<hsize_t>{data.size()});
+    BOOST_TEST(shape2 == std::vector<hsize_t>{data.size()});
 
-    assert(read_stringdata.size() == data.size());
+    BOOST_TEST(read_stringdata.size() == data.size());
     for (std::size_t i = 0; i < read_stringdata.size(); ++i)
     {
-        assert(std::string(read_stringdata[i]) == data[i].y);
+        BOOST_TEST(std::string(read_stringdata[i]) == data[i].y);
     }
 
     auto [shape3, read_data_int] = dataset3->read<std::vector<std::vector<int>>>();
-    assert(shape3 == std::vector<hsize_t>{data.size()});
+    BOOST_TEST(shape3 == std::vector<hsize_t>{data.size()});
 
     for (std::size_t i = 0; i < read_data_int.size(); ++i)
     {
-        assert(read_data_int[i].size() == data[i].z.size());
+        BOOST_TEST(read_data_int[i].size() == data[i].z.size());
         for (std::size_t j = 0; j < data[i].z.size(); ++j)
         {
-            assert(read_data_int[i][j] == data[i].z[j]);
+            BOOST_TEST(read_data_int[i][j] == data[i].z[j]);
         }
     }
 
     HDFAttribute attribute(*dataset1, "testattribute");
     auto [shape_attr, read_attribute] = attribute.read<std::string>();
-    assert(shape_attr.size() == 1);
-    assert(shape_attr[0] == 1);
-    assert(read_attribute == "this is an attribute to a double dataset");
+    BOOST_TEST(shape_attr.size() == 1);
+    BOOST_TEST(shape_attr[0] == 1);
+    BOOST_TEST(read_attribute == "this is an attribute to a double dataset");
 }
 
-int main()
+BOOST_AUTO_TEST_CASE(hdf_integration_test)
 {
-    // H5Eset_auto(error_stack, NULL, NULL); // turn off automatic error
-    // printings
+    Utopia::setup_loggers();
+    
     std::vector<Teststruct> data(50);
     double d = 3.14;
     std::string a = "a";
@@ -125,5 +121,4 @@ int main()
 
     write(data);
     read(data);
-    return 0;
 }

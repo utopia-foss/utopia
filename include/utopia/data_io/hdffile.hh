@@ -1,8 +1,3 @@
-/**
- * @brief This file provides a class for creating and managing HDF5 files.
- *
- * @file hdffile.hh
- */
 #ifndef UTOPIA_DATAIO_HDFFILE_HH
 #define UTOPIA_DATAIO_HDFFILE_HH
 
@@ -16,6 +11,8 @@
 
 #include "hdfdataset.hh"
 #include "hdfgroup.hh"
+#include "utopia/data_io/hdfobject.hh"
+#include "utopia/data_io/hdfutilities.hh"
 
 namespace Utopia
 {
@@ -61,13 +58,14 @@ namespace DataIO
  * @brief Class representing a HDF5 file.
  *
  */
-class HDFFile
+class HDFFile final : public HDFObject< HDFCategory::file >
 {
-  protected:
-    hid_t                                                 _file;
-    std::string                                           _path;
-    std::shared_ptr< std::unordered_map< haddr_t, int > > _referencecounter;
-    std::shared_ptr< HDFGroup >                           _base_group;
+  private:
+    /**
+     * @brief Pointer to base group of the file
+     *
+     */
+    std::shared_ptr< HDFGroup > _base_group;
 
   public:
     /**
@@ -80,23 +78,7 @@ class HDFFile
     {
         using std::swap;
         using Utopia::DataIO::swap;
-        swap(_file, other._file);
-        swap(_path, other._path);
         swap(_base_group, other._base_group);
-        swap(_referencecounter, other._referencecounter);
-    }
-
-    /**
-     * @brief      Closes the hdffile
-     */
-    void
-    close()
-    {
-        if (check_validity(H5Iis_valid(_file), _path))
-        {
-            H5Fflush(_file, H5F_SCOPE_GLOBAL);
-            H5Fclose(_file);
-        }
     }
 
     /**
@@ -114,74 +96,55 @@ class HDFFile
     void
     open(std::string path, std::string access)
     {
-
-        if (check_validity(H5Iis_valid(_file), _path))
+        this->_log->info(
+            "Opening file at {} with access specifier {}", path, access);
+        if (is_valid())
         {
             throw std::runtime_error(
                 "File still bound to another HDF5 file when trying to call "
-                "'open'");
+                "'open'. Close first.");
         }
+
+        // create file access property list
+        hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+
+        // set driver to stdio and close strongly, i.e., close all resources
+        // with the file
+        H5Pset_fapl_stdio(fapl);
+        H5Pset_fclose_degree(fapl, H5F_CLOSE_STRONG);
 
         if (access == "w")
         {
-            _file = H5Fcreate(
-                path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-            if (_file < 0)
-            {
-                throw std::runtime_error(
-                    "File creation failed with access specifier w");
-            }
+            bind_to(H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl),
+                    &H5Fclose,
+                    path);
         }
         else if (access == "r")
         {
-            _file = H5Fopen(path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-
-            if (_file < 0)
-            {
-                throw std::runtime_error(
-                    "File creation failed with access specifier w");
-            }
+            bind_to(
+                H5Fopen(path.c_str(), H5F_ACC_RDONLY, fapl), &H5Fclose, path);
         }
         else if (access == "r+")
         {
-            _file = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-
-            if (_file < 0)
-            {
-                throw std::runtime_error(
-                    "File creation failed with access specifier w");
-            }
+            bind_to(H5Fopen(path.c_str(), H5F_ACC_RDWR, fapl), &H5Fclose);
         }
         else if (access == "x")
         {
-            _file =
-                H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
-            if (_file < 0)
-            {
-                throw std::runtime_error(
-                    "File creation failed with access specifier x");
-            }
+            bind_to(H5Fcreate(path.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, fapl),
+                    &H5Fclose,
+                    path);
         }
         else if (access == "a")
         {
-            hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+            hid_t file_test = H5Fopen(path.c_str(), H5F_ACC_RDWR, fapl);
 
             if (file_test < 0)
             {
-                file_test = H5Fcreate(
-                    path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+                file_test =
+                    H5Fcreate(path.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
             }
 
-            if (_file < 0)
-            {
-                throw std::runtime_error(
-                    "File creation failed with access specifier w");
-            }
-            else
-            {
-                _file = file_test;
-            }
+            bind_to(file_test, &H5Fclose);
         }
         else
         {
@@ -190,45 +153,7 @@ class HDFFile
                                         "values");
         }
 
-        _path = path;
-        _referencecounter =
-            std::make_shared< std::unordered_map< haddr_t, int > >();
         _base_group = std::make_shared< HDFGroup >(*this, "/");
-        ++(*_referencecounter)[_base_group->get_address()];
-    }
-
-    /**
-     * @brief      Get the referencecounter object
-     *
-     * @return     unorderd_map which holds object id and the number of
-     * currently referencing objects for this id.
-     */
-    auto
-    get_referencecounter()
-    {
-        return _referencecounter;
-    }
-
-    /**
-     * @brief      Get the id object
-     *
-     * @return     hid_t
-     */
-    hid_t
-    get_id()
-    {
-        return _file;
-    }
-
-    /**
-     * @brief      Get the path object
-     *
-     * @return     std::string
-     */
-    std::string
-    get_path()
-    {
-        return _path;
     }
 
     /**
@@ -253,6 +178,13 @@ class HDFFile
     std::shared_ptr< HDFGroup >
     open_group(std::string path)
     {
+        // this removes the '/' at the beginning, because this is
+        // reserved for the basegroup
+        if (path[0] == '/')
+        {
+            path = path.substr(1, path.size() - 1);
+        }
+
         return _base_group->open_group(path);
     }
 
@@ -261,19 +193,23 @@ class HDFFile
      *
      * @param      path The path to the dataset
      *
-     * @return     std::shared_ptr<HDFDataset<HDFGroup>>
+     * @return     std::shared_ptr<HDFDataset>
      */
-    std::shared_ptr< HDFDataset< HDFGroup > >
+    std::shared_ptr< HDFDataset >
     open_dataset(std::string            path,
                  std::vector< hsize_t > capacity      = {},
                  std::vector< hsize_t > chunksizes    = {},
                  std::size_t            compresslevel = 0)
     {
-        // this kills the '/' at the beginning -> make this better
-        return _base_group->open_dataset(path.substr(1, path.size() - 1),
-                                         capacity,
-                                         chunksizes,
-                                         compresslevel);
+        // this removes the '/' at the beginning, because this is
+        // reserved for the basegroup
+        if (path[0] == '/')
+        {
+            path = path.substr(1, path.size() - 1);
+        }
+
+        return _base_group->open_dataset(
+            path, capacity, chunksizes, compresslevel);
     }
 
     /**
@@ -293,9 +229,9 @@ class HDFFile
     void
     flush()
     {
-        if (check_validity(H5Iis_valid(_file), _path))
+        if (is_valid())
         {
-            H5Fflush(_file, H5F_SCOPE_GLOBAL);
+            H5Fflush(get_C_id(), H5F_SCOPE_GLOBAL);
         }
     }
 
@@ -310,10 +246,7 @@ class HDFFile
      *
      * @param      other  rvalue reference to HDFFile object
      */
-    HDFFile(HDFFile&& other) : HDFFile()
-    {
-        this->swap(other);
-    }
+    HDFFile(HDFFile&& other) = default;
 
     /**
      * @brief Copy assignment operator, explicitly deleted, hence cannot be
@@ -333,11 +266,7 @@ class HDFFile
      * @return     HDFFile&
      */
     HDFFile&
-    operator=(HDFFile&& other)
-    {
-        this->swap(other);
-        return *this;
-    }
+    operator=(HDFFile&& other) = default;
 
     /**
      * @brief Copy constructor. Explicitly deleted, hence cannot be used
@@ -357,18 +286,18 @@ class HDFFile
      *                     exists), 'x' (create file, fail if exists), or 'a'
      *                     (read/write if exists, create otherwise)
      */
-    HDFFile(std::string path, std::string access)
+    HDFFile(std::string path, std::string access) : HDFFile()
     {
+        // init the logger here because it is needed throughout the module
+        // and its existence is not guaranteed when it is initialized in `core`
+        _log = init_logger(log_data_io, spdlog::level::warn, false);
         open(path, access);
     }
 
     /**
      * @brief      Destroy the HDFFile object
      */
-    virtual ~HDFFile()
-    {
-        close();
-    }
+    virtual ~HDFFile() = default;
 };
 
 /*! \} */ // end of group HDF5
