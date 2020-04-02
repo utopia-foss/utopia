@@ -1,0 +1,30 @@
+# Evaluate the example multiverse run of the ForestFire model
+# Plot only the tree_density and forest state animation
+---
+# --- Tree density ------------------------------------------------------------
+# ... Of the single universes .................................................
+tree_density:
+  based_on: tree_density
+
+# ... Of a sweep over p_lightning and seed ....................................
+tree_density_over_p_lightning:
+  based_on: tree_density_over_p_lightning
+
+  enabled: true
+
+# ... Of a sweep over p_lightning and seed as facet grid ......................
+tree_density_facet_grid_imshows:
+  based_on: tree_density_facet_grid
+  
+  enabled: true
+
+  col: p_lightning
+
+# ... Of a sweep over p_lightning and seed as facet grid ......................
+tree_density_facet_grid_lineplots:
+  based_on: tree_density_facet_grid
+  
+  enabled: true
+
+  col: p_lightning
+  row: seed
