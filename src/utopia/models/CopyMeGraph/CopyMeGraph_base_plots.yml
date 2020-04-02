@@ -46,3 +46,13 @@ some_dag_based_CopyMeGraph_plot:
 
   module: model_plots.CopyMeGraph
   plot_func: some_DAG_based_CopyMeGraph_plot
+
+# Example usage of the generic facet_grid function
+some_facet_grid_plot:
+  based_on: .dag.generic.facet_grid
+  creator: multiverse  # you can use this for 'universe', too :)
+  
+  select_and_combine:
+    fields:
+      data: state
+    base_path: data/CopyMeGrid

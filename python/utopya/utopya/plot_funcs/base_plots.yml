@@ -315,3 +315,13 @@
     <<: *default_helpers
   style:
     <<: *default_style
+
+# .. Facet Grid ...............................................................
+.dag.generic.facet_grid:
+  module: dantro.plot_creators.ext_funcs.generic
+  plot_func: facet_grid
+  
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style

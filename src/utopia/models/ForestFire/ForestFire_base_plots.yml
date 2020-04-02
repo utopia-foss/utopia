@@ -248,12 +248,11 @@ clusters_snapshot:
 
 # --- Generic Multidimensional Plotting ---------------------------------------
 # ... Facet Grid Plot .........................................................
-tree_density_facet_grids:
-  module: .dag.generic
-  plot_func: facet_grid
+tree_density_facet_grid:
+  based_on: .dag.generic.facet_grid
   creator: multiverse
   
   select_and_combine:
     fields:
-      y: tree_density
+      data: tree_density
     base_path: data/ForestFire
