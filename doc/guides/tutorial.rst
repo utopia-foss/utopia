@@ -909,7 +909,7 @@ Let's change the ``p_lightning`` parameter in the run configuration and use loga
 
 .. code-block:: yaml
 
-      p_lightning:
+      p_lightning: !sweep
         default: 1.0e-5
         logspace: [-5, -2, 7]  # 7 log-spaced values in [10^-5, 10^-2]
                                # Other ways to specify sweep values:
