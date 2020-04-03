@@ -1,0 +1,12 @@
+---
+1D:
+  simple:
+    extent: [1.]
+    periodic: false
+  simple_periodic:
+    extent: [1.]
+    periodic: true
+2D:
+  simple_periodic:
+    extent: [1., 2.]
+    periodic: true

@@ -106,50 +106,49 @@ struct Space {
         }
         // else: Need to transform back into space
 
-        // Hard-code for often used dimensions to avoid std::transform overhead
-        // For a description of the transformation, see the comments in the
-        // std::transform binary operator lambda below.
-        if constexpr (dim == 1) {
-            return SpaceVec({  pos[0]
-                             - std::floor(pos[0]/extent[0]) * extent[0]});
-        }
-        else if constexpr (dim == 2) {
-            return SpaceVec({  pos[0]
-                             - std::floor(pos[0]/extent[0]) * extent[0],
-                               pos[1]
-                             - std::floor(pos[1]/extent[1]) * extent[1]});
-        }
-        else if constexpr (dim == 3) {
-            return SpaceVec({  pos[0]
-                             - std::floor(pos[0]/extent[0]) * extent[0],
-                               pos[1]
-                             - std::floor(pos[1]/extent[1]) * extent[1],
-                               pos[2]
-                             - std::floor(pos[2]/extent[2]) * extent[2]});
-        }
-        else {
-            // The general case
-            // Use a temporary vector to apply the transformation to
-            auto mpos = pos;
+        return pos - arma::floor(pos / extent) % extent;
+    }
 
-            // Loop over position and extent and store the result of the
-            // transformation in the temporary vector
-            std::transform(pos.begin(), pos.end(),
-                           extent.begin(), mpos.begin(),
-                [](const double& p, const double& e){
-                    // Given the position in one dimension and the
-                    // corresponding extent, calculate the shift (in units of
-                    // the extend) to be back inside the space.
-                    // NOTE It is highly important to use a uniformly-rounding
-                    //      method here, i.e. rounding in the same direction
-                    //      regardless of the sign of the argument, otherwise
-                    //      an asymmetry is introduced!
-                    return (p - std::floor(p/e) * e);
-                }
-            );
+    
+    /// The displacement between 2 coordinates
+    /** \details Calculates vector pointing from pos_0 to pos_1.
+     *           In periodic boundary it calculates the shorter displacement.
+     *  
+     *  \warning The displacement of two coordinates in periodic boundary can be
+     *           maximum of half the domain size, i.e. moving away from a
+     *           coordinate in a certain direction will decrease the
+     *           displacement once reached half the domain size.
+     */
+    SpaceVec displacement(const SpaceVec& pos_0, const SpaceVec& pos_1) const {
+        SpaceVec dx = pos_1 - pos_0;
 
-            return mpos;
+        if (not periodic) {
+            return dx;
         }
+        // else: Need to get shortest distance
+
+
+        return dx - arma::round(dx / extent) % extent;
+    }
+
+    /// The distance of 2 coordinates in space
+    /** \details Calculates the distance of 2 coordinates using the norm
+     *           implemented within Armadillo.
+     *           In periodic boundary it calculates the shorter distance.
+     * 
+     *  \warning The distance of two coordinates in periodic boundary can be
+     *           maximum of half the domain size wrt every dimension,
+     *           i.e. moving away from a coordinate in a certain direction will
+     *           decrease the distance once reached half the domain size.
+     * 
+     *  \param   p   The norm used to compute the distance, see arma::norm(X, p).
+     *               Can be either an integer >= 1 or one of "-inf", "inf", "fro"
+     */
+    template<class NormType=std::size_t>
+    auto distance(const SpaceVec& pos_0, const SpaceVec& pos_1,
+                  const NormType p=2) const
+    {
+        return arma::norm(displacement(pos_0, pos_1), p);
     }
 
 
