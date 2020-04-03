@@ -7,6 +7,7 @@ both from the dantro PlotManager and some PlotCreator classes.
 import os
 import sys
 import logging
+import traceback
 from typing import Callable
 
 import dantro as dtr
@@ -94,6 +95,9 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
                   "import it from %d additional path(s).",
                   module, len(self.CUSTOM_PLOT_MODULE_PATHS))
 
+        # A dict to gather error information in
+        errors = dict()
+
         # Go over the specified custom paths and try to import them
         for key, path in self.CUSTOM_PLOT_MODULE_PATHS.items():
             # In order to be able to import modules at the given path, the
@@ -114,9 +118,12 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
             with _tmp_sys_path(parent_dir), _tmp_sys_modules():
                 try:
                     mod = super()._get_module_via_import(module)
-                
-                except ModuleNotFoundError:
-                    pass
+
+                except ModuleNotFoundError as err:
+                    # Gather some information on the error
+                    tb = err.__traceback__
+                    errors[parent_dir] = dict(err=err, tb=tb,
+                                              tb_lines=traceback.format_tb(tb))
 
                 else:
                     log.debug("Found module '%s' after having added custom "
@@ -124,12 +131,28 @@ class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
                               "sys.path.", mod, key, path)
                     return mod
 
-        raise ModuleNotFoundError("Could not import module '{}'! It was found "
-                                  "neither among the installed packages nor "
-                                  "among the following custom plot module "
-                                  "paths: {}"
-                                  "".format(module,
-                                            self.CUSTOM_PLOT_MODULE_PATHS))
+        # All imports failed. Inform extensively about errors to help debugging
+        raise ModuleNotFoundError("Could not import module '{mod:}'! It was "
+            "found neither among the installed packages nor among the custom "
+            "plot module paths.\n\n"
+            "The following errors were encountered at the respective custom "
+            "plot module search paths:\n\n{info:}\n"
+            "NOTE: This error can have two reasons:\n"
+            "  (1) the '{mod:}' module does not exist in the specified search "
+            "location.\n"
+            "  (2) during import of the plot module you specified, an "
+            "_unrelated_ ModuleNotFoundError occurred somewhere inside _your_ "
+            "code.\n"
+            "To debug, check the error messages and tracebacks above to find "
+            "out which of the two is preventing module import."
+            "".format(mod=module,
+                      info="\n".join(["-- Error at custom plot module path "
+                                      "{} : {}\n\n  Shortened traceback:\n{}"
+                                      "".format(p, e['err'],
+                                                "".join([e['tb_lines'][0],
+                                                         "  ...\n",
+                                                         e['tb_lines'][-1]]))
+                                      for p, e in errors.items()])))
 
 
 class UniversePlotCreator(dtr.plot_creators.UniversePlotCreator,
