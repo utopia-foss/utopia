@@ -5,6 +5,7 @@ from pkg_resources import resource_filename
 import pytest
 
 import paramspace as psp
+from dantro.plot_mngr import PlotCreatorError
 
 from utopya import Multiverse
 from utopya.testtools import ModelTest
@@ -15,13 +16,13 @@ from utopya.testtools import ModelTest
 BASIC_UNI_PLOTS = resource_filename('test', 'cfg/plots/basic_uni.yml')
 
 # Bifurcation diagram, 1D and 2D
-BIFURCATION_DIAGRAM_RUN = resource_filename('test', 
+BIFURCATION_DIAGRAM_RUN = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram/run.yml')
-BIFURCATION_DIAGRAM_PLOTS = resource_filename('test', 
+BIFURCATION_DIAGRAM_PLOTS = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram/plots.yml')
-BIFURCATION_DIAGRAM_2D_RUN = resource_filename('test', 
+BIFURCATION_DIAGRAM_2D_RUN = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram_2d/run.yml')
-BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test', 
+BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram_2d/plots.yml')
 
 # Fixtures --------------------------------------------------------------------
@@ -29,10 +30,51 @@ BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
 
 # Tests -----------------------------------------------------------------------
 
+def test_pcr_ext_extensions():
+    """Test the changes and extensions to the ExternalPlotCreator
+
+    ... indirectly, using some other plot creator.
+    """
+    model = ModelTest('dummy')
+    mv, dm = model.create_run_load()
+    mv.pm.raise_exc = True
+    print(dm.tree)
+
+    # Can do the default plots
+    mv.pm.plot_from_cfg()
+
+    # Can specify custom plots within utopya ... but will receive an error
+    # because the data dimensionality does not match
+    with pytest.raises(PlotCreatorError, match="Apply dimensionality red"):
+        mv.pm.plot("test", out_dir=mv.dirs['eval'],
+                   creator='universe', universes='all',
+                   module='.basic_uni', plot_func='lineplot',
+                   model_name='dummy', path_to_data='state')
+
+    # Cannot do a custom plot with a bad relative module import
+    with pytest.raises(PlotCreatorError, match="ModuleNotFoundError"):
+        mv.pm.plot("test2", out_dir=mv.dirs['eval'],
+                   creator='universe', universes='all',
+                   module='.some_invalid_module', plot_func='lineplot')
+
+    # How about absolute imports? Nope.
+    with pytest.raises(PlotCreatorError, match="No module named 'some'"):
+        mv.pm.plot("test3", out_dir=mv.dirs['eval'],
+                   creator='universe', universes='all',
+                   module='some.abs.invalid.module', plot_func='lineplot')
+
+    # ... and when an import fails for a custom model plot module?
+    with pytest.raises(PlotCreatorError,
+                       match="_unrelated_ ModuleNotFoundError occurred somew"):
+        mv.pm.plot("test4", out_dir=mv.dirs['eval'],
+                   creator='universe', universes='all',
+                   module='model_plots.some_invalid_model_name',
+                   plot_func='lineplot')
+
 def test_dummy_plotting():
     """Test plotting of the dummy model works"""
     mv, _ = ModelTest('CopyMeGrid').create_run_load()
-    
+
     # Plot the default configuration
     mv.pm.plot_from_cfg()
 
@@ -62,9 +104,9 @@ def test_ca_plotting():
     mv.pm.plot_from_cfg(plot_only=["state_and_trait_anim"])
 
 
-    # Same again with SimpleEG . . . . . . . . . . . . . . . . . . . . . . . . 
+    # Same again with SimpleEG . . . . . . . . . . . . . . . . . . . . . . . .
     mv, _ = ModelTest('SimpleEG').create_run_load()
-    
+
     # Plot the default configuration, which already includes some CA plotting
     mv.pm.plot_from_cfg()
 
@@ -79,7 +121,7 @@ def test_time_series_plots():
     # Plot specific plots from the default plot configuration, which are using
     # the time_series plots
     mv.pm.plot_from_cfg(plot_only=['area_fraction'])
-    
+
 
     # Again, with PredatorPrey
     mv, _ = ModelTest('PredatorPrey').create_run_load()
