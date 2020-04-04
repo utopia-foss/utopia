@@ -27,7 +27,7 @@ class ModelTest(Model):
 
         This is basically like the base class __init__ just that it sets the
         default value of ``use_tmpdir`` to True and renames TODO
-        
+
         Args:
             model_name (str): Name of the model to test
             test_file (str, optional): The file this ModelTest is used in. If
@@ -37,7 +37,7 @@ class ModelTest(Model):
                 to write data to. The default value can be set here; but the
                 flag can be overwritten in the create_mv and create_run_load
                 methods. For false, the regular model output directory is used.
-        
+
         Raises:
             ValueError: If the directory extracted from test_file is invalid
         """

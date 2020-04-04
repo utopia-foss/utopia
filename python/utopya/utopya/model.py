@@ -1,9 +1,10 @@
 """Provides the Model class to work interactively with Utopia models"""
 
 import os
+import glob
 import logging
 from tempfile import TemporaryDirectory
-from typing import Tuple
+from typing import Tuple, Dict
 
 from .model_registry import ModelInfoBundle, get_info_bundle, load_model_cfg
 from .multiverse import Multiverse, FrozenMultiverse
@@ -25,7 +26,7 @@ class Model:
                  base_dir: str=None, sim_errors: str=None,
                  use_tmpdir: bool=False):
         """Initialize the ModelTest for the given model name
-        
+
         Args:
             name (str, optional): Name of the model to attach to. If not
                 given, need to pass info_bundle.
@@ -42,7 +43,7 @@ class Model:
                 flag can be overwritten in the create_mv and create_run_load
                 methods. For ``false``, the regular model output
                 directory is used.
-        
+
         Raises:
             ValueError: Upon bad base_dir
         """
@@ -58,7 +59,7 @@ class Model:
         self._base_dir = ""
         if base_dir:
             base_dir = os.path.expanduser(base_dir)
-            
+
             if not os.path.isabs(base_dir):
                 raise ValueError("Given base_dir path {} should be absolute, "
                                  "but was not!".format(base_dir))
@@ -107,7 +108,83 @@ class Model:
         """
         cfg, _ = load_model_cfg(info_bundle=self.info_bundle)
         return cfg
-    
+
+    def run_and_eval_cfg_paths(self, *, search_dir: str='cfgs'
+                               ) -> Dict[str, dict]:
+        """Searches a directory, ``search_dir``, relative to the model's source
+        directory, for run- and eval configuration pairs.
+        Each pair is expected to be in a subdirectory within the given search
+        directory.
+
+        For each of these subdirectories, a dict entry with the paths for the
+        specified ``run`` and ``eval`` configurations is created.
+        These are detected by their file name suffix, i.e. ``*run.yml`` and
+        ``*eval.yml``, respectively. Both are optional, but if none of them
+        was found, the directory will not have an entry in the returned dict.
+
+        Args:
+            search_dir (str, optional): Path to the directory to search. If
+                this is a relative path, will look relative to the directory
+                the default model configuration is located in.
+
+        Returns:
+            Dict[str, dict]: Listed under the name of each subdirectory, the
+                values of the returned dict contain at least one path to a
+                ``run`` configuration and, if available, a path to an ``eval``
+                configuration.
+                If no files were found, the dict is empty.
+
+        Raises:
+            ValueError: If more than one run or eval configuration was found
+                inside any of the subdirectories.
+        """
+        # Construct the absolute search path
+        search_dir = os.path.expanduser(search_dir)
+        if not os.path.isabs(search_dir):
+            dcfg_dir = os.path.dirname(self.info_bundle.paths['default_cfg'])
+            search_dir = os.path.join(dcfg_dir, search_dir)
+
+        if not os.path.isdir(search_dir):
+            # Search directory does not exist, just return an empty dict
+            return dict()
+
+        # Go through subdirectories and aggregate information
+        log.info("Searching for run and eval configurations in %s ...",
+                 search_dir)
+        cfgs = dict()
+        for cfg_name in os.listdir(search_dir):
+            log.debug("Looking for run and eval configurations in '%s' "
+                      "subdirectory ...", cfg_name)
+
+            subdir_abs_path = os.path.join(search_dir, cfg_name)
+            found_cfgs = dict()
+
+            # First: run configuration
+            run_cfgs = glob.glob(os.path.join(subdir_abs_path, '*run.yml'))
+
+            if len(run_cfgs) > 1:
+                raise ValueError("Can have at most one `*run.yml`-named file "
+                                 "for a run configuration, got: {} in {} !"
+                                 "".format(run_cfgs, subdir_abs_path))
+            elif len(run_cfgs) == 1:
+                found_cfgs['run'] = run_cfgs[0]
+
+            # Now: eval configuration
+            eval_cfgs = glob.glob(os.path.join(subdir_abs_path, '*eval.yml'))
+            if len(eval_cfgs) > 1:
+                raise ValueError("Can have at most one `*eval.yml`-named file "
+                                 "for an evaluation configuration, got: {} in "
+                                 "{} !".format(eval_cfgs, subdir_abs_path))
+            elif len(eval_cfgs) == 1:
+                found_cfgs['eval'] = eval_cfgs[0]
+
+            # Add them
+            if found_cfgs:
+                cfgs[cfg_name] = found_cfgs
+
+        log.info("Found %d configuration entries for '%s' model.",
+                 len(cfgs), self.name)
+        return cfgs
 
     # Public methods ..........................................................
 
@@ -115,7 +192,7 @@ class Model:
                   use_tmpdir: bool=None, **update_meta_cfg) -> Multiverse:
         """Creates a :class:`utopya.Multiverse` for this model, optionally
         loading a configuration from a file and updating it with further keys.
-        
+
         Args:
             from_cfg (str, optional): The name of the config file (relative to
                 the base directory) to be used.
@@ -125,10 +202,10 @@ class Model:
                 to write the data to. If not given, uses default value set
                 at initialization.
             **update_meta_cfg: Can be used to update the meta configuration
-        
+
         Returns:
             Multiverse: The created Multiverse object
-        
+
         Raises:
             ValueError: If both from_cfg and run_cfg_path were given
         """
@@ -183,7 +260,7 @@ class Model:
         to a run directory.
 
         Use this method if you want to load an existing simulation run.
-        
+
         Args:
             **fmv_kwargs: Passed on to FrozenMultiverse.__init__
         """
@@ -197,7 +274,7 @@ class Model:
                         **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
         """Chains the create_mv, mv.run, and mv.dm.load_from_cfg
         methods together and returns a (Multiverse, DataManager) tuple.
-        
+
         Args:
             from_cfg (str, optional): The name of the config file (relative to
                 the base directory) to be used.
@@ -208,7 +285,7 @@ class Model:
                 at initialization.
             print_tree (bool, optional): Whether to print the loaded data tree
             **update_meta_cfg: Arguments passed to the create_mv function
-        
+
         Returns:
             Tuple[Multiverse, DataManager]:
         """
@@ -220,7 +297,7 @@ class Model:
         mv.dm.load_from_cfg(print_tree=print_tree)
         return mv, mv.dm
 
- 
+
     # Helpers .................................................................
 
     def _store_mv(self, mv: Multiverse, **kwargs) -> None:
