@@ -33,11 +33,33 @@ def test_that_it_runs():
     assert len(mv.dm)
 
 
+def test_run_and_eval_cfgs():
+    """Carries out all additional configurations that were specified alongside
+    the default model configuration.
+
+    This is done automatically for all run and eval configuration pairs that
+    are located in subdirectories of the ``cfgs`` directory (at the same level
+    as the default model configuration).
+    If no run or eval configurations are given in the subdirectories, the
+    respective defaults are used.
+
+    See :py:meth:`~utopya.model.Model.run_and_eval_cfg_paths` for more info.
+    """
+    for cfg_name, cfg_paths in mtc.run_and_eval_cfg_paths().items():
+        print("\nRunning '{}' configuration ...".format(cfg_name))
+
+        mv, _ = mtc.create_run_load(from_cfg=cfg_paths.get('run'),
+                                    parameter_space=dict(num_steps=3))
+        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get('eval'))
+
+        print("Succeeded running and evaluating '{}'.\n".format(cfg_name))
+
+
 # NOTE The below test is an example of how to access data and write a test.
 #      You can adjust this to your needs and then remove the decorator to
 #      enable the test.
 # TODO Adapt this to the data you are putting out
-def test_output(): 
+def test_output():
     """Test that the output structure is correct"""
     # Create a Multiverse and let it run
     mv, dm = mtc.create_run_load(from_cfg="output.yml", perform_sweep=True)
@@ -64,7 +86,7 @@ def test_output():
         # See:  http://xarray.pydata.org/en/stable/why-xarray.html
         some_state = data['some_state']
         assert some_state.dims == ('time', 'x', 'y')
-        
+
         some_trait = data['some_trait']
         assert some_trait.dims == ('time', 'x', 'y')
 

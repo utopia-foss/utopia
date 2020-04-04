@@ -145,3 +145,10 @@ some_multiverse_plot:
   creator: multiverse
 
   # specify further arguments here
+
+# Facet Grid plot for a sweep over some_parameter' and another dimension
+some_facet_grid_state_plot:
+  based_on: some_facet_grid_plot
+  enabled: false
+
+  col: some_parameter

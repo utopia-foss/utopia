@@ -11,7 +11,7 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.3',
-    'dantro~=0.12',  # NOTE Version need also be set in python/CMakeLists.txt
+    'dantro~=0.12.3',  # NOTE Version need also be set in python/CMakeLists.txt
     # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
     # details on the compatible release clause.
 
@@ -23,10 +23,11 @@ INSTALL_DEPS = [
 
 # .............................................................................
 
-# A function to extract version number from __init__.py
 def find_version(*file_paths) -> str:
     """Tries to extract a version from the given path sequence"""
-    import os, re, codecs
+    import os
+    import re
+    import codecs
 
     def read(*parts):
         """Reads a file from the given path sequence, relative to this file"""
@@ -42,6 +43,7 @@ def find_version(*file_paths) -> str:
     raise RuntimeError("Unable to find version string in " + str(file_paths))
 
 # .............................................................................
+
 
 setup(
     name='utopya',
