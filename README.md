@@ -479,11 +479,11 @@ Utopia's frontend, `utopya`, uses some additional python packages.
 
 These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#4-configure-and-build)).
 
-| Software                 | Version    | Comments                        |
-| ------------------------ | ---------- | ------------------------------- |
-| [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace][paramspace] | >= 2.3     | Makes parameter sweeps easy     |
-| [dantro][dantro]         | >= 0.12    | Handle, transform, and visualize hierarchically organized data |
+| Software                 | Version       | Comments                        |
+| ------------------------ | ------------- | ------------------------------- |
+| [Sphinx][Sphinx]         | >= 2.0, < 3.0 | Builds the Utopia documentation |
+| [paramspace][paramspace] | >= 2.3        | Makes parameter sweeps easy     |
+| [dantro][dantro]         | >= 0.12       | Handle, transform, and visualize hierarchically organized data |
 
 
 #### Recommended
