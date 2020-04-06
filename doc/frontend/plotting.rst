@@ -296,22 +296,40 @@ To learn more about this, visit the `dantro documentation of the DAG transformat
 
 .. hint::
 
-    If you are missing an operation, register it yourself:
+    If you are missing an operation, you can register it yourself using :py:func:`~utopya.plotting.register_operation`.
+    Add something like the following to your model-specific plot module:
 
     .. code-block:: python
 
-        from dantro.utils import register_operation
+        """model_plots/MyModel/__init__.py"""
 
+        # Your regular imports here
+
+        # --- Register custom operations ...
+        from utopya.plotting import register_operation
+
+        # ... from some imported module
+        import numpy as np
+        register_operation(name='np.mean', func=np.mean)
+
+        # ... from a lambda
+        register_operation(name='MyModel', func=lambda d: d**2)
+
+        # ... from some custom callable
         def my_operation(data, *, some_parameter):
             """Some operation on the given data"""
             # Do something with data and the parameter
             return new_data
 
-        register_operation(name='my_operation', func=my_operation)
+        register_operation(name='MyModel.my_operation', func=my_operation)
+
+    Of course, custom operations can also be defined somewhere else within your plot modules, e.g. an ``operations.py`` file, and imported into ``__init__.py`` using ``from .operations import my_operation``.
 
     Note that you are not allowed to override any existing operation.
-    To avoid naming conflicts, it is advisable to use a unique name for the custom operation, e.g. if by prefixing the model name for some model-specific operation.
+    To avoid naming conflicts, it is advisable to **use a unique name for custom operations**, e.g. by prefixing the model name for some model-specific operation.
 
+    **Important:** Your model-specific custom operations should be defined in the model-specific plot module, i.e.: accessible after importing ``model_plots/<your_model_name>/__init__.py``.
+    Prior to plotting, the :py:class:`~utopya.plotting.PlotManager` pre-loads that module, such that the ``register_operation`` calls are actually invoked.
 
 
 Implementing plot functions
@@ -381,7 +399,7 @@ The corresponding plot configuration could look like this:
           transform:
             - mean: [!dag_prev ]
             - increment: [!dag_prev ]
-      
+
       # Perform some transformation on the data
       transform: []
 

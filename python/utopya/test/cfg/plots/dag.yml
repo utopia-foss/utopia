@@ -1,0 +1,40 @@
+# Plot configurations for tests of DAG-based plots
+---
+.uni_defaults: &uni_defaults
+  based_on: .dag.generic.time_series
+  creator: universe
+  universes: all
+
+.mv_defaults: &mv_defaults
+  based_on: .dag.generic.time_series
+  creator: multiverse
+
+# .............................................................................
+uni_ts:
+  <<: *uni_defaults
+  select:
+    y:
+      path: data/dummy/state
+      with_previous_result: true
+      transform:
+        - .mean: {dim: dim_1}
+
+mv_ts:
+  <<: *mv_defaults
+  select_and_combine:
+    fields:
+      y:
+        path: state
+        with_previous_result: true
+        transform:
+          - .mean: {dim: dim_1}
+    base_path: data/dummy
+
+uni_custom_operation:
+  <<: *uni_defaults
+  select:
+    y:
+      path: data/dummy/state
+      transform:
+        - my_custom_dummy_operation: [!dag_prev ]
+        - getattr: [!dag_prev , data]

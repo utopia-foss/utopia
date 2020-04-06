@@ -8,14 +8,17 @@ import os
 import sys
 import logging
 import traceback
+import importlib
 from typing import Callable
 
 import dantro as dtr
 import dantro.plot_creators
 import dantro.plot_mngr
 from dantro.plot_creators import is_plot_func
+from dantro.utils import register_operation as _register_operation
 
 from .cfg import load_from_cfg_dir as _load_from_cfg_dir
+from .model_registry import ModelInfoBundle
 from ._path_setup import temporary_sys_path as _tmp_sys_path
 from ._path_setup import temporary_sys_modules as _tmp_sys_modules
 
@@ -24,6 +27,23 @@ from ._path_setup import temporary_sys_modules as _tmp_sys_modules
 log = logging.getLogger(__name__)
 
 # Local constants
+
+# -----------------------------------------------------------------------------
+
+def register_operation(*, skip_existing=True, **kws) -> None:
+    """Register an operation with the dantro data operations database.
+
+    This invokes :py:func:`~dantro.utils.data_ops.register_operation`, but
+    has  ``skip_existing == True`` as default in order to reduce number of
+    arguments that need to be specified in Utopia model plots.
+
+    Args:
+        skip_existing (bool, optional): Whether to skip (without an error) if
+            an operation
+        **kws: Passed to :py:func:`~dantro.utils.data_ops.register_operation`
+    """
+    return _register_operation(**kws, skip_existing=skip_existing)
+
 
 # -----------------------------------------------------------------------------
 # PlotHelper specialisations
@@ -179,3 +199,73 @@ class PlotManager(dtr.plot_mngr.PlotManager):
     # Register the supported plot creators
     CREATORS = dict(universe=UniversePlotCreator,
                     multiverse=MultiversePlotCreator)
+
+
+    def __init__(self, *args, _model_info_bundle: ModelInfoBundle=None,
+                 **kwargs):
+        """Sets up a PlotManager.
+
+        This additionally stores some Utopia-specific metadata about the
+        model this PlotManager is used with. That information is then used to
+        load some additional model-specific information once a creator is
+        invoked.
+        """
+        super().__init__(*args, **kwargs)
+
+        self._model_info_bundle = _model_info_bundle
+
+    def _get_plot_creator(self, *args, **kwargs):
+        """Before actually retrieving the plot creator, pre-loads the
+        model-specific plot function module. This allows to register custom
+        model-specific dantro data operations and have them available prior to
+        the invocation of the creator.
+        """
+        def preload_module(*, mod_path, model_name):
+            """Helper function to carry out preloading of the module"""
+            # Compile the module name
+            mod_str = "model_plots." + model_name
+
+            # Determine the parent directory from which import is possible
+            model_plots_parent_dir = os.path.dirname(os.path.dirname(mod_path))
+
+            # Now, try to import
+            try:
+                # Use the _tmp_sys_modules environment to prevent that a failed
+                # import ends up generating a cache entry. If the import is
+                # successful, a cache entry will be added (below) and further
+                # importlib.import_module call will use the cached module.
+                with _tmp_sys_path(model_plots_parent_dir), _tmp_sys_modules():
+                    mod = importlib.import_module(mod_str)
+
+            except Exception as exc:
+                if self.raise_exc:
+                    raise RuntimeError("Failed pre-loading the model-"
+                                       "specific plot module of the '{}' "
+                                       "model! Make sure that {}/__init__.py "
+                                       "can be loaded without errors; to "
+                                       "debug, inspect the chained traceback "
+                                       "above to find the cause of this error."
+                                       "".format(model_name, mod_path)
+                                       ) from exc
+                log.debug("Pre-loading model-specific plot module from %s "
+                          "failed: %s", mod_path, exc)
+                return
+
+            else:
+                log.debug("Pre-loading was successful.")
+
+            # Add the module to the cache
+            if mod_str not in sys.modules:
+                sys.modules[mod_str] = mod
+                log.debug("Added '%s' module to sys.modules cache.", mod_str)
+
+        # Invoke the preloading routine
+        mib = self._model_info_bundle
+
+        if mib is not None and mib.paths.get('python_model_plots_dir'):
+            mod_path = mib.paths.get('python_model_plots_dir')
+            if mod_path:
+                preload_module(mod_path=mod_path, model_name=mib.model_name)
+
+        # Now get to the actual retrieval of the plot creator
+        return super()._get_plot_creator(*args, **kwargs)

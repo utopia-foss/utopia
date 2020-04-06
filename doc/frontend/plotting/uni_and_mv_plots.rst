@@ -56,7 +56,7 @@ When using the recommended creator-averse plot function signature, the DAG is au
           transform:
             - mean: [!dag_prev ]
             - increment: [!dag_prev ]
-      
+
       # Perform some transformation on the data
       transform:
         - add: [!dag_tag some_data, !dag_tag some_other_data]
@@ -216,7 +216,7 @@ The signature for such a plot function looks like this:
 
 .. code-block:: python
 
-    
+
     import xarray as xr
 
     from utopya import DataManager
