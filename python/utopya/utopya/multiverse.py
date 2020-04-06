@@ -619,7 +619,7 @@ class Multiverse:
         if update_kwargs:
             pm_kwargs = recursive_update(pm_kwargs, update_kwargs)
 
-        pm = PlotManager(dm=self.dm,
+        pm = PlotManager(dm=self.dm, _model_info_bundle=self.info_bundle,
                          base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
                          update_base_cfg=paths.get('base_plots'),
                          plots_cfg=paths.get('default_plots'),

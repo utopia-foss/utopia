@@ -1,19 +1,32 @@
 """Test the plotting module"""
 
+import os
+import sys
+import copy
+import logging
 from pkg_resources import resource_filename
 
 import pytest
 
 import paramspace as psp
 from dantro.plot_mngr import PlotCreatorError
+from dantro.utils import available_operations
 
 from utopya import Multiverse
+from utopya.yaml import load_yml
 from utopya.testtools import ModelTest
+from utopya._path_setup import temporary_sys_path as tmp_sys_path
 
 
 # Get the test resources ......................................................
+# Mute the matplotlib logger
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
 # Basic universe plots
 BASIC_UNI_PLOTS = resource_filename('test', 'cfg/plots/basic_uni.yml')
+
+# DAG-based plots
+DAG_PLOTS = resource_filename('test', 'cfg/plots/dag.yml')
 
 # Bifurcation diagram, 1D and 2D
 BIFURCATION_DIAGRAM_RUN = resource_filename('test',
@@ -29,6 +42,105 @@ BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
 
 
 # Tests -----------------------------------------------------------------------
+
+def test_dag_custom_operations():
+    """Tests if custom dantro data operations can be registered via the
+    extensions made to PlotManager.
+
+    NOTE This test has to be the FIRST here, because side effects of other
+         tests can lead to some pre-conditions of this test not being valid.
+    """
+    print("Available operations:", ", ".join(available_operations()))
+    assert "my_custom_dummy_operation" not in available_operations()
+
+    # Now, set up the model and its PlotManager
+    model = ModelTest('dummy')
+    mv, dm = model.create_run_load()
+    mv.pm.raise_exc = True
+    plot_cfgs = load_yml(DAG_PLOTS)
+
+    # Should still not be available
+    assert "my_custom_dummy_operation" not in available_operations()
+
+    # Now, do some unrelated plot operation, i.e. not requiring model-specific
+    # plot functions, but only utopya plot functions.
+    # This should still lead to the _invoke_creator method being called, which
+    # takes care of invoking register_operation
+    mv.pm.plot("test", out_dir=mv.dirs['eval'], **plot_cfgs['uni_ts'])
+
+    assert "my_custom_dummy_operation" in available_operations()
+
+
+def test_preloading():
+    """Tests the preloading feature of the utopya.PlotManager"""
+    assert 'model_plots.ForestFire' not in sys.modules
+
+    model = ModelTest('ForestFire')
+    mv, dm = model.create_run_load()
+    mv.pm.raise_exc = True
+    assert 'model_plots.ForestFire' not in sys.modules
+
+    mv.pm.plot_from_cfg(plot_only=['tree_density'])
+    assert 'model_plots.ForestFire' in sys.modules
+
+    # How about a case with a bad import location; adjust a copy of the info
+    # bundle to be corrupt in such a way ... Also, temporarily clear the
+    # sys.path, as it _might_ include a path that allows import.
+    del sys.modules['model_plots.ForestFire']
+    assert 'model_plots' not in sys.modules
+    assert 'model_plots.ForestFire' not in sys.modules
+
+    # Corrupt the bundle
+    mib = copy.deepcopy(mv.pm._model_info_bundle)
+    mpd = os.path.dirname(os.path.dirname(mib.paths['python_model_plots_dir']))
+
+    # Prepare the temporary sys.path corruption
+    bad_sys_path = "/some_invalid_path/sub1/sub2/sub3"
+    mib.paths['python_model_plots_dir'] = bad_sys_path
+    mv.pm._model_info_bundle = mib
+
+    # Without exception raising, this should just go ahead ...
+    mv.pm.raise_exc = False
+    with tmp_sys_path(bad_sys_path):
+        # Remove the model plots directories from the path
+        sys.path = [p for p in sys.path if not p.startswith(mpd)]
+
+        mv.pm.plot_from_cfg(plot_only=['mean_tree_age'])
+    assert 'model_plots.ForestFire' not in sys.modules
+
+    # With exception raising, there should be an appropriate error message
+    mv.pm.raise_exc = True
+    with tmp_sys_path(bad_sys_path), pytest.raises(RuntimeError,
+                                                   match="Failed pre-loading "
+                                                         "the model-specific"):
+        # Remove the model plots directories from the path
+        sys.path = [p for p in sys.path if not p.startswith(mpd)]
+        mv.pm.plot_from_cfg(plot_only=['forest_snapshot'])
+    assert 'model_plots.ForestFire' not in sys.modules
+
+
+def test_dag_plotting():
+    """Makes sure that DAG plotting works as expected"""
+    # Now, set up the model
+    model = ModelTest('dummy')
+    mv, dm = model.create_run_load()
+    mv.pm.raise_exc = True
+    print(dm.tree)
+
+    # Load some configuration arguments
+    shared_kwargs = dict(out_dir=mv.dirs['eval'])
+    plot_cfgs = load_yml(DAG_PLOTS)
+
+    # Can do a simple DAG-based universe and multiverse plot
+    for cfg_name, plot_cfg in plot_cfgs.items():
+        if cfg_name.startswith('.'):
+            continue
+
+        # The actual plotting
+        print("Plotting '{}' ...".format(cfg_name))
+        mv.pm.plot(cfg_name, **shared_kwargs, **plot_cfg)
+        print("Successfully plotted '{}'!\n\n".format(cfg_name))
+
 
 def test_pcr_ext_extensions():
     """Test the changes and extensions to the ExternalPlotCreator
@@ -70,6 +182,9 @@ def test_pcr_ext_extensions():
                    creator='universe', universes='all',
                    module='model_plots.some_invalid_model_name',
                    plot_func='lineplot')
+
+
+# Tests of built-in plotting functions, via models ----------------------------
 
 def test_dummy_plotting():
     """Test plotting of the dummy model works"""
@@ -183,6 +298,7 @@ def test_bifurcation_diagram(tmpdir):
     # Plot the bifurcation using multistability
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_PLOTS,
                         plot_only=["bifurcation_fixpoint"])
+
 
 @pytest.mark.skip(reason="Need alternative way of testing this")
 def test_bifurcation_diagram_2d(tmpdir):

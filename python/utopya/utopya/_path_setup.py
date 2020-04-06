@@ -69,7 +69,7 @@ def add_modules_to_path(*modules, cfg_name: str='external_module_paths',
             raise KeyError("Missing configuration entry for '{}' module!"
                            "".format(module_name)
                            ) from err
-        
+
         if path not in sys.path:
             sys.path.append(path)
             log.debug("Added path '%s' to sys.path.", path)
