@@ -194,7 +194,7 @@ public:
     }
 
     /// Move an agent to a new position in the space
-    void move_to(const Agent& agent,
+    void move_to(Agent& agent,
                  const SpaceVec& pos) const
     {
         _move_to_func(agent, pos);
@@ -202,13 +202,13 @@ public:
 
     /// Move an agent relative to its current position
     void move_by(const std::shared_ptr<Agent>& agent,
-                 const SpaceVec& move_vec)
+                 const SpaceVec& move_vec) const
     {
         _move_to_func(*agent, agent->position() + move_vec);
     }
 
     /// Move an agent relative to its current position
-    void move_by(const Agent& agent,
+    void move_by(Agent& agent,
                  const SpaceVec& move_vec) const
     {
         _move_to_func(agent, agent.position() + move_vec);
