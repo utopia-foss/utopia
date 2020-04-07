@@ -96,20 +96,49 @@ First, install the Apple Command Line Tools:
 xcode-select --install
 ```
 
-As package manager on macOS, we recommend [Homebrew][Homebrew].
-(If you prefer to use [MacPorts][MacPorts], notice that some packages might need to be installed differently.)
+There are two popular package managers on macOS, [Homebrew][Homebrew] and [MacPorts][MacPorts].
+We recommend you use Homebrew. Here are the installation instructions for both:
 
-```bash
-brew update
-brew install armadillo boost cmake doxygen hdf5 pkg-config python3 spdlog yaml-cpp
-```
+* **Homebrew**:
 
-Further, we recommend to install the following optional packages:
+    Install the required packages:
 
-```bash
-brew update
-brew install ffmpeg graphviz doxygen
-```
+    ```bash
+    brew update
+    brew install armadillo boost cmake hdf5 pkg-config python3 spdlog yaml-cpp
+    ```
+
+    Further, we recommend to install the following optional packages:
+
+    ```bash
+    brew update
+    brew install ffmpeg graphviz doxygen
+    ```
+
+* **MacPorts**:
+
+    Notice that `port` commands typically require administrator rights (`sudo`).
+
+    Install the required packages:
+
+    ```bash
+    port install armadillo boost cmake hdf5 python37 py37-pip spdlog yaml-cpp
+    ```
+
+    Select the installed versions of Python and Pip:
+
+    ```bash
+    port select --set python python37
+    port select --set python3 python37
+    port select --set pip pip37
+    port select --set pip3 pip37
+    ```
+
+    Further, we recommend to install the following optional packages:
+
+    ```bash
+    port install doxygen ffmpeg graphviz
+    ```
 
 #### 3 — Configure and build
 Enter the repository and create your desired build directory:
@@ -124,6 +153,12 @@ Now, enter the build directory and invoke CMake:
 ```bash
 cd build
 cmake ..
+```
+
+**Note:** If you use **MacPorts**, append the location of your Python installation to the CMake command:
+
+```bash
+cmake -DPython_ROOT_DIR=/opt/local ..
 ```
 
 The terminal output will show the configuration steps, which includes the installation of further Python dependencies and the creation of a virtual environment.
