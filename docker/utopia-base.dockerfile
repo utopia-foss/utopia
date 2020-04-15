@@ -10,7 +10,7 @@
 ARG UBUNTU_VERSION
 FROM ubuntu:$UBUNTU_VERSION
 
-LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
+LABEL maintainer="Utopia Developers <utopia-dev@iup.uni-heidelberg.de>"
 
 # install dependencies
 RUN apt-get update \

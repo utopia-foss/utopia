@@ -5,8 +5,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-LABEL maintainer="Lukas Riedel <lriedel@iup.uni-heidelberg.de>, \
-                  Yunus Sevinchan <ysevinch@iup.uni-heidelberg.de>"
+LABEL maintainer="Utopia Developers <utopia-dev@iup.uni-heidelberg.de>"
 
 # Number of cores for parallel builds
 ARG PROCNUM=1
