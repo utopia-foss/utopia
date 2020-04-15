@@ -1,0 +1,73 @@
+# Configuration files for the doc examples test of faq/frontend.rst
+---
+yaml_tags_general:
+  ### Start -- faq_frontend_yaml_tags_general
+  # --- Simple calculations ---------------------------------------------------
+  # Allowed symbols: whitespace, numbers, dot, +-/*, **, (), eE
+  fourtytwo:       !expr 6. * 7
+  seconds_per_day: !expr 60 * 60 * 24
+  powers:          !expr 2**10
+  parentheses:     !expr (2 + 3) * 4 / (5 - 6)
+  exp_notation:    !expr (2.34 / 3.45) * 1e-10
+
+  # --- List generation -------------------------------------------------------
+  # Generate an integer-filled list using:  list(range(*args))
+  list_foo: !listgen [10]             # == [0, 1, 2, ..., 9]
+  list_bar: !listgen [4, 20, 2]       # == [4, 6, 8, ..., 18]
+
+  # Can also specify more advanced arguments to control the list's content
+  list_fancy: !listgen                # == [0, 10]
+    from_range: [0, 100, 10]
+    append: [0, 25, 50, 75, 100]      # append these to the list
+    remove: [0]                       # remove _all_ occurences of these
+    unique: true                      # removes duplicates, here: 50
+    sort: true                        # whether to sort the list, default: true
+  # NOTE The arguments are always applied in the same order:
+  #      from_range, append, remove, unique, sort (default: true)
+
+  # Nesting is also possible!
+  list_nested: !listgen               # == [0, 2, 4, 6, 8, 10, 20, 40, 60, 80]
+    from_range: [0, 11, 2]
+    append: !listgen [0, 100, 20]
+    unique: true
+
+
+  # --- Boolean logic with !any and !all --------------------------------------
+  will_be_true:  !any [false, false, true]
+  will_be_false: !all [true, false, true, false]
+
+  # These are useful to combine with YAML anchors
+  flag1: &flag1 true
+  flag2: &flag2 false
+  flag3: &flag3 true
+
+  some_parameters:
+    enabled: !all [*flag1, *flag2, *flag3]
+
+  # And they can also be nested:
+  another_set_of_parameters:
+    enabled: !any
+      - !all [*flag1, *flag2]
+      - *flag3
+
+  ### End ---- faq_frontend_yaml_tags_general
+
+yaml_tags_python_only:
+  ### Start -- faq_frontend_yaml_tags_python_only
+  # NOTE All tags below cannot be used to pass information to the model, as
+  #      they will create Python objects that have no equivalent in C++.
+  #      However, they can be useful for the plotting of model runs.
+  # Can also specify Python NaN and INFs ...
+  some_nan:  !expr NaN                 # creates np.nan
+  some_inf:  !expr inf                 # == np.inf
+  some_ninf: !expr -inf                # == - np.inf
+
+  # Create a Python range.       !range == range(*args)
+  one_range:     !range [10]          # == range(10)
+  another_range: !range [5, 20, 2]    # == range(5, 20, 2)
+
+  # Create a Python slice,       !slice == slice(*args)
+  empty_slice:   !slice [~]           # == slice(None), i.e. [:]
+  some_slice:    !slice [5, ~]        # == slice(5, None), i.e. [5:]
+
+  ### End ---- faq_frontend_yaml_tags_python_only

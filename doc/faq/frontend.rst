@@ -46,7 +46,7 @@ Save and close the file. From now on, all your simulation output will be stored 
   Also, only uncomment and change those parts of the user configuration that you *really* want to change. With updates to Utopia, the default values of parts of the frontend configuration may change; if you fixed those values in the user configuration, you might not only miss out on the updates, but the frontend might not work as desired.
 
 
-Work interactively 
+Work interactively
 ------------------
 Can I work interactively with the Utopia frontend?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -172,6 +172,34 @@ The base configuration documents a lot of parameters directly in the configurati
 
 For the model configuration, the model documentation usually includes the default configuration; for example: :doc:`../models/ForestFire`.
 
+
+What's with all these YAML ``!tags``? What can I use them for?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+YAML tags are really cool!
+You probably already discovered the ``!sweep`` tag, which is used to define a :doc:`parameter sweep dimension <../guides/parameter-sweeps>`.
+
+When reading YAML files, the frontend can attach certain functionality to entries that are labelled with a ``!tag``.
+Throughout Utopia (and its dependencies, ``dantro`` and ``paramspace``), this functionality is used to make it more convenient to define configuration entries.
+
+Which other tags are available?
+"""""""""""""""""""""""""""""""
+Quite a bunch.
+The example below demonstrates them:
+
+.. literalinclude:: ../../python/utopya/test/cfg/doc_examples/faq_frontend.yml
+    :language: yaml
+    :start-after: ### Start -- faq_frontend_yaml_tags_general
+    :end-before:  ### End ---- faq_frontend_yaml_tags_general
+    :dedent: 2
+
+There are some **Python-only tags**, which create Python objects that have no equivalent on C++-side.
+Make sure to *not* specify them inside your run or model config, but *only* in your evaluation config.
+
+.. literalinclude:: ../../python/utopya/test/cfg/doc_examples/faq_frontend.yml
+    :language: yaml
+    :start-after: ### Start -- faq_frontend_yaml_tags_python_only
+    :end-before:  ### End ---- faq_frontend_yaml_tags_python_only
+    :dedent: 2
 
 
 Data tree structure
