@@ -33,6 +33,9 @@ public:
     /// Data type for the datasets
     using DataSet = typename Base::DataSet;
 
+    /// Space type of the base model class
+    using Space = typename Base::Space;
+
 private:
     // Declare members
     Data _state;
@@ -62,7 +65,14 @@ public:
             this->create_dset("state", {initial_state.size()}, true)),
         _dset_mean(
             this->create_dset("mean", {}, false))
-    {}
+    {
+        // test the interface to _space member
+        BOOST_TEST(this->_space->dim == 2);
+        BOOST_TEST(this->_space->periodic == false);
+        BOOST_TEST(this->_space->extent.size() == this->_space->dim);
+        BOOST_TEST(this->_space->extent[0] == 1.);
+        BOOST_TEST(this->_space->extent[1] == 1.);
+    }
 
 
 

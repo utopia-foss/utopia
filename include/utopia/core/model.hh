@@ -153,7 +153,7 @@ protected:
     const Level _level;
 
     /// The space this model resides in
-    Space _space;
+    std::shared_ptr<Space> _space;
 
     /// Model-internal current time stamp
     Time _time;
@@ -190,14 +190,14 @@ protected:
 
 private:
     // TODO Consider doing this in constructor directly
-    Space setup_space() const {
+    auto setup_space() const {
         if (_cfg["space"]) {
             // Build a space with the given parameters
-            return Space(_cfg["space"]);
+            return std::make_shared<Space>(_cfg["space"]);
         }
         else {
             // Use the default space
-            return Space();
+            return std::make_shared<Space>();
         }
     }
 
@@ -332,8 +332,8 @@ public:
     // -- Getters -------------------------------------------------------------
 
     /// Return the space this model resides in
-    std::shared_ptr<Space> get_space() {
-        return std::make_shared<Space>(_space);
+    std::shared_ptr<Space> get_space() const {
+        return _space;
     }
 
     /// Return the current time of this model
