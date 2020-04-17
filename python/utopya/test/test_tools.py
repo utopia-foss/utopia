@@ -33,6 +33,7 @@ def test_expr_constructor():
         five:  !expr 1E10
         six:   !expr inf
         seven: !expr NaN
+        eight: !expr (2 + 3) * 4
     """
 
     # Load the string using the tools module, where the constructor was added
@@ -46,6 +47,7 @@ def test_expr_constructor():
     assert d['five'] == eval('1E10') == 10.0**10
     assert d['six'] == np.inf
     assert np.isnan(d['seven'])
+    assert d['eight'] == (2 + 3) * 4
 
 
 def test_any_and_all_constructor():
@@ -102,7 +104,7 @@ def test_model_cfg_constructor():
     # It should fail without a model name
     with pytest.raises(KeyError, match="model_name"):
         t.yaml.load("model: !model {}")
-    
+
     # ... or with an invalid model name
     with pytest.raises(KeyError, match="No model with name 'invalid' found"):
         t.yaml.load("model: !model {model_name: invalid}")

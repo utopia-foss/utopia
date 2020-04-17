@@ -45,8 +45,8 @@ def _expr_constructor(loader, node):
         return -np.inf
 
     # remove everything that might cause trouble -- only allow digits, dot, +,
-    # -, *, /, and eE to allow for writing exponentials
-    expr_str = re.sub(r'[^0-9eE\-.+\*\/]', '', expr_str)
+    # -, *, /, and eE to allow for writing exponentials, and parentheses
+    expr_str = re.sub(r'[^0-9eE\-.+\*\/\(\)]', '', expr_str)
 
     # Try to eval
     return eval(expr_str)
