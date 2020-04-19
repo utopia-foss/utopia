@@ -12,13 +12,6 @@ mean_cell_state_over_time:
   module: model_plots.GameOfLife
   plot_func: state_mean
 
-
-# Based on the CA state plot, a configuration for an animation
-state_single_time_step:
-  based_on: .ca.state
-
-  model_name: GameOfLife
-
 state_anim:
   based_on: .ca.state
   
@@ -31,41 +24,6 @@ state_anim:
   animation:
     enabled: true
 
-
-# Plots using the DAG framework ...............................................
-# A time series specialization for universe data
-time_series.uni:
-  based_on: .dag.generic.time_series
-  
-  creator: universe
-  universes: all
-
-  dag_options:
-    # Provide the base path within the universe to make selection easier
-    select_path_prefix: data/GameOfLife
-
-
-# A time series specialization for multiverse data
-time_series.mv:
-  based_on: .dag.generic.time_series
-  
-  creator: multiverse
-
-  select_and_combine:
-    # Provide the base path within each universe to make selection easier
-    base_path: data/GameOfLife
-
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# Some example DAG-based plots that are implemented in the GameOfLife model 
-# plots and performs some visualization that is not generalizable but needs be
-# implemented specifically for the GameOfLife model
-some_dag_based_GameOfLife_plot:
-  based_on: .default_style_and_helpers
-
-  module: model_plots.GameOfLife
-  plot_func: some_DAG_based_GameOfLife_plot
-
 # Example usage of the generic facet_grid function
 some_facet_grid_plot:
   based_on: .dag.generic.facet_grid
@@ -73,5 +31,5 @@ some_facet_grid_plot:
   
   select_and_combine:
     fields:
-      data: state
+      data: living
     base_path: data/GameOfLife

@@ -36,7 +36,7 @@ cell_manager:
 
     # 'random' mode specific initialization parameters
     random: 
-      p_living: 0.4
+      p_living: 0.5
 
 # --- Rule specification
 # Specify a rule in the notation used by Mirek's Cellebration as a string in
