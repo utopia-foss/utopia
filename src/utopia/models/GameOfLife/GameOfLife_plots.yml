@@ -14,21 +14,18 @@ some_state_mean:
 some_trait_mean:
   based_on: mean_cell_state_over_time
 
-  mean_of: some_trait
+# # Facet Grid plot for a sweep over some_parameter' and another dimension
+# CA_anim_facet_grid:
+#   based_on: some_facet_grid_plot
 
+#   frames: time
 
-# Spatial CA state plots (single frames) ......................................
-initial_state_and_trait:
-  based_on: state_single_time_step
-  
-  time_idx: 0
+#   animation:
+#     writer: frames
 
-  to_plot:
-    some_state:
-      title: State
-    some_trait:
-      title: Trait
-
+#   helpers:
+#     set_suptitle:
+#       title: ""
 
 # Spatial CA animations .......................................................
 state_and_trait_anim:

@@ -24,10 +24,10 @@ space:
 cell_manager:
   grid:
     structure: square
-    resolution: 64      # in cells per unit length of physical space
+    resolution: 128      # in cells per unit length of physical space
 
   neighborhood:
-    mode: vonNeumann
+    mode: Moore
 
   # Cell initialization parameters
   cell_params:
@@ -36,5 +36,12 @@ cell_manager:
 
     # 'random' mode specific initialization parameters
     random: 
-      p_living: 0.2
+      p_living: 0.4
 
+# --- Rule specification
+# Specify a rule in the notation used by Mirek's Cellebration as a string in
+# in form `x/y` with:
+#   - `x`: The number of neighbors required for a cell to get born
+#   - `y`: The number of neighbors required to survive
+# In this notation, the game of life is given as `3/23`
+rule: 3/23
