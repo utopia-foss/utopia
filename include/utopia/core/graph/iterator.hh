@@ -4,6 +4,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/subgraph.hpp>
+#include <boost/graph/filtered_graph.hpp>
 
 
 namespace Utopia {

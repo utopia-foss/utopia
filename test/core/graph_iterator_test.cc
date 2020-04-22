@@ -7,6 +7,10 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
+#include <boost/graph/subgraph.hpp>
+#include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/random.hpp>
 
@@ -101,6 +105,11 @@ using DefaultMatrix = boost::adjacency_matrix<>;
 using MatrixWithProperties =
     boost::adjacency_matrix<boost::undirectedS, Node, Edge>;
 
+/// A filtered graph
+using FilteredFFGraph =
+    boost::filtered_graph<FullFunctioningGraph,
+                          boost::keep_all, boost::keep_all>;
+
 
 /// The graph types to test
 using graph_types =
@@ -111,11 +120,18 @@ using graph_types =
         UndirectedSubGraph,
         DirectedSubGraph,
         DefaultMatrix,
-        MatrixWithProperties
+        MatrixWithProperties,
+        FilteredFFGraph
     >;
 
 
 // -- Fixtures and Helpers ----------------------------------------------------
+
+/// One specific global variable that can be used for reference storage
+/** \warning Only used for filtered graphs that need some surviving reference.
+  *          DO NOT DO ANYTHING ELSE WITH THIS!
+  */
+FullFunctioningGraph ffg(0);
 
 /// A graph generator
 template<class G>
@@ -147,18 +163,28 @@ G setup_graph () {
 
         return g;
     }
+    else if constexpr (std::is_same<G, FilteredFFGraph>()) {
+        // Generate the underlying graph using a global graph.
+        // This is crucial because otherwise the reference in the filtered
+        // graph does not persist...
+        ffg = typename G::graph_type(0);
+
+        constexpr bool allow_parallel = false;
+        constexpr bool allow_self_edges = false;
+        boost::generate_random_graph(ffg, num_vertices, num_edges, rng,
+                                     allow_parallel, allow_self_edges);
+
+        // Construct and return the filtered graph
+        G g(ffg, boost::keep_all(), boost::keep_all());
+        return g;
+    }
     else {
         // Generate a random graph with fixed number of edges
         constexpr bool allow_parallel = false;
         constexpr bool allow_self_edges = false;
-
         G g(0);
-        boost::generate_random_graph(g,
-                                     num_vertices,
-                                     num_edges,
-                                     rng,
-                                     allow_parallel,
-                                     allow_self_edges);
+        boost::generate_random_graph(g, num_vertices, num_edges, rng,
+                                     allow_parallel, allow_self_edges);
         return g;
     }
 }
@@ -180,8 +206,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_iterator_pair, Graph, graph_types)
         >();
 
     const auto g = setup_graph<Graph>();
-    BOOST_TEST(boost::num_vertices(g) > 0);
-    BOOST_TEST(boost::num_edges(g) > 0);
+    BOOST_REQUIRE(boost::num_vertices(g) > 0);
+    BOOST_REQUIRE(boost::num_edges(g) > 0);
+    // NOTE For filtered graph, this checks the number of entities on the
+    //      underlying graph!
 
     // .. Vertices
     {
@@ -201,9 +229,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_iterator_pair, Graph, graph_types)
         }
     }
 
+    // For the following, need a vertex descriptor
+    // Methods of retrieving one depend on the graph type ...
+    VertexDesc v;
+    if constexpr (std::is_same<Graph, FilteredFFGraph>()) {
+        // ... for filtered graphs, boost::vertex is not defined. Obviously.
+        // Use the third on the iterator returns...
+        auto [_v, _v_end] = boost::vertices(g);
+        _v++; _v++;
+        v = *_v;
+    }
+    else {
+        v = boost::vertex(2, g);
+    }
+
     // .. Neighbors
-    //    Need some descriptor for that
-    const VertexDesc v = boost::vertex(2, g);
     {
         auto it = GraphUtils::iterator_pair<IterateOver::neighbors>(v, g);
         for (auto [nb, nb_end] = boost::adjacent_vertices(v, g);
@@ -215,12 +255,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_iterator_pair, Graph, graph_types)
         }
     }
 
-    // .. inverse neighbors; not supported for directedS, subgraphs, matrices
+    // .. inverse neighbors
+    //    Not supported for directedS, subgraphs, matrices, filtered_graphs
     if constexpr (    not is_directed
                   and not std::is_same<Graph, UndirectedSubGraph>()
                   and not std::is_same<Graph, DirectedSubGraph>()
                   and not std::is_same<Graph, DefaultMatrix>()
                   and not std::is_same<Graph, MatrixWithProperties>()
+                  and not std::is_same<Graph, FilteredFFGraph>()
                   )
     {
         auto it = GraphUtils::iterator_pair<IterateOver::neighbors>(v, g);
@@ -266,8 +308,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_range, Graph, graph_types)
         >();
 
     const auto g = setup_graph<Graph>();
-    BOOST_TEST(boost::num_vertices(g) > 0);
-    BOOST_TEST(boost::num_edges(g) > 0);
+    BOOST_REQUIRE(boost::num_vertices(g) > 0);
+    BOOST_REQUIRE(boost::num_edges(g) > 0);
 
     // .. Vertices
     {
@@ -287,9 +329,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_range, Graph, graph_types)
         }
     }
 
+    // For the following, need a vertex descriptor
+    // Methods of retrieving one depend on the graph type ...
+    VertexDesc v;
+    if constexpr (std::is_same<Graph, FilteredFFGraph>()) {
+        // ... for filtered graphs, boost::vertices is not defined. Obviously.
+        // Use the third on the iterator returns...
+        auto [_v, _v_end] = boost::vertices(g);
+        _v++; _v++;
+        v = *_v;
+    }
+    else {
+        v = boost::vertex(2, g);
+    }
+
     // .. Neighbors
-    //    Need some descriptor for that
-    const VertexDesc v = boost::vertex(2, g);
     {
         auto it = boost::adjacent_vertices(v, g);
         for (auto nb : range<IterateOver::neighbors>(v, g)) {
@@ -298,12 +352,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE (get_range, Graph, graph_types)
         }
     }
 
-    // .. inverse neighbors; not supported for directedS, subgraphs, matrices
+    // .. inverse neighbors
+    //    Not supported for directedS, subgraphs, matrices, filtered_graphs
     if constexpr (    not is_directed
                   and not std::is_same<Graph, UndirectedSubGraph>()
                   and not std::is_same<Graph, DirectedSubGraph>()
                   and not std::is_same<Graph, DefaultMatrix>()
                   and not std::is_same<Graph, MatrixWithProperties>()
+                  and not std::is_same<Graph, FilteredFFGraph>()
                   )
     {
         auto it = boost::inv_adjacent_vertices(v, g);
