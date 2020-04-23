@@ -1,0 +1,187 @@
+# Test configurations for graph plotting
+---
+# -- Single plot configurations -----------------------------------------------
+Graph: &base
+  based_on: .dag.graph
+  file_ext: png
+  select:
+    graph_group: data/CopyMeGraph/g_dynamic
+  helpers:
+    set_title:
+      title: graph
+  graph_cfg:
+    graph_creation: &graph_creation
+      at_time_idx: -1
+      node_props: ['some_trait', 'some_state']
+      edge_props: ['weights']
+      directed: False
+      parallel_edges: False
+    graph_drawing: &graph_drawing
+      positions:
+        model: random
+      nodes:
+        node_color:
+          from_property: some_state
+        node_size:
+          from_property: degree
+          scale_to_interval: [200, 400]
+      edges:
+        edge_color: orange
+        width:
+          from_property: weights
+
+DiGraph:
+  <<: *base
+  file_ext: pdf
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+      directed: True
+      parallel_edges: False
+    graph_drawing:
+      <<: *graph_drawing
+      positions:
+        model: spring
+        seed: 42
+      select:
+        nodes: !listgen [0, 6]
+      nodes:
+        node_size: 200
+      node_labels:
+        enabled: True
+        show_only: [0, 1, 2]
+        labels:
+          0: label0
+          1: label1
+      edge_labels:
+        enabled: True
+        show_only: [[0,1],[0,2],[1,2]]
+
+MultiGraph:
+  <<: *base
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+      directed: False
+      parallel_edges: True
+    graph_drawing:
+      <<: *graph_drawing
+      select:
+        radial: True
+        center: 0
+        radius: 100
+      edges:
+        edge_color:
+          from_property: weights
+      node_labels:
+        enabled: True
+        show_only: [0, 1, 2]
+        labels:
+          from_property: some_trait
+      edge_labels:
+        enabled: True
+        edge_labels:
+          from_property: weights
+
+MultiDiGraph:
+  <<: *base
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+      directed: True
+      parallel_edges: True
+    graph_drawing:
+      <<: *graph_drawing
+      select:
+        radial: True
+        center: 0
+        radius: 1
+      node_labels:
+        enabled: True
+        labels:
+          0: label0
+          1: label1
+      edge_labels:
+        enabled: True
+
+# -- Single plots that raise Errors or Warnings -------------------------------
+Graphviz:
+  <<: *base
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+    graph_drawing:
+      <<: *graph_drawing
+      positions:
+        model: graphviz_dot
+
+wrong_edge_label_kwarg:
+  <<: *base
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+    graph_drawing:
+      <<: *graph_drawing
+      edge_labels:
+        enabled: True
+        labels:
+          [0,1]: foo
+
+colorbar_for_directed_edges:
+  <<: *base
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+      directed: True
+      parallel_edges: False
+    graph_drawing:
+      <<: *graph_drawing
+      edges:
+        edge_color:
+          from_property: weights
+
+# -- Animation configurations -------------------------------------------------
+graph_anim1:
+  <<: *base
+  animation:
+    enabled: True
+    writer: frames
+
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+    graph_drawing:
+      <<: *graph_drawing
+    graph_animation:
+      times:
+        from_property: weights
+
+graph_anim2:
+  <<: *base
+  animation:
+    enabled: True
+    writer: frames
+
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+    graph_drawing:
+      <<: *graph_drawing
+    graph_animation:
+      times:
+        isel: [0, -1]
+
+graph_anim3:
+  <<: *base
+  animation:
+    enabled: True
+    writer: frames
+
+  graph_cfg:
+    graph_creation:
+      <<: *graph_creation
+    graph_drawing:
+      <<: *graph_drawing
+    graph_animation:
+      times:
+        sel: [0, 1, 2]

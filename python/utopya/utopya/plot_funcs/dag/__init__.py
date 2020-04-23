@@ -7,3 +7,4 @@ visualization from the given data.
 """
 
 from .time_series import time_series
+from .graph import draw_graph

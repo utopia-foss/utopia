@@ -23,7 +23,7 @@ space:
 # -- Network and agent initialization -----------------------------------------
 create_graph:
   model: ErdosRenyi
-  num_vertices: 1000
+  num_vertices: 42
   mean_degree: 4
 
   # --- Model-specific parameters
