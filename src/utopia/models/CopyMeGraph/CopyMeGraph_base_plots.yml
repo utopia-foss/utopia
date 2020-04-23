@@ -36,6 +36,12 @@ time_series.mv:
     # Provide the base path within each universe to make selection easier
     base_path: data/CopyMeGraph
 
+# A graph plot for universe data
+graph:
+  based_on: .dag.graph
+
+  dag_options:
+    select_path_prefix: data/CopyMeGraph
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # Some example DAG-based plots that are implemented in the CopyMeGraph model plots

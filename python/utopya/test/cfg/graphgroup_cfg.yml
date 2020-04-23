@@ -1,9 +1,9 @@
-# Test file for the GraphGroup test, done in test_datagroup.py
+# Test file for the GraphGroup and for graph plotting, using CopyMeGraph.
 ---
 parameter_space:
   num_steps: 3
 
-  Hierarnet: !model
+  CopyMeGraph: !model
     model_name: CopyMeGraph
 
     create_graph:

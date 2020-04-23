@@ -37,6 +37,9 @@ BIFURCATION_DIAGRAM_2D_RUN = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram_2d/run.yml')
 BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram_2d/plots.yml')
+GRAPH_RUN = resource_filename('test', 'cfg/graphgroup_cfg.yml')
+
+GRAPH_PLOTS = resource_filename('test', 'cfg/graph_plot_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
 
@@ -320,3 +323,40 @@ def test_bifurcation_diagram_2d(tmpdir):
     # Plot the bifurcation using the fixpoint
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS,
                         plot_only=["bifurcation_diagram_2d_fixpoint_to_plot"])
+
+def test_graph_plots(tmpdir):
+    """Tests the plot_funcs.graph module"""
+    # Create and run simulation
+    raise_exc = {'plot_manager': {'raise_exc': True}}
+    mv = Multiverse(model_name='CopyMeGraph',
+                    run_cfg_path=GRAPH_RUN,
+                    paths=dict(out_dir=str(tmpdir)),
+                    **raise_exc)
+
+    mv.run_single()
+
+    # Load
+    mv.dm.load_from_cfg(print_tree=False)
+
+    # Single graph plots
+    mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                        plot_only=["Graph", "DiGraph", "MultiGraph",
+                                   "MultiDiGraph"])
+
+    # Try using a graphviz node layout
+    with pytest.raises(PlotCreatorError, match="No module named 'pydot'"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
+
+    # Try plotting a colorbar for directed edges
+    with pytest.raises(PlotCreatorError, match="No colorbar can be shown"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["colorbar_for_directed_edges"])
+
+    # Passing the 'labels' key for edge labels
+    with pytest.raises(PlotCreatorError, match="Received 'labels' key"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["wrong_edge_label_kwarg"])
+
+    # Animation plots
+    mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                        plot_only=["graph_anim1", "graph_anim2", "graph_anim3"])
