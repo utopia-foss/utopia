@@ -228,5 +228,16 @@ iterator adaptor and a set of containers.
                        return std::make_tuple(i*i, d*d);
                    });
 \endcode
+\}
+
+
+
+\defgroup TestTools Test Tools
+\{
+\ingroup Core
+\brief   Gathers useful tools for writing tests in the Boost.Test framework
+
+Have a look at the Utopia::TestTools namespace for more specific information.
+\}
 
 */

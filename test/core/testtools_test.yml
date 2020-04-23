@@ -1,0 +1,98 @@
+# Config parameters for the tests of core/testtools
+---
+infrastructure_test:
+  some_string: foobar
+  some_list: [1, 2, 3]
+  some_number: 42
+
+config_based_tests:
+  succeeding:
+    all_good:
+      params: {foo: some string, num: 42}
+
+    bad_num:
+      params: {foo: another string, num: -1}
+      throws: std::invalid_argument
+      match: Expected non-negative
+
+    bad_num2:
+      params: {foo: another string, num: -1}
+      throws: std::exception
+      match: Expected non-negative
+
+    bad_foo:
+      params: {foo: some very bad value, num: 23}
+      throws: std::runtime_error
+      match: really bad
+
+    bad_foo2:
+      params: {foo: some very bad value, num: 23}
+      throws: std::runtime_error
+
+    missing_key_foo:
+      params: {num: 23}
+      throws: Utopia::KeyError
+      match: foo
+
+    missing_key_num:
+      params: {foo: hey hey}
+      throws: Utopia::KeyError
+      match: num
+
+  no_params:
+    case1:
+      params: {}
+    case2:
+      params: {}
+    case3:
+      params: {}
+
+  expected_exceptions:
+    case1:
+      params: {exc_typename: std::exception}
+      throws: std::exception
+    case2:
+      params: {exc_typename: std::logic_error}
+      throws: std::logic_error
+    case3:
+      params: {exc_typename: std::invalid_argument}
+      throws: std::invalid_argument
+    case4:
+      params: {exc_typename: std::domain_error}
+      throws: std::domain_error
+    case5:
+      params: {exc_typename: std::length_error}
+      throws: std::length_error
+    case6:
+      params: {exc_typename: std::out_of_range}
+      throws: std::out_of_range
+    case7:
+      params: {exc_typename: std::runtime_error}
+      throws: std::runtime_error
+    case8:
+      params: {exc_typename: std::range_error}
+      throws: std::range_error
+    case9a:
+      params: {exc_typename: std::overflow_error}
+      throws: std::overflow_error
+    case9b:
+      params: {exc_typename: std::underflow_error}
+      throws: std::underflow_error
+    case10:
+      params: {exc_typename: Utopia::KeyError}
+      throws: Utopia::KeyError
+    case11:
+      params: {exc_typename: Utopia::Exception}
+      throws: Utopia::Exception
+    case12:
+      params: {exc_typename: YAML::Exception}
+      throws: YAML::Exception
+    case13:
+      params: {exc_typename: foo}
+      throws: std::exception  # This is an expectedly failing test
+    case14:
+      params: {exc_typename: none}
+      throws: std::exception  # This is an expectedly failing test
+    case15:
+      params: {}
+      throws: some_unexpected_type  # This is an expectedly failing test

@@ -13,6 +13,7 @@ file(COPY
         "neighborhood_test.yml"
         "select_test.yml"
         "space_test.yml"
+        "testtools_test.yml"
         "model_datamanager_test.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -44,6 +45,7 @@ set(TESTS_CORE
     space_test
     state_test
     tags_test
+    testtools_test
     utils_test
     zip_test
     )
