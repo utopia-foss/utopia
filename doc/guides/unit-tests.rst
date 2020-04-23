@@ -14,6 +14,8 @@ documentation.
 
 ----
 
+
+
 What Is a Unit Test?
 ====================
 
@@ -24,6 +26,7 @@ code units (paraphrased from
 Whenever you write some new code, you should create a unit test to verify that
 it works. Including the test into the automated CI/CD system ensures that it
 will be working as intended after future updates.
+
 
 .. _good_unit_test:
 
@@ -38,7 +41,10 @@ When writing unit tests, sticking to the following high-level principles will he
 
 To achieve this, make sure to use the full capabilities of the testing framework you have at hand; for Boost Test, see :ref:`good_boost_test`.
 
-.. note:: As general rule of thumb, take as much care of writing tests than of writing your "actual" code!
+.. note::
+
+    As general rule of thumb, take as much care of writing tests than of writing your "actual" code!
+
 
 Writing Unit Tests with Boost Test
 ==================================
@@ -51,12 +57,14 @@ Programmers only have to supply the test functions or test function templates.
 The library itself will wrap everything into a proper executable which can even
 take additional arguments.
 
+
 Most Useful References
 ----------------------
 
 * `Declaring and Organizing Tests`_
 * `Summary of the API for Declaring and Organizing Tests`_
 * `Summary of the API for Writing Tests`_
+
 
 How to Start
 ------------
@@ -87,6 +95,7 @@ test. The function takes the following arguments:
     add_unit_test(NAME my_great_unit_test
                   GROUP core
                   SOURCES file.cc)
+
 
 Writing a Simple Unit Test
 --------------------------
@@ -126,6 +135,7 @@ would not make sense:
 
 For more assertion macros, see the `Summary of the API for Writing Tests`_.
 
+
 .. _boost_test_templates:
 
 Unit Tests on Templates
@@ -153,8 +163,11 @@ For more information, see the Boost Test docs on `template test cases <https://w
 The above code will result in two test cases, one where ``ThisType`` is a
 typedef for ``int``, and one where it is for ``double``.
 
-.. note:: Recent compilers also support specifying the template type list
-          as ``std::tuple``. This is **not supported** on Ubuntu Bionic 18.04.
+.. note::
+
+    Recent compilers also support specifying the template type list as ``std::tuple``.
+
+.. _unit_test_fixtures:
 
 
 .. _boost_test_fixture:
@@ -189,6 +202,13 @@ For more information, see the Boost Test docs on `test fixtures <https://www.boo
         BOOST_TEST(agent.index == index);
         BOOST_TEST(agent.value == value);
     }
+
+.. hint::
+
+    If you find yourself frequently using the same fixture, have a look at ``BOOST_FIXTURE_TEST_SUITE`` (`documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html#boost_test.tests_organization.fixtures.case.fixture_for_a_complete_subtree>`_).
+    Inside the fixture test suite, you can conveniently use ``BOOST_AUTO_TEST_CASE``.
+    This can also be useful if you want to use the templated test cases described above *and* a fixture at the same time.
+
 
 .. _boost_test_compare_custom_types:
 
@@ -229,6 +249,7 @@ the proper comparison functions and an overload of the ``<<`` stream operator:
         int_2.value = 4;
         BOOST_TEST(int_1 == int_2); // Yay, this works now!
     }
+
 
 .. _boost_test_utils:
 
@@ -340,14 +361,192 @@ Following the motiation of the remarks on :ref:`good_unit_test` above, the list 
 
 
 
+Using ``Utopia::TestTools``
+===========================
+Utopia provides a set of test tools that make it easier to apply the above.
+
+Using these tools is as simple as including the ``utopia/core/testtools.hh`` header:
+
+.. code-block:: c++
+
+    #define BOOST_TEST_MODULE test my_fancy_feature
+
+    #include <utopia/core/testtools.hh>
+
+    // Use the Utopia::TestTools namespace
+    using namespace Utopia::TestTools;
+
+    // +++ Tests +++
+    // ... your tests here ...
+
+.. note::
+
+    Refer to the `corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ entries for more detailed information.
+
+
+The ``BaseInfrastructure`` fixture
+----------------------------------
+Frequently, tests or models require some kind of logger, random number generator, and some form of configuration.
+The ``BaseInfrastructure`` fixture provides these tools.
+It can be specialized to the need of the currently used test module using inheritance from the base class:
+
+.. code-block:: c++
+
+    #define BOOST_TEST_MODULE test my_fancy_feature
+
+    #include <utopia/core/testtools.hh>
+
+    // Use the Utopia::TestTools namespace
+    using namespace Utopia::TestTools;
+
+
+    // +++ Fixtures +++
+
+    /// A specialized infrastructure fixture, loading a configuration file
+    /** \note If no configuration file is required or available, you can
+      *       simply omit the file path. The configuration is then empty.
+      */
+    struct Infrastructure : BaseInfrastructure<> {
+        Infrastructure () : BaseInfrastructure<>("my_test_config.yml") {};
+    };
+
+
+    // +++ Tests +++
+    /// Some simple test case using that fixture
+    BOOST_FIXTURE_TEST_CASE (test_my_test_with_fixture, Infrastructure)
+    {
+        // Have all members available directly here: log, rng, cfg, ...
+        const auto default_cfg = cfg["defaults"];
+
+        // ...
+    }
+
+If desired, the derived class can also be extended to provide more members, just like :ref:`regular fixtures <unit_test_fixtures>`.
+
+.. note::
+
+    **Important:** If you change test configuration files, e.g. the ``my_test_config.yml`` used in the fixture, remember to invoke ``cmake ..`` again, which takes care of copying that file to the directory where the test executables are placed.
+    Otherwise, your tests might appear to be failing due to an outdated configuration file.
+
+
+Testing exceptions
+------------------
+To test that an exception not only matches a specific type, but also a specific error message, you can use the ``check_exception`` test tool:
+
+.. code-block:: c++
+
+    #define BOOST_TEST_MODULE test my_fancy_feature
+
+    #include <utopia/core/testtools.hh>
+
+    // Use the Utopia::TestTools namespace
+    using namespace Utopia::TestTools;
+
+    // +++ Tests +++
+    /// Test that some callable invokes the expected exception
+    BOOST_AUTO_TEST_CASE (test_my_exception)
+    {
+        check_exception<std::invalid_argument>(
+            [](){
+                // Do some stuff ...
+
+                // This will throw:
+                some_function_that_expects_a_positive_number(-1);
+            },
+            "Expected a positive number, got: -1"  // expected error message
+        );
+    }
+
+The ``match`` string is optional; if it is not given, only the exception type will be checked.
+See `the corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ for more information.
+
+.. warning::
+
+    When ``check_exception`` fails, the test output will show the error originating from within ``utopia/core/testtools``, because that's where the ``BOOST_ERROR`` is invoked from.
+
+.. hint::
+
+    If you have trouble pinning down the error location and :ref:`reducing the test case size <good_unit_test>` is *not* an option, you can supply location information by adding ``{__LINE__, __FILE__}`` as last argument:
+
+    .. code-block:: c++
+
+        check_exception<std::invalid_argument>(
+            [](){ throw std::invalid_argument("foo"); }, "foo",
+            {__LINE__, __FILE__}
+        );
+
+
+.. _unit_test_config_based:
+
+Configuration-based test cases
+------------------------------
+Sometimes you might desire to repeatedly invoke some callable with a different set of parameters.
+Which easier way is there to do this than via a configuration file?
+The ``test_config_callable`` function is your friend:
+
+.. code-block:: c++
+
+    BOOST_AUTO_TEST_CASE (test_my_config_callable)
+    {
+        test_config_callable(
+            // Define some callable, ad-hoc, which expects a config node
+            [](auto cfg){
+                auto foo = get_as<std::string>("foo", cfg);
+                auto some_number = get_as<int>("some_number", cfg);
+
+                some_function_that_throws_on_negative_int(some_number);
+
+                // Can do more tests here. Ideally, use BOOST_TEST( ... )
+                // ...
+            },
+            // The YAML mapping that holds _all_ test cases
+            cfg["my_test_cases"],
+            // Information that is passed on to the test context; use something
+            // unique here such that you can pin down the error's origin.
+            "My test cases"
+        );
+    }
+
+The corresponding configuration (here: ``cfg``) should look something like this and can specify whether a certain parameter combination is expected to throw an exception, just like with ``check_exception``:
+
+.. code-block:: yaml
+
+    my_test_cases:
+      case1:
+        # The parameters that are passed to the callable
+        params: {foo: bar, some_number: 42}
+
+      # With these parameters, the callable is expected to throw
+      case1_but_failing:
+        params: {foo: bar, some_number: -1}
+        throws: std::invalid_argument
+
+      # Can optionally also define a string to match the error message
+      case1_but_failing_with_match:
+        params: {foo: bar, some_number: -1}
+        throws: std::invalid_argument
+        match: "Expected a positive number but got: -1"
+
+      # More test cases ...
+      case2:
+        params: {foo: spam, some_number: 23}
+
+      case2_KeyError:
+        params: {some_number: 23}
+        throws: Utopia::KeyError
+        match: foo
+
+Again, see `the corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ of the ``test_config_callable`` function for more information.
+
+
 .. _Summary of the API for Writing Tests:
-    https://www.boost.org/doc/libs/1_69_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
     testing_tools/summary.html
 
 .. _Declaring and Organizing Tests:
-    https://www.boost.org/doc/libs/1_69_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
     tests_organization.html
 
 .. _Summary of the API for Declaring and Organizing Tests:
-    https://www.boost.org/doc/libs/1_69_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
     tests_organization/summary_of_the_api_for_declaring.html
