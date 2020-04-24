@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE PCPVertexTestSpace
+#define BOOST_TEST_MODULE space test
 
 #include <assert.h>
 #include <iostream>
