@@ -27,7 +27,7 @@ class ReportFormat:
                  min_report_intv: float=None):
         """Initialises a ReportFormat object, which gathers callables needed to
         create a report in a certain format.
-        
+
         Args:
             parser (Callable): The parser method to use
             writers (List[Callable]): The writer method(s) to use
@@ -68,17 +68,17 @@ class ReportFormat:
 
     def report(self, *, force: bool=False, parser_kwargs: dict=None) -> bool:
         """Parses and writes a report corresponding to this object's format.
-        
+
         If within the minimum report interval, will return False.
-        
+
         Args:
             force (bool, optional): If True, will ignore the min_report_intv
             parser_kwargs (dict, optional): Keyword arguments passed on to the
                 parser
-        
+
         Returns:
             bool: Whether a report was generated or not
-        
+
         """
         if not force and self.reporting_blocked:
             # Do not report
@@ -115,7 +115,7 @@ class Reporter:
                  default_format: str=None, report_dir: str=None,
                  suppress_cr: bool=False):
         """Initialize the Reporter for the WorkerManager.
-        
+
         Args:
             report_formats (Union[List[str], Dict[str, dict]], optional): The
                 report formats to use with this reporter. If given as list
@@ -147,7 +147,7 @@ class Reporter:
 
         elif isinstance(report_formats, (list, tuple)):
             report_formats = {f: dict() for f in report_formats}
-        
+
         # And add these report formats to the reporter
         for name, params in report_formats.items():
             self.add_report_format(name, **params)
@@ -220,7 +220,7 @@ class Reporter:
                           min_report_intv: float=None, rf_kwargs: dict=None,
                           **parser_kwargs):
         """Add a report format to this reporter.
-        
+
         Args:
             name (str): The name of this format
             parser (str, optional): The name of the parser; if not given, the
@@ -233,7 +233,7 @@ class Reporter:
                 seconds) for this report format
             rf_kwargs (dict, optional): Further kwargs to ReportFormat.__init__
             **parser_kwargs: The kwargs to the parser function
-        
+
         Raises:
             ValueError: A report format with this `name` already exists
         """
@@ -258,14 +258,14 @@ class Reporter:
     def report(self, report_format: str=None, **kwargs) -> bool:
         """Create a report with the given format; if none is given, the default
         format is used.
-        
+
         Args:
             report_format (str, optional): The report format to use
             **kwargs: Passed on to the ReportFormat.report() call
-        
+
         Returns:
             bool: Whether there was a report
-        
+
         Raises:
             ValueError: If no default format was set and no report format name
                 was given
@@ -289,7 +289,7 @@ class Reporter:
     def parse_and_write(self, *, parser: Union[str, Callable],
                         write_to: Union[str, Callable], **parser_kwargs):
         """This function allows to select a parser and writer explicitly.
-        
+
         Args:
             parser (Union[str, Callable]): The parser method to use.
             write_to (Union[str, Callable]): The write method to use. Can also
@@ -298,7 +298,7 @@ class Reporter:
             **parser_kwargs: Passed to the parser, if given
         """
 
-        # Determine the parser    
+        # Determine the parser
         parser = self._resolve_parser(parser, **parser_kwargs)
 
         # Parse the report
@@ -315,11 +315,11 @@ class Reporter:
             log.debug("Wrote report using %s .", writer_name)
 
     # Private methods .........................................................
-    
+
     def _resolve_parser(self, parser: Union[str, Callable],
                         **parser_kwargs) -> Callable:
         """Given a string or a callable, returns the corresponding callable.
-        
+
         Args:
             parser (Union[str, Callable]): If a callable is already given,
                 returns that; otherwise looks for a parser method with the
@@ -327,10 +327,10 @@ class Reporter:
             **parser_kwargs: Arguments that should be passed to the parser.
                 If given, a new function is created where these arguments are
                 already included.
-        
+
         Returns:
             Callable: The desired parser function
-        
+
         Raises:
             ValueError: If no parser with the given name is available
         """
@@ -356,7 +356,7 @@ class Reporter:
 
     def _resolve_writers(self, write_to) -> Dict[str, Callable]:
         """Resolves the given argument to a list of callable writer functions.
-        
+
         Args:
             write_to: a specification of the writers to use. Allows many
                 different ways of specifying the writer functions:
@@ -366,15 +366,15 @@ class Reporter:
                 to use
                 - Dict[str, dict]: the names of the writer functions and
                 additional keyword arguments.
-        
+
         Returns:
             Dict[str, Callable]: the writers (key: name, value: writer method)
-        
+
         Raises:
             TypeError: Invalid `write_to` argument
             ValueError: A writer with that name was already added or a writer
                 with the given name is not available.
-        
+
         """
         def get_callable_name(c) -> str:
             """Returns the name of the callable"""
@@ -422,7 +422,7 @@ class Reporter:
 
             # Use the new write_to dict
             write_to = wt
-            
+
         # Ensure that the format is a dict now
         if not isinstance(write_to, dict):
             raise TypeError("Invalid type {} for argument `write_to`!"
@@ -437,7 +437,7 @@ class Reporter:
                 raise ValueError("No writer named '{}' available in {}!"
                                  "".format(writer_name,
                                            self.__class__.__name__)) from err
-            
+
             # If given, partially apply the params
             if params:
                 writer = partial(writer, **params)
@@ -449,14 +449,14 @@ class Reporter:
         return writers
 
     # Parser methods ..........................................................
-    
+
     # None available in the base class
 
     # Writer methods ..........................................................
 
     def _write_to_stdout(self, s: str, *, flush: bool=True, **print_kws):
         """Writes the given string to stdout using the print function.
-        
+
         Args:
             s (str): The string to write
             flush (bool, optional): Whether to flush directly; default: True
@@ -470,7 +470,7 @@ class Reporter:
 
     def _write_to_stdout_noreturn(self, s: str, *, prepend="  "):
         """Writes to stdout without ending the line. Always flushes.
-        
+
         Args:
             s (str): The string to write
             prepend (str, optional): Is prepended to the string; useful because
@@ -484,7 +484,7 @@ class Reporter:
 
     def _write_to_log(self, s: str, *, lvl: int=10):
         """Writes the given string via the logging module.
-        
+
         Args:
             s (str): The string to log
             lvl (int, optional): The level at which to log at; default: DEBUG
@@ -494,7 +494,7 @@ class Reporter:
     def _write_to_file(self, s: str, *, path: str="_report.txt",
                        mode: str='w'):
         """Writes the given string to a file
-        
+
         Args:
             s (str): The string to write
             path (str): The path to write it to; will be assumed relative to
@@ -528,7 +528,7 @@ class WorkerManagerReporter(Reporter):
 
     def __init__(self, wm, **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager.
-        
+
         Args:
             wm (WorkerManager): The associated WorkerManager
             **reporter_kwargs: Passed on to parent method
@@ -614,7 +614,7 @@ class WorkerManagerReporter(Reporter):
     def wm_elapsed(self) -> Union[timedelta, None]:
         """Seconds elapsed since start of working or None if not yet started"""
         times = self.wm.times
-        
+
         if times['start_working'] is None:
             # Not started yet
             return None
@@ -651,9 +651,9 @@ class WorkerManagerReporter(Reporter):
         """Given the task object, extracts and stores some information.
 
         The information currently extracted is the run time and the exit code.
-        
+
         This can be used as a callback function from a WorkerTask object.
-        
+
         Args:
             task (WorkerTask): The WorkerTask to extract information from.
         """
@@ -666,7 +666,7 @@ class WorkerManagerReporter(Reporter):
 
     def calc_runtime_statistics(self, min_num: int=10) -> OrderedDict:
         """Calculates the current runtime statistics.
-        
+
         Returns:
             OrderedDict: name of the calculated statistic and its value, i.e.
                 the runtime in seconds
@@ -674,14 +674,14 @@ class WorkerManagerReporter(Reporter):
         if len(self.runtimes) < min_num:
             # Only calculate if there is enough data
             return None
-        
+
         # Throw out Nones and convert to np.array
         rts = np.array([rt for rt in self.runtimes if rt is not None])
-        
+
         # Calculate statistics
         d = OrderedDict()
-        d['total (wall)']= np.sum(rts) / self._wm.num_workers
         d['total (CPU)'] = np.sum(rts)
+        d['total (wall)']= np.sum(rts) / min(self._wm.num_workers, len(rts))
         d['mean']        = np.mean(rts)
         d[' (last 50%)'] = np.mean(rts[-len(rts)//2:])
         d[' (last 20%)'] = np.mean(rts[-len(rts)//5:])
@@ -696,15 +696,15 @@ class WorkerManagerReporter(Reporter):
         return d
 
     # Parser methods ..........................................................
-    
+
     # One-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     def _parse_task_counters(self, *, report_no: int=None) -> str:
         """Return a string that shows the task counters of the WorkerManager
-        
+
         Args:
             report_no (int, optional): Passed by ReportFormat call
-        
+
         Returns:
             str: A str representation of the task counters of the WorkerManager
         """
@@ -713,10 +713,10 @@ class WorkerManagerReporter(Reporter):
 
     def _parse_progress(self, *, report_no: int=None) -> str:
         """Returns a progress string
-        
+
         Args:
             report_no (int, optional): Passed by ReportFormat call
-        
+
         Returns:
             str: A simple progress indicator
         """
@@ -735,9 +735,9 @@ class WorkerManagerReporter(Reporter):
                             show_total: bool=False, show_times: bool=False,
                             report_no: int=None) -> str:
         """Returns a progress bar.
-        
+
         It shows the amount of finished tasks, active tasks, and a percentage.
-        
+
         Args:
             num_cols (int, optional): The number of columns available for
                 creating the progress bar.
@@ -746,7 +746,7 @@ class WorkerManagerReporter(Reporter):
             show_times (bool, optional): Whether to show a short version of the
                 results of the times parser
             report_no (int, optional): Passed by ReportFormat call
-        
+
         Returns:
             str: The one-line progress bar
         """
@@ -780,7 +780,7 @@ class WorkerManagerReporter(Reporter):
             fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:} "
             pb_width = num_cols - (13 + 5
                                    + len(str(cntr['total'])) + len(times))
-        
+
         else:
             fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}% {times:} "
             pb_width = num_cols - (8 + 5 + len(times))
@@ -820,7 +820,7 @@ class WorkerManagerReporter(Reporter):
                      times: dict=None,
                      report_no: int=None) -> str:
         """Parses the worker manager time information and est time left
-        
+
         Args:
             fstr (str, optional): The main format string; gets as keys the
                 results of the WorkerManager time information. Available keys:
@@ -834,7 +834,7 @@ class WorkerManagerReporter(Reporter):
             times (dict, optional): A dict of times to use; this is mainly
                 for testing purposes!
             report_no (int, optional): The report number passed by ReportFormat
-        
+
         Returns:
             str: A string representation of the time information
         """
@@ -855,13 +855,13 @@ class WorkerManagerReporter(Reporter):
             tstrs['est_left'] = format_time(times['est_left'],
                                             max_num_parts=2)
         else:
-            # No est_left available 
+            # No est_left available
             # Distinguish between finished and not started simulaltions
             if self.wm_progress == 1.:
                 tstrs['est_left'] = "(finished)"
             else:
                 tstrs['est_left'] = "∞"
-        
+
         # Check if the start and end times are given
         if not (times['start'] and times['est_end']):
             # Not given -> not started yet
@@ -907,7 +907,7 @@ class WorkerManagerReporter(Reporter):
             tstrs['start'] = times['start'].strftime(timefstr)
             tstrs['now'] = times['now'].strftime(timefstr_abs)
             tstrs['est_end'] = times['est_end'].strftime(timefstr)
-            
+
             if times['end']:
                 tstrs['end'] = times['end'].strftime(timefstr_abs)
             else:
@@ -924,7 +924,7 @@ class WorkerManagerReporter(Reporter):
     def _parse_runtime_stats(self, *, fstr: str="  {k:<13s} {v:}",
                              join_char="\n", report_no: int=None) -> str:
         """Parses the runtime statistics dict into a multiline string
-        
+
         Args:
             fstr (str, optional): The format string to use. Gets passed the
                 keys 'k' and 'v' where k is the name of the entry and v its
@@ -932,7 +932,7 @@ class WorkerManagerReporter(Reporter):
             join_char (str, optional): The join character / string to put the
                 elements together.
             report_no (int, optional): Passed by ReportFormat call
-        
+
         Returns:
             str: The multi-line runtime statistics
         """
@@ -944,52 +944,54 @@ class WorkerManagerReporter(Reporter):
         return join_char.join(parts)
 
     def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}",
-                          min_num: int=1, report_no: int=None) -> str:
+                          min_num: int=4, report_no: int=None,
+                          show_individual_runtimes: bool=True) -> str:
         """Parses the report of the simulation into a multiline string
-        
+
         Keyword Arguments:
             fstr (str, optional): The format string to use. Gets passed the
                 keys 'k' and 'v' where k is the name of the entry and v its
                 value.
-            min_num (int, optional): The minimum number of runs 
-                before the simulation report is generated.
+            min_num (int, optional): The minimum number of universes needed to
+                calculate runtime statistics.
             report_no (int, optional): Passed by ReportFormat call
-        
+            show_individual_runtimes (bool, optional): Whether to report
+                individual universe runtimes; default: True
+
         Returns:
             str: The multi-line simulation report
         """
+        # List that contains the parts that will be written
+        parts = []
+
         # Calculate the runtime statistics and add them to the parts
         rtstats = self.calc_runtime_statistics(min_num=min_num)
 
-        if rtstats is None:
-            return ("No simulation report generated because no runtime "
-                    "statistics were calculated.")
+        if rtstats is not None:
+            # Add header
+            parts += ["Runtime Statistics"]
+            parts += ["------------------"]
+            parts += [""]
+            parts += ["This report contains the runtime statistics of a "
+                      "multiverse simulation run."]
+            parts += ["The statistics are calculated from universe run times."]
+            parts += [""]
+            parts += ["  # universes:  {} / {}".format(len(self.runtimes),
+                                                       len(self.wm.tasks))]
+            parts += [""]
 
-        # List that contains the parts that will be written
-        parts = []
-        
-        # Add header 
-        parts += ["Runtime Statistics"]
-        parts += ["------------------"]
-        parts += [""]
-        parts += ["This report contains the runtime statistics of a "
-                  "multiverse simulation run."]
-        parts += ["The statistics are calculated from universe run times."]
-        parts += [""]
-        parts += ["  # universes:  {} / {}".format(len(self.runtimes),
-                                                   len(self.wm.tasks))]
-        parts += [""]
-    
-        # Add the runtime statistics
-        parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
-                  for k, v in rtstats.items()]
+            # Add the runtime statistics
+            parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
+                      for k, v in rtstats.items()]
+            parts += [""]
+            parts += [""]
 
         # In cluster mode, add more information
         if self.wm.cluster_mode:
             rcps = self.wm.resolved_cluster_params
 
-            parts += [""]
-            parts += ["Cluster mode is enabled."]
+            parts += ["Cluster Mode Information"]
+            parts += ["------------------------"]
             parts += [""]
             parts += [fstr.format(k=k, v=rcps[k])
                       for k in ('node_name', 'node_index', 'num_nodes',
@@ -997,9 +999,22 @@ class WorkerManagerReporter(Reporter):
                                 'job_account', 'cluster_name', 'num_procs')
                       if rcps.get(k) is not None]
             parts += [""]
+            parts += [""]
+
+        # Add individual universe run times
+        if show_individual_runtimes:
+            parts += ["Universe Runtimes"]
+            parts += ["-----------------"]
+            parts += [""]
+
+            for task in self.wm.tasks:
+                if 'run_time' in task.profiling:
+                    rt = task.profiling['run_time']
+                    parts += [fstr.format(k=task.name,
+                                          v=format_time(rt, ms_precision=1))]
 
         return " \n".join(parts)
-      
+
 
     # Writer methods ..........................................................
 
@@ -1007,10 +1022,10 @@ class WorkerManagerReporter(Reporter):
                        cluster_mode_path: str='{0:}_{node_name:}{ext:}',
                        **kwargs):
         """Overloads the parent method with capabilities needed in cluster mode
-        
+
         All args and kwargs are passed through. If in cluster mode, the path
         is changed such that it includes the name of the node.
-        
+
         Args:
             *args: Passed on to parent method
             path (str, optional): The path to save to

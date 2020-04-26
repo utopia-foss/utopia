@@ -44,6 +44,7 @@ Utopia has been developed by (in alphabetical order):
 * Harald Mack
 * Peter Manshausen
 * Lukas Riedel
+* Soeren Rubner
 * Simeon Schreib
 * Yunus Sevinchan
 * Lukas Siebert
