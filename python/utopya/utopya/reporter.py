@@ -680,8 +680,8 @@ class WorkerManagerReporter(Reporter):
 
         # Calculate statistics
         d = OrderedDict()
-        d['total (wall)']= np.sum(rts) / self._wm.num_workers
         d['total (CPU)'] = np.sum(rts)
+        d['total (wall)']= np.sum(rts) / min(self._wm.num_workers, len(rts))
         d['mean']        = np.mean(rts)
         d[' (last 50%)'] = np.mean(rts[-len(rts)//2:])
         d[' (last 20%)'] = np.mean(rts[-len(rts)//5:])
@@ -944,7 +944,7 @@ class WorkerManagerReporter(Reporter):
         return join_char.join(parts)
 
     def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}",
-                          min_num: int=1, report_no: int=None,
+                          min_num: int=4, report_no: int=None,
                           show_individual_runtimes: bool=True) -> str:
         """Parses the report of the simulation into a multiline string
 
@@ -952,8 +952,8 @@ class WorkerManagerReporter(Reporter):
             fstr (str, optional): The format string to use. Gets passed the
                 keys 'k' and 'v' where k is the name of the entry and v its
                 value.
-            min_num (int, optional): The minimum number of runs
-                before the simulation report is generated.
+            min_num (int, optional): The minimum number of universes needed to
+                calculate runtime statistics.
             report_no (int, optional): Passed by ReportFormat call
             show_individual_runtimes (bool, optional): Whether to report
                 individual universe runtimes; default: True
@@ -961,38 +961,37 @@ class WorkerManagerReporter(Reporter):
         Returns:
             str: The multi-line simulation report
         """
-        # Calculate the runtime statistics and add them to the parts
-        rtstats = self.calc_runtime_statistics(min_num=min_num)
-
-        if rtstats is None:
-            return ("No simulation report generated because no runtime "
-                    "statistics were calculated.")
-
         # List that contains the parts that will be written
         parts = []
 
-        # Add header
-        parts += ["Runtime Statistics"]
-        parts += ["------------------"]
-        parts += [""]
-        parts += ["This report contains the runtime statistics of a "
-                  "multiverse simulation run."]
-        parts += ["The statistics are calculated from universe run times."]
-        parts += [""]
-        parts += ["  # universes:  {} / {}".format(len(self.runtimes),
-                                                   len(self.wm.tasks))]
-        parts += [""]
+        # Calculate the runtime statistics and add them to the parts
+        rtstats = self.calc_runtime_statistics(min_num=min_num)
 
-        # Add the runtime statistics
-        parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
-                  for k, v in rtstats.items()]
+        if rtstats is not None:
+            # Add header
+            parts += ["Runtime Statistics"]
+            parts += ["------------------"]
+            parts += [""]
+            parts += ["This report contains the runtime statistics of a "
+                      "multiverse simulation run."]
+            parts += ["The statistics are calculated from universe run times."]
+            parts += [""]
+            parts += ["  # universes:  {} / {}".format(len(self.runtimes),
+                                                       len(self.wm.tasks))]
+            parts += [""]
+
+            # Add the runtime statistics
+            parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
+                      for k, v in rtstats.items()]
+            parts += [""]
+            parts += [""]
 
         # In cluster mode, add more information
         if self.wm.cluster_mode:
             rcps = self.wm.resolved_cluster_params
 
-            parts += [""]
-            parts += ["Cluster mode is enabled."]
+            parts += ["Cluster Mode Information"]
+            parts += ["------------------------"]
             parts += [""]
             parts += [fstr.format(k=k, v=rcps[k])
                       for k in ('node_name', 'node_index', 'num_nodes',
