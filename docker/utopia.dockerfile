@@ -14,11 +14,20 @@ ARG PROCNUM=1
 ARG CC=gcc
 ARG CXX=g++
 
+# commit or branch to check out and remote URL
+ARG GIT_CHECKOUT=""
+ARG GIT_REMOTE_URL=""
+
+
 # End of argument definitions . . . . . . . . . . . . . . . . . . . . . . . . .
 
 # Enter a new work directory and copy over all data from the build context
 WORKDIR /utopia
 COPY ./ ./
+
+# Checkout a specific commit and set the origin URL as specified
+RUN if [ -n "$GIT_CHECKOUT" ]; then git checkout ${GIT_CHECKOUT}; fi
+RUN if [ -n "$GIT_REMOTE_URL" ]; then git remote set-url origin ${GIT_REMOTE_URL}; fi
 
 # Configure and build Utopia
 WORKDIR /utopia/build
@@ -45,11 +54,12 @@ RUN ./run-in-utopia-env utopia config user \
     --set paths.out_dir=/home/utopia/io/output
 # Have model registry and utopia configuration in /root/.config/utopia now.
 
-# Move the model registry files and any already created cache files from the
-# root's home to the utopia user's home.
+# Move the model registry files and any already created cache and cmake files
+# from the root's home to the utopia user's home.
 # Then, take care that everything the user interacts with is owned by them.
 RUN    mv /root/.config /home/utopia/.config/  \
     && mv /root/.cache /home/utopia/.cache/    \
+    && mv /root/.cmake /home/utopia/.cmake/    \
     && chown -R utopia:utopia /utopia          \
     && chown -R utopia:utopia /home/utopia
 # Utopia works for the utopia user now

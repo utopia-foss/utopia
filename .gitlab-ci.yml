@@ -16,6 +16,13 @@ variables:
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
 
+  # Variables controlling the deployed Utopia image and its development
+  # counterpart (deployed from the ci_test stage for testing)
+  UTOPIA_IMAGE_NAME: ccees/utopia
+  UTOPIA_IMAGE_REMOTE_URL: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+
+  UTOPIA_DEV_IMAGE_TAG: dev
+  UTOPIA_DEV_IMAGE_CHECKOUT: master
 
   # Setting number of processes for build jobs and DIND jobs
   CPUS_BUILD: 4
@@ -123,13 +130,15 @@ ci_test:docker-image:
     - web
     - my-development-branch-name  # Change this to suit your needs.
   script:
-    # Same build command as in deploy:dockerhub-latest, but with different tag
+    # Same build command as in deploy:dockerhub-latest, but with dev tag
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t ccees/utopia:dev
+                   --build-arg GIT_CHECKOUT=$UTOPIA_DEV_IMAGE_CHECKOUT
+                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
+                   -t ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
                    ./
-    - docker push ccees/utopia:dev
+    - docker push ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
 
     # Abort, such that the rest of the pipeline does not run.
     - exit 1
@@ -566,12 +575,15 @@ deploy:dockerhub-latest:
   only:
     - master
   script:
+    # Now, build the docker image and push it as $UTOPIA_IMAGE_NAME:latest
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t ccees/utopia:latest
+                   --build-arg GIT_CHECKOUT=master
+                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
+                   -t $UTOPIA_IMAGE_NAME:latest
                    ./
-    - docker push ccees/utopia:latest
+    - docker push $UTOPIA_IMAGE_NAME:latest
   environment:
     name: docker/latest
-    url: https://hub.docker.com/r/ccees/utopia
+    url: https://hub.docker.com/r/$UTOPIA_IMAGE_NAME
