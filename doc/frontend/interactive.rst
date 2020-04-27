@@ -44,14 +44,11 @@ When running ``jupyter notebook``, you should now be able to select a kernel fro
 
 With the Docker Container
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. todo::
+You can also work interactively with Utopia when using the `Utopia docker container <https://hub.docker.com/r/ccees/utopia>`_.
+As part of the ``ccees/utopia`` docker image, Jupyter is already pre-installed and a notebook server is started alongside the container.
+The idea is that you attach to that notebook server with the browser on your *host* system.
 
-  Formulate sentences. And already install ``jupyter`` and ``ipython`` inside the docker container.
-
-* Run the docker container with additional port specification, i.e. add ``-p 8888:8888`` to the ``docker run`` command
-* Inside the container, use pip to install ``jupyter``
-* Run the notebook with ``jupyter notebook --ip 0.0.0.0 --no-browser``
-* Open the shown link in a browser on your *host* machine
+Follow the `detailed instructions on the corresponding Docker Hub page <https://hub.docker.com/r/ccees/utopia>`_ to find out more.
 
 
 Basic Concepts

@@ -199,7 +199,8 @@ To make sure that Utopia works as expected on your machine, [build and carry out
 [Docker][docker] is a free OS-level virtualization software.
 It allows to run any application in a closed environment container.
 
-If you do not intend to develop models with Utopia, the Utopia docker image is a way to _run_ Utopia models and evaluate them without having to go through the installation procedure.
+The Utopia docker image is a way to run Utopia models and evaluate them without having to go through the installation procedure.
+It is also suitable for framework and model development.
 
 The image and instructions on how to create a container from it can be found on the [`ccees/utopia` docker hub page][Utopia-docker].
 

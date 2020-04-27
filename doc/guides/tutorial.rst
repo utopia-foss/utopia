@@ -39,7 +39,7 @@ So far for an introduction. Let's dive in! 🤓
 
 .. hint::
 
-  Read these boxes if you are running Utopia from within the docker container.
+  Read these boxes if you are running Utopia from within the `Utopia docker container <https://hub.docker.com/r/ccees/utopia>`_.
 
 ----
 
@@ -78,7 +78,7 @@ Let us now look at how to run a model using the CLI. Run on the command line:
 
   $ utopia run --help
 
-You should get a wall of text. Don't be scared, all this log output is your friend. 
+You should get a wall of text. Don't be scared, all this log output is your friend.
 The command shows you all the possible parameters that you might need to run your model. Use it whenever you forgot what options you have.
 
 At the very top of the log, you will see the ``usage`` specified, with optional parameters in square brackets. As you see there, the only *non*-optional parameter is the name of the model you want to run.
@@ -100,7 +100,7 @@ If not, you probably got the following error message:
 
 .. code-block:: console
 
-  FileNotFoundError: Could not find command to execute! Did you build your binary? 
+  FileNotFoundError: Could not find command to execute! Did you build your binary?
 
 Alright, so let's build the ``dummy`` binary: Make sure you are in the ``build`` directory and then call ``make dummy``. After that command succeeds, you will be able to run the dummy model.
 
@@ -139,7 +139,7 @@ Due to its simplicity, this model is the perfect place to start, allowing you to
 
 The ``SandPile`` model
 ^^^^^^^^^^^^^^^^^^^^^^
-The ``SandPile`` model is a simple cellular automata model first described in the seminal work by `Bak et al. <https://doi.org/10.1103/PhysRevLett.59.381>`_ in 1987. 
+The ``SandPile`` model is a simple cellular automata model first described in the seminal work by `Bak et al. <https://doi.org/10.1103/PhysRevLett.59.381>`_ in 1987.
 It models heaps of sand and how their slope differ from a critical value. For more information on the model see the CCEES lecture notes.
 You can also check out the corresponding :doc:`model documentation <../models/SandPile>`.
 
@@ -160,12 +160,13 @@ Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmm
 
 .. hint::
 
-  Inside the docker image, the home directory of the ``utopia`` user is mapped to a local directory on your host machine, usually your current working directory. You will find the ``utopia_output`` there.
+  Inside the docker container, the home directory of the ``utopia`` user is mapped to a local directory on your host machine, usually your current working directory.
+  You will find the ``utopia_output`` there.
 
 You should see three different folders:
 
 * ``config``: Here, all the model configuration files are stored. You already learned how to set parameters in the terminal through the command line interface. But from the number of files inside the folder you can probably already guess that there are more options to set parameters. You will explore the possibilities below.
-* ``data``: Here, the simulation data is stored. 
+* ``data``: Here, the simulation data is stored.
 * ``eval``: Here, the results of the data evaluation are stored. All saved plots are inside this folder.
 
 This directory structure already hints at the three basic steps that are executed during a model run:
@@ -176,15 +177,15 @@ This directory structure already hints at the three basic steps that are execute
 
 So, to get an idea of how the simulation went, let us have a look at the ``SandPile`` model plots. These are plots implemented alongside the model that show the relevant model behaviour. `Below <#plotting>`_, you will learn how to adjust these plots; for now, let us use these only to understand the behaviour of changes in the model parameters.
 
-Navigate to the ``eval/YYMMDD-hhmmss/`` folder and open ``mean_slope.pdf``. 
+Navigate to the ``eval/YYMMDD-hhmmss/`` folder and open ``mean_slope.pdf``.
 Inside the ``eval`` folder there is again a time-stamped folder.
-Every time you evaluate a simulation, a new folder is created. 
+Every time you evaluate a simulation, a new folder is created.
 Like this, no evaluation result is ever overwritten.
 
-The ``mean_slope.pdf`` file contains the plot of the mean slope over time. 
-You can see that only four time steps are shown. 
-That is because by default *Utopia* runs 3 iteration steps producing four data points taking into account the initial state. 
-You can run 
+The ``mean_slope.pdf`` file contains the plot of the mean slope over time.
+You can see that only four time steps are shown.
+That is because by default *Utopia* runs 3 iteration steps producing four data points taking into account the initial state.
+You can run
 
 .. code-block:: console
 
@@ -197,7 +198,7 @@ If you further increase ``num_steps``, you will most certainly need to select wh
 
 Try the following if you want to see that calculating the complementary cumulative probability distribution can be created fast without the need to plot other time-consuming plots.
 
-.. code-block:: console 
+.. code-block:: console
 
   $ utopia run SandPile --num-steps 50000 --plot-only compl_cum_prob_dist
 
@@ -208,12 +209,7 @@ Directory structure
 ^^^^^^^^^^^^^^^^^^^
 Let's take a brief detour and have a look at the directory structure of the *Utopia* repository, the output folder and where you can place the configuration files you will need in the rest of this tutorial.
 
-.. hint::
-
-  As the docker image does not contain the ``utopia`` development repository but only ready-built models, you can skip the following.
-  Continue from the next green hint box.
-
-Assuming that you have *Utopia* inside your home directory, the directory structure should look similar to the following (only most relevant directories listed here):
+Assuming that you have *Utopia* installed inside your home directory, the directory structure should look similar to the following (only most relevant directories listed here):
 
 .. code-block:: console
 
@@ -227,9 +223,10 @@ Assuming that you have *Utopia* inside your home directory, the directory struct
           ├── core           # Utopia core structures
           └── data_io        # Data input and output library
       ├─┬ src
-        └─┬ models           # The model implementations
-          ├── ...
-          └── SandPile
+        └─┬ utopia
+          └─┬ models         # The model implementations
+            ├── ...
+            └── SandPile
       ├─┬ python             # All python code
         ├─┬ model_plots      # Model-specific plots
           ├── ...
@@ -240,14 +237,25 @@ Assuming that you have *Utopia* inside your home directory, the directory struct
         └── utopya           # The Utopia frontend
       └── ...
 
+.. hint::
+
+  In the Utopia docker container, the ``utopia`` framework repository is located at ``/utopia``.
+
+.. note::
+
+  When working on a *separate* Utopia model repository, the structure is basically the same. The differences are the following:
+
+  * The models are implemented in ``src/models`` instead of ``src/utopia/models``.
+  * There is no ``include`` and no ``python/utopya`` directory.
+
 This might be a bit overwhelming, but you will soon know your way around this.
 
 You are already familiar with the ``build`` directory, needed for the build commands and to enter the virtual environment. Other important ones will be the model implementations and the model plots; you can ignore the others for now.
 
 .. hint::
 
-  Continue here. :)
-  Remember that what relates to the home directory below is your *mounted* directory.
+  Remember that what relates to the home directory below is your *mounted* directory in the docker container.
+  Inside the docker container, the output directory is ``~/io/utopia_output``.
 
 The *Utopia* frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
 
@@ -257,7 +265,7 @@ The *Utopia* frontend also took care of creating an ``utopia_output`` directory,
   ├── Utopia                 # All the Utopia code
   ├─┬ utopia_output          # The Utopia output folder
     ├── ...                  # Other model names
-    └─┬ SandPile             
+    └─┬ SandPile
       ├─┬ YYMMDD-hhmmss      # Timestamp of a simulation run
         ├── config           # Config files used in the simulation run
         ├── data             # Raw output data
@@ -277,8 +285,8 @@ It makes sense to build up another folder hierarchy for each model, which helps 
   ├── Utopia                 # All the Utopia code
   ├── utopia_output          # The Utopia output folder
   └─┬ utopia_cfgs            # Custom config files (needs to be created manually)
-    ├── ...                  
-    └─┬ SandPile             
+    ├── ...
+    └─┬ SandPile
       └─┬ test               # Configuration files for a test run ...
         ├─ run.yml           # ... specifying one run
         └─ plots.yml         # ... specifying the plots for this run
@@ -310,14 +318,15 @@ What is this business with the configuration files and how can you actually chan
 
 .. hint::
 
-    You can create a directory and an empty plain text file right from the terminal:
+    You can create a directory and an empty plain text file right from the terminal *inside* the docker container:
 
     .. code-block:: console
 
-        $ mkdir -p ~/utopia_cfgs/SandPile/test
-        $ touch ~/utopia_cfgs/SandPile/test/run.yml
+        $ mkdir -p ~/io/utopia_cfgs/SandPile/test
+        $ touch ~/io/utopia_cfgs/SandPile/test/run.yml
 
     The created file can then be opened in the text editor of your choice.
+    As the directory is mounted, you can also do this on the host system.
 
 Now, copy the following lines into it:
 
@@ -334,7 +343,7 @@ Just to give you an idea: A key-value pair can be specified simply with the ``ke
 
 .. note::
 
-  In Utopia, all files with a ``.yml`` endings are configuration files. 
+  In Utopia, all files with a ``.yml`` endings are configuration files.
   To learn more about YAML, you can have a look at `learnXinYminutes tutorial <https://learnxinyminutes.com/docs/yaml/>`_ or search for others on the internet.
 
 As you can see, the parameters are all bundled under the ``parameter_space`` key. With the above configuration, you set the number of iteration steps to ``2000``, overwriting the default value of ``3``.
@@ -459,10 +468,10 @@ By the way: What you learned here, applies also to all other models.
 You just need to know the model specific parameters, which you can find in the model documentation.
 So, just check out another model and change parameters if you like. 😎
 
-.. note:: 
+.. note::
 
   **Changing the model configurations:** Technically, it is possible to change the model parameters in the file where the defaults are specified.
-  However, this is **not** advisable at all! As the name says, these files are to carry the *default* parameters and are not expected to change. 
+  However, this is **not** advisable at all! As the name says, these files are to carry the *default* parameters and are not expected to change.
   Instead write your own run configuration files as described in this section.
   This ensures inter alia that all models always work with their default configuration and that tests are guaranteed to run quickly and pass.
   Basically, you prevent the universe from collapsing.
@@ -584,7 +593,7 @@ This creates a new plot named ``my_mean_slope_plot``, which in this form produce
 
   $ utopia eval SandPile --plots-cfg ~/utopia_cfgs/SandPile/test/plots.yml
 
-Confirm in the logs that only the ``my_mean_slope_plot`` plot was created. 
+Confirm in the logs that only the ``my_mean_slope_plot`` plot was created.
 Now check out the run directory, where a new directory inside ``eval`` (with the current timestamp) will hold the plot output.
 
 Feel free to customize the plot configuration by changing parameters in your ``plots.yml`` file. To find out which configuration parameters are available, check out the base plot configuration for the model.
@@ -637,7 +646,7 @@ In fact, it is part of the default plotting system. You might have noticed the c
    :end-before: # --- An animation of the CA `avalanche`
 
 .. note::
-    
+
     To create animations, you need to have ``ffmpeg`` installed.
     For more information, have a look at the recommended dependencies section in the :doc:`README <../README>`.
 
@@ -984,13 +993,13 @@ The short description of what you told *Utopia*'s frontend to do is:
   For more information on how to select data from a multiverse, see :ref:`select_mv_data`.
 
 So, we roughly understand the first part of the configuration file.
-Plotting will, however, not work: 
+Plotting will, however, not work:
 The second part of the configuration file states: Use the plotting function ``plot_func: ensemble_averaged_mean_state``, which is located in the ``module_file: ~/path/to/my/plot/function/file.py`` and create the plot.
 But this function does not exist yet.
 So let us create it:
 
-Create a file at a location of your choice, so let's choose: ``~/utopia_FFM_timeseries_plots.py``. 
-(You would probably want to create it at another location 
+Create a file at a location of your choice, so let's choose: ``~/utopia_FFM_timeseries_plots.py``.
+(You would probably want to create it at another location
 – get inspired by the directory structure described earlier in this tutorial.)
 Within this file, let us create the ``ensemble_averaged_mean_state`` function with the following content:
 
@@ -1002,12 +1011,12 @@ Within this file, let us create the ``ensemble_averaged_mean_state`` function wi
 
   from utopya import DataManager, UniverseGroup
 
-  def ensemble_averaged_mean_state(dm: DataManager, *, 
-                                   out_path: str, 
+  def ensemble_averaged_mean_state(dm: DataManager, *,
+                                   out_path: str,
                                    # Here, you get the selected data
                                    mv_data: xr.Dataset,
                                    # Below, you can add further model specific arguments
-                                   save_kwargs: dict=None, 
+                                   save_kwargs: dict=None,
                                    **plot_kwargs):
       """Plots the ensemble averaged mean state over multiple universes"""
       # Calculate the mean state averaged over all universes.
@@ -1041,7 +1050,7 @@ Of course, if you want to do a new simulation run that creates new data you can 
 
   $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
 
-Now, go check the resulting plot. How does it look like? 
+Now, go check the resulting plot. How does it look like?
 
 To learn more about parameter sweeps, look at the :doc:`multidimensional data generation and plotting in Utopia  <../guides/parameter-sweeps>` guide.
 
@@ -1052,8 +1061,8 @@ To learn more about parameter sweeps, look at the :doc:`multidimensional data ge
   For the ``ensemble_averaged_mean_state`` this probably is not the case.
 
   You could be wondering why this plot is not within the *Utopia* default plots.
-  Just ask yourself: Is it really necessary to do multiple realizations of the 
-  ForestFire model with just different random number seeds and average them? 
+  Just ask yourself: Is it really necessary to do multiple realizations of the
+  ForestFire model with just different random number seeds and average them?
   The answer is no because this system is ergodic.
 
   So, always think about what you want to implement and whether it makes sense to do it or not. :)
@@ -1084,7 +1093,7 @@ Of course, you will need to adjust some parameters.
 So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
 
 And, perhaps you even want to write your own *Utopia* model. To that end you should work with the features given by GitLab.
-If you have never heard of GitLab or worked with it and you don't know what a master nor a branch is and even less what is meant by committing or merging, continue with the :doc:`Greenhorn Guide <greenhorn-guide>`. 
+If you have never heard of GitLab or worked with it and you don't know what a master nor a branch is and even less what is meant by committing or merging, continue with the :doc:`Greenhorn Guide <greenhorn-guide>`.
 
 After mastering that guide, a good starting point for the actual implementation of your own model is the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
 
