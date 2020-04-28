@@ -16,6 +16,13 @@ variables:
   # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
   #      docker file are introduced.
 
+  # Variables controlling the deployed Utopia image and its development
+  # counterpart (deployed from the ci_test stage for testing)
+  UTOPIA_IMAGE_NAME: ccees/utopia
+  UTOPIA_IMAGE_REMOTE_URL: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+
+  UTOPIA_DEV_IMAGE_TAG: dev
+  UTOPIA_DEV_IMAGE_CHECKOUT: master
 
   # Setting number of processes for build jobs and DIND jobs
   CPUS_BUILD: 4
@@ -69,17 +76,17 @@ image: ${BASE_IMAGE}
     #   https://docs.gitlab.com/ce/ci/ssh_keys/
     # Run ssh-agent (inside the build environment)
     - eval $(ssh-agent -s)
-    
+
     # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
     # We're using tr to fix line endings which makes ed25519 keys work
     # without extra base64 encoding.
     # https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-    
+
     # Create the SSH directory and give it the right permissions
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    
+
     # Add the known hosts lists to ensure this ssh connection is the right one
     - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
@@ -120,16 +127,18 @@ ci_test:docker-image:
   <<: *dind
   stage: ci_test
   only:
+    - web
     - my-development-branch-name  # Change this to suit your needs.
   script:
-    # Same build command as in deploy:dockerhub-latest, but with different tag
+    # Same build command as in deploy:dockerhub-latest, but with dev tag
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
-                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t ccees/utopia:dev
+                   --build-arg GIT_CHECKOUT=$UTOPIA_DEV_IMAGE_CHECKOUT
+                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
+                   -t ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
                    ./
-    - docker push ccees/utopia:dev
+    - docker push ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
 
     # Abort, such that the rest of the pipeline does not run.
     - exit 1
@@ -340,15 +349,15 @@ test:models:
   before_script:
     # Make model registry available (from build:models job)
     - *add_cfg_symlink
-  script:    
+  script:
     # Test models using C++ and Python model tests
     - cd build
     - make $MAKE_FLAGS_TEST test_models
-    
+
     # Also test each model via the CLI.
     # Need to enter the virtual env first
     - $ENTER_UTOPIA_ENV
-    
+
     # First, the test and benchmark models:
     - utopia run dummy --debug
     - utopia run CopyMeGraph --debug
@@ -385,17 +394,17 @@ test:cli:
   script:
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
-    
+
     # Test deployment of user configuration
     - utopia config user --deploy
-    
+
     # Adjust the user configuration to store to a local directory
     - utopia config user --set paths.out_dir=$CI_PROJECT_DIR/utopia_output --get
 
     # Show which models are available
     - utopia models
     - utopia models ls --long
-    
+
     # Test the run command
     - utopia run dummy
 
@@ -417,7 +426,7 @@ test:cli:
     # Write start and step
     - utopia run dummy --note write_sparse --num-steps 5 --write-every 2
     - utopia run dummy --note write_last --num-steps 5 --write-start 5
-    
+
     # Test the printing of the data tree
     # NOTE Need to sleep here because the eval directory will already exist
     - utopia run dummy --full-data-tree
@@ -436,7 +445,7 @@ test:cli:
     - utopia run dummy --note plt4
         --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
     - utopia run dummy --note plt5
-        --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml 
+        --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml
 
     # Test the interactive plotting mode, piping mock input to it
     # None of these should lead to an exit code other than 0
@@ -450,7 +459,7 @@ test:cli:
         <<< $'--plot-only some_non_existing_plot --debug'
     - sleep 1.1 && utopia eval --interactive dummy
         <<< $'some offending arguments\n--help'
-    
+
     # Test the setting of parameters and config parameters from CLI
     - utopia run dummy --set-model-params foo=3 bar=2.0
     - utopia run dummy --set-params num_steps=3 write_every=2
@@ -566,13 +575,15 @@ deploy:dockerhub-latest:
   only:
     - master
   script:
+    # Now, build the docker image and push it as $UTOPIA_IMAGE_NAME:latest
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
-                   --build-arg DEPLOY_KEY="$SSH_PRIVATE_KEY"
                    --build-arg PROCNUM=$CPUS_DIND
-                   -t ccees/utopia:latest
+                   --build-arg GIT_CHECKOUT=master
+                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
+                   -t $UTOPIA_IMAGE_NAME:latest
                    ./
-    - docker push ccees/utopia:latest
+    - docker push $UTOPIA_IMAGE_NAME:latest
   environment:
     name: docker/latest
-    url: https://hub.docker.com/r/ccees/utopia
+    url: https://hub.docker.com/r/$UTOPIA_IMAGE_NAME

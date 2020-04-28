@@ -7,7 +7,8 @@ After having been through the :doc:`README <../README>`, the
 
 .. note::
 
-  As a model developer, you can **not** use the Utopia docker image, as it does not contain the model source code.
+  You **can** use the `Utopia docker image <https://hub.docker.com/r/ccees/utopia>`_ for model development.
+  Follow the instructions given there to find out how.
 
 If you go through all the steps, you will end up with a model that can profit
 from all *Utopia* features and can do ... basically nothing interesting yet.
@@ -39,7 +40,7 @@ You should now decide with which model you want to start with.
 This can be one of the above ``CopyMe`` models or some other model.
 
 ⚠️ Below, you will need to replace all mentions of ``CopyMe`` with the name of the model of your choice.
-  
+
 
 Choosing a name for your model
 ------------------------------
@@ -114,7 +115,7 @@ To avoid problems, go through the following points from top to bottom, and first
 
   - In ``src/utopia/models/``, you find a ``CMakeLists.txt`` file. Open it and let
     CMake find your model directory by including the command:
-    ``add_subdirectory(MyFancyModel)`` 
+    ``add_subdirectory(MyFancyModel)``
   - In ``src/utopia/models/MyFancyModel/``, there is another ``CMakeLists.txt`` file.
     Open it and change the line ``add_model(CopyMe CopyMe.cc)`` to
     ``add_model(MyFancyModel MyFancyModel.cc)``. With this command, you tell
@@ -169,7 +170,7 @@ You can set up a simple Python testing framework in the following way:
 
 12. Move to the ``python/model_tests`` directory
 13. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
-    that there is a file named ``__init__.py`` inside the directory. 
+    that there is a file named ``__init__.py`` inside the directory.
 14. Inside the created ``MyFancyModel`` directory, rename the
     ``test_CopyMe.py`` file to ``test_MyFancyModel.py``.
 15. Open the ``test_MyFancyModel.py`` file and replace all ``CopyMe``\ 's
@@ -255,7 +256,7 @@ As a rough guideline:
 
 * Use ``log->info("Some info")`` for information that is not repetitive, e.g.
   not inside a loop, and contains rather general information.
-* Use ``log->debug("Some more detailed info, e.g. for helping you debug")`` 
+* Use ``log->debug("Some more detailed info, e.g. for helping you debug")``
 * Use the python-like formatting syntax:
   ``log->debug("Some parameter: {:.3f}", param)`` to output parameters.
 
@@ -283,14 +284,14 @@ It contains information what requirements your code must fulfill such that it
 can be accepted as a model within *Utopia*, e.g. that it can be merged into
 *Utopia*'s ``master`` branch.
 
-Have fun implementing your own *Utopia* model! :) 
+Have fun implementing your own *Utopia* model! :)
 
 Coupling of models - the post model era
 ---------------------------------------
 
 .. note::
     This is an advanced feature.
-    Only go forward to couple models if each of them is tested individually. 
+    Only go forward to couple models if each of them is tested individually.
 
 Once you have your own model implemented, you might want to consider to couple two or more models.
 It is absolutely intended to do so, even in complicated hierarchy.
@@ -303,15 +304,15 @@ Operating coupled models usually requires a couple of additional thoughts:
 * For every model, the `run()` command includes the iteration until maximum time and three additional operations:
 
   #.
-    The ``prolog``. 
+    The ``prolog``.
     A function that is to be called before the first iteration of this model.
     Its default function includes the writing of the initial state.
-  #. 
+  #.
     The ``epilog``.
     A function that is called after the last iteration of this model.
     It should be directly thereafter, but it does not have to be.
     Check with the model's documentation.
-  #. 
+  #.
     The `breakpoint`.
     The model may receive a signal to stop iteration, e.g. due to a break condition or the user interrupting the simulation run.
     Upon that signal, the ``stop_now`` flag is set to ``true``, indicating that the iteration should stop and the model should shut down.
@@ -319,7 +320,7 @@ Operating coupled models usually requires a couple of additional thoughts:
     If – for special reasons – a system of coupled models needs to perform a specific task at the breakpoint, the flag may be queries using ``this->stop_now.load()``.
     Be aware that time-intensive tasks should *not* be carried out after the breakpoint; the aim is to swiftly take down the model object.
     Also note that this flag is not part of the public interface and may change unexpectedly.
-    
+
   These operations must be handled manually if the child-model is only iterated.
   That means, call the `prolog` before the first iteration, call the `epilog` after the last iteration, and set a breakpoint if you are performing several iterations in a row.
   Note, that the maximum time is equal for all models.
