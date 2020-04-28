@@ -6,7 +6,7 @@ phase_space:
 
   model_name: PredatorPreyPlant
 
-  # How to color-code the time axis  
+  # How to color-code the time axis
   cmap: viridis_r
 
   # All below: passed on to plt.scatter
@@ -40,15 +40,16 @@ species_densities:
       preprocess:
         - create_mask: [==, 1]
       label: Prey
-    
+
     plant:
       mean_of: [x, y]
       preprocess:
         - create_mask: [==, 1]
       label: Plant
 
+# -- Time series of the predator and prey resources ---------------------------
 mean_resources:
-  based_on: .time_series.densities
+  based_on: .basic_uni.lineplots
 
   helpers:
     set_limits:
@@ -61,24 +62,27 @@ mean_resources:
 
   model_name: PredatorPreyPlant
 
+  # Take average only of cells with resources >= 1
   to_plot:
     resource_predator:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
+      path_to_data: resource_predator
+      transform_data:
+        - where: [ge, 1]
+        - mean: [x, y]
       label: Predator
 
     resource_prey:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
+      path_to_data: resource_prey
+      transform_data:
+        - where: [ge, 1]
+        - mean: [x, y]
       label: Prey
 
 
 # -- A grid animation that shows combined predator and prey positions ---------
 combined_grid_animation_frames: &combined_grid_anim
   based_on: .ca.state.anim_frames
-  
+
   model_name: PredatorPreyPlant
 
   # Use the custom plotting function
