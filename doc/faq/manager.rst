@@ -25,10 +25,10 @@ Only two properties need always be defined: The state type of the entity and whe
 
   /// Traits for cells with synchronous update
   using MySyncCell = Utopia::CellTraits<MyCellState, Update::sync>;
-  
+
   /// Traits for cells with asynchronous update
   using MyAsyncCell = Utopia::CellTraits<MyCellState, Update::async>;
-  
+
   /// Traits for cells with determination of update via apply_rule call
   using MyManualCell = Utopia::CellTraits<MyCellState, Update::manual>;
 
@@ -117,7 +117,7 @@ entries are listed below:
   ---
   agent_manager:
     initial_num_agents: 10   # has to be given
-    initial_position: random # default mode is ``random``, 
+    initial_position: random # default mode is ``random``,
                              # currently available modes: ``random``
                              # defines how the initial positions are set
 
@@ -223,7 +223,7 @@ If cells or agents provide a constructor that allows passing not only a ``const 
       double a_double;
       std::string a_string;
       bool a_bool;
-  
+
       // Construct a cell state with the use of a RNG
       template<class RNGType>
       CellStateRC(const Config& cfg, const std::shared_ptr<RNGType>& rng)
@@ -254,3 +254,41 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
   to the cell state constructor.
 
   You should **not** create a new RNG; not here, not anywhere.
+
+
+
+.. _cell_manager_faq:
+
+``CellManager``-related FAQs
+============================
+
+Neighborhood calculation
+------------------------
+
+Where and how are neighborhoods calculated?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The neighborhood computation does not take place in the ``CellManager`` itself but in the underlying ``Grid`` object and based on the cells' IDs.
+The ``CellManager`` then retrieves the corresponding shared pointers from the IDs and makes them available via the ``neighbors_of`` method.
+
+The available neighborhood modes vary depending on the chosen `grid specialization <../../doxygen/html/class_utopia_1_1_grid.html>`_.
+
+
+Are neighborhoods computed on the fly or can I cache them?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Yes,** the ``CellManager`` offers to cache the neighborhood computation's result.
+This feature can be controlled via the ``compute_and_store`` argument.
+
+If enabled (which is the default), the neighborhood is computed once for each cell, stored, and retrieved upon calls to ``neighbors_of``.
+For more information, see `the doxygen documentation <../../doxygen/html/class_utopia_1_1_cell_manager.html>`_.
+
+Having this feature enabled gives a slight performance gain in most situations.
+However, when being memory-limited, it might make sense to disable it:
+
+.. code-block:: yaml
+
+    cell_manager:
+      neighborhood:
+        mode: Moore
+        compute_and_store: false
+
+*Note:* In the ``Grid`` itself, the IDs of the cells in the neighborhood are always computed on the fly.
