@@ -464,27 +464,48 @@ public:
     }
 
     /// Select the neighborhood and all parameters fully from a config node
+    /** If this method is used to set up the neighborhood, the following keys
+      * will be read and parsed:
+      *
+      *     - ``mode`` (required): the neighborhood mode
+      *     - ``compute_and_store`` (optional, default: ``true``): whether to
+      *       directly compute all neighbors and henceforth use the buffer to
+      *       get these neighbors.
+      *
+      * Subsequently, these values are passed to the appropriate overload
+      * of the select_neighborhood function.
+      *
+      * \param nb_cfg   The neighborhood configuration node. Apart from the
+      *                 keys that are parsed here, the full config node is
+      *                 passed along further.
+      */
     void select_neighborhood(const Config& nb_cfg) {
         // Extract the desired values
         if (not nb_cfg["mode"]) {
             throw KeyError("mode", nb_cfg, "Could not select neighborhood!");
         }
         const auto nb_mode = get_as<std::string>("mode", nb_cfg);
-
-        bool compute_nb = false;
-        if (nb_cfg["compute_and_store"]) {
-            compute_nb = get_as<bool>("compute_and_store", nb_cfg);
-        }
+        const bool compute = get_as<bool>("compute_and_store", nb_cfg, true);
 
         // Call the string-based selection function, passing through the whole
         // config node. The fact that the above two keys are also present in
         // the node is not a problem.
-        select_neighborhood(nb_mode, compute_nb, nb_cfg);
+        select_neighborhood(nb_mode, compute, nb_cfg);
     }
 
     /// Select the neighborhood mode using a string for the mode argument
+    /** Resolves a string-type ``nb_mode`` to NBmode, then invokes the
+      * appropriate overload.
+      *
+      * \param nb_mode            The name of the neighborhood to select
+      * \param compute_and_store  Whether to directly compute all neighbors
+      *                           and henceforth use the buffer to get these
+      *                           neighbors. Default: ``true``.
+      * \param nb_params          Passed on to the Grid::select_neighborhood
+      *                           method, carrying additional parameters.
+      */
     void select_neighborhood(const std::string& nb_mode,
-                             const bool compute_and_store = false,
+                             const bool compute_and_store = true,
                              const Config& nb_params = {})
     {
         // Check if the string is valid
@@ -502,10 +523,12 @@ public:
     /** \param nb_mode            The name of the neighborhood to select
       * \param compute_and_store  Whether to directly compute all neighbors
       *                           and henceforth use the buffer to get these
-      *                           neighbors.
+      *                           neighbors. Default: ``true``.
+      * \param nb_params          Passed on to the Grid::select_neighborhood
+      *                           method, carrying additional parameters.
       */
     void select_neighborhood(const NBMode& nb_mode,
-                             const bool compute_and_store = false,
+                             const bool compute_and_store = true,
                              const Config& nb_params = {})
     {
         // Only change the neighborhood if it is different to the one already
