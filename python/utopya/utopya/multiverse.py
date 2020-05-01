@@ -1096,12 +1096,8 @@ class FrozenMultiverse(Multiverse):
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
 
-        # Instantiate the PlotManager with the model-specific plot config
-        self._pm = PlotManager(dm=self.dm,
-                        base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
-                        update_base_cfg=self.info_bundle.paths.get('base_plots'),
-                        plots_cfg=self.info_bundle.paths.get('default_plots'),
-                        **self.meta_cfg['plot_manager'])
+        # Instantiate the PlotManager via the helper method
+        self._pm = self._setup_pm()
 
         log.progress("Initialized FrozenMultiverse.\n")
 
