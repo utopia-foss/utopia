@@ -703,7 +703,7 @@ if __name__ == '__main__':
     while args.interactive:
         print("")
         log.hilight("--- Interactive plotting session %d ---", iap_session)
-        log.note("Use Cmd+C to exit.")
+        log.note("Use Control+C to exit.")
 
         try:
             argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args,
