@@ -35,8 +35,7 @@ order, users may choose to use shuffling before iterating over the cells.
 ## Implementation
 
 A rule must be implemented by the programmer as a function (object).
-The function it represents must take a pointer to the entity as single
-argument and may capture arbitrary objects.
+The function it represents must take a pointer to the entity as first argument and any number of additional arguments, and may capture arbitrary objects.
 The function's return value is the new state of the entity it is applied to.
 
 For asynchronously applied rules, no return value is required; the state may be
@@ -46,6 +45,32 @@ Currently, rules may also alter other members (i.e., tags) of the entity
 they are applied to, and may even change states of other entities. *Notice
 that this does not make sense if you intend to apply such a rule
 synchronously!*
+
+A rule is applied with the Utopia::apply_rule() function.
+All overloads of this function take the rule, a container of entities, and optionally additional containers as arguments.
+The latter two are iterated and their elements are applied to the rule in order of their occurance in the containers.
+The number of containers the function is called with must match the number of arguments of the rule.
+All containers must have the same size.
+
+\warning There will be no runtime check if the inserted containers match in size!
+The zip iterator will cause undefined behavior in that case.
+
+Defining a rule taking two arguments and passing an additional container with arguments to be applied can look like this:
+\code{.cc}
+    auto my_rule = [](auto&& cell, auto&& arg){ return cell->state * arg; };
+    Utopia::apply_rule<Utopia::Update::async,
+                       Utopia::Shuffle::off>(my_rule, my_cells, my_args);
+\endcode
+
+Utopia::apply_rule() uses the \ref Iter "Zip iteration utilities".
+The above function call is equivalent to the Python code:
+
+\code{.py}
+    for cell, arg in zip(my_cells, my_args):
+        cell.state = rule(cell, arg)
+\endcode
+
+\note Additional argument containers are only available with Utopia::apply_rule() overloads for manual state update (see next section).
 
 ### Choosing Update Type When Calling `apply_rule`
 

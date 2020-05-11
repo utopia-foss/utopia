@@ -76,7 +76,7 @@ Logging
 """""""
 * Based on `spdlog <https://github.com/gabime/spdlog>`_, logging fast yet conveniently using the `fmt <https://github.com/fmtlib/fmt>`_ library for string parsing. No more ``std::cout``!
 * Available as ``_log`` member in every ``Model``. Example:
-    
+
     .. code-block:: cpp
 
         _log->debug("Creating {} entities now ...", num_new_entities);
@@ -206,6 +206,7 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
             g               // The graph to iterate over
         );
 
+* With a rule that accepts more than one argument, additional container-like arguments can be passed to ``apply_rule``, leading to a ``zip``-iteration. For each entity, the arguments from the containers are then unpacked into the respective call to the rule function.
 * 📚
   `Doxygen <../doxygen/html/group___rules.html>`_,
   :ref:`apply_rule on graph entities <apply_rule_graph>`
@@ -752,7 +753,7 @@ Issue Board & Merge Request
 * To add more involved diagrams like class diagrams or sequence diagrams, the GitLab also provides access to `PlantUML <http://plantuml.com>`_, simply by defining a code block with ``plantuml`` as syntax:
 
     .. code-block::
-    
+
         ```plantuml
         Bob -> Alice : hello
         Alice -> Bob : hi
