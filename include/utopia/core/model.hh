@@ -988,14 +988,25 @@ public:
 private:
 
     /// Set up the global loggers with levels specified in the config file
+    /** Extract the following keys from the ``_cfg`` member:
+      *
+      *     - ``log_levels.core``:      the Core module log level; required
+      *     - ``log_levels.data_io``:   the DataIO module log level; required
+      *     - ``log_levels.data_mngr``: the DataIO::DataManager log level;
+      *                                 optional, defaults to ``warn``
+      *     - ``log_pattern``:          the global log pattern
+      */
     void setup_loggers () const {
         Utopia::setup_loggers(
-            spdlog::level::from_str(get_as<std::string>("core",
-                                                        _cfg["log_levels"])),
-            spdlog::level::from_str(get_as<std::string>("data_io",
-                                                        _cfg["log_levels"])),
-            spdlog::level::from_str(get_as<std::string>("data_mngr",
-                                                        _cfg["log_levels"])),
+            spdlog::level::from_str(
+                get_as<std::string>("core", _cfg["log_levels"])
+            ),
+            spdlog::level::from_str(
+                get_as<std::string>("data_io", _cfg["log_levels"])
+            ),
+            spdlog::level::from_str(
+                get_as<std::string>("data_mngr", _cfg["log_levels"], "warn")
+            ),
             get_as<std::string>("log_pattern", _cfg, "")
         );
     }
