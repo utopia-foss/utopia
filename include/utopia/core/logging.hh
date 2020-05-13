@@ -20,8 +20,10 @@ inline const std::string log_data_mngr = "data_mngr";
 /// Initialize a logger with a certain name and log level
 /** If the logger already exists, issue a warning and only set the log level.
  *  Optionally, this function can throw an exception.
- *  \param name Name of the logger. This is also the registered logger name.
- *  \param level Log level of the logger. See spdlog::level::level_enum
+ *
+ *  \param name           Name of the logger. This is also the registered
+ *                        logger name.
+ *  \param level          Level of the logger. See spdlog::level::level_enum
  *  \param throw_on_exist Throw an exception if the logger exists
  */
 inline std::shared_ptr<spdlog::logger> init_logger (
@@ -32,14 +34,11 @@ inline std::shared_ptr<spdlog::logger> init_logger (
 {
     auto logger = spdlog::get(name);
 
+    // Create it if it does not exist yet; without a check, spdlog would throw
     if (not logger || throw_on_exist) {
-        // Create it; spdlog throws an exception if it already exists
         logger = spdlog::stdout_color_mt(name);
     }
-    else {
-        logger->warn("Skipping initialization of logger '{}' because "
-                     "it already exists.", name);
-    }
+
     logger->set_level(level);
     return logger;
 };
