@@ -19,7 +19,6 @@ from utopya.multiverse import DataManager, PlotManager, WorkerManager
 # Get the test resources
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
 USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
-BAD_USER_CFG_PATH = resource_filename('test', 'cfg/bad_user_cfg.yml')
 BASE_PLOTS_PATH = resource_filename('test', 'cfg/base_plots.yml')
 UPDATE_BASE_PLOTS_PATH = resource_filename('test', 'cfg/update_base_plots.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
@@ -45,7 +44,8 @@ def mv_kwargs(tmpdir) -> dict:
 
 @pytest.fixture
 def default_mv(mv_kwargs) -> Multiverse:
-    """Initialises a unique default configuration of the Multiverse to test everything beyond initialisation.
+    """Initialises a unique default configuration of the Multiverse to test
+    everything beyond initialisation.
 
     Using the mv_kwargs fixture, it is assured that the output directory is
     unique.
@@ -90,12 +90,6 @@ def test_simple_init(mv_kwargs):
     # NOTE Without specifying a path, the search path will be used, which makes
     # the results untestable and creates spurious folders for the user.
     # Therefore, we cannot test for the case where no user config is given ...
-
-    # Test with a bad user config
-    mv_kwargs['user_cfg_path'] = BAD_USER_CFG_PATH
-    mv_kwargs['paths']['model_note'] = "bad_user_cfg"
-    with pytest.raises(ValueError, match="There was a 'parameter_space' key"):
-        Multiverse(**mv_kwargs)
 
     # No user config path given -> search at default location
     mv_kwargs['user_cfg_path'] = None
