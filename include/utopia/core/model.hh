@@ -993,7 +993,10 @@ private:
             spdlog::level::from_str(get_as<std::string>("core",
                                                         _cfg["log_levels"])),
             spdlog::level::from_str(get_as<std::string>("data_io",
-                                                        _cfg["log_levels"]))
+                                                        _cfg["log_levels"])),
+            spdlog::level::from_str(get_as<std::string>("data_mngr",
+                                                        _cfg["log_levels"])),
+            get_as<std::string>("log_pattern", _cfg, "")
         );
     }
 
