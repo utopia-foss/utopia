@@ -349,7 +349,7 @@ plot_manager:
 
   # Enable auto-detection of plot creators, e.g. via is_plot_func decorator
   auto_detect_creator: true
-  
+
   # Can set creator initialization arguments here
   creator_init_kwargs:
     universe:
@@ -391,11 +391,11 @@ parameter_space:
   # By default, emit monitor data to the terminal every two seconds:
   monitor_emit_interval: 2.
 
-  # The default logging levels
+  # The default logging levels and pattern
   log_levels:
     # level for backend internal operations
     core: warning
-    
+
     # level for general I/O operations
     data_io: warning
 
@@ -406,6 +406,8 @@ parameter_space:
     # NOTE The level is propagated hierarchically, with models 'inheriting' the
     #      log level of their parents if they don't receive a custom level.
     model: info
+
+  log_pattern: "[%T.%e] [%^%l%$] [%n]  %v"
 
   # The path to the config file to load
   # output_path: /abs/path/to/uni<#>/cfg.yml

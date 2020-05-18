@@ -1,5 +1,0 @@
-# this is a user config with bad values to test if exceptions are raised
----
-parameter_space:
-  there: should be no keys here
-  actually: not even the parameter_space key should be defined

@@ -421,12 +421,6 @@ class Multiverse:
         if user_cfg_path:
             user_cfg = load_yml(user_cfg_path)
 
-            # Check that it does not contain parameter_space
-            if user_cfg and 'parameter_space' in user_cfg:
-                raise ValueError("There was a 'parameter_space' key found in "
-                                 "the user configuration loaded from {}. You "
-                                 "need to remove it.".format(user_cfg_path))
-
         # Read in the configuration corresponding to the chosen model
         model_cfg, model_cfg_path= load_model_cfg(info_bundle=self.info_bundle)
         # NOTE Unlike the other configuration files, this does not attach at
