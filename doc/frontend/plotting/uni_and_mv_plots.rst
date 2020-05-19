@@ -12,7 +12,7 @@ This page describes how to create plot functions and configurations for plotting
 .. note::
 
     This page documents only a selection of the plotting capabilities.
-    Make sure to also visit the `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/>`_, where the plotting framework is implemented.
+    Make sure to also visit the `dantro documentation <https://dantro.readthedocs.io/>`_, where the plotting framework is implemented.
 
 ----
 
@@ -38,7 +38,7 @@ This is done via the ``universes`` argument:
 Universe plots using DAG framework *(recommended)*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the :ref:`creator-averse plot function definition<plot_func_sig_recommended>` and specify the ``creator`` in the plot configuration.
-You can then use the `regular syntax <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html#arguments-to-control-dag-behaviour>`_ to select the desired data, based on the currently selected universe.
+You can then use the `regular syntax <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#arguments-to-control-dag-behaviour>`_ to select the desired data, based on the currently selected universe.
 
 When using the recommended creator-averse plot function signature, the DAG is automatically enabled and allows to select data in the following way:
 
@@ -65,13 +65,13 @@ When using the recommended creator-averse plot function signature, the DAG is au
       # ... further arguments
 
 In this case, the available tags would be ``some_data``, ``some_other_data``, and ``result``.
-Furthermore, for the universe plot creator, the ``uni`` tag is always available as well.
+Furthermore, for universe plots, the ``uni`` tag is available as well (in *addition* to the ``dm`` tag, which is always available).
 
 .. note::
 
     This is only a glimpse into the full capabilities of data selection via the transformation framework.
 
-    For more details, have a look at the `corresponding dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html#special-case-universeplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
+    For more details, have a look at the `corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-universeplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
 
 Remarks
 """""""
@@ -156,7 +156,7 @@ See :ref:`below <select_mv_data>` on how to control the selection and combinatio
 Multiverse plots using DAG framework *(recommended)*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Again, use the :ref:`creator-averse plot function definition<plot_func_sig_recommended>` and specify the ``creator`` in the plot configuration.
-For the :py:class:`~utopya.plotting.MultiversePlotCreator`, a `special syntax <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ exists to select and combine the multiverse data.
+For the :py:class:`~utopya.plotting.MultiversePlotCreator`, a `special syntax <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ exists to select and combine the multiverse data.
 
 When using the recommended creator-averse plot function signature, the DAG is automatically enabled and allows to select data using the ``select_and_combine`` key:
 
@@ -191,16 +191,68 @@ When using the recommended creator-averse plot function signature, the DAG is au
 
     As above, this is only a glimpse into the full capabilities of data selection via the transformation framework.
 
-    For more details, have a look at the `corresponding dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
+    For more details, have a look at the `corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
 
 .. warning::
 
     The arguments given to ``select_and_combine`` are similar **but not equal** to those to the ``select`` argument in the :ref:`legacy syntax <select_mv_data>`!
-    Check out `the documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ to learn about the proper usage of the ``select_and_combine`` argument.
+    Check out `the documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ to learn about the proper usage of the ``select_and_combine`` argument.
 
 .. hint::
 
     The subspace selection happens via :py:meth:`paramspace.ParamSpace.activate_subspace`.
+
+
+Remarks
+"""""""
+
+* For multiverse plots, no ``uni`` tag can be defined. However, the ``dm`` tag is *always* available and can be used to access the data tree starting from the ``DataManager``.
+* The ``select`` argument is still available. However, be aware that it is applied only after ``select_and_combine`` was evaluated and that it acts *globally*, i.e. not on each universe as ``select_and_combine`` does.
+* To access the **default universe configuration**, one can do the following:
+
+    .. code-block:: yaml
+
+        my_plot:
+          creator: multiverse
+
+          select_and_combine:
+            some_data: path/to/foo/data
+
+          select:
+            default_cfg:
+              path: multiverse
+              with_previous_result: true
+              transform:
+                - getattr: pspace
+                - getattr: default
+
+    Note that this is the *default* configuration, meaning that all parameters that were specified as a sweep dimensions are set to their default values.
+    To select a parameter that was part of a sweep, it needs to be extracted via ``select_and_combine`` and assembled into an array of the same shape as the parameter space used in the sweep.
+
+* If using the default universe configuration in multiple plots, it makes sense to define a YAML anchor for it in order to reduce copy-paste:
+
+    .. code-block:: yaml
+
+        # Plot configuration entries starting with _ are ignored. Can use these
+        # to define some YAML anchors and shared defaults ...
+        _dag_templates:
+          select_default_cfg: &select_default_cfg
+            default_cfg:
+              path: multiverse
+              with_previous_result: true
+              transform:
+                - getattr: pspace
+                - getattr: default
+
+        one_multiverse_plot:
+          # ...
+          select:
+            <<: [*select_default_cfg]
+
+        another_multiverse_plot:
+          # ...
+          select:
+            <<: [*select_default_cfg]
 
 
 .. _select_mv_data:
@@ -215,7 +267,6 @@ Without DAG framework *(legacy approach)*
 The signature for such a plot function looks like this:
 
 .. code-block:: python
-
 
     import xarray as xr
 
@@ -238,7 +289,8 @@ The signature for such a plot function looks like this:
 
 
 To select the ``mv_data``, specify the ``select`` key in the configuration.
-The associated ``MultiverseGroup`` will then take care to select the desired multidimensional data. The resulting data is then bundled into a ``xr.Dataset``; see `the xarray documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ for more information.
+The associated ``MultiverseGroup`` will then take care to select the desired multidimensional data.
+The resulting data is then bundled into a ``xr.Dataset``; see `the xarray documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ for more information.
 
 The ``select`` argument allows a number of ways to specify which data is to be selected. The examples below range from the simplest to the most explicit:
 
@@ -261,6 +313,9 @@ The ``select`` argument allows a number of ways to specify which data is to be s
       one_more_param2: {idx: [0, 10, 20]}    # select multiple by index
 
 The fields ``data`` and ``std`` are then made available to the ``mv_data`` argument to the plotting function.
+
+To access the **default universe configuration** for such a multiverse plot, use ``dm['multiverse'].pspace.default``.
+Be aware that it contains only *default* values for all sweep dimensions; as the sweep values are different for each universe, the sweep parameters only make sense in the context of the selected data: you find them as coordinates of ``mv_data``.
 
 For further documentation, see the functions invoked by ``MultiversePlotCreator``, ``ParamSpaceGroup.select`` and :py:meth:`paramspace.paramspace.ParamSpace.activate_subspace`:
 
