@@ -92,6 +92,30 @@ directly when calling Utopia::apply_rule.
                        Utopia::Shuffle::off>(my_rule, cm.cells());
 \endcode
 
+### Multithreading Rules
+
+Rules can also be applied in parallel, speeding up the entire computation.
+This requires the optional dependency TBB to be installed.
+Overloads for manual state update of apply_rule() can take a Utopia::ExecPolicy as first argument.
+Omitting this policy argument has the same effect as using the Utopia::ExecPolicy::seq policy.
+Parallel execution of Utopia algorithms can be selected at runtime.
+See \ref Parallel for details.
+
+\code{.cc}
+    // Sequential execution
+    Utopia::apply_rule<Utopia::Update::async>(my_rule, my_cells, my_args);
+
+    // Possibly parallel execution
+    // NOTE: `my_rule` must avoid data races!
+    Utopia::apply_rule<Utopia::Update::async>(
+        Utopia::ExecPolicy::par,
+        my_rule,
+        my_cells,
+        my_args
+    );
+\endcode{}
+
+
 \}
 
 
@@ -263,6 +287,106 @@ iterator adaptor and a set of containers.
 \brief   Gathers useful tools for writing tests in the Boost.Test framework
 
 Have a look at the Utopia::TestTools namespace for more specific information.
+\}
+
+\defgroup Parallel Parallel Execution
+\{
+\ingroup Core
+\brief Facilities for parallel execution based on runtime configuration
+
+## Overview
+
+C++17 introduced [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) for running STL algorithms in parallel.
+The decision of executing an algorithm is thereby taken at compile time because this optimizes performance and, depending on the particular policy chosen, poses restrictions on the algorithm and underlying data due to [data races](https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races).
+However, most large STL libraries still do not support parallel execution policies.
+Utopia therefore relies on Intel's [ParallelSTL](https://software.intel.com/content/www/us/en/develop/articles/get-started-with-parallel-stl.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+ISNMain+%28Intel+Developer+Zone+Articles+Feed%29) bundled into the [TBB](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html) library which is an optional dependency.
+
+The goal of the parallel facilities in Utopia is to shift the compile-time decision to a runtime decision.
+Developers only *indicate* that their algorithms can be run in parallel and take all necessary precautions for that.
+The core ingredients for this are overloads of [STL algorithms](https://en.cppreference.com/w/cpp/algorithm) where the `ExecutionPolicy` template parameter is replaced by a Utopia::ExecPolicy runtime parameter.
+
+## Enabling Parallel Facilities
+
+Parallel execution must first be enabled through the build system.
+In CMake, developers can use the function `enable_parallel()` on a target to enable possibly parallel execution.
+This will have no effect if the prerequisites for parallel execution are not fulfilled on the system.
+
+For models added to the build system via `add_model()`, parallel features are enabled by default.
+Developers may pass the `DISABLE_PARALLEL` option to this function to globally disable any parallel features, as if `enable_parallel()` was not called on the respective model targets.
+
+\code{.cmake}
+# Define a target and enable parallel features
+add_executable(my_target source.cc)
+enable_parallel(my_target)
+
+# Define a model and disable parallel features
+add_model(my_model my_model.cc DISABLE_PARALLEL)
+\endcode
+
+## Writing Parallel Code
+
+The basic rule of thumb is that developers who want their code to be executed in parallel using the Utopia facilities simply write the code as if it was *always* run in parallel, and then replace the STL execution policies with Utopia::ExecPolicy.
+In particular, this means that data races have to be avoided, which can be achieved by using [guards against mutual execution](https://en.cppreference.com/w/cpp/thread/mutex) (`mutex`) or [atomic data types](https://en.cppreference.com/w/cpp/atomic) which are inherently safe when accessed by multiple threads simultaneously.
+See the notes on [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) and [data races](https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races) for additional information.
+
+Parallel execution at runtime is controlled through Utopia::ParallelExecution and is **disabled** by default.
+Utopia::PseudoParent will **disable** parallel execution if the respective parameter space setting is not available.
+In the base configuration, parallel execution is also **disabled** by default.
+The static method Utopia::ParallelExecution::set can be used at any time in a program to enable or disable parallel execution.
+If disabled, all algorithms simply fall back to their sequential version.
+
+\code{.cc}
+    #include <vector>
+    #include <utopia/core/parallel.hh>
+
+    using namespace Utopia;
+
+    // Enable parallel if requirements are met
+    ParallelExecution::set(ParallelExecution::Setting::enabled);
+
+    std::vector<double> in(1E6, 0.0), out(1E6);
+    std::copy(ExecPolicy::par_unseq, begin(in), end(in), begin(out));
+\endcode
+
+### Applying Rules in Parallel
+
+In addition to the STL algorithms, apply_rule() may be called with Utopia::ExecPolicy as argument.
+This execution policy is then used for applying the rule function in parallel, where all considerations for data races apply.
+Additionally, apply_rule() will parallelize some internal operations like copying values automatically, if parallel exeuction is enabled.
+To properly parallelize the application of a rule, additional rule arguments are a key ingredient.
+Depending on the complexity of a rule, it might be feasible to compute values beforehand to avoid locking different threads against each other, and then pass these values as additional rule arguments:
+
+\code{.cc}
+    #include <mutex>
+    #include <utopia/core/apply.hh>
+
+    SomeRandomNumberGenerator rng;
+    std::mutex m;  // Will guard main thread
+
+    // Option 1: Multithreading with guard
+    Utopia::apply_rule<Utopia::Update::sync>(
+        Utopia::ExecPolicy::par,
+        // Rule creates random number and returns its value
+        [&](auto&){
+            // Lock thread to access RNG safely
+            std::lock_guard<std::mutex> guard(m);
+            return rng();
+        },
+        my_cells
+    );
+
+    // Option 2: Apply RNG first, then use multithreading and vectorization
+    std::vector<double> numbers(my_cells.size());
+    std::generate(begin(numbers), end(numbers), rng);
+    Utopia::apply_rule<Utopia::Update::sync>(
+        Utopia::ExecPolicy::par_unseq,
+        // Rule fetches value from 'numbers' and returns it
+        [&](auto&, auto val){ return val; },
+        my_cells,
+        numbers
+    );
+\endcode
+
 \}
 
 */

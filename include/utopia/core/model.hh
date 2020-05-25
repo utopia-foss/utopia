@@ -7,6 +7,7 @@
 #include "signal.hh"
 #include "logging.hh"
 #include "space.hh"
+#include "parallel.hh"
 
 #include "../data_io/hdffile.hh"
 #include "../data_io/hdfgroup.hh"
@@ -884,6 +885,7 @@ public:
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
+        ParallelExecution::init(_cfg);
 
         _log->info("Initialized PseudoParent from config file");
         _log->debug("cfg_path:       {}", cfg_path);
@@ -924,6 +926,7 @@ public:
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
+        ParallelExecution::init(_cfg);
 
         _log->info("Initialized PseudoParent from parameters");
         _log->debug("cfg_path:      {}", cfg_path);
