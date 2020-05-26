@@ -75,7 +75,7 @@ BOOST_FIXTURE_TEST_CASE(model_datamanager_integration,
     BOOST_TEST(state_writer_x2_found);
 
     // check decider-task-associations
-    BOOST_TEST(datamanager.get_decider_task_map()["write_slice"] ==
+    BOOST_TEST(datamanager.get_decider_task_map()["write_interval_step"] ==
                std::vector<std::string>{"state_writer"});
     //    boost::test_tools::per_element());
     BOOST_TEST(datamanager.get_decider_task_map()["write_interval"] ==
@@ -83,7 +83,7 @@ BOOST_FIXTURE_TEST_CASE(model_datamanager_integration,
     //    boost::test_tools::per_element());
 
 
-    BOOST_TEST(datamanager.get_trigger_task_map()["build_slice"] ==
+    BOOST_TEST(datamanager.get_trigger_task_map()["build_interval_step"] ==
                    std::vector<std::string>{"state_writer"},
                boost::test_tools::per_element());
     BOOST_TEST(datamanager.get_trigger_task_map()["build_once"] ==

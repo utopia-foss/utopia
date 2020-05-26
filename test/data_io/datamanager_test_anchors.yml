@@ -3,61 +3,48 @@
 ---
 data_manager: 
   # this builds the deciders
-  deciders: 
-    write_every_3rd: &every_3rd
-      type: slice
+  deciders:
+    write_intervals:
+      type: interval
       args: 
-        start: 0
-        stop: 30
-        step: 3
+        intervals: &intervals
+          - [0, 10]
+          - [25, 30, 1]
+          - [96, 100, 2]
+          - [100, 115, 5]
       active: true
       associate_with_tasks:
         - write_x
-
-    write_every_5th:
-      type: slice
-      args: 
-        start: 30
-        stop: 50
-        step: 5
-      active: true
-      associate_with_tasks:
         - write_y
-
-    write_intervals: &intervals
-      type: interval
-      args: 
-        intervals:
-          - [0, 10]
-          - [25, 30]
-          - [100, 115]
-      active: true
-      associate_with_tasks:
         - write_z
 
   triggers:
-    build_every_3rd: *every_3rd
-
     build_once:
       type: once
       active: true
       associate_with_tasks:
+        - write_x
         - write_y
       args:
         time: 0
 
-    build_intervals: *intervals
-
+    build_intervals:
+      type: interval
+      args: 
+        intervals: *intervals
+      active: true
+      associate_with_tasks:
+        - write_z
 
   tasks: 
     write_x:
       active: true
-      decider: write_every_3rd
-      trigger: build_every_3rd
+      decider: write_intervals
+      trigger: build_once
 
     write_y:
       active: true
-      decider: write_every_5th
+      decider: write_intervals
       trigger: build_once
 
     write_z:
@@ -71,41 +58,16 @@ data_manager:
 data_manager0: 
 
   # this builds the deciders
-  deciders: 
-    write_every_3rd: &every_3rd
-      type: slice
-      args: 
-        start: 0
-        stop: 30
-        step: 3
-      active: true
-      associate_with_tasks:
-        - write_x
-
-    write_every_5th:
-      type: slice
-      args: 
-        start: 30
-        stop: 50
-        step: 5
-      active: true
-      associate_with_tasks:
-        - write_y
-
-    write_intervals: &intervals
+  deciders:
+    write_intervals:
       type: interval
       args: 
-        intervals:
-          - [0, 10]
-          - [25, 30]
-          - [100, 115]
+        intervals: *intervals
       active: true
-      associate_with_tasks:
+        - write_y
         - write_z
 
   triggers:
-    build_every_3rd: *every_3rd
-
     build_once:
       type: once
       active: true
@@ -114,21 +76,28 @@ data_manager0:
       args:
         time: 0
 
-    build_intervals: *intervals
+    build_intervals:
+      type: interval
+      args: 
+        intervals: *intervals
+      active: true
+      associate_with_tasks:
+        - write_z
 
 
   tasks: 
     write_x:
       active: false
-      decider: write_every_3rd
-      trigger: build_every_3rd
+      decider: write_intervals
+      trigger: build_once
 
     write_y:
       active: true
-      decider: write_every_5th
+      decider: write_intervals
       trigger: build_once
 
     write_z:
       active: true
       decider: write_intervals
       trigger: build_intervals
+
