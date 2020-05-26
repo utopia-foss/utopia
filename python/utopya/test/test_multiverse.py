@@ -52,11 +52,11 @@ def default_mv(mv_kwargs) -> Multiverse:
     """
     return Multiverse(**mv_kwargs)
 
-@pytest.fixture
-def cluster_env(tmpdir) -> dict:
+@pytest.fixture(params=["node[002-004,011,006]", "node[002,003-004,011,006]"])
+def cluster_env(tmpdir, request) -> dict:
     return dict(TEST_JOB_ID="123",
                 TEST_JOB_NUM_NODES="5",
-                TEST_JOB_NODELIST="node[002-004,011,006]",
+                TEST_JOB_NODELIST=request.param,
                 TEST_NODENAME="node006",
                 TEST_JOB_NAME="testjob",
                 TEST_JOB_ACCOUNT="testaccount",
