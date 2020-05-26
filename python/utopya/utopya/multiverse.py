@@ -760,8 +760,7 @@ class Multiverse:
                     segments = [seg.split("-") for seg in segments]
 
                     # Get the string width
-                    digits = (len(segments[0]) if len(segments[0]) == 1
-                              else len(segments[0][0]))
+                    digits = len(segments[0][0])
 
                     # In segments, lists longer than 1 are intervals, the
                     # others are node numbers of a single node.
