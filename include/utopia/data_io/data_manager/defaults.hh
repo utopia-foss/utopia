@@ -188,6 +188,9 @@ struct DefaultDecider
 };
 
 /// A decider that returns true when within certain time intervals
+/** Every interval is of shape `[start, stop), stride` where the third argument
+ *  is optional and defines a stepping size.
+ */
 template < typename Model >
 struct IntervalDecider : DefaultDecider< Model >
 {
@@ -196,25 +199,26 @@ struct IntervalDecider : DefaultDecider< Model >
     using Base = DefaultDecider< Model >;
 
     /// The sequence of intervals within to return true
-    std::list< std::array< std::size_t, 2 > > intervals;
+    std::list< std::array< std::size_t, 3 > > intervals;
 
     virtual bool
     operator()(Model& m) override
     {
+        // Are at the end of the current interval; pop it, such that
+        // at next invocation the front is the new interval
+        if (intervals.size() != 0 and m.get_time() == intervals.front()[1])
+        {
+            intervals.pop_front();
+        }
+
         if (intervals.size() != 0)
         {
+            const auto [start, stop, step] = intervals.front();
             // Check if within [start, end) interval
-            if (m.get_time() >= intervals.front()[0] and
-                m.get_time() < intervals.front()[1])
+            if ((m.get_time() >= start) and (m.get_time() < stop) and
+                ((m.get_time() - start) % step == 0))
             {
                 return true;
-            }
-
-            // Are at the end of the current interval; pop it, such that
-            // at next invocation the front is the new interval
-            if (m.get_time() == intervals.front()[1])
-            {
-                intervals.pop_front();
             }
         }
         return false;
@@ -227,8 +231,27 @@ struct IntervalDecider : DefaultDecider< Model >
     virtual void
     set_from_cfg(const Config& cfg) override
     {
-        intervals = get_as< std::list< std::array< std::size_t, 2 > > >(
+        auto tmp = get_as< std::list< std::vector< std::size_t > > >(
             "intervals", cfg);
+        for (std::vector< std::size_t > tmp_interval : tmp)
+        {
+            if (tmp_interval.size() == 2)
+            {
+                tmp_interval.push_back(1);
+            }
+            else if (tmp_interval.size() != 3)
+            {
+                throw Utopia::KeyError("intervals", cfg,
+                    fmt::format("Array of unexpected length {}! Expected array "
+                        "of length 2 or 3 [start, stop, step] with step "
+                        "optional (default 1)."));
+            }
+
+            std::array< std::size_t, 3 > interval;
+            std::copy(tmp_interval.begin(), tmp_interval.end(),
+                      interval.begin());
+            intervals.push_back(interval);
+        }
     }
 
     IntervalDecider()                       = default;
@@ -239,50 +262,6 @@ struct IntervalDecider : DefaultDecider< Model >
     IntervalDecider&
     operator=(IntervalDecider&&) = default;
     virtual ~IntervalDecider()   = default;
-};
-
-/**
- * @brief Represents a decider which decides to write according to a slice
- *        definition
- *
- */
-template < typename Model >
-struct SliceDecider : DefaultDecider< Model >
-{
-    std::size_t start;
-    std::size_t stop;
-    std::size_t step;
-
-    /// The type of the base decider class
-    using Base = DefaultDecider< Model >;
-
-    virtual bool
-    operator()(Model& m) override
-    {
-        return ((m.get_time() >= start) and (m.get_time() < stop) and
-                ((m.get_time() - start) % step == 0));
-    }
-    /**
-     * @brief Set the decider up from a given config node
-     *
-     * @param cfg config node containing arguments for this decider
-     */
-    virtual void
-    set_from_cfg(const Config& cfg) override
-    {
-        start = get_as< std::size_t >("start", cfg);
-        stop  = get_as< std::size_t >("stop", cfg);
-        step  = get_as< std::size_t >("step", cfg);
-    }
-
-    SliceDecider()                    = default;
-    SliceDecider(const SliceDecider&) = default;
-    SliceDecider(SliceDecider&&)      = default;
-    SliceDecider&
-    operator=(const SliceDecider&) = default;
-    SliceDecider&
-    operator=(SliceDecider&&) = default;
-    virtual ~SliceDecider()   = default;
 };
 
 /**
@@ -419,53 +398,6 @@ struct CompositeDecider : DefaultDecider< Model >
     virtual ~CompositeDecider()   = default;
 };
 
-/**
- * @brief A composite of the slice and the interval deciders
- *
- * @tparam Model
- *
- * @TODO Make it configurable to allow AND-connected operator()
- */
-template < typename Model >
-struct SimpleCompositeDecider : DefaultDecider< Model >
-{
-    /// The type of the base decider class
-    using Base = DefaultDecider< Model >;
-
-    /// The slice decider
-    SliceDecider< Model > slice_decider;
-
-    /// The interval decider
-    IntervalDecider< Model > interval_decider;
-
-    /// Evaluates to true if the slice OR interval decider evalute to true
-    virtual bool
-    operator()(Model& m) override
-    {
-        return slice_decider(m) or interval_decider(m);
-    }
-
-    /**
-     * @brief Set the decider up from a given config node
-     *
-     * @param cfg config node containing arguments for this decider
-     */
-    virtual void
-    set_from_cfg(const Config& cfg) override
-    {
-        slice_decider.set_from_cfg(cfg["slice"]);
-        interval_decider.set_from_cfg(cfg["interval"]);
-    }
-
-    SimpleCompositeDecider()                              = default;
-    SimpleCompositeDecider(const SimpleCompositeDecider&) = default;
-    SimpleCompositeDecider&
-    operator=(const SimpleCompositeDecider&) = default;
-    SimpleCompositeDecider&
-    operator=(SimpleCompositeDecider&&) = default;
-    virtual ~SimpleCompositeDecider()   = default;
-};
-
 // =============================================================================
 // =========================== Default type maps  ==============================
 // =============================================================================
@@ -493,13 +425,7 @@ static std::unordered_map<
         { std::string("once"),
           []() { return std::make_shared< OnceDecider< Model > >(); } },
         { std::string("interval"),
-          []() { return std::make_shared< IntervalDecider< Model > >(); } },
-        { std::string("slice"),
-          []() { return std::make_shared< SliceDecider< Model > >(); } },
-        { std::string("simple_composite"),
-          []() {
-              return std::make_shared< SimpleCompositeDecider< Model > >();
-          } }
+          []() { return std::make_shared< IntervalDecider< Model > >(); } }
     };
 
 // =============================================================================
@@ -515,9 +441,6 @@ template < typename Model >
 using DefaultTrigger = DefaultDecider< Model >;
 
 template < typename Model >
-using SliceTrigger = SliceDecider< Model >;
-
-template < typename Model >
 using IntervalTrigger = IntervalDecider< Model >;
 
 template < typename Model >
@@ -528,9 +451,6 @@ using BuildAlwaysTrigger = AlwaysDecider< Model >;
 
 template < typename Model, typename... Deciders >
 using CompositeTrigger = CompositeDecider< Model, Deciders... >;
-
-template < typename Model >
-using SimpleCompositeTrigger = SimpleCompositeDecider< Model >;
 
 /**
  * @brief Default trigger factories. Equal to deciders because while the 

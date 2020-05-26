@@ -989,21 +989,11 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
             Default::DefaultExecutionProcess());
 
         // check that the deciders are present with the correct names
-        bool found = (dm.get_deciders().find("write_every_3rd") !=
-                      dm.get_deciders().end());
-        BOOST_TEST(found == true);
-        found = (dm.get_deciders().find("write_every_5th") !=
-                 dm.get_deciders().end());
-        BOOST_TEST(found == true);
-        found = (dm.get_deciders().find("write_intervals") !=
+        bool found = (dm.get_deciders().find("write_intervals") !=
                  dm.get_deciders().end());
         BOOST_TEST(found == true);
 
         // check that the triggers are present with the correct names
-        found = (dm.get_triggers().find("build_every_3rd") !=
-                 dm.get_triggers().end());
-        BOOST_TEST(found == true);
-
         found = (dm.get_triggers().find("build_intervals") !=
                  dm.get_triggers().end());
         BOOST_TEST(found == true);
@@ -1013,37 +1003,6 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
         BOOST_TEST(found == true);
 
         // check that deciders work correctly according to config file
-        model.time = 0;
-
-        for (; model.time < 22; ++model.time)
-        {
-            if (model.time % 3 == 0 and model.time < 30)
-            {
-                BOOST_TEST((*dm.get_deciders()["write_every_3rd"])(model) ==
-                           true);
-            }
-            else
-            {
-                BOOST_TEST((*dm.get_deciders()["write_every_3rd"])(model) ==
-                           false);
-            }
-        }
-
-        model.time = 20;
-        for (; model.time < 50; ++model.time)
-        {
-            if (model.time % 5 == 0 and model.time < 50 and model.time >= 30)
-            {
-                BOOST_TEST((*dm.get_deciders()["write_every_5th"])(model) ==
-                           true);
-            }
-            else
-            {
-                BOOST_TEST((*dm.get_deciders()["write_every_5th"])(model) ==
-                           false);
-            }
-        }
-
         model.time = 0;
         for (; model.time < 150; ++model.time)
         {
@@ -1057,7 +1016,14 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
                 BOOST_TEST((*dm.get_deciders()["write_intervals"])(model) ==
                            true);
             }
-            else if (model.time >= 100 and model.time < 115)
+            else if (model.time >= 96 and model.time < 100 and
+                     (model.time - 96) % 2 == 0)
+            {
+                BOOST_TEST((*dm.get_deciders()["write_intervals"])(model) ==
+                           true);
+            }
+            else if (model.time >= 100 and model.time < 115 and
+                     (model.time - 100) % 5 == 0)
             {
                 BOOST_TEST((*dm.get_deciders()["write_intervals"])(model) ==
                            true);
@@ -1070,22 +1036,6 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
         }
 
         // check that triggers work correctly according to config
-        // file
-        model.time = 0;
-        for (; model.time < 60; ++model.time)
-        {
-            if (model.time % 3 == 0 and model.time < 30)
-            {
-                BOOST_TEST((*dm.get_triggers()["build_every_3rd"])(model) ==
-                           true);
-            }
-            else
-            {
-                BOOST_TEST((*dm.get_triggers()["build_every_3rd"])(model) ==
-                           false);
-            }
-        }
-
         model.time = 0;
         for (; model.time < 100; ++model.time)
         {
@@ -1112,7 +1062,14 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
                 BOOST_TEST((*dm.get_triggers()["build_intervals"])(model) ==
                            true);
             }
-            else if (model.time >= 100 and model.time < 115)
+            else if (model.time >= 96 and model.time < 100 and
+                     (model.time - 96) % 2 == 0)
+            {
+                BOOST_TEST((*dm.get_triggers()["build_intervals"])(model) ==
+                           true);
+            }
+            else if (model.time >= 100 and model.time < 115 and
+                     (model.time - 100) % 5 == 0)
             {
                 BOOST_TEST((*dm.get_triggers()["build_intervals"])(model) ==
                            true);
@@ -1125,26 +1082,22 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
         }
 
         // check associations of deciders
-        BOOST_TEST(dm.get_decider_task_map()["write_every_3rd"] ==
-                       (std::vector< std::string >{ "write_x" }),
-                   boost::test_tools::per_element());
-        BOOST_TEST(dm.get_decider_task_map()["write_every_5th"] ==
-                       (std::vector< std::string >{ "write_y" }),
-                   boost::test_tools::per_element());
         BOOST_TEST(dm.get_decider_task_map()["write_intervals"] ==
-                       (std::vector< std::string >{ "write_z" }),
+                       (std::vector< std::string >{ "write_x",
+                                                    "write_y", 
+                                                    "write_z" }),
                    boost::test_tools::per_element());
 
         // check associations of triggers
-        BOOST_TEST(dm.get_trigger_task_map()["build_every_3rd"] ==
-                       (std::vector< std::string >{ "write_x" }),
-                   boost::test_tools::per_element());
         BOOST_TEST(dm.get_trigger_task_map()["build_once"] ==
-                       (std::vector< std::string >{ "write_y" }),
+                       (std::vector< std::string >{ "write_x",
+                                                    "write_y" }),
                    boost::test_tools::per_element());
         BOOST_TEST(dm.get_trigger_task_map()["build_intervals"] ==
                        (std::vector< std::string >{ "write_z" }),
                    boost::test_tools::per_element());
+
+
 
         // test datamanager with one task being marked inactive
         Utopia::DataIO::DataManager< DMT > dm0(
@@ -1161,8 +1114,8 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
             Default::DefaultExecutionProcess());
 
         // check that everything is registered correctly
-        found = dm0.get_tasks().find("write_x") == dm0.get_tasks().end();
-        BOOST_TEST(found);
+        found = dm0.get_tasks().find("write_x") != dm0.get_tasks().end();
+        BOOST_TEST(not found);
 
         found = dm0.get_tasks().find("write_y") != dm0.get_tasks().end();
         BOOST_TEST(found);
@@ -1170,10 +1123,10 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
         found = dm0.get_tasks().find("write_z") != dm0.get_tasks().end();
         BOOST_TEST(found);
 
-        found = (dm0.get_deciders().find("write_every_3rd") !=
+        found = (dm0.get_deciders().find("write_intervals") !=
                  dm0.get_deciders().end());
         BOOST_TEST(found == true);
-        found = (dm0.get_deciders().find("write_every_5th") !=
+        found = (dm0.get_deciders().find("write_intervals") !=
                  dm0.get_deciders().end());
         BOOST_TEST(found == true);
         found = (dm0.get_deciders().find("write_intervals") !=
@@ -1181,16 +1134,12 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
         BOOST_TEST(found == true);
 
         // check that the triggers are present with the correct names
-        found = (dm0.get_triggers().find("build_every_3rd") !=
-                 dm0.get_triggers().end());
+        found =
+            (dm0.get_triggers().find("build_once") != dm0.get_triggers().end());
         BOOST_TEST(found == true);
 
         found = (dm0.get_triggers().find("build_intervals") !=
                  dm0.get_triggers().end());
-        BOOST_TEST(found == true);
-
-        found =
-            (dm0.get_triggers().find("build_once") != dm0.get_triggers().end());
         BOOST_TEST(found == true);
     }
 }
@@ -1320,22 +1269,8 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
     // task1
     BOOST_TEST(
         path_exists(model.file.get_basegroup()->get_C_id(), "datagroup/1"));
-
-    for (model.time = 0; model.time < 60; ++model.time)
-    {
-        if (model.time % 3 == 0 and model.time < 30)
-        {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
-                                   "datagroup/1/testgroup/initial_dataset1_" +
-                                       std::to_string(model.time)));
-        }
-        else
-        {
-            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
-                                   "datagroup/1/testgroup/initial_dataset1_" +
-                                       std::to_string(model.time)) == false);
-        }
-    }
+    BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
+                           "datagroup/1/testgroup/initial_dataset1_0"));
 
     // task2
     BOOST_TEST(
@@ -1361,7 +1296,15 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
                                    "datagroup3/3/testgroup/initial_dataset3_" +
                                        std::to_string(model.time)));
         }
-        else if (model.time >= 100 and model.time < 115)
+        else if (model.time >= 96 and model.time < 100 and
+                 (model.time - 96) % 2 == 0)
+        {
+            BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
+                                   "datagroup3/3/testgroup/initial_dataset3_" +
+                                       std::to_string(model.time)));
+        }
+        else if (model.time >= 100 and model.time < 115 and
+                 (model.time - 100) % 5 == 0)
         {
             BOOST_TEST(path_exists(model.file.get_basegroup()->get_C_id(),
                                    "datagroup3/3/testgroup/initial_dataset3_" +
@@ -1384,28 +1327,28 @@ BOOST_AUTO_TEST_CASE(datamanager_config_written_data_check)
 
     // task1
     auto group = file.open_group("/datagroup/1/testgroup");
-    for (std::size_t t = 0; t < 30; ++t)
-    {
-        if (t % 3 == 0)
-        {
-            auto dset =
-                group->open_dataset("initial_dataset1_" + std::to_string(t));
-            auto [shape, data] = dset->read< std::vector< int > >();
+    auto dset = group->open_dataset("initial_dataset1_0");
+    auto [shape, data] = dset->read< std::vector< int > >();
 
-            BOOST_TEST(shape == (std::vector< hsize_t >{ 100 }),
-                       boost::test_tools::per_element());
-            BOOST_TEST(data == testdata, boost::test_tools::per_element());
-        }
-        else
-        {
-            // do nothing
-        }
+    std::iota(testdata.begin(), testdata.end(), 0);
+    std::transform(testdata.begin(),
+                   testdata.end(),
+                   testdata.begin(),
+                   [](int i) { return i; });
+
+    auto testdata2 = testdata;
+    // 20 writes on single build
+    for (std::size_t i = 0; i < 19; i++) {
+        testdata2.insert(testdata2.end(), testdata.begin(), testdata.end());
     }
+    BOOST_TEST(shape == (std::vector< hsize_t >{ 2000 }),
+               boost::test_tools::per_element());
+    BOOST_TEST(data == testdata2, boost::test_tools::per_element());
 
     // task2
-    group              = file.open_group("/datagroup2/2/testgroup");
-    auto dset          = group->open_dataset("initial_dataset2_0");
-    auto [shape, data] = dset->read< std::vector< int > >();
+    group = file.open_group("/datagroup2/2/testgroup");
+    dset = group->open_dataset("initial_dataset2_0");
+    std::tie(shape, data) = dset->read< std::vector< int > >();
 
     std::iota(testdata.begin(), testdata.end(), 0);
     std::transform(testdata.begin(),
@@ -1413,12 +1356,13 @@ BOOST_AUTO_TEST_CASE(datamanager_config_written_data_check)
                    testdata.begin(),
                    [](int i) { return i * 2; });
 
-    auto testdata2 = testdata;
-    testdata2.insert(testdata2.end(), testdata.begin(), testdata.end());
-    testdata2.insert(testdata2.end(), testdata.begin(), testdata.end());
-    testdata2.insert(testdata2.end(), testdata.begin(), testdata.end());
+    testdata2 = testdata;
+    // 20 writes on single build
+    for (std::size_t i = 0; i < 19; i++) {
+        testdata2.insert(testdata2.end(), testdata.begin(), testdata.end());
+    }
 
-    BOOST_TEST(shape == (std::vector< hsize_t >{ 400 }),
+    BOOST_TEST(shape == (std::vector< hsize_t >{ 2000 }),
                boost::test_tools::per_element());
     BOOST_TEST(data == testdata2, boost::test_tools::per_element());
 
@@ -1454,7 +1398,16 @@ BOOST_AUTO_TEST_CASE(datamanager_config_written_data_check)
                        boost::test_tools::per_element());
             BOOST_TEST(data == testdata, boost::test_tools::per_element());
         }
-        else if (t >= 100 and t < 115)
+        else if (t >= 96 and t < 100 and (t - 96) % 2 == 0)
+        {
+            auto dset =
+                group->open_dataset("initial_dataset3_" + std::to_string(t));
+            auto [shape, data] = dset->read< std::vector< int > >();
+            BOOST_TEST(shape == (std::vector< hsize_t >{ 100 }),
+                       boost::test_tools::per_element());
+            BOOST_TEST(data == testdata, boost::test_tools::per_element());
+        }
+        else if (t >= 100 and t < 115 and (t - 100) % 5 == 0)
         {
             auto dset =
                 group->open_dataset("initial_dataset3_" + std::to_string(t));

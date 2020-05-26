@@ -20,12 +20,11 @@ test:
   data_manager: 
     # this builds the deciders
     deciders:
-      write_slice:
-        type: slice
-        args: 
-          start: 0
-          stop: 100
-          step: 10
+      write_interval_step:
+        type: interval
+        args:
+          intervals:
+            - [0, 100, 10]
 
       write_interval:
         type: interval
@@ -35,13 +34,11 @@ test:
 
     # this builds the triggers, here deciders are used
     triggers:
-      build_slice:
-        type: slice
-        args: 
-          start: 0
-          stop: 100
-          step: 10
-        # FIXME: this does not yet work
+      build_interval_step:
+        type: interval
+        args:
+          intervals:
+            - [0, 100, 10]
 
         path: state$time
         # these can be set, but need not
@@ -62,8 +59,8 @@ test:
     tasks:
       state_writer:
         active: true
-        decider: write_slice
-        trigger: build_slice
+        decider: write_interval_step
+        trigger: build_interval_step
         basegroup_path: state_group
         # typetag can be given or not, if not, is plain
         typetag: plain

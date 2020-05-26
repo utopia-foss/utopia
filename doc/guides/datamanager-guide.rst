@@ -199,18 +199,13 @@ Five default deciders are provided:
 ``IntervalDecider`` 
 """""""""""""""""""
 
-This holds a list of intervals ``[a, b)``. If model time is in
-the foremost of these intervals, it returns true, else it
-returns false, and if model time hits `b+1`, it removes the
-foremost interval of the list. It continues this until either
-the model has run out or its list is empty.
-
-``SliceDecider``
-""""""""""""""""
-
-This returns true if model time is in, using numpy slice notation now,
-``[a, b, n]``, where `n` is the step with which to go through the
-interval [a, b).
+For an interval ``[start, stop, step]`` the decider returns true exactly when for model
+time ``t`` it holds that ``(start <= t < stop) && t%step == 0``. The default value
+for ``step`` is 1. If model time is in the foremost of these intervals, it returns
+true every step-th time, else it returns false, and if model time hits `stop`, it
+removes the foremost interval of the list. It continues this until either the
+model has run out or its list of intervals becomes empty. Note, that ``start``
+of an interval must be larger or equal to ``stop`` of the previous interval.
 
 ``OnceDecider`` 
 """""""""""""""
@@ -222,14 +217,6 @@ and otherwise it returns false.
 """""""""""""""""
 
 This returns true always.
-
-``SimpleCompositeDecider``
-""""""""""""""""""""""""""
-
-This combines the ``IntervalDecider`` and ``SliceDecider``
-such that you can have intervals in which every timestep
-is written out, while outside of these intervals only
-every nth timestep is written out.
 
 
 These deciders are stored in a global map called ``default_decidertypes``, which
@@ -243,10 +230,6 @@ looks like this:
 | ``once``             | ``OnceDecider``            |
 +----------------------+----------------------------+
 | ``interval``         | ``IntervalDecider``        |
-+----------------------+----------------------------+
-| ``slice``            | ``SliceDecider``           |
-+----------------------+----------------------------+
-| ``simple_composite`` | ``SimpleCompositeDecider`` |
 +----------------------+----------------------------+
 
 
@@ -381,10 +364,7 @@ These are listed in the following:
 | ``once``             | ``OnceDecider``            | time to return true at       |
 +----------------------+----------------------------+------------------------------+
 | ``interval``         | ``IntervalDecider``        | array of intervals           |
-+----------------------+----------------------------+------------------------------+
-| ``slice``            | ``SliceDecider``           | array [start, end, stride    |
-+----------------------+----------------------------+------------------------------+
-| ``simple_composite`` | ``SimpleCompositeDecider`` | arguments for slice, interval|
+|                      |                            | [start, end), stride         |
 +----------------------+----------------------------+------------------------------+
 
 For instance, the deciders node could look like this:
@@ -394,33 +374,14 @@ For instance, the deciders node could look like this:
   data_manager:
     # this builds the deciders
     deciders:
-      write_slice:
-        type: slice
-        args:
-          start: 0
-          stop: 100
-          step: 10
-
       write_interval:
         type: interval
         args:
           intervals:
-            - [50, 75]
-            - [500, 1000]
-            - [10000, 11000]
-            - [20000, 25000]
-
-      write_composite:
-        type: simple_composite
-        args:
-          interval:
-            intervals:
-                - [100, 200]
-                - [1000, 1100]
-          slice:
-            start: 0
-            stop:   2000
-            step: 100
+            - [50, 75] # default stride: 1
+            - [500, 1000, 1]
+            - [1000, 10000, 10]
+            - [10000, 11000, 5]
 
       write_once:
         type: once
@@ -445,12 +406,11 @@ are employed to achieve this reusability.
     data_manager:
         deciders:
           # The & sets an anchor...
-          write_slice: &slicer
-            type: slice
+          write_interval: &interval
+            type: interval
             args:
-              start: 0
-              stop: 100
-              step: 10
+              intervals:
+                - [0, 100, 10]
 
         triggers:
           build_once:
@@ -459,7 +419,7 @@ are employed to achieve this reusability.
               time: 42
 
           # which can be used via *. Like c++ pointers...
-          build_slice: *slicer
+          build_interval: *interval
 
 Tasks
 """""
@@ -542,8 +502,8 @@ A realistic ``WriteTasks`` node looks like this, for instance:
       tasks:
         state_writer:
           active: true
-          decider: write_slice
-          trigger: build_slice
+          decider: write_interval
+          trigger: build_interval
           basegroup_path: state_group
           # typetag can be given or not, if not given, defaults to plain
           typetag: plain
@@ -575,12 +535,11 @@ like this:
     data_manager: 
       # this builds the deciders
       deciders:
-        write_slice: &slicer
-          type: slice
+        write_interval &interval
+          type: interval
           args: 
-            start: 0
-            stop: 100
-            step: 10
+            intervals:
+              - [0, 100, 10]
 
         write_interval:
           type: interval
@@ -590,7 +549,7 @@ like this:
 
       # this builds the triggers, here deciders are used
       triggers:
-        build_slice: *slicer
+        build_interval *interval
 
         build_once:
           type: once
@@ -600,8 +559,8 @@ like this:
       tasks:
         state_writer:
           active: true
-          decider: write_slice
-          trigger: build_slice
+          decider: write_interval
+          trigger: build_interval
           basegroup_path: state_group
           # typetag can be given or not, if not, is plain
           typetag: plain
