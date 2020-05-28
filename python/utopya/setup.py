@@ -10,10 +10,11 @@ INSTALL_DEPS = [
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
 
-    'paramspace>=2.3',
-    'dantro~=0.12.3',  # NOTE Version need also be set in python/CMakeLists.txt
+    'paramspace>=2.4.1',
+    'dantro~=0.13.0',
+    # NOTE Version need also be set in python/CMakeLists.txt
     # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
-    # details on the compatible release clause.
+    # details on the compatible release clause, `~=`.
 
     # Required for testing:
     'pytest>=3.4.0',
