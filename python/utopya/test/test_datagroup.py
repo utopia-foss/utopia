@@ -34,8 +34,9 @@ def test_graphgroup():
             assert gg._GG_edge_container == '_edges'
             assert gg._GG_attr_directed == 'is_directed'
             assert gg._GG_attr_parallel == 'allows_parallel'
-            assert gg._GG_attr_node_prop == 'is_vertex_property'
-            assert gg._GG_attr_edge_prop == 'is_edge_property'
+            assert (gg._GG_attr_edge_container_is_transposed
+                    == 'edge_container_is_transposed')
+            assert gg._GG_WARN_UPON_BAD_ALIGN == True
 
             # Test that the graph can be created and properties can be added.
             g = gg.create_graph(at_time=0)

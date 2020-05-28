@@ -282,19 +282,16 @@ class CopyMeGraph : public Model<CopyMeGraph, ModelTypes>
     {
         // Can do remaining initialization steps here ...
 
-        // Mark the datasets as vertex properties and set the second dimension
-        // name to 'vertex_idx'. The first dimension's name is 'time'.
-        // Also, specify the coordinates for the vertex_idx dimension, which
-        // are just the trivial coordinates 0, ..., N-1, where N is the number
-        // of vertices.
+        // Set the second dimension name to 'vertex_idx'. The first dimension's
+        // name is 'time'. Also, specify the coordinates for the vertex_idx
+        // dimension, which are just the trivial coordinates 0, ..., N-1,
+        // where N is the number of vertices.
         // NOTE The IDs of the vertices do not necessarily line up with the
         //      indices of the vertices when iterating over the graph. That's
         //      why the dimension is called vertex_idx, not vertex_id.
-        _dset_some_state->add_attribute("is_vertex_property", true);
         _dset_some_state->add_attribute("dim_name__1", "vertex_idx");
         _dset_some_state->add_attribute("coords_mode__vertex_idx", "trivial");
 
-        _dset_some_trait->add_attribute("is_vertex_property", true);
         _dset_some_trait->add_attribute("dim_name__1", "vertex_idx");
         _dset_some_state->add_attribute("coords_mode__vertex_idx", "trivial");
 
