@@ -517,13 +517,23 @@ private:
 public:
     // -- Model setup ---------------------------------------------------------
     /// Construct the PredatorPreyPlant model
-    /** \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
+    /** \param name             Name of this model instance; is used to extract
+     *                          the configuration from the parent model and
+     *                          set up a HDFGroup for this instance
+     *  \param parent_model     The parent model this model instance resides in
+     *  \param custom_cfg       A custom configuration to use instead of the
+     *                          one extracted from the parent model using the
+     *                          instance name
      */
     template <class ParentModel>
-    PredatorPreyPlant(const std::string name, ParentModel& parent)
+    PredatorPreyPlant (
+        const std::string& name,
+        ParentModel& parent_model,
+        const DataIO::Config& custom_cfg = {}
+    )
     : 
-        Base(name, parent),
+        Base(name, parent_model, custom_cfg),
+        
         // Initialize the cell manager, binding it to this model
         _cm(*this),
 

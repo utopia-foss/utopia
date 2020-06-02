@@ -77,18 +77,8 @@ public:
         const DataIO::Config& custom_cfg = {}
     )
     :
-        // Initialize first via base model
         Base(name, parent_model, custom_cfg)
-        // Now initialize members specific to this class
-        // ...
-
-        // Open the datasets
-        // e.g. via _dset_state(this->create_dset("state", {})) <- 1d
-        //      or  _dset_state(this->create_dset("state", {num_states})) <- 2d
-    {
-        // Can do remaining initialization steps here ...
-        // ...
-    }
+    {}
 
 
 private:
