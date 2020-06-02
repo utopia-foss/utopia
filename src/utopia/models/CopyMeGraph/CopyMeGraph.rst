@@ -1,6 +1,6 @@
 
-``CopyMeGraph`` - A good place to start with your CA-based model
-===========================================================
+``CopyMeGraph`` - A good place to start with your graph-based model
+===================================================================
 
 This is an *example* for the documentation of your model implementation. 
 Use your own creativity and structure to convey the important information about your model in a nice and catchy way.
