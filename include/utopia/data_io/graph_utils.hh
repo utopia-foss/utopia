@@ -57,14 +57,12 @@ setup_graph_containers(const Graph& g, const std::shared_ptr<HDFGroup>& grp)
     spdlog::get("data_io")->info("Saving graph with {} vertices and {} edges "
                                  "...", num_vertices, num_edges);
 
-    // Store additional metadata in the group attributes
-    grp->add_attribute("num_vertices", num_vertices);
-    grp->add_attribute("num_edges", num_edges);
-
     // Initialize datasets to store vertices and edges in
     auto dset_vertices = grp->open_dataset("_vertices", { num_vertices });
     auto dset_edges = grp->open_dataset("_edges", { 2, num_edges });
-    // NOTE Need shape to be {2, num_edges} because write writes line by line.
+    // NOTE Need shape to be {2, num_edges} because `write` writes line by line.
+    // Store the information on the edge container shape
+    grp->add_attribute("edge_container_is_transposed", true);
 
     // Set attributes
     dset_vertices->add_attribute("dim_name__0", "vertex_idx");
@@ -181,7 +179,6 @@ auto generate_write_function(const Graph& g,
                 }
             );
 
-            grp->add_attribute("is_"s + prop_prefix + "_property", true);
             dset->add_attribute("dim_name__0", prop_prefix + "_idx");
             dset->add_attribute("coords_mode__"s + prop_prefix + "_idx",
                                 "trivial");
@@ -246,7 +243,6 @@ auto generate_write_function(const Graph& g,
             const std::string dim0_name = std::get<1>(write_spec);
 
             // Set attributes
-            grp->add_attribute("is_"s + prop_prefix + "_property", true);
             dset->add_attribute("dim_name__0", dim0_name);
             dset->add_attribute("coords_mode__"s + dim0_name, "values");
             dset->add_attribute("coords__"s + dim0_name, coords);
@@ -302,6 +298,7 @@ create_graph_group(const Graph&                       g,
     auto grp = parent_grp->open_group(name);
 
     grp->add_attribute("content", "graph");
+    // Store additional metadata in the group attributes
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("allows_parallel", boost::allows_parallel_edges(g));
 

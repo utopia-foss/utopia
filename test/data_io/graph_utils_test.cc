@@ -131,14 +131,9 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
     BOOST_TEST(attr_parallel == 0);
     ggrp_attr.close();
 
-    ggrp_attr.open(*ggrp, "num_vertices");
-    auto attr_num_vertices = std::get<1>(ggrp_attr.read<size_t>());
-    BOOST_TEST(attr_num_vertices == 10);
-    ggrp_attr.close();
-
-    ggrp_attr.open(*ggrp, "num_edges");
-    auto attr_num_edges = std::get<1>(ggrp_attr.read<size_t>());
-    BOOST_TEST(attr_num_edges == 3);
+    ggrp_attr.open(*ggrp, "edge_container_is_transposed");
+    auto attr_transposed_edges = std::get<1>(ggrp_attr.read<int>());
+    BOOST_TEST(attr_transposed_edges == 1);
     ggrp_attr.close();
 
     // Test that the edge dataset attributes are set correctly
@@ -458,12 +453,6 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph_entity_properties) {
     auto grp = hdf.open_group("testgroup");
     auto grp_edges = grp->open_group("edges1");
     auto dset_edges = grp_edges->open_dataset("dset");
-
-    // Test that the group attribute is set correctly
-    HDFAttribute grp_edges_attr(*grp_edges, "is_edge_property");
-    auto attr_is_edge_prop = std::get<1>(grp_edges_attr.read<int>());
-    BOOST_TEST(attr_is_edge_prop == 1);
-    grp_edges_attr.close();
 
     // Test that the dataset attributes are set correctly
 

@@ -69,8 +69,11 @@ class GraphGroup(dtr.groups.GraphGroup):
     _GG_node_container = "_vertices"
     _GG_edge_container = "_edges"
 
-    # Expected _group_ attribute names determining the type of graph
+    # _group_ attribute names for optionally providing additional information
+    # on the graph.
     _GG_attr_directed = "is_directed"
     _GG_attr_parallel = "allows_parallel"
-    _GG_attr_node_prop = "is_vertex_property"
-    _GG_attr_edge_prop = "is_edge_property"
+    _GG_attr_edge_container_is_transposed = "edge_container_is_transposed"
+
+    # Whether warning is raised upon bad alignment of property data
+    _GG_WARN_UPON_BAD_ALIGN = True
