@@ -66,11 +66,13 @@ namespace GraphUtils
  */
 template<IterateOver iterate_over, typename Graph>
 decltype(auto) iterator_pair(const Graph& g){
+    using namespace boost;
+
     if constexpr (iterate_over == IterateOver::vertices){
-        return boost::vertices(g);
+        return vertices(g);
     }
     else if constexpr (iterate_over == IterateOver::edges){
-        return boost::edges(g);
+        return edges(g);
     }
     else {
         static_assert((iterate_over == IterateOver::vertices)
@@ -103,17 +105,19 @@ decltype(auto) iterator_pair(const Graph& g){
  */
 template<IterateOver iterate_over, typename Graph, typename EntityDesc>
 decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
+    using namespace boost;
+
     if constexpr (iterate_over == IterateOver::neighbors){
-        return boost::adjacent_vertices(e, g);
+        return adjacent_vertices(e, g);
     }
     else if constexpr (iterate_over == IterateOver::inv_neighbors){
-        return boost::inv_adjacent_vertices(e, g);
+        return inv_adjacent_vertices(e, g);
     }
     else if constexpr (iterate_over == IterateOver::in_edges){
-        return boost::in_edges(e, g);
+        return in_edges(e, g);
     }
     else if constexpr (iterate_over == IterateOver::out_edges){
-        return boost::out_edges(e, g);
+        return out_edges(e, g);
     }
     else {
         static_assert((iterate_over == IterateOver::neighbors)
@@ -121,7 +125,7 @@ decltype(auto) iterator_pair(EntityDesc e, const Graph& g){
                       or (iterate_over == IterateOver::in_edges)
                       or (iterate_over == IterateOver::out_edges),
                       "Only the iterator pairs of neighbors, inv_neighbors, "
-                      "in_edge, and out_edgecan be returned: "
+                      "in_edge, and out_edge can be returned: "
                       "iterate_over is set wrong!");
     }
 }
