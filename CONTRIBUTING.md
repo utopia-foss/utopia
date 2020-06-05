@@ -8,6 +8,10 @@ Utopia is open source software. We strive for making every stage of development
 public, sharing our advances, and incorporating community contributions. We
 therefore prefer public contributions of any kind via GitLab.
 
+Utopia is licensed under the [GNU Lesser General Public License Version 3](https://www.gnu.org/licenses/lgpl-3.0.en.html).
+Contributors to the Utopia project and source code agree that their contributions are published and may be distributed according to this license.
+At their discretion, all contributors will be acknowledged in the [authors list](COPYING.md#copyright-holders).
+
 To uphold a welcoming, friendly, and productive experience with Utopia, we
 expect all involved parties to adhere to our included
 [Code of Conduct](CODE_OF_CONDUCT.md) and

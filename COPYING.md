@@ -1,12 +1,12 @@
-# Copyright
-
-Utopia is licensed under the [GNU Lesser General Public License Version 3]
-or any later version.
-
-## Copyright Notice
+# Copyright Notice
 
     Utopia — Comprehensive Modelling Framework for Complex Environmental Systems
-    Copyright (C) 2016 – 2020  TS-CCEES Utopia Developers
+    Copyright (C) 2016 – 2020  Utopia Developers
+
+    The term "Utopia Developers" refers to all direct contributors to this
+    software package. A full list of copyright holders and information about
+    individual contributions can be retrieved from the version-controlled
+    development history of this software package.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -27,30 +27,34 @@ the source code of this program.
 
 ## Copyright Holders
 
-The copyright holders of Utopia are collectively referred to as
-_TS-CCEES Utopia Developers_ in the respective copyright notices and
-disclaimers.
+The copyright holders of the Utopia software package are collectively referred
+to as "Utopia Developers" in the respective copyright notices.
 
-Utopia has been developed by (in alphabetical order):
+### Maintainers
+
+* Benjamin Herdeanu
+* Harald Mack
+* Lukas Riedel
+* Yunus Sevinchan
+* Julian Weninger (appears in commits also as `Julian`, `jweninger`, and
+  `Julian 530U3C Ubuntu`)
+
+### Contributors
 
 * Narek Baghumian
 * Lorenzo Biasi
 * Unai Fischer Abaigar
 * Thomas Gaskin
-* Benjamin Herdeanu
 * Christian Kobrow
 * Fabian Krautgasser
 * Daniel Lake
-* Hendrik Leusmann
-* Harald Mack
+* Hendrik Leusmann (appears in commits as `H_Leusmann`)
 * Peter Manshausen
-* Lukas Riedel
 * Soeren Rubner
+* Laila Pilar Schmidt
 * Simeon Schreib
-* Yunus Sevinchan
 * Lukas Siebert
 * Jeremias Traub
-* Julian Weninger
 * Josephine Westermann
 
 [GNU General Public License Version 3]: https://www.gnu.org/licenses/gpl-3.0.en.html

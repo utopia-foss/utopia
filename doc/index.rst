@@ -7,7 +7,7 @@ We are happy that you found your way to the documentation.
 Utopia is free software and licensed under the
 `GNU Lesser General Public License Version 3 <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_
 or any later version.
-For details, please refer to the :doc:`Copyright Information <COPYING>`.
+For details, please refer to the :doc:`COPYING`.
 
 .. hint::
 
@@ -68,7 +68,7 @@ For details, please refer to the :doc:`Copyright Information <COPYING>`.
    :maxdepth: 1
    :glob:
 
-   Copyright Information <COPYING>
+   Copyright Notice <COPYING>
    Contribution Guide <CONTRIBUTING>
    Code of Conduct <CODE_OF_CONDUCT>
    Documentation Examples <examples>
