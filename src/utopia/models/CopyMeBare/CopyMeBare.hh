@@ -60,25 +60,25 @@ private:
 
 public:
     // -- Model Setup ---------------------------------------------------------
+
     /// Construct the CopyMeBare model
-    /** \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
+    /** \param name             Name of this model instance; is used to extract
+     *                          the configuration from the parent model and
+     *                          set up a HDFGroup for this instance
+     *  \param parent_model     The parent model this model instance resides in
+     *  \param custom_cfg       A custom configuration to use instead of the
+     *                          one extracted from the parent model using the
+     *                          instance name
      */
     template<class ParentModel>
-    CopyMeBare (const std::string name, ParentModel& parent)
+    CopyMeBare (
+        const std::string& name,
+        ParentModel& parent_model,
+        const DataIO::Config& custom_cfg = {}
+    )
     :
-        // Initialize first via base model
-        Base(name, parent)
-        // Now initialize members specific to this class
-        // ...
-
-        // Open the datasets
-        // e.g. via _dset_state(this->create_dset("state", {})) <- 1d
-        //      or  _dset_state(this->create_dset("state", {num_states})) <- 2d
-    {
-        // Can do remaining initialization steps here ...
-        // ...
-    }
+        Base(name, parent_model, custom_cfg)
+    {}
 
 
 private:

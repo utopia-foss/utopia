@@ -220,19 +220,25 @@ private:
 public:
     // -- Model Setup ---------------------------------------------------------
     /// Construct the Environment model associated to a CellManager
-    /** \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
+    /** \param name            Name of this model instance
+     *  \param parent_model    The parent model this model instance resides in
      *  \param associate_cm    The CellManager of the associate (i.e. parent)
      *                         model. The Environment model's CellManager will
      *                         use the configuration of that CellManager.
+     *  \param custom_cfg      A custom configuration to use instead of the
+     *                         one extracted from the parent model using the
+     *                         instance name
      */
     template<class ParentModel, class CellManager>
-    Environment (const std::string name,
-                 ParentModel& parent,
-                 CellManager&& associate_cm)
+    Environment (
+        const std::string& name,
+        ParentModel& parent_model,
+        CellManager&& associate_cm,
+        const DataIO::Config& custom_cfg = {}
+    )
     :
         // Initialize first via base model
-        Base(name, parent),
+        Base(name, parent_model, custom_cfg),
 
         // Set up the internal CellManager
         _cm(*this, associate_cm.cfg()),
@@ -258,8 +264,10 @@ public:
                 associate_cm.cells()[i]->custom_links().env = _cm.cells()[i];
             }
 
-            this->_log->info("Associated '{}' cells with those of the parent "
-                             "model '{}'.", this->_name, parent.get_name());
+            this->_log->info(
+                "Associated '{}' cells with those of the parent model '{}'.",
+                this->_name, parent_model.get_name()
+            );
         }
         else if constexpr (not standalone) {
             // Only allow coupled models without coupled cellmanagers when

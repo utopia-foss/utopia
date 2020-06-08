@@ -132,15 +132,21 @@ public:
      *  setting that is close to the actual use case, i.e.: as means for
      *  storing model output.
      *
-     *  \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
+     *  \param name           Name of this model instance
+     *  \param parent_model   The parent model this model instance resides in
+     *  \param custom_cfg       A custom configuration to use instead of the
+     *                          one extracted from the parent model using the
+     *                          instance name
      */
     template<class ParentModel>
-    HdfBenchModel (const std::string name,
-                   ParentModel &parent)
+    HdfBenchModel (
+        const std::string& name,
+        ParentModel& parent_model,
+        const DataIO::Config& custom_cfg = {}
+    )
     :
         // Initialize first via base model
-        Base(name, parent),
+        Base(name, parent_model, custom_cfg),
 
         // Set maps for setup and write functions
         _setup_funcs(),

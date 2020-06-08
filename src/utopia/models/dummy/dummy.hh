@@ -40,21 +40,27 @@ private:
 public:
     /// Construct the dummy model with an initial state
     /** \param name          Name of this model instance
-     *  \param parent_model  The parent model instance this instance appears
-     *                       under
+     *  \param parent_model  The parent model instance this instance resides in
      *  \param initial_state Initial state of the model
+     *  \param custom_cfg    A custom configuration to use instead of the
+     *                       one extracted from the parent model using the
+     *                       instance name
      */
     template <class ParentModel>
-    Dummy(const std::string name,
-          const ParentModel& parent_model,
-          const Data& initial_state)
-        :
-          // Use the base constructor for the main parts
-          Base(name, parent_model),
-          // Initialise state and boundary condition members
-          _state(initial_state),
-          _bc(_state.size(), 1.0),
-          _dset_state(this->create_dset("state", {_state.size()}))
+    Dummy (
+        const std::string& name,
+        const ParentModel& parent_model,
+        const Data& initial_state,
+        const DataIO::Config& custom_cfg = {}
+    )
+    :
+        // Use the base constructor for the main parts
+        Base(name, parent_model, custom_cfg),
+
+        // Initialise state and boundary condition members
+        _state(initial_state),
+        _bc(_state.size(), 1.0),
+        _dset_state(this->create_dset("state", {_state.size()}))
     {}
 
 

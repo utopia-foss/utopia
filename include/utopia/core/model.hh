@@ -216,18 +216,25 @@ public:
      *  \param parent_model The parent model object from which the
      *                      corresponding config node, the group, the RNG,
      *                      and the parent log level are extracted.
+     *  \param custom_cfg   If given, will use this configuration node instead
+     *                      of trying to extract one from the parent model's
+     *                      configuration.
      *  \param w_args       Passed on to DataManager constructor. If not given,
      *                      the DataManager will still be constructed. Take
      *                      care to also set the WriteMode accordingly.
      */
     template<class ParentModel, class... WriterArgs>
-    Model (const std::string name,
-           const ParentModel& parent_model,
-           WriterArgs&&... w_args)
+    Model (
+        const std::string& name,
+        const ParentModel& parent_model,
+        const Config& custom_cfg = {},
+        [[maybe_unused]] std::tuple<WriterArgs...> w_args = {}
+    )
     :
         // First thing: setup name, configuration, and level in hierarchy
         _name(name),
-        _cfg(parent_model.get_cfg()[_name]),
+        _cfg(custom_cfg.size() ? custom_cfg
+             : get_as<Config>(_name, parent_model.get_cfg())),
         _level(parent_model.get_level() + 1),
 
         // Determine space and time
@@ -286,7 +293,7 @@ public:
             _hdfgrp->add_attribute("write_mode", "off");
         }
         else if constexpr (_write_mode == WriteMode::managed) {
-            static_assert(sizeof...(w_args) > 0,
+            static_assert(sizeof...(WriterArgs) > 0,
                           "No arguments to construct write_tasks given!");
 
             _log->info("  write_mode:  {:>7s}", "managed");
@@ -316,9 +323,8 @@ public:
 
             _log->info("Invoking DataManager task factory ...");
 
-
             _datamanager = DataIO::DataManagerFactory<Derived>()(
-                dm_cfg, std::forward_as_tuple(w_args...)
+                dm_cfg, w_args
             );
 
             _log->info("DataManager set up with {} task(s), {} decider(s), "

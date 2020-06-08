@@ -233,14 +233,25 @@ class CopyMeGraph : public Model<CopyMeGraph, ModelTypes>
 
   public:
     // -- Model Setup ---------------------------------------------------------
+
     /// Construct the CopyMeGraph model
-    /** \param name     Name of this model instance
-     *  \param parent   The parent model this model instance resides in
+    /** \param name             Name of this model instance; is used to extract
+     *                          the configuration from the parent model and
+     *                          set up a HDFGroup for this instance
+     *  \param parent_model     The parent model this model instance resides in
+     *  \param custom_cfg       A custom configuration to use instead of the
+     *                          one extracted from the parent model using the
+     *                          instance name
      */
     template<class ParentModel>
-    CopyMeGraph(const std::string name, ParentModel& parent) :
+    CopyMeGraph (
+        const std::string& name,
+        ParentModel& parent_model,
+        const DataIO::Config& custom_cfg = {}
+    )
+    :
         // Initialize first via base model
-        Base(name, parent),
+        Base(name, parent_model, custom_cfg),
 
         // Initialize the uniform real distribution to range [0., 1.]
         _prob_distr(0., 1.),

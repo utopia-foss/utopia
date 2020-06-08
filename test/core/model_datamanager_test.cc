@@ -1,5 +1,5 @@
-#include "utopia/core/utils.hh"
 #define BOOST_TEST_MODULE model_test_writemode
+
 // stl
 #include <chrono>
 #include <numeric>
@@ -8,7 +8,9 @@
 
 // boost test
 #include <boost/test/included/unit_test.hpp>
+
 // utopia
+#include <utopia/core/utils.hh>
 #include <utopia/data_io/cfg_utils.hh>
 #include <utopia/data_io/data_manager/factory.hh>
 #include <utopia/data_io/hdfattribute.hh>
@@ -38,7 +40,9 @@ struct Fixture
             "w");
 
     Utopia::TestModel<write_mode> model = Utopia::TestModel<write_mode>(
-        "test", pp, std::vector<double>(1000, 5),
+        "test", pp, std::vector<double>(1000, 5), {},
+        // task tuple definition
+        std::make_tuple(
         // first task
         std::make_tuple(
             "state_writer", // this is for finding name
@@ -54,7 +58,7 @@ struct Fixture
             [](auto&& thing) -> decltype(auto) { return thing * 2; },
             Utopia::Utils::Nothing{},
             std::make_tuple("Content_x2", "state times two is contained"))
-
+        )
     );
 };
 

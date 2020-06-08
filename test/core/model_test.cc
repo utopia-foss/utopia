@@ -228,4 +228,17 @@ BOOST_AUTO_TEST_CASE (test_model_monitor_emit) {
 }
 
 
+/// Test whether passing of a custom configuration is possible
+BOOST_AUTO_TEST_CASE (test_model_custom_config) {
+    auto custom_cfg = pp.get_cfg()["custom_cfg"];
+    TestModel model("some instance name without counterpart in the config",
+                    pp, initial_state, custom_cfg);
+
+    const auto model_cfg = model.get_cfg();
+    BOOST_TEST(model_cfg.size() == 2);
+    BOOST_TEST(get_as<std::string>("foo", model_cfg) == "bar");
+    BOOST_TEST(get_as<std::string>("note", model_cfg)
+               == "this is the custom configuration node");
+}
+
 BOOST_AUTO_TEST_SUITE_END() // end of test_model_base_class test suite

@@ -50,13 +50,16 @@ public:
     /** \param state Initial state of the model
      */
     template<class ParentModel, class... WriterArgs>
-    TestModel (const std::string name,
-               const ParentModel &parent_model,
-               const Data& initial_state,
-               WriterArgs&&... writer_args)
+    TestModel (
+        const std::string name,
+        const ParentModel &parent_model,
+        const Data& initial_state,
+        const DataIO::Config& custom_cfg = {},
+        std::tuple<WriterArgs...> writer_args = {}
+    )
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_model, std::forward<WriterArgs>(writer_args)...),
+        Base(name, parent_model, custom_cfg, writer_args),
         // Initialize state and boundary condition members
         _state(initial_state),
         _bc(_state.size(), 1.0),
