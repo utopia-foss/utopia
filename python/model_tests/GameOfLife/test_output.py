@@ -7,7 +7,7 @@ import pytest
 from utopya.testtools import ModelTest
 
 # Configure the ModelTest class for GameOfLife
-mtc = ModelTest("GameOfLife", test_file=__file__) # TODO set the model name
+mtc = ModelTest("GameOfLife", test_file=__file__)
 
 
 # Fixtures --------------------------------------------------------------------
@@ -58,7 +58,6 @@ def test_run_and_eval_cfgs():
 # NOTE The below test is an example of how to access data and write a test.
 #      You can adjust this to your needs and then remove the decorator to
 #      enable the test.
-# TODO Adapt this to the data you are putting out
 def test_output():
     """Test that the output structure is correct"""
     # Create a Multiverse and let it run
@@ -73,21 +72,21 @@ def test_output():
     # and the content of the output data
     for uni_no, uni in dm['multiverse'].items():
         # Get the data
-        data = uni['data']['GameOfLife']  # TODO change this to your model name
+        data = uni['data']['GameOfLife']
 
         # Get the config of this universe
         uni_cfg = uni['cfg']
 
         # Check that all datasets are available
-        assert 'some_state' in data
-        assert 'some_trait' in data
+        assert 'living' in data
 
         # It is very helpful to make use of the xarray functionality!
         # See:  http://xarray.pydata.org/en/stable/why-xarray.html
-        some_state = data['some_state']
-        assert some_state.dims == ('time', 'x', 'y')
+        living = data['living']
+        assert living.dims == ('time', 'x', 'y')
 
-        some_trait = data['some_trait']
-        assert some_trait.dims == ('time', 'x', 'y')
-
-        # Can do further tests here ...
+        # Check that in each time-step there are living
+        # as well as dead cells
+        for t, d in living.groupby('time'):
+            assert 0 in d
+            assert 1 in d

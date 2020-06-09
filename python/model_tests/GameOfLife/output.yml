@@ -1,7 +1,4 @@
 # Configuration file used to test that the output of the model is correct
-
-# TODO specify what this config file intends to test here
-# TODO rename this file to match the intended test purpose more explicitly
 ---
 perform_sweep: true
 
@@ -12,7 +9,6 @@ parameter_space:
     default: 42
     values: [23, 42, 665, 667]
 
-  # TODO change "GameOfLife" to the name of your model instance
   GameOfLife: !model  
     model_name: GameOfLife  # imports the model config for the GameOfLife model
 
