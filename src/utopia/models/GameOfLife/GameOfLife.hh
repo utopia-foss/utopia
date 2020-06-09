@@ -12,6 +12,7 @@
 #include <utopia/core/model.hh>
 #include <utopia/core/cell_manager.hh>
 #include <utopia/core/apply.hh>
+#include <utopia/core/select.hh>
 #include <utopia/data_io/cfg_utils.hh>
 
 namespace Utopia::Models::GameOfLife
@@ -24,46 +25,25 @@ struct CellState
     /// Whether a cell lives or not
     bool living;
 
-    /// Construct the cell state from a configuration and an RNG
-    template<class RNG>
-    CellState(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
-    {
-        // Initialize cells randomly
-        // NOTE This check can be improved if the string comparison is replaced
-        //      e.g. by an enum class comparisson. However, reading in the
-        //      configuration directly as enum class generates errors because
-        //      because of not allowed type conversions.
-        if (get_as<std::string>("mode", cfg) == "random") {
-            if (not get_as<DataIO::Config>("random", cfg)) {
-                // Is set, but is false. Just return:
-                return;
-            }
-
-            // Get the probability to be living
-            auto p_living = get_as<double>("p_living", cfg["random"]);
-
-            // Create a uniform real distribution
-            auto dist = std::uniform_real_distribution<double>(0., 1.);
-
-            // With probability p_living, a cell lives
-            if (dist(*rng) < p_living) {
-                living = true;
-            }
-            else {
-                living = false;
-            }
-        }
-        // else: the config option was not available
-    }
+    /// Construct the cell state with all dead cells as default
+    /** Set all cells to be dead as default. In the GameOfLife model
+     * constructor, the select_entity interface is used to set selected
+     * cells to be living. Implementing it here in the state constructor
+     * would be unnecessary costly wrt. performance because for each
+     * cell state created, _all_ cells selected to be living would need to
+     * be calculated.
+     */
+    CellState() : living(false) {};
 };
 
 /// Specialize the CellTraits type helper for this model
-/** Specifies the type of each cells' state as first template argument and the
- * update mode as second.
+/** Specifies the type of each cells' state as first template argument, the
+ * update mode as second, and whether to use the state default constructor as
+ * third.
  *
  * See \ref Utopia::CellTraits for more information.
  */
-using CellTraits = Utopia::CellTraits<CellState, Update::manual>;
+using CellTraits = Utopia::CellTraits<CellState, Update::manual, true>;
 
 /// Type helper to define types used by the model
 using ModelTypes = Utopia::ModelTypes<>;
@@ -150,6 +130,13 @@ class GameOfLife : public Model<GameOfLife, ModelTypes>
         // helper functions to take care of setting them up:
         _dset_living(this->create_cm_dset("living", _cm))
     {
+        // Select the cells that should be set to living
+        const auto living = this->_cm.select_cells(
+            get_as<DataIO::Config>("living", this->_cfg));
+        for (const auto& living_cell : living) {
+            living_cell->state.living = true;
+        }
+
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
     }

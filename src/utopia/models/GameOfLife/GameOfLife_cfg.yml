@@ -29,14 +29,22 @@ cell_manager:
   neighborhood:
     mode: Moore
 
-  # Cell initialization parameters
-  cell_params:
-    # The mode in which to initialize the cells. Available options: 'random'
-    mode: random
+# --- Initialization 
+# Initialize cells that should be set to living.
+# This feature uses the `select_entities` interface; consult the
+# documentation regarding information on available selection modes.
+# Turn dead cells into living cells. All cells that do not fulfill the 
+# condition are set to be dead.
+living:
+  mode: probability
 
-    # 'random' mode specific initialization parameters
-    random: 
-      p_living: 0.5
+  # Probability parameter
+  probability: 0.1
+
+  # Clustering parameters
+  p_seed: .02            # Probability with which a cell is a cluster seed
+  p_attach: .1           # Attachment probability (per neighbor)
+  num_passes: 5          # How many attachment procedures to perform
 
 # --- Rule specification
 # Specify a rule in the notation used by Mirek's Cellebration as a string in
