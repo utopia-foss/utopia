@@ -11,22 +11,6 @@ living_density:
   # Specify the dataset within the GameOfLife output that is to be plotted
   mean_of: living
 
-
-# Facet Grid plot for a sweep over some_parameter' and another dimension
-CA_anim_facet_grid:
-  based_on: some_facet_grid_plot
-
-  frames: time
-
-  kind: pcolormesh
-
-  animation:
-    writer: frames
-
-  helpers:
-    set_suptitle:
-      title: ~
-
 # Spatial CA animations .......................................................
 CA_anim:
   based_on: state_anim
