@@ -1,0 +1,17 @@
+# Configuration file used to test initialization
+---
+parameter_space:
+  num_steps: 0
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 32
+    cell_params:
+      p_tree: 0
+
+    stones:
+      enabled: true
+
+    infection_source:
+      enabled: false

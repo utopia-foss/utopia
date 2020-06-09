@@ -1,0 +1,135 @@
+# Base configuration for SEIRD model plots
+---
+# -- Any kind of phase plot ---------------------------------------------------
+phase_diagram:
+  based_on: .default_style_and_helpers
+
+  creator: universe
+  universes: all
+
+  module: model_plots.SEIRD
+  plot_func: phase_diagram
+
+  cmap: viridis_r
+
+  helpers:
+    set_title:
+      title: Phase Diagram
+
+
+# -- Densities plot -----------------------------------------------------------
+densities:
+  based_on: .basic_uni.lineplots
+
+  model_name: SEIRD
+
+  to_plot:
+    empty:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: empty }
+      label: empty
+      color: &color_empty darkkhaki
+
+    susceptible:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: susceptible }
+      label: susceptible
+      color: &color_susceptible forestgreen
+
+    exposed:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: exposed }
+      label: exposed
+      color: &color_exposed darkorange
+
+    infected:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: infected }
+      label: infected
+      color: &color_infected firebrick
+
+    recovered:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: recovered }
+      label: recovered
+      color: &color_recovered slategray
+
+    source:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: source }
+      label: source
+      color: &color_source maroon
+
+    stone:
+      transform_data:
+        - sel: { kind: stone }
+      path_to_data: densities
+      label: stone
+      color: &color_stone black
+
+  helpers:
+    set_limits:
+      x: [min, max]
+      y: [0., 1.]
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Density [1/A]
+    set_title:
+      title: Densities
+    set_legend:
+      loc: best
+
+
+# --- Grid Snapshots ----------------------------------------------------------
+# NOTE These can also be used as basis for grid animations.
+# ... The CA ..............................................................
+CA_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+  
+  to_plot:
+    kind:
+      title: ""
+      limits: [0, 6]
+      # Be aware that the colors need to be in the correct ordering!
+      cmap:
+        empty: *color_empty
+        susceptible: *color_susceptible
+        exposed: *color_exposed
+        infected: *color_infected
+        recovered: *color_recovered
+        source: *color_source
+        stone: *color_stone
+
+# ... The CA age ..........................................................
+CA_age_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+
+  to_plot:
+    age:
+      title: Age
+      cmap: YlGn
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+
+  to_plot:
+    cluster_id:
+      title: Clusters
+      limits: [0, 20]
+      cmap: tab20
+      no_cbar_markings: true
+
+  transform_data:
+    cluster_id:
+      - where: ['!=', 0]       # 0 is masked: not part of a cluster
+      - mod: 20                # ... to match the tab20 color map

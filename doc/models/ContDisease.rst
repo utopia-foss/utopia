@@ -7,8 +7,8 @@ on the description in the script of the CCEES lecture of Prof. Roth.
 
 Fundamentals
 ------------
-We model a "forest" on a two dimensional square grid of cells. Each cell can be
-in one of five different states: empty, tree, infected, herd or stones.
+We model a "forest" on a two-dimensional square grid of cells. Each cell can be
+in one of five different states: empty, tree, infected, source or stones.
 
 Implementation
 --------------
@@ -21,7 +21,7 @@ following rules:
 2. An ``empty`` cell can become a ``tree`` cell with probability ``p_growth``.
 3. A ``tree`` cell can become infected in the following ways:
 
-   - From a neighbouring infected cell with probability 1-``p_immunity``
+   - From a neighboring infected cell with probability 1-``p_immunity``
      *per neighbor*
    - Via a random point infection with probability ``p_infect``
    - Via a constantly infected cell, an infection ``source``
@@ -57,7 +57,7 @@ The following data is stored alongside the simulation:
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
-* ``densities``: the densities of each of the kind of cells over time; this is a labelled 2D array with the dimensions ``time`` and ``kind``.
+* ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
 
 
 Default configuration parameters

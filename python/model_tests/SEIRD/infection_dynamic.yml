@@ -1,0 +1,23 @@
+# Configuration file used to test the infection dynamics
+
+---
+parameter_space:
+  num_steps: 3
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 3
+    
+    cell_params:
+      p_tree: 0.
+
+    stones:
+      enabled: false
+
+    infection_source:
+      enabled: true
+
+    p_growth: 1
+    p_immunity: 0
+    p_infect: 0

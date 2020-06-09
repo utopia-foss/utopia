@@ -1,0 +1,20 @@
+# Configuration file used to test the initial state
+---
+parameter_space:
+  num_steps: 23
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 32
+    cell_params:
+      p_tree: 0
+
+    p_infect: 0.
+    p_growth: 0.
+
+    stones: 
+      enabled: false
+    
+    infection_source:
+      enabled: true

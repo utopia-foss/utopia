@@ -1,0 +1,27 @@
+# Configuration file used to test infection control
+---
+parameter_space:
+  num_steps: 20
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 32
+      cell_params:
+        p_tree: 0.
+
+    stones:
+      enabled: false
+
+    p_infect: 0.
+
+    infection_source:
+      enabled: false
+
+    infection_control:
+      enabled: true
+
+      # infect all cells
+      num_additional_infections: 1024
+
+      at_times: [5, 10, 15]

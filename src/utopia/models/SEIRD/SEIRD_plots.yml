@@ -1,0 +1,98 @@
+# Default plots for the SEIRD model
+---
+# --- Plot of all densities over time -----------------------------------------
+densities:
+  based_on: densities
+  
+# --- Create a phase plot of two densities ------------------------------------
+phase_diagram_SI:
+  based_on: phase_diagram
+
+  # Select from what densities to create the phase diagram
+  x: susceptible
+  y: infected
+
+  helpers:
+    set_labels:
+      x: Susceptible Density [1/A]
+      y: Infected Density [1/A]
+    set_limits:
+      x: [0, max]
+      y: [0, max]
+
+  # Parameters that are passed on to plot.scatter
+  s: 10
+
+phase_diagram_SE:
+  based_on: phase_diagram
+
+  # Select from what densities to create the phase diagram
+  x: susceptible
+  y: exposed
+
+  helpers:
+    set_labels:
+      x: Susceptible Density [1/A]
+      y: Exposed Density [1/A]
+    set_limits:
+      x: [0, max]
+      y: [0, max]
+
+  # Parameters that are passed on to plot.scatter
+  s: 10
+
+phase_diagram_EI:
+  based_on: phase_diagram
+
+  # Select from what densities to create the phase diagram
+  x: exposed
+  y: infected
+
+  helpers:
+    set_labels:
+      x: Exposed Density [1/A]
+      y: Infected Density [1/A]
+    set_limits:
+      x: [0, max]
+      y: [0, max]
+
+  # Parameters that are passed on to plot.scatter
+  s: 10
+
+# --- Snapshots and animations of the spatial grid ----------------------------
+# NOTE These are both based on the snapshot base plots and add the remaining
+#      parameters: For snapshots, the time index that is to be plotted; for
+#      animations, the animation parameters (using multiple inheritance).
+
+# ... The CA ..............................................................
+CA_snapshot:
+  based_on: CA_snapshot
+  enabled: false
+  time_idx: -1
+
+CA:
+  based_on: [CA_snapshot, .ca.state.anim_ffmpeg]
+
+# ... The CA age ..........................................................
+CA_age_snapshot:
+  based_on: CA_age_snapshot
+  enabled: false
+  time_idx: -1
+
+CA_age:
+  based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg]
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: clusters_snapshot
+  enabled: false
+  time_idx: -1
+
+clusters:
+  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
+
+# --- Miscellaneous -----------------------------------------------------------
+# ... Combined plot of CA states and clusters .............................
+CA_and_clusters:
+  based_on: [CA_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+  enabled: false

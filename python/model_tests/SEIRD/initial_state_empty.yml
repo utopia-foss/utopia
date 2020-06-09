@@ -1,0 +1,20 @@
+# Configuration file used to test that the initialization of the model is
+# correct
+---
+parameter_space:
+  num_steps: 0
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 32
+
+    cell_params:
+      p_tree: 0
+
+    stones:
+      enabled: false
+    
+    infection_source:
+      enabled: false
+      

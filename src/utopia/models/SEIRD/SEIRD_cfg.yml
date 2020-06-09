@@ -1,0 +1,128 @@
+# The model configuration for the SEIRD model
+# 
+# NOTE This file holds the _default_ values for a single instance.
+#      Do NOT change the values here!
+#
+# Consult the documentation on how to change these parameters
+---
+# --- Space parameters --------------------------------------------------------
+# The physical space this model is embedded in
+space:
+  periodic: false
+
+# --- CellManager and cell initialization -------------------------------------
+cell_manager:
+  grid:
+    structure: square
+    resolution: 128      # in cells per unit length of physical space
+
+  neighborhood:
+    mode: Moore
+
+  # Cell initialization parameters
+  cell_params:
+    # Initial susceptible density, value in [0, 1]
+    # With this probability, a cell is initialized as susceptible (instead of empty)
+    p_susceptible: 0.3
+
+    # Initial immune density, value in [0, 1]
+    # With this probability, a cell is initialized as immune, however, only if
+    # it is susceptible (determined via p_susceptible)
+    p_immune: 0.05
+
+# --- Model Dynamics ----------------------------------------------------------
+# Probability per site and time step to transition from state empty to susceptible
+p_susceptible: 7.5e-3
+
+# Probability to be immune per transition to susceptible via p_susceptible
+p_immune: 0.1
+
+# Probability per site and time step for a susceptible cell to not become infected if
+# an infected cell is in the neighborhood. This probability applies per event
+# so it does _not_ mean that an immune cell is also immune in the next
+# iteration step
+p_random_immunity: 0.
+
+# Probability per site and time step for a random point exposure of a susceptible
+p_exposure: 0.05
+# NOTE This is affected by the exposure control, see below.
+
+# Probability to recover if infected
+# Note that p_recover + p_decease need to be smaller than 1
+p_recover: 0.3
+
+# Probability to desease if the cell is infected
+# Note that p_recover + p_decease need to be smaller than 1
+p_decease: 0.1
+
+# Probability per site and time step to transition to empty
+p_empty: 7.5e-3
+
+# The incubation period for exposed cells to become infected
+incubation_period: 5
+
+# The probability to loose immunity if a cell is recovered
+p_lose_immunity: 0.02
+
+# ... Movement ...............................................................
+# Whether to allow cells to move away from infected neighboring cells
+# If a neighbor is infected a cell searches for a random empty neighboring
+# place and moves towards it. If there is no space do nothing
+move_away_from_infected: false
+
+# Probability to move in a random direction
+p_move_randomly: 0.01
+
+# --- Exposure Control -------------------------------------------------------
+# Exposure control to investigate the time-dependent influence of the 
+# disease driving force. Note that exposure control is applied at the
+# beginning of an iteration step. It's effect is seen in the following
+# time step
+exposure_control:
+  enabled: false
+
+  # The number of additional exposures to be placed on the grid
+  num_additional_exposures: 10
+
+  # Add the additional exposures at the given times
+  # Note the the !listgen tag creates a list from the parameters 
+  # (start, stop, step_size)
+  # To disable, pass an empty sequence.
+  at_times: !listgen [0, 100, 20]
+
+  # Change the probability of a random exposure.
+  # The expected value is a list of [iteration_step, new_value] pairs, e.g.
+  #   - [10, .5]
+  #   - [42, 0.]
+  # ... will set p_expose from the default value to .5 at time 10 and set it
+  # back to 0. at time 42.
+  # To disable, pass an empty sequence.
+  change_p_expose: []
+
+# --- Heterogeneities ---------------------------------------------------------
+# Some cells can be permanently infected or turned into stones.
+# Both these features are using the `select_entities` interface; consult the
+# documentation regarding information on available selection modes.
+
+# Turn some cells into stones: these do not take part in any of the processes
+stones:
+  enabled: false
+  mode: clustered_simple
+
+  # Clustering parameters
+  p_seed: .02                # Probability with which a cell is a cluster seed
+  p_attach: .1               # Attachment probability (per neighbor)
+  num_passes: 5              # How many attachment procedures to perform
+
+# Set some cells to be permanently infected (invoked after stones are set)
+infection_source:
+  enabled: false
+  mode: boundary
+
+  # Boundary selection parameters (requires space to be set to NON-periodic!)
+  boundary: bottom
+
+# --- Output Configuration ----------------------------------------------------
+# Whether to only write out the densities; useful for runs on large grids
+# where spatial information is not needed.
+write_only_densities: false

@@ -1,0 +1,21 @@
+# Configuration file used to test that the growing dynamic of the model is correct
+
+---
+parameter_space:
+  num_steps: 1
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 3
+    cell_params:
+      p_tree: 0.
+
+    stones:
+      enabled: false
+
+    infection_source:
+      enabled: false
+    
+    p_growth: 1.
+    p_infect: 0.
