@@ -1,51 +1,9 @@
 
-``GameOfLife`` - A good place to start with your CA-based model
-===============================================================
+``GameOfLife`` - Conway's Game of Life
+======================================
 
-This is an *example* for the documentation of your model implementation. 
-Use your own creativity and structure to convey the important information about your model in a nice and catchy way.
-
-**Important:** Before your model can be merged into the master, the following steps are required:
-
-1. Fill in this documentation file
-2. ``git mv`` this file to the ``doc/models`` directory. Make sure it is named exactly as your model is named.
-3. After the move, make sure the link in the :ref:`Default Model Configuration` section points to your model configuration.
-
-For the reStructuredText syntax, see `here <http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_, but there are also some examples below.
-
-
-Model Fundamentals
-------------------
-
-Here, you can add some description of the fundamental ideas of your model and the questions it potentially can address.
-
-A subsection
-^^^^^^^^^^^^
-
-Here, important subaspects of the model can be addressed. Feel free to use math blocks:
-
-.. math::
-
-   W = \begin{pmatrix}w_{00} & w_{01} \cr w_{10} & w_{11} \end{pmatrix}
-
-…or some inline math, if you like: :math:`\sigma = 42`.
-
-Implementation Details
-----------------------
-
-This section provides a few important implementation details...
-
-You can use some short code blocks to convey some information. Adjust the language to your need (``c++``, ``python``, ...)
-
-.. code-block:: yaml
-
-   # A YAML code block
-   # My parameters
-   foo:
-     bar: baz
-   
-   spam: 42
-
+This model implements `Conway's Game of Life <https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life>`_ as well as all two-dimensional `life-like cellular automata <https://en.wikipedia.org/wiki/Life-like_cellular_automaton>`_. 
+For information on the model and its generalization to two-dimensional rules please have a look at the linked Wikipedia articles and, if needed, follow the references presented in the articles.
 
 Default Model Configuration
 ---------------------------
@@ -56,21 +14,17 @@ Below are the default configuration parameters for the ``GameOfLife`` model.
    :language: yaml
    :start-after: ---
 
-.. todo::  Make sure the path is correct here.
-
 
 Possible Future Extensions
 --------------------------
 
-You have a nice idea, but
+This model can be expanded in many different ways. A few ideas are:
 
-* that would open a completely new storyline and thus would need the creation of a new model that is based on this one.
-* you just did not have the time to explore everything, however, it would probably be a good idea to look into this in future work.
-
-Well... write it down here, maybe someone picks it up.
-
+- Expand the initialization options to position well-known structures such as gliders or space-ships at desired locations on the grid
+- Introduce stochasticity into the model by introducing birth and/or death probabilities. For these cases, also provide means to plot and analyze the data.
 
 References
 ----------
 
-* Adams, Douglas (1979). *A Hitchhiker's Guide to the Galaxy*. Pan books.
+* `Conway's Game of Life <https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life>`_
+* `Life-like cellular automata <https://en.wikipedia.org/wiki/Life-like_cellular_automaton>`_
