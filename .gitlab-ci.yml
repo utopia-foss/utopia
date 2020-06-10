@@ -369,6 +369,7 @@ test:models:
     - utopia run ContDisease --debug
     - utopia run Environment --debug --num-steps 10
     - utopia run ForestFire --debug
+    - utopia run GameOfLife --debug
     - utopia run Geomorphology --debug
     - utopia run PredatorPrey --debug
     - utopia run SandPile --debug

@@ -1,0 +1,55 @@
+# The model configuration for the GameOfLife model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# --- Space parameters
+# The physical space this model is embedded in
+space:
+  periodic: true
+
+# --- CellManager and cell initialization
+cell_manager:
+  grid:
+    structure: square
+    resolution: 128      # in cells per unit length of physical space
+
+  neighborhood:
+    mode: Moore
+
+# --- Initialization 
+# Initialize cells that should be set to living.
+# This feature uses the `select_entities` interface; consult the
+# documentation regarding information on available selection modes.
+# Turn dead cells into living cells. All cells that do not fulfill the 
+# condition are set to be dead.
+living:
+  mode: probability
+
+  # Probability parameter
+  probability: 0.1
+
+  # Clustering parameters
+  p_seed: .02            # Probability with which a cell is a cluster seed
+  p_attach: .1           # Attachment probability (per neighbor)
+  num_passes: 5          # How many attachment procedures to perform
+
+# --- Rule specification
+# Specify a rule in the notation used by Mirek's Cellebration as a string in
+# in form `x/y` with:
+#   - `x`: The number of neighbors required for a cell to get born
+#   - `y`: The number of neighbors required to survive
+# In this notation, the game of life is given as `3/23`
+rule: 3/23
