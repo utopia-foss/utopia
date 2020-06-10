@@ -23,3 +23,23 @@ state_anim:
   # Enable animation (disabled by default)
   animation:
     enabled: true
+
+# Plot the mean density of living cells
+density_living_cells:
+  based_on: .dag.generic.facet_grid
+  creator: multiverse
+  
+  select_and_combine:
+    fields:
+      living: living
+    base_path: data/GameOfLife
+
+  transform:
+    # The 'data' provided to the facet_grid plot function is the mean over
+    # the 'x' and 'y' dimension. Due to the fact that living is represented as
+    # 1 and dead as 0, calculating the mean over all grid cells automatically
+    # results in the density
+    - operation: .mean
+      args: [!dag_tag living, ['x', 'y']]
+      tag: data
+    

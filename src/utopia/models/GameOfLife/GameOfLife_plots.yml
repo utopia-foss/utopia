@@ -3,15 +3,11 @@
 # These can use the `based_on` feature with configurations specified in the
 # accompanying *_base_plots.yml file and in the utopya base plot configs.
 ---
-# Mean value plots ............................................................
+# Plot the density time development of living cells
 living_density:
-  # Base it on some existing configuration
-  based_on: mean_cell_state_over_time
+  based_on: density_living_cells
 
-  # Specify the dataset within the GameOfLife output that is to be plotted
-  mean_of: living
-
-# Spatial CA animations .......................................................
+# Plot an animation of the cellular automaton
 CA_anim:
   based_on: state_anim
 
