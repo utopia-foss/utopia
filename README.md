@@ -75,7 +75,7 @@ Have a look at the [troubleshooting](#troubleshooting) section to see how to add
 ##### On Ubuntu (20.04)
 ```bash
 apt update
-apt install cmake doxygen gcc-10 g++ gfortran git libarmadillo-dev \
+apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
             libboost-dev libboost-test-dev libhdf5-dev libspdlog-dev \
             libyaml-cpp-dev pkg-config python3-dev python3-pip python3-venv
 ```
