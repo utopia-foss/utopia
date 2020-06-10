@@ -8,7 +8,7 @@ living_density:
   based_on: density_living_cells
 
 # Plot an animation of the cellular automaton
-CA_anim:
+CA_state_anim:
   based_on: state_anim
 
   to_plot:

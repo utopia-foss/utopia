@@ -2,16 +2,7 @@
 #
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
-# A model-specific plot of the mean state over time
-mean_cell_state_over_time:
-  based_on: [.default_style_and_helpers]
-
-  universes: all
-  
-  # Use the GameOfLife-specific plot functions
-  module: model_plots.GameOfLife
-  plot_func: state_mean
-
+# Plot a state animation of the cellular automaton
 state_anim:
   based_on: .ca.state
   
