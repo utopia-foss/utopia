@@ -53,6 +53,53 @@ using LargeGraphsFixtures = boost::mpl::vector<
 
 // -- Test cases --------------------------------------------------------------
 
+/// Test the create_graph_group function.
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_graph_group, G,
+                                SmallGraphsVecSFixtures, G)
+{
+    using Utopia::DataIO::create_graph_group;
+    // Create a test HDFFile and a HDFGroup
+    auto hdf_write = Utopia::DataIO::HDFFile("graph_testfile.h5","w");
+    auto grp_write = hdf_write.open_group("testgroup");
+
+    // Open a graph group
+    auto ggrp_write = create_graph_group(G::g, grp_write, "testgraph");
+
+    // Read the HDF5 file
+    auto hdf = Utopia::DataIO::HDFFile("graph_testfile.h5","r");
+    auto grp = hdf.open_group("testgroup");
+    auto ggrp = grp->open_group("testgraph");
+
+    // Test that the group attributes are set correctly
+    HDFAttribute ggrp_attr(*ggrp, "content");
+    auto attr_content = std::get<1>(ggrp_attr.read<std::string>());
+    BOOST_TEST(attr_content == "graph");
+    ggrp_attr.close();
+
+    ggrp_attr.open(*ggrp, "is_directed");
+    auto attr_is_dir = std::get<1>(ggrp_attr.read<int>());
+    if (std::is_same_v<typename G::Type, Graph_vertvecS_edgevecS_undir>) {
+        BOOST_TEST(attr_is_dir == 0);
+    }
+    else {
+        BOOST_TEST(attr_is_dir == 1);
+    }
+    ggrp_attr.close();
+
+    ggrp_attr.open(*ggrp, "allows_parallel");
+    auto attr_parallel = std::get<1>(ggrp_attr.read<int>());
+    BOOST_TEST(attr_parallel == 1);
+    ggrp_attr.close();
+
+    ggrp_attr.open(*ggrp, "edge_container_is_transposed");
+    auto attr_transposed_edges = std::get<1>(ggrp_attr.read<int>());
+    BOOST_TEST(attr_transposed_edges == 1);
+    ggrp_attr.close();
+
+    // Remove the graph testsfile
+    std::remove("graph_testfile.h5");
+}
+
 /// Test the save_graph function with internal id's.
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_save_graph_vecS, G,
                                 SmallGraphsVecSFixtures, G)
@@ -114,27 +161,6 @@ BOOST_AUTO_TEST_CASE(test_attribute_writing_save_graph) {
     auto ggrp = grp->open_group("testgraph");
     auto dset_vertices = ggrp->open_dataset("_vertices");
     auto dset_edges = ggrp->open_dataset("_edges");
-
-    // Test that the group attributes are set correctly
-    HDFAttribute ggrp_attr(*ggrp, "content");
-    auto attr_content = std::get<1>(ggrp_attr.read<std::string>());
-    BOOST_TEST(attr_content == "graph");
-    ggrp_attr.close();
-
-    ggrp_attr.open(*ggrp, "is_directed");
-    auto attr_is_dir = std::get<1>(ggrp_attr.read<int>());
-    BOOST_TEST(attr_is_dir == 0);
-    ggrp_attr.close();
-
-    ggrp_attr.open(*ggrp, "allows_parallel");
-    auto attr_parallel = std::get<1>(ggrp_attr.read<int>());
-    BOOST_TEST(attr_parallel == 0);
-    ggrp_attr.close();
-
-    ggrp_attr.open(*ggrp, "edge_container_is_transposed");
-    auto attr_transposed_edges = std::get<1>(ggrp_attr.read<int>());
-    BOOST_TEST(attr_transposed_edges == 1);
-    ggrp_attr.close();
 
     // Test that the edge dataset attributes are set correctly
 
