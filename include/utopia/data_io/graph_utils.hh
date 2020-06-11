@@ -61,8 +61,6 @@ setup_graph_containers(const Graph& g, const std::shared_ptr<HDFGroup>& grp)
     auto dset_vertices = grp->open_dataset("_vertices", { num_vertices });
     auto dset_edges = grp->open_dataset("_edges", { 2, num_edges });
     // NOTE Need shape to be {2, num_edges} because `write` writes line by line.
-    // Store the information on the edge container shape
-    grp->add_attribute("edge_container_is_transposed", true);
 
     // Set attributes
     dset_vertices->add_attribute("dim_name__0", "vertex_idx");
@@ -301,6 +299,11 @@ create_graph_group(const Graph&                       g,
     // Store additional metadata in the group attributes
     grp->add_attribute("is_directed", boost::is_directed(g));
     grp->add_attribute("allows_parallel", boost::allows_parallel_edges(g));
+
+    // Store the information on the edge container shape
+    // NOTE Here, it is assumed that the edge data is written in shape (2,N).
+    //      If this is not the case, the attribute must be overwritten.
+    grp->add_attribute("edge_container_is_transposed", true);
 
     spdlog::get("data_io")->info("Opened graph group '{}'.", name);
 
