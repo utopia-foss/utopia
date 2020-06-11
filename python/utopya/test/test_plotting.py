@@ -39,7 +39,7 @@ BIFURCATION_DIAGRAM_2D_PLOTS = resource_filename('test',
                                 'cfg/plots/bifurcation_diagram_2d/plots.yml')
 GRAPH_RUN = resource_filename('test', 'cfg/graphgroup_cfg.yml')
 
-GRAPH_PLOTS = resource_filename('test', 'cfg/graph_plot_cfg.yml')
+GRAPH_PLOTS = resource_filename('test', 'cfg/plots/graph_plot_cfg.yml')
 
 # Fixtures --------------------------------------------------------------------
 
@@ -341,10 +341,15 @@ def test_graph_plots(tmpdir):
     # Single graph plots
     mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
                         plot_only=["Graph", "DiGraph", "MultiGraph",
-                                   "MultiDiGraph"])
+                                   "MultiDiGraph", "ExternalProperties"])
 
-    # Try using a graphviz node layout
-    with pytest.raises(PlotCreatorError, match="No module named 'pydot'"):
+    # Try using a graphviz node layout, which requires pydot
+    try:
+        import pydot
+    except ImportError:
+        with pytest.raises(PlotCreatorError, match="No module named 'pydot'"):
+            mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
+    else:
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
 
     # Try plotting a colorbar for directed edges
@@ -356,6 +361,13 @@ def test_graph_plots(tmpdir):
     with pytest.raises(PlotCreatorError, match="Received 'labels' key"):
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
                             plot_only=["wrong_edge_label_kwarg"])
+
+    # Providing invalid dag tag for external property
+    with pytest.raises(PlotCreatorError,
+                       match="No tag 'some_state_transformed' found in the "
+                             "data selected by the DAG!"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["invalid_ext_prop"])
 
     # Animation plots
     mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,

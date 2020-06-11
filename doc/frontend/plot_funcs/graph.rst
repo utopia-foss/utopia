@@ -22,13 +22,22 @@ An extended overview of the ``draw_graph`` configuration:
 
       select:
         graph_group: path/to/your/GraphGroup
+        some_ext_node_prop: path/to/external/node/property/data
+
+      # It is also possible to load external property data. The dag tags (from the dag
+      # selection above) listed in 'register_property_maps' will be registered in the
+      # graph group, and hence be available as property data.
+      register_property_maps: ['some_ext_node_prop']
     
       # The 'graph_cfg' dict contains all configurations used for the creation, drawing,
       # and animation of the graph.
       graph_cfg:
         graph_creation:                     # The graph_creation configurations are passed to
           at_time: 42                       # 'GraphGroup.create_graph'. Here, you can, e.g.,
-          node_props: ['foo', 'bar']        # set node and edge properties.
+          node_props:                       # set node and edge properties.
+            - 'foo'
+            - 'bar'
+            - 'some_ext_node_prop'
           edge_props: ['baz']
         graph_drawing:                      # 'graph_drawing' contains all layout configs.
           positions:                        

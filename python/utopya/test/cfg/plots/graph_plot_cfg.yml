@@ -104,6 +104,27 @@ MultiDiGraph:
       edge_labels:
         enabled: True
 
+ExternalProperties: &ext_prop
+  <<: *base
+  select:
+    graph_group: data/CopyMeGraph/g_static
+    some_state_transformed:
+      path: data/CopyMeGraph/g_static/some_state
+      with_previous_result: True
+      transform:
+        - operation: squared
+  register_property_maps: ['some_state_transformed']
+  graph_cfg:
+    graph_creation:
+      at_time_idx: -1
+      node_props: ['some_trait', 'some_state_transformed']
+      directed: False
+      parallel_edges: False
+    graph_drawing:
+      nodes:
+        node_color:
+          from_property: some_state_transformed
+
 # -- Single plots that raise Errors or Warnings -------------------------------
 Graphviz:
   <<: *base
@@ -139,6 +160,10 @@ colorbar_for_directed_edges:
       edges:
         edge_color:
           from_property: weights
+
+invalid_ext_prop:
+  <<: *ext_prop
+  compute_only: ['graph_group']
 
 # -- Animation configurations -------------------------------------------------
 graph_anim1:
