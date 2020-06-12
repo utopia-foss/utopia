@@ -8,19 +8,24 @@
 #include <algorithm>
 #include <type_traits>
 
+#include <armadillo>
+#include <yaml-cpp/yaml.h>
+#include <spdlog/spdlog.h>  // for fmt::
+
 #include "types.hh"
 #include "exceptions.hh"
 #include "entity.hh"
 #include "cell.hh"
 #include "agent.hh"
+#include "logging.hh"
 #include "../data_io/cfg_utils.hh"
 
 /**
  *  \addtogroup EntitySelection Entity Selection
  *  \{
- *  \ingroup Core 
+ *  \ingroup Core
  *  \brief   An interface to select a subset of entities from a manager
- *  
+ *
  *  The Utopia constructs \ref Utopia::Cell and \ref Utopia::Agent both have a
  *  common parent type: \ref Utopia::Entity.
  *  Additionally, there are corresponding manager types that provide an
@@ -75,7 +80,7 @@ enum class SelectionMode {
     /// Select an entity with a given probability
     probability = 2,
 
-    // .. Clustering . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+    // .. Clustering . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     // (Offset by 20 to accomodate different algorithms)
     /// Select entity clusters using a simple neighborhood-based algorithm
     /** Uses the "simple" algorithm: From a given start population, iterate
@@ -97,11 +102,11 @@ enum class SelectionMode {
 
     /// (For CellManager only) Selects horizontal or vertical lanes of cells
     lanes = 102
-    
-    // .. Only relevant for AgentManager . . . . . . . . . . . . . . . . . . . 
+
+    // .. Only relevant for AgentManager . . . . . . . . . . . . . . . . . . .
     // (Offset by 200)
-    
-    // .. Only relevant for GraphManager . . . . . . . . . . . . . . . . . . . 
+
+    // .. Only relevant for GraphManager . . . . . . . . . . . . . . . . . . .
     // (Offset by 300)
 };
 // NOTE When adding new enum members, take care to update the select_key_map!
@@ -144,7 +149,7 @@ std::string selection_mode_to_string(const SelectionMode& mode) {
 /** \note Relies on export of the traits type by \ref Entity.
   */
 template<class M>
-struct is_cell_manager { 
+struct is_cell_manager {
     static constexpr bool value =
         std::is_same_v<Cell<typename M::Entity::Traits>,
                        typename M::Entity>;
@@ -155,7 +160,7 @@ struct is_cell_manager {
   *       types exporting the \ref Utopia::Space type.
   */
 template<class M>
-struct is_agent_manager { 
+struct is_agent_manager {
     static constexpr bool value =
         std::is_same_v<Agent<typename M::Entity::Traits,
                              typename M::Space>,
@@ -170,6 +175,18 @@ struct is_agent_manager {
 /** Via the ``mode`` key, one of the modes (see \ref Utopia::SelectionMode) can
   * be selected. Depending on that mode, the other parameters are extracted
   * from the configuration.
+  *
+  * Available keys for each mode:
+  *     - `sample` mode: `num_cells`
+  *     - `probability` mode: `probability`
+  *     - `positions` mode: `positions` (a list of coordinate pairs)
+  *     - `boundary` mode: `boundary` (a string, e.g. `left`, `right`, `top`,
+  *         `bottom`)
+  *     - `lanes` mode: `num_horizontal`, `num_vertical`, `permeability`
+  *         (optional; can be given as scalar, pair, or mapping w/ keys
+  *         `horizontal` and `vertical`), `gate_width` (optional, same as
+  *         `permeability`)
+  *     - `clustered_simple` mode: `p_seed`, `p_attach`, `num_passes`
   *
   * \note   The \ref Utopia::SelectionMode::condition is not available!
   *
@@ -202,7 +219,7 @@ Container select_entities(const Manager& mngr, const DataIO::Config& sel_cfg)
     // the mode-specific methods directly
     // .. Generally available .................................................
     if (mode == SelectionMode::sample) {
-        const auto N = get_as<int>("num_cells", sel_cfg);
+        const auto N = get_as<int>("num_cells", sel_cfg); // FIXME not general!
         return select_entities<SelectionMode::sample>(mngr, N);
     }
 
@@ -225,7 +242,7 @@ Container select_entities(const Manager& mngr, const DataIO::Config& sel_cfg)
             for (const auto& pos_node : sel_cfg["positions"]) {
                 using SpaceVec = typename Manager::SpaceVec;
                 using ET = typename Manager::SpaceVec::elem_type;
-                
+
                 const auto vec = pos_node.as<std::array<ET, Manager::dim>>();
 
                 // Construct the SpaceVec from the array
@@ -245,11 +262,44 @@ Container select_entities(const Manager& mngr, const DataIO::Config& sel_cfg)
             const auto b = get_as<std::string>("boundary", sel_cfg);
             return select_entities<SelectionMode::boundary>(mngr, b);
         }
-        
+
         if (mode == SelectionMode::lanes) {
             const auto num_v = get_as<unsigned>("num_vertical", sel_cfg);
             const auto num_h = get_as<unsigned>("num_horizontal", sel_cfg);
-            return select_entities<SelectionMode::lanes>(mngr, num_v, num_h);
+
+            // Handle optional arguments
+            // Permeability
+            auto perm = std::pair<double, double>{0., 0.};
+            auto perm_cfg = sel_cfg["permeability"];
+            if (perm_cfg and perm_cfg.IsSequence()) {
+                perm = perm_cfg.as<std::pair<double, double>>();
+            }
+            else if (perm_cfg and perm_cfg.IsMap()) {
+                perm.first = get_as<double>("horizontal", perm_cfg);
+                perm.second = get_as<double>("vertical", perm_cfg);
+            }
+            else if (perm_cfg and perm_cfg.IsScalar()) {
+                perm.first = perm_cfg.as<double>();
+                perm.second = perm_cfg.as<double>();
+            }
+
+            // Gate width
+            auto gate_width = std::pair<unsigned, unsigned>{0, 0};
+            auto gate_cfg = sel_cfg["gate_width"];
+            if (gate_cfg and gate_cfg.IsSequence()) {
+                gate_width = gate_cfg.as<std::pair<unsigned, unsigned>>();
+            }
+            else if (gate_cfg and gate_cfg.IsMap()) {
+                gate_width.first = get_as<unsigned>("horizontal", gate_cfg);
+                gate_width.second = get_as<unsigned>("vertical", gate_cfg);
+            }
+            else if (gate_cfg and gate_cfg.IsScalar()) {
+                gate_width.first = gate_cfg.as<unsigned>();
+                gate_width.second = gate_cfg.as<unsigned>();
+            }
+
+            return select_entities<SelectionMode::lanes>(mngr, num_v, num_h,
+                                                         perm, gate_width);
         }
 
         if (mode == SelectionMode::clustered_simple) {
@@ -283,7 +333,7 @@ Container select_entities(const Manager& mngr, const DataIO::Config& sel_cfg)
 // ++ General selection functions +++++++++++++++++++++++++++++++++++++++++++++
 
 /// Return a container with entities that match the given condition
-/** 
+/**
   * \param  mngr       The manager to select the entities from
   * \param  condition  A unary function working on a single entity and
   *                    returning a boolean.
@@ -375,7 +425,7 @@ Container select_entities(const Manager& mngr,
     // Build the distribution, selection condition lambda, and select ...
     std::uniform_real_distribution<> dist(0., 1.);
 
-    return 
+    return
         select_entities<SelectionMode::condition>(
             mngr,
             // Declare a mutable lambda (needed for dist)
@@ -461,6 +511,12 @@ Container select_entities(const Manager& mngr,
   *                         be a \ref Utopia::CellManager .
   * \param  num_vertical    Number of vertical lanes
   * \param  num_horizontal  Number of horizontal lanes
+  * \param  permeability    The permeability of the horizontal and vertical
+  *                         lanes, respectively. The probability that a cell is
+  *                         spared out. Optional.
+  * \param  gate_width      The width of gates in the horizontal and vertical
+  *                         lanes, respectively. Given in number of cells per
+  *                         compartment, i.e. between two lanes. Optional.
   */
 template<
     SelectionMode mode,
@@ -468,9 +524,13 @@ template<
     class Container = EntityContainer<typename Manager::Entity>,
     typename std::enable_if_t<mode == SelectionMode::lanes, int> = 0
     >
-Container select_entities(const Manager& mngr,
-                          const unsigned int num_vertical,
-                          const unsigned int num_horizontal)
+Container select_entities(
+    const Manager& mngr,
+    const unsigned int num_vertical,
+    const unsigned int num_horizontal,
+    const std::pair<double, double> permeability = {0., 0.},
+    const std::pair<unsigned int, unsigned int> gate_width = {0, 0}
+)
 {
     static_assert(Manager::Space::dim == 2, "Only 2D space is supported.");
     using SpaceVec = typename Manager::SpaceVec;
@@ -481,6 +541,7 @@ Container select_entities(const Manager& mngr,
     const MultiIndex shape = grid->shape();
     const auto num_cells = grid->num_cells();
     const SpaceVec extent = grid->space()->extent;
+    const auto eff_resolution = grid->effective_resolution();
 
     // The number of lanes should not exceed the number of cells
     if (num_vertical >= shape[0] or num_horizontal >= shape[1]) {
@@ -489,6 +550,32 @@ Container select_entities(const Manager& mngr,
             "that dimension! Choose a smaller value.");
     }
 
+    // Check permeability
+    if (permeability.first < 0. or permeability.first > 1.) {
+        throw std::invalid_argument(fmt::format(
+            "Permeability in horizontal lanes needs to be in interval "
+            "[0., 1.], but was: {}", permeability.first)
+        );
+    }
+    if (permeability.second < 0. or permeability.second > 1.) {
+        throw std::invalid_argument(fmt::format(
+            "Permeability in vertical lanes needs to be in interval "
+            "[0., 1.], but was: {}", permeability.second)
+        );
+    }
+
+    // Emit information
+    mngr.log()->debug(
+        "Selecting cells for lanes ...\n"
+        "   num:            {} horizontal, \t{} vertical\n"
+        "   permeability:   {} horizontal, \t{} vertical\n"
+        "   gate width:     {} horizontal, \t{} vertical\n",
+        num_horizontal, num_vertical,
+        permeability.first, permeability.second,
+        gate_width.first, gate_width.second
+    );
+
+    // .. Lanes ...............................................................
     // Define the required variables for vertical and horizontal lanes. It is
     // important to work on absolute positions such that rounding errors are
     // not propagated along the grid ...
@@ -523,8 +610,80 @@ Container select_entities(const Manager& mngr,
         indices_y.insert(grid->midx_of(grid->cell_at(proxy_pos))[1]);
     }
 
+    // .. Gates in lanes ......................................................
+    // Gates are centered between the lanes
+    auto num_gates = num_lanes;
+    SpaceVec gate_start, gate_step;
+    const SpaceVec grid_step = 1./eff_resolution;
+
+    if (grid->is_periodic()) {
+        gate_step = extent / num_gates;
+    }
+    else {
+        num_gates = num_gates + 1;
+        gate_step = extent / num_gates;
+    }
+
+    // center of gate at gate_step / 2.
+    // but, want lower edge of the gate and iterate from there
+    // hence, distinguish pair and impair gates width
+    if (gate_width.first % 2 == 0) {
+        gate_start = gate_step / 2. - SpaceVec(
+                        {grid_step[0] * (gate_width.first - 1) / 2.,
+                         grid_step[1] * (gate_width.second - 1) / 2.});
+    }
+    else {
+        gate_start = gate_step / 2. - SpaceVec(
+                        {grid_step[0] * (gate_width.first) / 2.,
+                         grid_step[1] * (gate_width.second) / 2.});
+    }
+
+    // Determine x- and y-indices for every gate
+    // Need error handling here because with a large gate width in non-periodic
+    // space, the grid->cell_at lookup might throw std::invalid_argument
+    std::set<IndexType> gates_indices_x, gates_indices_y;
+    SpaceVec proxy_pos;
+
+    try {
+        for (unsigned int i = 0; i < num_gates[0]; i++) {
+            for (unsigned int j = 0; j < gate_width.first; j++) {
+                proxy_pos = {gate_start[0] + i*gate_step[0] + j*grid_step[0],
+                             0.};
+                gates_indices_x.insert(
+                    grid->midx_of(grid->cell_at(proxy_pos))[0]
+                );
+            }
+        }
+        for (unsigned int i = 0; i < num_gates[1]; i++) {
+            for (unsigned int j = 0; j < gate_width.second; j++) {
+                proxy_pos = {0.,
+                             gate_start[1] + i*gate_step[1] + j*grid_step[1]};
+                gates_indices_y.insert(
+                    grid->midx_of(grid->cell_at(proxy_pos))[1]
+                );
+            }
+        }
+    }
+    catch (std::invalid_argument& exc) {
+        throw std::invalid_argument(fmt::format(
+            "Failed to determine gate cells for lane selection, presumably "
+            "because the gate width was chosen larger than the compartment "
+            "size. Check that the gate width (h: {:d}, v: {:d}) fits into the "
+            "compartment. Grid shape: ({:d} x {:d}, {}). "
+            "Number of lanes: (h: {:d}, v: {:d}).",
+            gate_width.first, gate_width.second,
+            shape[0], shape[1],
+            grid->is_periodic() ? "periodic" : "non-periodic",
+            num_horizontal, num_vertical
+        ));
+    }
+
+    // .. ID selection ........................................................
     // Now need a container for selected cell IDs
     std::vector<IndexType> selected_ids{};
+
+    // Build the distribution, selection condition lambda, and select ...
+    std::uniform_real_distribution<> dist(0., 1.);
 
     // Populate it by iterating over all grid cell IDs, determining their
     // multi index, and then checking it against the containers of cells.
@@ -538,11 +697,37 @@ Container select_entities(const Manager& mngr,
     for (IndexType cell_id = 0; cell_id < num_cells; cell_id++) {
         const auto midx = grid->midx_of(cell_id);
 
-        // Check whether this cell belongs to a vertical or horizontal lane and
+        // Check whether this cell belongs to a horizontal lane and
         // if so, add its index to the container of indices.
-        if (   indices_x.find(midx[0]) != indices_x.end()
-            or indices_y.find(midx[1]) != indices_y.end())
-        {
+        if (indices_y.find(midx[1]) != indices_y.end()) {
+            // skip because this cell is a gate
+            if (gates_indices_x.find(midx[0]) != gates_indices_x.end()) {
+                continue;
+            }
+            // skip because of permeability
+            else if (permeability.first > 0. and
+                     dist(*mngr.rng()) < permeability.first)
+            {
+                continue;
+            }
+
+            // else: not skipped. Add the cell ID
+            selected_ids.push_back(cell_id);
+        }
+        // Do the same for cells belonging to vertical lanes
+        else if (indices_x.find(midx[0]) != indices_x.end()) {
+            // skip because this cell is a gate
+            if (gates_indices_y.find(midx[1]) != gates_indices_y.end()) {
+                continue;
+            }
+            // skip because of permeability
+            else if (permeability.second > 0. and
+                     dist(*mngr.rng()) < permeability.second)
+            {
+                continue;
+            }
+
+            // else: not skipped. Add the cell ID
             selected_ids.push_back(cell_id);
         }
     }
@@ -551,6 +736,9 @@ Container select_entities(const Manager& mngr,
     // from it. However, the Grid does not currently supply a method to
     // calculate the ID from a given multi index.
 
+    mngr.log()->debug("Selected {:d} / {:d} cells using mode 'lanes'.",
+                    selected_ids.size(), mngr.cells().size());
+
     // Return as container of shared pointers to cell objects
     return mngr.entity_pointers_from_ids(selected_ids);
 }
@@ -558,7 +746,7 @@ Container select_entities(const Manager& mngr,
 
 /// Selects cells that are clustered using a simple clustering algorithm
 /** This is done by first determining some "seed" cells and then attaching
-  * their neighbors to them with a certain probability. 
+  * their neighbors to them with a certain probability.
   *
   * \param  mngr        The manager to select the entities from. Needs to be
   *                     a Utopia::CellManager for this function.
@@ -631,13 +819,13 @@ Container select_entities(const Manager& mngr,
 
         // Add them to the set of selected cells
         selected_ids.insert(ids_to_attach.begin(), ids_to_attach.end());
-        
+
         mngr.log()->debug("Finished pass {}. Have {} cells selected now.",
                           i + 1, selected_ids.size());
     }
 
     // Convert into container of pointers to cells and return
-    return 
+    return
         mngr.entity_pointers_from_ids(
             std::vector<IndexType>(selected_ids.begin(), selected_ids.end())
         );
