@@ -75,7 +75,7 @@ public:
 
     /// Neighborhood function used in public interface (with cell as argument)
     using NBFuncCell = std::function<CellContainer<Cell>(const Cell&)>;
-    
+
     /// The type of a rule function acting on cells of this cell manager
     /** This is a convenience type def that models can use to easily have this
       * type available.
@@ -90,7 +90,7 @@ public:
       */
     using VoidRuleFunc =
         typename std::function<void(const std::shared_ptr<Cell>&)>;
-    
+
 
 private:
     // -- Members -------------------------------------------------------------
@@ -118,8 +118,13 @@ private:
     /// The currently chosen neighborhood function (working directly on cells)
     NBFuncCell _nb_func;
 
-
 public:
+    /// Whether a warning about an empty neighbourhood was already emitted
+    /** This is to prevent a gigantic amount of warnings being logged
+      */
+    bool _empty_nb_warning_emitted = false;
+
+
     // -- Constructors --------------------------------------------------------
     /// Construct a cell manager
     /** With the model available, the CellManager can extract the required
@@ -127,8 +132,8 @@ public:
       * Furthermore, this constructor differs to the one with the
       * ``initial_state`` parameter such that the way the initial state of the
       * cells is determined can be controlled via the configuration.
-      * 
-      * \param  model       The model this CellManager belongs to  
+      *
+      * \param  model       The model this CellManager belongs to
       * \param  custom_cfg  A custom config node to use to use for grid and
       *                     cell setup. If not given, the model's configuration
       *                     is used to extract the required entries.
@@ -152,10 +157,10 @@ public:
 
         _log->info("CellManager is all set up.");
     }
-    
+
 
     /// Construct a cell manager explicitly passing an initial cell state
-    /** \param  model          The model this CellManager belongs to  
+    /** \param  model          The model this CellManager belongs to
       * \param  initial_state  The initial state of the cells
       * \param  custom_cfg     A custom config node to use to use for grid and
       *                        cell setup. If not given, the model's
@@ -231,7 +236,7 @@ public:
     MultiIndex midx_of(const Cell& cell) const {
         return _grid->midx_of(cell.id());
     }
-    
+
     /// Returns the multi-index of the given cell
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the interpretation of the returned values.
@@ -244,7 +249,7 @@ public:
     SpaceVec barycenter_of(const Cell& cell) const {
         return _grid->barycenter_of(cell.id());
     }
-    
+
     /// Returns the barycenter of the given cell
     SpaceVec barycenter_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->barycenter_of(cell->id());
@@ -254,7 +259,7 @@ public:
     SpaceVec extent_of(const Cell& cell) const {
         return _grid->extent_of(cell.id());
     }
-    
+
     /// Returns the physical extent of the given cell
     SpaceVec extent_of(const std::shared_ptr<Cell>& cell) const {
         return _grid->extent_of(cell->id());
@@ -271,7 +276,7 @@ public:
     std::vector<SpaceVec> vertices_of(const Cell& cell) const {
         return _grid->vertices_of(cell.id());
     }
-    
+
     /// Returns a container of vertices of the given cell
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the order of the returned values.
@@ -321,7 +326,7 @@ public:
             _log->warn("Selecting boundary cells (mode '{}') of a periodic "
                        "space will always return an empty container!", select);
         }
-        
+
         return entity_pointers_from_ids(_grid->boundary_cells(select));
     }
 
@@ -329,7 +334,7 @@ public:
     /** Returns a container of cells that were selected according to a certain
       * selection mode. This is done via the \ref Utopia::select_entities
       * interface.
-      * 
+      *
       * \tparam  mode    The selection mode
       *
       * \args    args    Forwarded to \ref Utopia::select_entities
@@ -439,7 +444,7 @@ public:
     const NBMode& nb_mode () const {
         return _grid->nb_mode();
     }
-    
+
     /// Return the (maximum) size of the currently selected neighborhood
     /** \note This is a shortcut that accesses the value computed in the grid.
       */
@@ -614,9 +619,9 @@ private:
     // -- Private Helpers -----------------------------------------------------
     // ...
 
-    
+
     // -- std::functions to call from neighbors_of ----------------------------
-    
+
     /// Return the pre-computed neighbors of the given cell
     NBFuncCell _nb_from_cache = [this](const Cell& cell) {
         return this->_cell_neighbors[cell.id()];
@@ -631,9 +636,12 @@ private:
 
     /// Compute the neighbors for the given cell using the grid
     NBFuncCell _nb_compute_each_time_empty = [this](const Cell& cell) {
-        this->_log->warn("No neighborhood selected! Calls to the "
-            "CellManager::neighbors_of method will always return an empty "
-            "container.");
+        if (not this->_empty_nb_warning_emitted) {
+            this->_log->warn("No neighborhood selected! Calls to the "
+                "CellManager::neighbors_of method will always return an empty "
+                "container. There will be no further warning.");
+            this->_empty_nb_warning_emitted = true;
+        }
         return
             this->entity_pointers_from_ids(
                 this->_grid->neighbors_of(cell.id()));
@@ -656,7 +664,7 @@ private:
         else {
             _log->debug("Using '{}' model's configuration for cell manager "
                         "setup ... ", model.get_name());
-            
+
             if (not model.get_cfg()["cell_manager"]) {
                 throw std::invalid_argument("Missing config entry "
                     "'cell_manager' in model configuration! Either specify "
@@ -681,13 +689,13 @@ private:
             throw std::invalid_argument("Missing required grid configuration "
                                         "entry 'structure'!");
         }
-        
+
         // Get the structure parameter
         auto structure = get_as<std::string>("structure", _cfg["grid"]);
 
         _log->info("Setting up grid discretization with '{}' cells ...",
                    structure);
-        
+
         // Create the respective grids, distinguishing by structure
         if (structure == "triangular") {
             using GridSpec = TriangularGrid<Space>;
@@ -768,7 +776,7 @@ private:
         {
             _log->info("Setting up cells using config constructor (with RNG) "
                        "...");
-            
+
             // Extract the configuration parameter
             if (not _cfg["cell_params"]) {
                 throw std::invalid_argument("CellManager is missing the "
@@ -776,7 +784,7 @@ private:
                     "initial states!");
             }
             const auto cell_params = _cfg["cell_params"];
-            
+
             // The cell container to be populated
             CellContainer<Cell> cont;
 
@@ -805,7 +813,7 @@ private:
             );
 
             _log->info("Setting up cells using config constructor ...");
-            
+
             // Extract the configuration parameter
             if (not _cfg["cell_params"]) {
                 throw std::invalid_argument("CellManager is missing the "
