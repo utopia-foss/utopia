@@ -1,7 +1,9 @@
 #define BOOST_TEST_MODULE select test
 
 #include <boost/test/included/unit_test.hpp>
+
 #include <utopia/core/select.hh>
+#include <utopia/core/testtools.hh>
 #include <utopia/data_io/cfg_utils.hh>
 
 #include "agent_manager_test.hh"
@@ -60,10 +62,10 @@ BOOST_FIXTURE_TEST_CASE(interface, ModelFixture)
     select_entities<SelectionMode::probability>(am, .1);
 
     auto always_true = [](const auto&){ return true; };
-    
+
     auto c3 = select_entities<SelectionMode::condition>(cm, always_true);
     BOOST_TEST(c3.size() == cm.entities().size());
-    
+
     auto a3 = select_entities<SelectionMode::condition>(am, always_true);
     BOOST_TEST(a3.size() == am.entities().size());
 }
@@ -125,7 +127,7 @@ BOOST_FIXTURE_TEST_CASE(cm_position, ModelFixture)
     std::vector<SpaceVecType<2>> pos{{0.,0.}, {.5, .5}, {1., 1.}};
     auto c2 = cm.select_cells<SelectionMode::position>(pos);
     BOOST_TEST(c2.size() == 3);
-    
+
     BOOST_TEST(c1 == c2);
 
     BOOST_TEST(c1[0] == cm.cell_at({0., 0.}));
@@ -159,9 +161,9 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
 
     // interface
     auto cp1 = cm.select_cells<SelectionMode::lanes>(2, 3);
-    auto cp2 = cm.select_cells(cfg["lanes"]);
+    auto cp2 = cm.select_cells(cfg["lanes"]["simple"]);
     auto cnp1 = cm_np.select_cells<SelectionMode::lanes>(2, 3);
-    auto cnp2 = cm_np.select_cells(cfg["lanes"]);
+    auto cnp2 = cm_np.select_cells(cfg["lanes"]["simple"]);
     BOOST_TEST(cp1 == cp2);
     BOOST_TEST(cnp1 == cnp2);
     BOOST_TEST(cp1 != cnp1);
@@ -170,10 +172,10 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
     // interface for permeable lanes
     auto cp_wp1 = cm.select_cells<SelectionMode::lanes>(2, 3,
                         std::pair<double, double>({0.2, 0.2}));
-    auto cp_wp2 = cm.select_cells(cfg["lanes_w_permeability"]);
+    auto cp_wp2 = cm.select_cells(cfg["lanes"]["w_permeability"]);
     auto cnp_wp1 = cm_np.select_cells<SelectionMode::lanes>(2, 3,
                         std::pair<double, double>({0.2, 0.3}));
-    auto cnp_wp2 = cm_np.select_cells(cfg["lanes_w_permeability"]);
+    auto cnp_wp2 = cm_np.select_cells(cfg["lanes"]["w_permeability"]);
     BOOST_TEST(cp_wp1 != cp1);
     BOOST_TEST(cp_wp2 != cp2);
     BOOST_TEST(cnp_wp1 != cnp1);
@@ -183,11 +185,11 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
     auto cp_wg1 = cm.select_cells<SelectionMode::lanes>(2, 3,
                         std::pair<double, double>({0., 0.}),
                         std::pair<unsigned int, unsigned int>({2, 3}));
-    auto cp_wg2 = cm.select_cells(cfg["lanes_w_gates"]);
-    auto cnp_wg1 = cm_np.select_cells<SelectionMode::lanes>(2, 3, 
+    auto cp_wg2 = cm.select_cells(cfg["lanes"]["w_gates"]);
+    auto cnp_wg1 = cm_np.select_cells<SelectionMode::lanes>(2, 3,
                         std::pair<double, double>({0., 0.}),
                         std::pair<unsigned int, unsigned int>({2, 3}));
-    auto cnp_wg2 = cm_np.select_cells(cfg["lanes_w_gates"]);
+    auto cnp_wg2 = cm_np.select_cells(cfg["lanes"]["w_gates"]);
     BOOST_TEST(cp_wg1 == cp_wg2);
     BOOST_TEST(cnp_wg1 == cnp_wg2);
     BOOST_TEST(cp_wg1 != cp1);
@@ -232,7 +234,7 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
             //             gates at x-index 20, 21, and 62, 63
             BOOST_TEST(  (midx[0] == 0) | (midx[0] == 42)
                        | (midx[1] == 0) | (midx[1] == 28) | (midx[1] == 56));
-            
+
             // not selecting gate cells in vertical lanes
             BOOST_TEST(midx[1] != 13); BOOST_TEST(midx[1] != 14);
             BOOST_TEST(midx[1] != 15);
@@ -276,6 +278,32 @@ BOOST_FIXTURE_TEST_CASE(cm_lanes, ModelFixture)
             BOOST_TEST(midx[0] != 69); BOOST_TEST(midx[0] != 70);
         }
     }
+
+    // check error message on too large gate width
+    TestTools::check_exception<std::invalid_argument>(
+        [&](){
+            cm_np.select_cells<SelectionMode::lanes>(2, 3,
+                                                     std::make_pair(0., 0.),
+                                                     std::make_pair(1234u,0u));
+        },
+        "Failed to determine gate cells for lane selection",
+        {__LINE__, __FILE__}
+    );
+    // _Not_ an issue for periodic grid
+    cm.select_cells<SelectionMode::lanes>(2, 3, std::make_pair(0., 0.),
+                                          std::make_pair(1234u, 0u));
+
+    // finally, check a bunch of different configurations to ensure that the
+    // config interface works as expected
+    TestTools::test_config_callable(
+        [&](const DataIO::Config& params){
+            cm.select_cells(params);
+            cm_np.select_cells(params);
+        },
+        cfg["lanes"]["batch_test"],
+        "CellManager::select_cells batch test",
+        {__LINE__, __FILE__}
+    );
 }
 
 // -- Selection mode: clustered_simple

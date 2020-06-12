@@ -10,7 +10,7 @@ models:
       grid:
         structure: square
         resolution: 42
-  
+
   # -- CellManager: For default-constructible, with nonperiodic space
   with_cm_np:
     space:
@@ -52,21 +52,132 @@ boundary:
   boundary: bottom
 
 lanes:
-  mode: lanes
-  num_vertical: 2
-  num_horizontal: 3
+  simple: &lanes_simple
+    mode: lanes
+    num_vertical: 2
+    num_horizontal: 3
 
-lanes_w_permeability:
-  mode: lanes
-  num_vertical: 2
-  num_horizontal: 3
-  permeability: [0.2, 0.3]
-  
-lanes_w_gates:
-  mode: lanes
-  num_vertical: 2
-  num_horizontal: 3
-  gates_width: [2, 3]
+  w_permeability: &lanes_w_permeability
+    mode: lanes
+    num_vertical: 2
+    num_horizontal: 3
+    permeability: [0.2, 0.3]
+
+  w_gates: &lanes_w_gates
+    mode: lanes
+    num_vertical: 2
+    num_horizontal: 3
+    gate_width: [2, 3]
+
+  batch_test:
+    simple:
+      params: *lanes_simple
+    w_permeability:
+      params: *lanes_w_permeability
+    w_gates:
+      params: *lanes_w_gates
+
+    w_permeability_scalar:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability: 0.5
+
+    w_permeability_mapping:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability:
+          horizontal: 0.2
+          vertical: 0.3
+
+    w_gates_scalar:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        gate_width: 1
+
+    w_gates_mapping:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        gate_width:
+          horizontal: 2
+          vertical: 3
+
+    # Bad permeability should throw an error
+    bad_permeability_value1:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability: 1.01
+      throws: std::invalid_argument
+      match: "Permeability in horizontal lanes needs to be in interval [0., 1.], but was: 1.01"  # horizontal value checked first
+
+    bad_permeability_value2:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability: [0., -0.1]
+      throws: std::invalid_argument
+      match: "Permeability in vertical lanes needs to be in interval [0., 1.], but was: -0.1"
+
+    # Too large gate width should throw an error
+    bad_gate_width:
+      params:
+        mode: lanes
+        num_vertical: 4
+        num_horizontal: 3
+        gate_width: [1, 1234]
+      throws: std::invalid_argument
+      match: "Failed to determine gate cells for lane selection, presumably because the gate width was chosen larger than the compartment size. Check that the gate width (h: 1, v: 1234) fits into the compartment. Grid shape: (84 x 84, non-periodic). Number of lanes: (h: 3, v: 4)."
+
+    # Missing configuration values should throw errors
+    bad_permeability_mapping1:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability:
+          horizontal: .1
+      throws: Utopia::KeyError
+      match: vertical
+
+    bad_permeability_mapping2:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        permeability:
+          vertical: .2
+      throws: Utopia::KeyError
+      match: horizontal
+
+    bad_gates_mapping1:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        gate_width:
+          horizontal: 2
+      throws: Utopia::KeyError
+      match: vertical
+
+    bad_gates_mapping2:
+      params:
+        mode: lanes
+        num_vertical: 2
+        num_horizontal: 3
+        gate_width:
+          vertical: 2
+      throws: Utopia::KeyError
+      match: horizontal
 
 clustered:
   mode: clustered_simple
