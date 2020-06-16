@@ -191,9 +191,16 @@ struct Params
     /// infected if an infected cell is in the neighborhood.
     const double p_random_immunity;
 
-    /// Probability per site and time step for a random point infection of a
-    /// cell
+    /// Probability per susceptible cell and  time step to transition to exposed
+    /// state
     mutable double p_exposure;
+
+    /// Probability per exposed cell and time step to transition to infected
+    /// state
+    /** This probability will define the typical incubation period of the
+     * desease.
+     */
+    mutable double p_infected;
 
     /// Probability for a cell to recover
     double p_recover;
@@ -203,10 +210,6 @@ struct Params
 
     /// Probability for a cell to become empty
     double p_empty;
-
-    /// The incubation period defining the time required to pass for an exposed
-    /// cell to become infected
-    std::size_t incubation_period;
 
     /// The probability to loose immunity if a cell is recovered
     double p_lose_immunity;
@@ -229,10 +232,10 @@ struct Params
         p_immune(get_as<double>("p_immune", cfg)),
         p_random_immunity(get_as<double>("p_random_immunity", cfg)),
         p_exposure(get_as<double>("p_exposure", cfg)),
+        p_infected(get_as<double>("p_infected", cfg)),
         p_recover(get_as<double>("p_recover", cfg)),
         p_decease(get_as<double>("p_decease", cfg)),
         p_empty(get_as<double>("p_empty", cfg)),
-        incubation_period(get_as<std::size_t>("incubation_period", cfg)),
         p_lose_immunity(get_as<double>("p_lose_immunity", cfg)),
         move_away_from_infected(get_as<bool>("move_away_from_infected", cfg)),
         p_move_randomly(get_as<double>("p_move_randomly", cfg)),
@@ -265,6 +268,11 @@ struct Params
             throw std::invalid_argument("Invalid p_exposure! Need be a value "
                                         "in range [0, 1], was " +
                                         std::to_string(p_exposure));
+        }
+        if ((p_infected > 1) or (p_infected < 0)) {
+            throw std::invalid_argument("Invalid p_infected! Need be a value "
+                                        "in range [0, 1], was " +
+                                        std::to_string(p_infected));
         }
         if ((p_recover > 1) or (p_recover < 0)) {
             throw std::invalid_argument("Invalid p_recover! Need be a value "

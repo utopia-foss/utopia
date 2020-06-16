@@ -507,13 +507,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // Increase the age of the exposed cell
             ++state.age;
 
-            // Check whether the incubation period is exceeded and update the
-            // cell to be infected if that is the case.
-            if (state.exposed_time < _params.incubation_period) {
-                ++state.exposed_time;
-            }
-            else {
+            // Transition from the exposed state to infected with probability
+            // p_infected
+            if (_prob_distr(*this->_rng) < _params.p_infected) {
                 state.kind = Kind::infected;
+                return state;
             }
 
             return state;

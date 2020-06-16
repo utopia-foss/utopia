@@ -51,9 +51,13 @@ p_immune: 0.001
 # iteration step.
 p_random_immunity: 0.
 
-# Probability per site and time step for a random point exposure of a susceptible
-p_exposure: 0.001
+# Probability per susceptible cell and time step for a random point exposure
 # NOTE This is affected by the exposure control, see below.
+p_exposure: 0.001
+
+# Probability per exposed cell and time step to transition to infected state
+# The default corresponds to a mean incubation period of 5 time steps
+p_infected: 0.2
 
 # Probability to recover if infected
 # Note that p_recover + p_decease need to be smaller than 1
@@ -72,11 +76,6 @@ p_decease: 0.02
 # As default, there are no living cells vanishing by chance i.e. the system
 # is approximated to be closed for the given time scales. 
 p_empty: 0
-
-# The incubation period for exposed cells to become infected
-incubation_period: 5
-# Probabilty to transition to infected if exposed
-# p_infected: 1/5
 
 # The probability to loose immunity if a cell is recovered
 # This value is quite uncertain because it is not known whether and with what 
