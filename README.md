@@ -299,6 +299,27 @@ The [Sphinx][Sphinx]-built user documentation will then be located at `build/doc
 The C++ [doxygen][doxygen]-documentation can be found at `build/doc/doxygen/html/`.
 Open the respective `index.html` files to browse the documentation.
 
+### Choosing a different compiler
+CMake will inspect your system paths and use the default compiler.
+You can use the `CC` and `CXX` environment variables to select a specific C and C++ compiler, respectively.
+As compiler paths are cached by CMake, changing the compiler requires you to delete the `build` directory and re-run CMake.
+
+Ubuntu 20.04 LTS (Focal Fossa), for example, provides GCC 9 and GCC 10.
+To use GCC 10, first install it via APT:
+
+```bash
+apt update && apt install gcc-10 g++-10
+```
+
+Then create the build directory, enter it, and set the `CC` and `CXX` environment variables when calling CMake:
+
+```bash
+mkdir build && cd build
+CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake ..
+```
+
+Alternatively, you can `export` these variables in separate bash commands before executing CMake.
+
 ### Build Types
 If you followed the instructions above, you have a `Release` build which is
 optimized for maximum performance. If you need to debug, you should reconfigure
