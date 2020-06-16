@@ -8,7 +8,7 @@
 
 namespace Utopia::Models::SEIRD
 {
-/// Parameters specifying the infection control
+/// Parameters specifying the exposure control
 struct ExposureContParams
 {
     // -- Type definitions ----------------------------------------------------
@@ -93,6 +93,91 @@ struct ExposureContParams
         }()} {};
 };
 
+/// Parameters specifying the immunity control
+struct ImmunityContParams
+{
+    // -- Type definitions ----------------------------------------------------
+    /// Type of the times queue
+    using TimesQueue = std::queue<std::size_t>;
+
+    /// The type of the change p_immune pairs
+    using TimesValuesQueue = std::queue<std::pair<std::size_t, double>>;
+
+    // -- Parameters ----------------------------------------------------
+    /// Whether immunity control is enabled
+    const bool enabled;
+
+    /// The number of immunities added to the default p_expose
+    const std::size_t num_additional_immunities;
+
+    /// Add additional immunities at these time steps
+    mutable TimesQueue at_times;
+
+    /// Change p_immune to new value at given times
+    /** Each element of this container provides a pair of [time, new_value].
+     *   If the iteration step (time) of the simulation is reached
+     *   p_immune is set to new_value
+     */
+    mutable TimesValuesQueue change_p_immune;
+
+    /// Configuration constructor
+    /** Construct an ImmunityContParams object with required parameters being
+     *  extracted from a configuration node with the same parameter names.
+     */
+    ImmunityContParams(const DataIO::Config& cfg) :
+        enabled(get_as<bool>("enabled", cfg)),
+        num_additional_immunities {
+            get_as<std::size_t>("num_additional_immunities", cfg, 0)},
+        at_times {[&]() {
+            auto cont = get_as<std::vector<std::size_t>>("at_times", cfg, {});
+
+            std::sort(cont.begin(), cont.end());
+
+            // Copy elements into the queue
+            TimesQueue q {};
+            for (const auto& v : cont) {
+                q.push(v);
+            }
+
+            return q;
+        }()},
+        change_p_immune {[&]() {
+            // Check the parameter
+            if (not cfg["change_p_immune"] or
+                not cfg["change_p_immune"].size()) {
+                // Key did not exist or was empty; return empty queue.
+                return TimesValuesQueue {};
+            }
+            else if (not cfg["change_p_immune"].IsSequence()) {
+                // Inform about bad type of the given configuration entry
+                throw std::invalid_argument(
+                    "Parameter change_p_immune need be "
+                    "a sequence of pairs, but was not! Given infection control "
+                    "parameters:\n" +
+                    DataIO::to_string(cfg));
+            }
+
+            auto cont = get_as<std::vector<std::pair<std::size_t, double>>>(
+                "change_p_immune",
+                cfg);
+
+            // Sort such that low times are in the beginning of the queue
+            std::sort(cont.begin(),
+                      cont.end(),
+                      [](const auto& a, const auto& b) {
+                          return a.first < b.first;
+                      });
+
+            // Copy elements into the queue
+            TimesValuesQueue q {};
+            for (const auto& v : cont) {
+                q.push(v);
+            }
+
+            return q;
+        }()} {};
+};
+
 /// Parameters of the SEIRD
 struct Params
 {
@@ -100,7 +185,7 @@ struct Params
     const double p_susceptible;
 
     /// Probability per transition to susceptible via p_susceptible to be immune
-    const double p_immune;
+    mutable double p_immune;
 
     /// Probability per site and time step for a tree cell to not become
     /// infected if an infected cell is in the neighborhood.
@@ -135,6 +220,9 @@ struct Params
     /// Exposure control parameters
     const ExposureContParams exposure_control;
 
+    /// Immunity control parameters
+    const ImmunityContParams immunity_control;
+
     /// Construct the parameters from the given configuration node
     Params(const DataIO::Config& cfg) :
         p_susceptible(get_as<double>("p_susceptible", cfg)),
@@ -148,7 +236,8 @@ struct Params
         p_lose_immunity(get_as<double>("p_lose_immunity", cfg)),
         move_away_from_infected(get_as<bool>("move_away_from_infected", cfg)),
         p_move_randomly(get_as<double>("p_move_randomly", cfg)),
-        exposure_control(get_as<DataIO::Config>("exposure_control", cfg))
+        exposure_control(get_as<DataIO::Config>("exposure_control", cfg)),
+        immunity_control(get_as<DataIO::Config>("immunity_control", cfg))
     {
         if ((p_susceptible > 1) or (p_susceptible < 0)) {
             throw std::invalid_argument(

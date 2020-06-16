@@ -123,6 +123,33 @@ exposure_control:
   # To disable, pass an empty sequence.
   change_p_expose: []
 
+# --- Immunity Control --------------------------------------------------------
+# Immunity control to investigate the time-dependent influence of actively  
+# provided immunities. Note that immunity control is applied at the
+# beginning of an iteration step but after the exposure control. It's effect 
+# is seen in the following time step
+immunity_control:
+  enabled: false
+
+  # The number of additional immunitys to be placed on the grid
+  num_additional_immunities: 10
+
+  # Add the additional immunities at the given times
+  # Note the the !listgen tag creates a list from the parameters 
+  # (start, stop, step_size)
+  # To disable, pass an empty sequence.
+  at_times: !listgen [0, 100, 20]
+
+  # Change the probability of a random immunity when new susceptible cells 
+  # appear through p_susceptible.
+  # The expected value is a list of [iteration_step, new_value] pairs, e.g.
+  #   - [10, .5]
+  #   - [42, 0.]
+  # ... will set p_immune from the default value to .5 at time 10 and set it
+  # back to 0. at time 42.
+  # To disable, pass an empty sequence.
+  change_p_immune: []
+
 # --- Heterogeneities ---------------------------------------------------------
 # Some cells can be permanently infected or turned into stones.
 # Both these features are using the `select_entities` interface; consult the

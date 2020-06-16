@@ -343,6 +343,65 @@ class SEIRD : public Model<SEIRD, CDTypes>
         }
     }
 
+    /// Apply immunity control
+    /** Add cell immunities if the iteration step matches the ones specified in
+     *  the configuration. There are two available modes of immunity control
+     *  that are applied, if provided, in this order:
+     *
+     *  1.  At specified times (parameter: ``at_times``) a number of additional
+     *      immmunities is added (parameter: ``num_additional_immmunities``)
+     *  2.  The parameter ``immune`` is changed to a new value at given
+     *      times. This can happen multiple times.
+     *      Parameter: ``change_immune``
+     */
+    void immunity_control()
+    {
+        // Check that time matches the first element of the sorted queue of
+        // time steps at which to apply the given number of immmunities.
+        if (not _params.immunity_control.at_times.empty()) {
+            // Check whether time has come for immmunities
+            if (this->_time == _params.immunity_control.at_times.front()) {
+                // Select cells that are susceptibles
+                // (not empty, exposed, infected, stones, infected, or source)
+                const auto cells_pool =
+                    _cm.select_cells<SelectionMode::condition>(
+                        [&](const auto& cell) {
+                            return (cell->state.kind == Kind::susceptible);
+                        });
+
+                // Sample cells from the pool and ...
+                CellContainer sample {};
+                std::sample(cells_pool.begin(),
+                            cells_pool.end(),
+                            std::back_inserter(sample),
+                            _params.immunity_control.num_additional_immunities,
+                            *this->_rng);
+
+                // ... and add immunity to the sampled cells
+                for (const auto& cell : sample) {
+                    cell->state.immune = true;
+                }
+
+                // Done. Can now remove first element of the queue.
+                _params.immunity_control.at_times.pop();
+            }
+        }
+
+        // Change immune if the iteration step matches the ones
+        // specified in the configuration. This leads to constant time lookup.
+        if (not _params.immunity_control.change_p_immune.empty()) {
+            const auto change_p_immune =
+                _params.immunity_control.change_p_immune.front();
+
+            if (this->_time == change_p_immune.first) {
+                _params.p_immune = change_p_immune.second;
+
+                // Done. Can now remove the element from the queue.
+                _params.immunity_control.change_p_immune.pop();
+            }
+        }
+    }
+
     // .. Rule functions ......................................................
 
     /// Define the update rule
@@ -627,6 +686,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Apply exposure control if enabled
         if (_params.exposure_control.enabled) {
             exposure_control();
+        }
+
+        // Apply immunity control if enabled
+        if (_params.immunity_control.enabled) {
+            immunity_control();
         }
 
         // Apply the update rule to all cells.
