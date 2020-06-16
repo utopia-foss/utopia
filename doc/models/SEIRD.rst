@@ -13,6 +13,7 @@ We model a population of agents on a two-dimensional grid of cells that can move
 - ``exposed``: the agent on the cell is exposed to the disease, meaning that it can already infect other agents in contact with the disease, however, there are no symptoms yet, thus, the agent gets noticed as infected only after the incubation period
 - ``infected``: the agent on the cell is infected and can infect neighboring agents
 - ``recovered``: the agent on the cell is recovered, thus, it is immune to the disease. However, it can lose its immunity after a while and get susceptible again.
+- ``deceased``: the agent on the cell is deceased. The cell will be empty in the next time step again.
 - ``source``: the cells are infection sources, thus, they can transition neighboring agents from the susceptible to the exposed state.
 - ``stones``: the cells are stones, thus, they lie around doing nothing but blocking space on the grid. Stones can be used to model spatial heterogeneities for example through clusters or spatial compartmentalization.
 
@@ -30,8 +31,9 @@ following rules:
 2. An ``empty`` cell turns into a ``susceptible`` one with probability ``p_susceptible``. With probability ``p_immune`` the cell is ``immune`` to being infected.
 3. A ``susceptible`` cell either randomly becomes exposed with probability ``p_exposure`` or becomes exposed with probability ``1-p_random_immunity`` if a neighboring cell is ``exposed`` or ``infected``if the cell is _not_ ``immune``.
 4. An ``exposed`` cell becomes ``infected`` after an ``incubation_period``.
-5. An ``infected`` cell recovers with probability ``p_recover`` and becomes ``immune``, dies with probability ``p_decease``, or else stays infected.
+5. An ``infected`` cell recovers with probability ``p_recover`` and becomes ``immune``, becomes ``deceased`` with probability ``p_decease``, or else stays infected.
 6. A ``recovered`` cell can lose its immunity with ``p_lose_immunity`` and becomes ``susceptible`` again 
+7. A ``deceased`` cell turns into an ``empty`` cell
 
 Movement
 ^^^^^^^^
@@ -72,13 +74,13 @@ The following data is stored alongside the simulation:
    * ``2``: ``exposed``
    * ``3``: ``infected``
    * ``4``: ``recovered``
-   * ``5``: ``source``, is constantly ignited
-   * ``6``: ``stone``, does not take part in any interaction 
+   * ``5``: ``deceased``
+   * ``6``: ``source``, is constantly ignited
+   * ``7``: ``stone``, does not take part in any interaction 
 
 * ``age``: the age of each cell, reset after a cell gets empty or deceases
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-living cells. Recovered cells do not count into it.
 * ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
-* ``deceased_ages``: the ages of the deceased agents
 * ``exposed_time``: the time steps a living cell is already exposed to the disease for each cell
 * ``immunity``: whether a cell is immune or not for each cell
 

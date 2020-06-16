@@ -19,16 +19,18 @@ enum class Kind : char
     infected = 3,
     /// Cell is recovered
     recovered = 4,
+    /// Cell is deceased
+    deceased = 5,
     /// Cell is an infection source: constantly infected, spreading infection
-    source = 5,
+    source = 6,
     /// Cell cannot be infected
-    stone = 6,
+    stone = 7,
 
     /// The number of kinds (COUNT)
     /** \attention The COUNT should _always_ be the last member of the enum
      *  class to ensure that it reflects the correct number of kinds.
      */
-    COUNT = 7,
+    COUNT = 8,
 };
 
 /// The full cell struct for the SEIRD model
@@ -39,6 +41,10 @@ struct State
 
     /// Whether the agent is immune
     bool immune;
+
+    /// The probability to transmit the infection to others if exposed or
+    /// infected
+    double p_transmit;
 
     /// The time passed since first being exposed
     unsigned exposed_time;
@@ -55,8 +61,8 @@ struct State
     /// Construct the cell state from a configuration and an RNG
     template<class RNG>
     State(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng) :
-        kind(Kind::empty), immune(false), exposed_time(0), age(0),
-        num_recoveries(0), cluster_id(0)
+        kind(Kind::empty), immune(false), p_transmit(1), exposed_time(0),
+        age(0), num_recoveries(0), cluster_id(0)
     {
         // Check if p_susceptible is available to set up cell state
         if (cfg["p_susceptible"]) {

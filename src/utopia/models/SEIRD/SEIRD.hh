@@ -13,7 +13,6 @@
 // SEIRD-realted includes
 #include "params.hh"
 #include "state.hh"
-#include "movement.hh"
 
 namespace Utopia::Models::SEIRD
 {
@@ -84,9 +83,6 @@ class SEIRD : public Model<SEIRD, CDTypes>
     /// The range [0, 1] distribution to use for probability checks
     std::uniform_real_distribution<double> _prob_distr;
 
-    /// Store the ages of deceased cells
-    std::vector<unsigned> _deceased_ages;
-
     /// The incremental cluster tag
     unsigned int _cluster_id_cnt;
 
@@ -146,8 +142,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         _params(this->_cfg),
 
         // Initialize remaining members
-        _prob_distr(0., 1.), _deceased_ages(), _cluster_id_cnt(),
-        _cluster_members(),
+        _prob_distr(0., 1.), _cluster_id_cnt(), _cluster_members(),
         _densities {},  // undefined here, will be set in constructor body
         _write_only_densities(get_as<bool>("write_only_densities", this->_cfg)),
 
@@ -172,11 +167,6 @@ class SEIRD : public Model<SEIRD, CDTypes>
     {
         // Make sure the densities are not undefined
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
-
-        // Reserve memory for the vector storing deseased agent's ages
-        // NOTE The model will probably not use all the reserved memory.
-        //      If memory becomes an issue, reevaluate reserving memory here.
-        _deceased_ages.reserve(_cm.cells().size());
 
         // Cells are already set up by the CellManager.
         // Remaining initialization steps regard only macroscopic quantities,
@@ -204,7 +194,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                              get_as<std::string>("mode", _cfg["stones"]));
         }
 
-        // Ignite some cells permanently: fire sources
+        // Ignite some cells permanently: infection sources
         if (_cfg["infection_source"] and
             get_as<bool>("enabled", _cfg["infection_source"])) {
             this->_log->info("Setting cells to be infection sources ...");
@@ -234,6 +224,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                                                                  "exposed",
                                                                  "infected",
                                                                  "recovered",
+                                                                 "deceased",
                                                                  "source",
                                                                  "stone"});
         this->_log->debug("Added coordinates to densities dataset.");
@@ -530,15 +521,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 ++state.num_recoveries;
             }
             else if (_prob_distr(*this->_rng) < _params.p_decease) {
-                state.kind           = Kind::empty;
-                state.immune         = false;
-                state.num_recoveries = 0;
-
-                // Store the age of the deceased cell in _deceased_ages vector.
-                _deceased_ages.push_back(state.age);
-
-                // Reset the age for the next susceptible cell
-                state.age = 0;
+                state.kind = Kind::deceased;
+                // Do not reset the cell states here to keep them for
+                // write out and analysis. Resetting happens in the deceased
+                // case below.
             }
             // else nothing happens and the cell stays infected the next time
 
@@ -553,6 +539,17 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 state.immune = false;
                 state.kind   = Kind::susceptible;
             }
+
+            return state;
+        }
+        else if (state.kind == Kind::deceased) {
+            // A former deceased cell gets empty
+            state.kind           = Kind::empty;
+            state.immune         = false;
+            state.num_recoveries = 0;
+
+            // Reset the age for the next susceptible cell
+            state.age = 0;
 
             return state;
         }
@@ -617,9 +614,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 // ... go through it, and move to the first appearing empty
                 // cell
                 for (const auto& _nb : neighbors) {
-                    const auto moved = move_to_empty_cell(state, _nb->state);
-                    // If the cell moved successfully leave the loop
-                    if (moved) {
+                    if (_nb->state.kind == Kind::empty) {
+                        // Swap the states and leave the loop
+                        std::swap(state, _nb->state);
                         break;
                     }
                 }
@@ -636,15 +633,15 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
     /// Move randomly to a neighboring cell if that cell is empty
     /** If the cell is not empty, a stone, or a source move to a neighboring
-     *  empty location with probability p_move_randomly. If no neighboring cell
-     *  is empty do nothing.
+     *  empty location with probability p_move_randomly. If no neighboring
+     * cell is empty do nothing.
      */
     RuleFunc _move_randomly = [this](const auto& cell) {
         // Get the state reference to directly manipulate the state
         auto& state = cell->state;
 
-        // Directly return the state if the cell is of kind empty, source, or
-        // stone.
+        // Directly return the state if the cell is of kind empty, source,
+        // or stone.
         if ((state.kind == Kind::empty) or (state.kind == Kind::source) or
             (state.kind == Kind::stone)) {
             return state;
@@ -657,9 +654,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
             std::shuffle(neighbors.begin(), neighbors.end(), *this->_rng);
             // ... go through it, and move to the first appearing empty cell
             for (const auto& _nb : neighbors) {
-                const auto moved = move_to_empty_cell(state, _nb->state);
-                // If the cell moved successfully leave the loop
-                if (moved) {
+                if (_nb->state.kind == Kind::empty) {
+                    // Swap the states and leave the loop
+                    std::swap(state, _nb->state);
                     break;
                 }
             }
@@ -669,8 +666,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
     };
 
   public:
-    // -- Public Interface ----------------------------------------------------
-    // .. Simulation Control ..................................................
+    // -- Public Interface
+    // ----------------------------------------------------
+    // .. Simulation Control
+    // ..................................................
 
     /// Iterate a single time step
     /** This updates all cells (synchronously) according to the _update
@@ -694,7 +693,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Apply the update rule to all cells.
         apply_rule<Update::sync>(_update, _cm.cells());
         // NOTE The cell state is updated synchronously, i.e.: only after
-        // all cells have been visited and know their state for the next step
+        // all cells have been visited and know their state for the next
+        // step
 
         // Move cells randomly with probability p_move_randomly
         apply_rule<Update::async, Shuffle::on>(_move_randomly,
@@ -774,20 +774,6 @@ class SEIRD : public Model<SEIRD, CDTypes>
                                 [](const auto& cell) {
                                     return cell->state.cluster_id;
                                 });
-
-        // In the last time step write the deceased_ages
-        if (this->_time == this->_time_max) {
-            auto _dset_deceased_ages =
-                this->_hdfgrp->open_dataset("deceased_ages",
-                                            {_deceased_ages.size()},
-                                            {},
-                                            1);
-
-            _dset_deceased_ages->add_attribute("dim_name__0", "age");
-            _dset_deceased_ages->add_attribute("coords_mode__age", "trivial");
-
-            _dset_deceased_ages->write(_deceased_ages);
-        }
     }
 };
 

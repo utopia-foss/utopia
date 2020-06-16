@@ -1,5 +1,16 @@
 # Base configuration for SEIRD model plots
 ---
+# -- Help configurations ------------------------------------------------------
+colors:
+  empty: &color_empty darkkhaki
+  susceptible: &color_susceptible forestgreen
+  exposed: &color_exposed darkorange
+  infected: &color_infected firebrick
+  recovered: &color_recovered slategray
+  deceased: &color_deceased black
+  source: &color_source maroon
+  stone: &color_stone moccasin
+
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
   based_on: .default_style_and_helpers
@@ -29,49 +40,56 @@ densities:
       transform_data:
         - sel: { kind: empty }
       label: empty
-      color: &color_empty darkkhaki
+      color: *color_empty
 
     susceptible:
       path_to_data: densities
       transform_data:
         - sel: { kind: susceptible }
       label: susceptible
-      color: &color_susceptible forestgreen
+      color: *color_susceptible
 
     exposed:
       path_to_data: densities
       transform_data:
         - sel: { kind: exposed }
       label: exposed
-      color: &color_exposed darkorange
+      color: *color_exposed
 
     infected:
       path_to_data: densities
       transform_data:
         - sel: { kind: infected }
       label: infected
-      color: &color_infected firebrick
+      color: *color_infected
 
     recovered:
       path_to_data: densities
       transform_data:
         - sel: { kind: recovered }
       label: recovered
-      color: &color_recovered slategray
+      color: *color_recovered
+
+    deceased:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: deceased }
+      label: deceased
+      color: *color_deceased
 
     source:
       path_to_data: densities
       transform_data:
         - sel: { kind: source }
       label: source
-      color: &color_source maroon
+      color: *color_source
 
     stone:
       transform_data:
         - sel: { kind: stone }
       path_to_data: densities
       label: stone
-      color: &color_stone black
+      color: *color_stone
 
   helpers:
     set_limits:
@@ -96,7 +114,7 @@ CA_snapshot:
   to_plot:
     kind:
       title: ""
-      limits: [0, 6]
+      limits: [0, 7]
       # Be aware that the colors need to be in the correct ordering!
       cmap:
         empty: *color_empty
@@ -104,6 +122,7 @@ CA_snapshot:
         exposed: *color_exposed
         infected: *color_infected
         recovered: *color_recovered
+        deceased: *color_deceased
         source: *color_source
         stone: *color_stone
 
