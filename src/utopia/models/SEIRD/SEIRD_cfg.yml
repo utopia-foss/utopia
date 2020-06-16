@@ -28,41 +28,65 @@ cell_manager:
     # Initial immune density, value in [0, 1]
     # With this probability, a cell is initialized as immune, however, only if
     # it is susceptible (determined via p_susceptible)
-    p_immune: 0.05
+    p_immune: 0.001
 
 # --- Model Dynamics ----------------------------------------------------------
-# Probability per site and time step to transition from state empty to susceptible
-p_susceptible: 7.5e-3
+# NOTE that the default parameters below are chosen according to the
+#      Covid-19 storyline roughly approximating the current knowledge, which
+#      of course still changes and updates weekly (updated June 16th, 2020). 
+
+# Probability per site and time step to transition from state empty to 
+# susceptible. 
+# As default, there are no randomly appearing susceptible cells coming into the 
+# system.
+p_susceptible: 0
 
 # Probability to be immune per transition to susceptible via p_susceptible
-p_immune: 0.1
+# Effect there, but minimal compared to immunity e.g. through  recovery 
+p_immune: 0.001
 
 # Probability per site and time step for a susceptible cell to not become infected if
 # an infected cell is in the neighborhood. This probability applies per event
 # so it does _not_ mean that an immune cell is also immune in the next
-# iteration step
+# iteration step.
 p_random_immunity: 0.
 
 # Probability per site and time step for a random point exposure of a susceptible
-p_exposure: 0.05
+p_exposure: 0.001
 # NOTE This is affected by the exposure control, see below.
 
 # Probability to recover if infected
 # Note that p_recover + p_decease need to be smaller than 1
-p_recover: 0.3
+# The default is set to 1/14=0.0714, modeling that, on average, infection
+# takes place for 14 days. 
+p_recover: 0.0714
 
 # Probability to desease if the cell is infected
 # Note that p_recover + p_decease need to be smaller than 1
-p_decease: 0.1
+# The default is set to 2%, approximating the infection fatality rate 
+# (see e.g. https://ourworldindata.org/mortality-risk-covid for a rough 
+# explanation).
+p_decease: 0.02
 
 # Probability per site and time step to transition to empty
-p_empty: 7.5e-3
+# As default, there are no living cells vanishing by chance i.e. the system
+# is approximated to be closed for the given time scales. 
+p_empty: 0
 
 # The incubation period for exposed cells to become infected
 incubation_period: 5
+# Probabilty to transition to infected if exposed
+# p_infected: 1/5
 
 # The probability to loose immunity if a cell is recovered
-p_lose_immunity: 0.02
+# This value is quite uncertain because it is not known whether and with what 
+# probability immunity is lost in the case of Covid-19. Currently, the effect
+# of losing immunity through virus mutation seem to be smaller then for the 
+# common influenca virus with roughly one year. However, there are studies 
+# suggesting that especially for light Covid-19 infections, new infections 
+# can happen with a probably non-negligable rate. 
+# The given default tries to roughly incorporate and estiate both effects.
+p_lose_immunity: 0.01
 
 # ... Movement ...............................................................
 # Whether to allow cells to move away from infected neighboring cells
@@ -71,7 +95,7 @@ p_lose_immunity: 0.02
 move_away_from_infected: false
 
 # Probability to move in a random direction
-p_move_randomly: 0.01
+p_move_randomly: 0.2
 
 # --- Exposure Control -------------------------------------------------------
 # Exposure control to investigate the time-dependent influence of the 
