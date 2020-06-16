@@ -678,6 +678,12 @@ Now that your animation is configured, you might want to run a simulation with a
   If you *just* want to enable a disabled default plot and not change anything in the plot configuration, the CLI is here to help:
   ``utopia eval <model_name> --plot-only <plot_name1> <plot_name2> ...``.
 
+.. note::
+
+    If you see unexpected artifacts in the animation, try choosing a higher pixel resolution.
+    See :ref:`plot_animations` for more information.
+
+
 
 Using your own plot functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
