@@ -14,7 +14,7 @@ Say you have defined the following plot function, making use of the ``PlotHelper
 
     @is_plot_func(creator_type=UniversePlotCreator)
     def plot_some_data(dm: DataManager, *, hlpr: PlotHelper,
-                       uni: UniverseGroup, 
+                       uni: UniverseGroup,
                        data_path: str,
                        time: int,
                        **plot_kwargs):
@@ -39,7 +39,7 @@ update function and mark it as supporting an animation:
 
     @is_plot_func(creator_type=UniversePlotCreator, supports_animation=True)
     def plot_some_data(dm: DataManager, *, hlpr: PlotHelper,
-                       uni: UniverseGroup, 
+                       uni: UniverseGroup,
                        data_path: str,
                        time: int,
                        **plot_kwargs):
@@ -126,7 +126,13 @@ An example for an animation configuration is the following:
           init:           # passed to Writer.__init__ method
             fps: 15
           saving:
-            dpi: 92
+            dpi: 254
           grab_frame: {}  # passed to Writer.grab_frame and from there to savefig
 
       animation_update_kwargs:  {} # passed to the animation update function
+
+
+.. note::
+
+    For high-resolution plots, e.g. from a cellular automaton state, take care to choose a high-enough ``dpi`` value.
+    Otherwise, you might get interpolation issues.
