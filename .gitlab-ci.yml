@@ -51,7 +51,6 @@ variables:
 
 
 stages:
-  - ci_test   # (on selected branches) tests CI itself, then aborts
   - setup     # (on master) set up the docker base image
   - build     # build utopia and all tests
   - test      # carry out tests
@@ -117,31 +116,6 @@ image: ${BASE_IMAGE}
 
 
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-# -- CI testing stage ---------------------------------------------------------
-# Jobs in this stage can be used on development branches to test the CI itself.
-
-# Test building of the docker image and deployment
-# The image is then available under: ccees/utopia:dev
-ci_test:docker-image:
-  <<: *dind
-  stage: ci_test
-  only:
-    - web
-    - my-development-branch-name  # Change this to suit your needs.
-  script:
-    # Same build command as in deploy:dockerhub-latest, but with dev tag
-    - docker build -f docker/utopia.dockerfile
-                   --build-arg BASE_IMAGE=$BASE_IMAGE
-                   --build-arg PROCNUM=$CPUS_DIND
-                   --build-arg GIT_CHECKOUT=$UTOPIA_DEV_IMAGE_CHECKOUT
-                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
-                   -t ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
-                   ./
-    - docker push ccees/utopia:$UTOPIA_DEV_IMAGE_TAG
-
-    # Abort, such that the rest of the pipeline does not run.
-    - exit 1
 
 
 # -- Setup stage --------------------------------------------------------------
