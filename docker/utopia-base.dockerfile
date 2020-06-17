@@ -38,7 +38,6 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
         libspdlog-dev \
         # NOTE: Clang package currently depends on wrong lib version
         libstdc++-10-dev \
-        libtbb-dev \
         libyaml-cpp-dev \
         python3-dev \
         python3-pip \

@@ -7,7 +7,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include <utopia/core/apply.hh>
-#include <utopia/core/logging.hh>
 #include <utopia/data_io/cfg_utils.hh>
 
 #include "cell_manager_test.hh"
@@ -77,11 +76,6 @@ struct ModelFixture
     {
         // Fill vector
         std::iota(begin(iota), end(iota), 0);
-
-        // NOTE: Only applies parallelism if enabled through build system
-        Utopia::setup_loggers();
-        Utopia::ParallelExecution::set(
-            Utopia::ParallelExecution::Setting::enabled);
     }
 
 private:

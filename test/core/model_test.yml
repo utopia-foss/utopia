@@ -4,8 +4,6 @@ output_path: model_test_tmpfile.h5
 num_steps: 3
 write_every: 1
 monitor_emit_interval: 1.5
-parallel_execution:
-  enabled: True
 
 # model configuration (no values expected here)
 test: {}

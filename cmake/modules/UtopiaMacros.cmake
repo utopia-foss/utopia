@@ -45,9 +45,6 @@ find_package(spdlog 1.3 REQUIRED)
 # --- yaml-cpp ---
 find_package(yaml-cpp 0.6.2 REQUIRED)
 
-# --- Thread Building Blocks (TBB) ---
-find_package(TBB 2018.5)
-
 # --- Threads (NOTE: required by spdlog on Ubuntu 18.04) ---
 set(THREADS_PREFER_PTHREAD_FLAG)
 find_package(Threads REQUIRED)
@@ -64,7 +61,6 @@ include(UtopiaEnv)
 include(UtopiaFrontendModelRegistry)
 
 include(UtopiaAddCoverageFlags)
-include(UtopiaEnableParallel)
 include(UtopiaAddUnitTest)
 include(UtopiaAddModel)
 include(UtopiaAddModelTest)

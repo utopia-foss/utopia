@@ -389,27 +389,6 @@ def test_cluster_mode_run(mv_kwargs, cluster_env):
     assert [t.name for t in mv.wm.tasks] == ['uni05', 'uni10']
 
 
-def test_parallel_init(mv_kwargs):
-    """Test enabling parallel execution through the config"""
-    # NOTE Ensure that information on parallel execution is logged
-    mv_kwargs['parameter_space'] = dict(log_levels=dict(core='debug'))
-
-    # Run with default settings and check log message
-    mv_kwargs['paths']['model_note'] = "pexec_disabled"
-    mv = Multiverse(**mv_kwargs)
-    mv.run()
-    log = mv.wm.tasks[0].streams['out']['log']
-    assert any((line.find("Parallel execution disabled") > 0 for line in log))
-
-    # Now override default setting
-    mv_kwargs['parameter_space']['parallel_execution'] = dict(enabled=True)
-    mv_kwargs['paths']['model_note'] = "pexec_enabled"
-    mv = Multiverse(**mv_kwargs)
-    mv.run()
-    log = mv.wm.tasks[0].streams['out']['log']
-    assert any((line.find("Parallel execution enabled") > 0 for line in log))
-
-
 # FrozenMultiverse tests ------------------------------------------------------
 
 def test_FrozenMultiverse(mv_kwargs, cluster_env):

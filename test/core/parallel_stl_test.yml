@@ -1,9 +1,0 @@
-default:
-
-works:
-  parallel_execution:
-    enabled: true
-
-throws:
-  parallel_execution:
-    is_on: true
