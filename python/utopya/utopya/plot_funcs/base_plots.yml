@@ -55,6 +55,7 @@
     <<: *default_style
 
 # .. Basic errorbar plot from universe data ...................................
+# NOTE Preferably, use the .dag.generic.errorbar function instead! See below.
 .basic_uni.errorbar:
   creator: universe
   universes: all
@@ -89,6 +90,7 @@
 
 
 # .. Errorbar plot from Multiverse data .......................................
+# NOTE Preferably, use the .dag.generic.errorbar function instead! See below.
 .basic_mv.errorbar:
   creator: multiverse
 
@@ -317,20 +319,41 @@
   style:
     <<: *default_style
 
-### Start ---- Facet Grid
+
 # .. Facet Grid ...............................................................
 # For conveniently plotting high-dimensional data, using dantro.
-# For more info, have a look at the dantro docs:
-#   https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html
+#    Docs: https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html
 .dag.generic.facet_grid:
-  module: dantro.plot_creators.ext_funcs.generic
+  module: &dantro_plots dantro.plot_creators.ext_funcs.generic
   plot_func: facet_grid
 
   helpers:
     <<: *default_helpers
   style:
     <<: *default_style
-### End ---- Facet Grid
+
+
+# .. Errorbar and Errorbands ..................................................
+# For visualizing confidence intervals using error bars or bands (shaded area)
+#    Docs: https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html
+.dag.generic.errorbar:
+  module: *dantro_plots
+  plot_func: errorbar
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
+.dag.generic.errorbands:
+  module: *dantro_plots
+  plot_func: errorbands
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+
 
 # .. Graph plots ..............................................................
 .dag.graph:
