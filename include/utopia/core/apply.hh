@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "parallel.hh"
 #include "state.hh"
 #include "zip.hh"
 
@@ -120,20 +121,7 @@ make_tuple_from_tuple(Tuple&& t)
 
 // -- Manually-managed state updates ------------------------------------------
 
-/// Apply a rule synchronously to manually updated states
-/** This creates a cache for new states whose contents are moved into the
- *  respective state containers after all rules have been applied.
- *
- *  \tparam mode Update mode for this rule. This is the overload for
- *               synchronous updates (Update::sync).
- *  \tparam Rule The type of the rule function (object).
- *  \tparam ContTarget The type of entity container.
- *  \tparam ContArgs The types of argument containers.
- *
- *  \param rule The function (object) to apply to the entities
- *  \param cont_target The container of entities the function will be applied to
- *  \param cont_args The containers of additional argument for the function.
- */
+/// Sequential overload
 template<Update mode,
          class Rule,
          class ContTarget,
@@ -146,15 +134,48 @@ void apply_rule(Rule&& rule,
                 const ContTarget& cont_target,
                 ContArgs&&... cont_args)
 {
+    apply_rule<mode>(
+        Utopia::ExecPolicy::seq, rule, cont_target, cont_args...);
+}
+
+/// Apply a rule synchronously to manually updated states
+/** This creates a cache for new states whose contents are moved into the
+ *  respective state containers after all rules have been applied.
+ *
+ *  \tparam mode Update mode for this rule. This is the overload for
+ *               synchronous updates (Update::sync).
+ *  \tparam Rule The type of the rule function (object).
+ *  \tparam ContTarget The type of entity container.
+ *  \tparam ContArgs The types of argument containers.
+ *
+ *  \param policy Utopia::ExecPolicy for the rule when applied in parallel
+ *  \param rule The function (object) to apply to the entities
+ *  \param cont_target The container of entities the function will be applied to
+ *  \param cont_args The containers of additional argument for the function.
+ */
+template<Update mode,
+         class Rule,
+         class ContTarget,
+         class... ContArgs,
+         typename std::enable_if_t<mode == Update::sync, int> = 0,
+         typename std::enable_if_t<
+                    impl::entity_t<ContTarget>::mode
+                        == Update::manual, int> = 0>
+void apply_rule(const Utopia::ExecPolicy policy,
+                Rule&& rule,
+                const ContTarget& cont_target,
+                ContArgs&&... cont_args)
+{
     using State = typename impl::entity_t<ContTarget>::State;
 
     // Make sure to call `invoke_result_type` at least for a conversion check
     static_assert(not is_void_rule<State, Rule, ContTarget, ContArgs...>(),
                   "Cannot apply void rules in a synchronous update!");
 
-    // initialize the state cache
-    std::vector<State> state_cache;
-    state_cache.reserve(cont_target.size());
+    // Initialize the state cache
+    // NOTE: Copy one element to avoid requirement of default initialization
+    std::vector<State> state_cache(cont_target.size(),
+                                   cont_target.front()->state);
 
     // create the input zip iterators
     auto range = Itertools::zip(cont_target, cont_args...);
@@ -162,36 +183,26 @@ void apply_rule(Rule&& rule,
 
     // Apply the rule
     // NOTE: Capute by reference is fine because rule is a temporary
-    std::transform(begin(range), end(range),
-                   back_inserter(state_cache),
+    std::transform(policy,
+                   begin(range),
+                   end(range),
+                   begin(state_cache),
                    [&rule](auto&& args) {
                        return std::apply(rule,
                                          std::forward<decltype(args)>(args));
                    });
 
     // move the cache
-    for (size_t i = 0; i < cont_target.size(); ++i) {
-        cont_target[i]->state = std::move(state_cache[i]);
-    }
+    auto move_range = Itertools::zip(cont_target, state_cache);
+    std::for_each(Utopia::ExecPolicy::par_unseq,
+                  begin(move_range),
+                  end(move_range),
+                  [](auto&& tpl) {
+                      std::get<0>(tpl)->state = std::move(std::get<1>(tpl));
+                  });
 }
 
-/// Apply a rule asynchronously to manually updated states
-/** Directly overwrite the states of the passed entities, according to
- *  the storage order inside the container.
- *
- *  \tparam mode Update mode for this rule. This is the overload for
- *               asynchronous updates (Update::async).
- *  \tparam shuffle Switch for enabling the shuffling of cells before applying
- *                  the rule. This is the overload with shuffling disabled
- *                  (Shuffle::off).
- *  \tparam Rule The type of the rule function (object).
- *  \tparam Container The type of entity container.
- *  \tparam ContArgs The types of argument containers.
- *
- *  \param rule The function (object) to apply to the entities
- *  \param container The container of entities the function will be applied to
- *  \param cont_args The containers of additional argument for the function.
- */
+/// Sequential case overload
 template<Update mode,
          Shuffle shuffle = Shuffle::on,
          class Rule,
@@ -207,6 +218,44 @@ apply_rule(Rule&& rule,
            const ContTarget& cont_target,
            ContArgs&&... cont_args)
 {
+    apply_rule<mode, shuffle>(
+        Utopia::ExecPolicy::seq, rule, cont_target, cont_args...);
+}
+
+/// Apply a rule asynchronously to manually updated states
+/** Directly overwrite the states of the passed entities, according to
+ *  the storage order inside the container.
+ *
+ *  \tparam mode Update mode for this rule. This is the overload for
+ *               asynchronous updates (Update::async).
+ *  \tparam shuffle Switch for enabling the shuffling of cells before applying
+ *                  the rule. This is the overload with shuffling disabled
+ *                  (Shuffle::off).
+ *  \tparam Rule The type of the rule function (object).
+ *  \tparam Container The type of entity container.
+ *  \tparam ContArgs The types of argument containers.
+ *
+ *  \param policy Utopia::ExecPolicy for the rule when applied in parallel
+ *  \param rule The function (object) to apply to the entities
+ *  \param container The container of entities the function will be applied to
+ *  \param cont_args The containers of additional argument for the function.
+ */
+template<Update mode,
+         Shuffle shuffle = Shuffle::on,
+         class Rule,
+         class ContTarget,
+         class... ContArgs,
+         typename std::enable_if_t<mode == Update::async, int> = 0,
+         typename std::enable_if_t<
+                    impl::entity_t<ContTarget>::mode
+                        == Update::manual, int> = 0,
+         typename std::enable_if_t<shuffle == Shuffle::off, int> = 0>
+void
+apply_rule(const Utopia::ExecPolicy policy,
+           Rule&& rule,
+           const ContTarget& cont_target,
+           ContArgs&&... cont_args)
+{
     // Create the input range zip iterators
     auto range = Itertools::zip(cont_target, cont_args...);
     using std::begin, std::end;
@@ -215,18 +264,40 @@ apply_rule(Rule&& rule,
     using State = typename impl::entity_t<ContTarget>::State;
     if constexpr (is_void_rule<State, Rule, ContTarget, ContArgs...>()) {
         // Is a void-rule; no need to set the return value
-        std::for_each(begin(range), end(range), [&rule](auto&& args) {
+        std::for_each(policy, begin(range), end(range), [&rule](auto&& args) {
             std::apply(rule,
                        std::forward<decltype(args)>(args));
         });
     }
     else {
-        std::for_each(begin(range), end(range), [&rule](auto&& args) {
+        std::for_each(policy, begin(range), end(range), [&rule](auto&& args) {
             auto& cell = std::get<0>(args);
             cell->state = std::apply(rule,
                                     std::forward<decltype(args)>(args));
         });
     }
+}
+
+/// Sequential case overload
+template<Update mode,
+         Shuffle shuffle = Shuffle::on,
+         class Rule,
+         class ContTarget,
+         class RNG,
+         class... ContArgs,
+         typename std::enable_if_t<mode == Update::async, int> = 0,
+         typename std::enable_if_t<
+                    impl::entity_t<ContTarget>::mode
+                        == Update::manual, int> = 0,
+         typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
+void
+apply_rule(Rule&& rule,
+           const ContTarget& cont_target,
+           RNG&& rng,
+           ContArgs&&... cont_args)
+{
+    apply_rule<mode, shuffle>(
+        Utopia::ExecPolicy::seq, rule, cont_target, rng, cont_args...);
 }
 
 /// Apply a rule asynchronously and shuffled to manually updated states
@@ -244,6 +315,7 @@ apply_rule(Rule&& rule,
  *  \tparam RNG The type of the random number generator.
  *  \tparam ContArgs The types of argument containers.
  *
+ *  \param policy Utopia::ExecPolicy for the rule when applied in parallel
  *  \param rule The function (object) to apply to the entities
  *  \param cont_target The container of entities the function will be applied to
  *  \param rng The random number generator used for shuffling the entities
@@ -270,7 +342,8 @@ template<Update mode,
                         == Update::manual, int> = 0,
          typename std::enable_if_t<shuffle == Shuffle::on, int> = 0>
 void
-apply_rule(Rule&& rule,
+apply_rule(const Utopia::ExecPolicy policy,
+           Rule&& rule,
            const ContTarget& cont_target,
            RNG&& rng,
            ContArgs&&... cont_args)
@@ -302,36 +375,40 @@ apply_rule(Rule&& rule,
 
     // Create a container of tuples of arguments and shuffle it
     std::vector<Tuple> args_container(begin(range), end(range));
-    std::shuffle(begin(args_container),
-                 end(args_container),
-                 std::forward<RNG>(rng));
+    std::shuffle(
+        begin(args_container), end(args_container), std::forward<RNG>(rng));
 
     // Apply the rule, distinguishing by return type of the rule
     using State = typename impl::entity_t<ContTarget>::State;
     if constexpr(is_void_rule<State, Rule, ContTarget, ContArgs...>())
     {
         // Is a void-rule; no need to set the return value
-        std::for_each(
-            begin(args_container), end(args_container), [&rule](auto&& args) {
-                // NOTE: 'args' is tuple of reference_wrappers, and we want a
-                //       tuple of regular references.
-                std::apply(
-                    rule,
-                    make_tuple_from_tuple(std::forward<decltype(args)>(args)));
-        });
+        std::for_each(policy,
+                      begin(args_container),
+                      end(args_container),
+                      [&rule](auto&& args) {
+                          // NOTE: 'args' is tuple of reference_wrappers, and we
+                          // want a tuple of regular references.
+                          std::apply(rule,
+                                     make_tuple_from_tuple(
+                                       std::forward<decltype(args)>(args)));
+                      });
     }
     else
     {
-        std::for_each(
-            begin(args_container), end(args_container), [&rule](auto&& args) {
-                // NOTE: 'args' is tuple of reference_wrappers, and we want a
-                //       tuple of regular references.
-                auto tpl = make_tuple_from_tuple(
-                    std::forward<decltype(args)>(args));
-                auto& entity = std::get<0>(tpl);
-                // NOTE: Do not move 'tpl' as this invalidates ref 'entity'
-                entity->state = std::apply(rule, tpl);
-        });
+        std::for_each(policy,
+                      begin(args_container),
+                      end(args_container),
+                      [&rule](auto&& args) {
+                          // NOTE: 'args' is tuple of reference_wrappers, and we
+                          //       want a tuple of regular references.
+                          auto tpl = make_tuple_from_tuple(
+                            std::forward<decltype(args)>(args));
+                          auto& entity = std::get<0>(tpl);
+                          // NOTE: Do not move 'tpl' as this invalidates ref
+                          //       'entity'
+                          entity->state = std::apply(rule, tpl);
+                      });
     }
 }
 

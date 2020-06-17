@@ -373,6 +373,11 @@ plot_manager:
 #            should add any model-specific content here
 #
 parameter_space:
+  # NOTE: These settings only apply if appropriate depedencies are detected
+  parallel_execution:
+    # Enable parallel features of Utopia
+    enabled: false
+
   # Set a default PRNG seed
   seed: 42
 

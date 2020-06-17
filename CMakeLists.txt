@@ -65,11 +65,15 @@ target_link_libraries(utopia INTERFACE
     armadillo
     Boost::boost
     hdf5
+    $<$<BOOL:${TBB_FOUND}>:TBB::tbb>
 )
 
 # Set preprocessor definitions
 target_compile_definitions(utopia INTERFACE
-    ARMA_USE_HDF5  # Enable HDF5 functions of Armadillo
+    # Enable HDF5 functions of Armadillo
+    ARMA_USE_HDF5
+    # Propagate availability of ParallelSTL
+    $<$<BOOL:${TBB_FOUND}>:HAVE_PARALLEL_STL>
 )
 
 # --- Include Config Tree ---
