@@ -28,7 +28,20 @@ cell_manager:
     # Initial immune density, value in [0, 1]
     # With this probability, a cell is initialized as immune, however, only if
     # it is susceptible (determined via p_susceptible)
-    p_immune: 0.001
+    p_immune: &p_immune 0.001
+
+    # The cell specific probability p_transmit to transmit the desease to other
+    # cells. This parameter sets the initial value for each cell. 
+    # This probability can be manipulated using the transmit_control to either
+    # manipulate it for all cell or for a subset of cells at specified times.
+    # This allows for example to set some cells to be superspreader.
+    p_transmit: &p_transmit 
+      mode: value
+      value:
+        default: 1.
+      uniform:
+        range: [0., 1.]
+
 
 # --- Model Dynamics ----------------------------------------------------------
 # NOTE that the default parameters below are chosen according to the
@@ -41,9 +54,14 @@ cell_manager:
 # system.
 p_susceptible: 0
 
-# Probability to be immune per transition to susceptible via p_susceptible
-# Effect there, but minimal compared to immunity e.g. through  recovery 
-p_immune: 0.001
+# Probability to be immune per transition from an empty to a susceptible cell 
+# via p_susceptible.
+p_immune: *p_immune
+
+# Cell specific probability to be transmit the disease per transition 
+# from an empty to a susceptible cell via p_susceptible. This sets the cell 
+# state `p_transmit` used in the model dynamics.
+p_transmit: *p_transmit
 
 # Probability per site and time step for a susceptible cell to not become infected if
 # an infected cell is in the neighborhood. This probability applies per event
@@ -149,6 +167,33 @@ immunity_control:
   # To disable, pass an empty sequence.
   change_p_immune: []
 
+# --- Transmit Control --------------------------------------------------------
+# Transmit control to investigate the time-dependent influence of actively  
+# changing decease transmition probabilities. Note that transmit control is 
+# applied at the beginning of an iteration step after the exposure and immunity 
+# control. It's effect is seen in the following time step
+transmit_control:
+  enabled: false
+  # Change the probability to transmit a decease of a number of randomly 
+  # selected exposed or infected cells.
+  # The expected value is a list of mappings
+  # change_p_transmit: 
+  #   - time: 10
+  #     num_cells: 6
+  #     cell_kind: susceptible
+  #     p_transmit: 0.5
+  #   - time: 42
+  #     num_cells: 2
+  #     cell_kind: exposed
+  #     p_transmit: 0.
+  # ... will set p_transmit from the default value to .5 for 6 randomly selected
+  # susceptible cells at time 10 and set it to 0. for 2 randomly 
+  # selected exposed cells at time 42. 
+  # If num_cells exceeds the current number of present cells with the specified
+  # kind all of them are chosen to reset their p_transmit value.
+  # To disable, pass an empty sequence.
+  change_p_transmit: []
+  
 # --- Heterogeneities ---------------------------------------------------------
 # Some cells can be permanently infected or turned into stones.
 # Both these features are using the `select_entities` interface; consult the

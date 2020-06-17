@@ -33,6 +33,73 @@ enum class Kind : char
     COUNT = 8,
 };
 
+/// Parse the Kind of a cell from a kind name
+/** This function takes a string as name and translates it to the corresponding
+ *  enum class Kind.
+ */
+auto parse_kind = [](const std::string& kind_name) {
+    if (kind_name == "empty") {
+        return Kind::empty;
+    }
+    else if (kind_name == "susceptible") {
+        return Kind::susceptible;
+    }
+    else if (kind_name == "exposed") {
+        return Kind::exposed;
+    }
+    else if (kind_name == "infected") {
+        return Kind::infected;
+    }
+    else if (kind_name == "recovered") {
+        return Kind::recovered;
+    }
+    else if (kind_name == "deceased") {
+        return Kind::deceased;
+    }
+    else if (kind_name == "source") {
+        return Kind::source;
+    }
+    else if (kind_name == "stone") {
+        return Kind::stone;
+    }
+    else {
+        throw std::invalid_argument(
+            "Invalid kind name! Need be a valid cell "
+            "kind. Valid options: 'empty', 'susceptible', 'exposed', "
+            "'infected', 'recovered', 'deceased', 'source', or 'stone'."
+            " Was: " +
+            kind_name);
+    }
+};
+
+/// Initialize p_transmit from a configuration node.
+template<typename RNG>
+double initialize_p_transmit(const DataIO::Config& cfg,
+                             const std::shared_ptr<RNG>& rng)
+{
+    const auto mode = get_as<std::string>("mode", cfg);
+
+    if (mode == "value") {
+        // Return the default value
+        return get_as<double>("default", get_as<DataIO::Config>("value", cfg));
+    }
+    else if (mode == "uniform") {
+        const auto range = get_as<std::pair<double, double>>(
+            "range",
+            get_as<DataIO::Config>("uniform", cfg));
+
+        // Create a uniform real distribution from the specified range
+        std::uniform_real_distribution<double> distr(range.first, range.second);
+
+        // Draw a random number from the range and return it
+        return distr(*rng);
+    }
+    else {
+        throw std::invalid_argument(
+            "Invalid mode! Need be either 'value' or 'uniform', was " + mode);
+    }
+};
+
 /// The full cell struct for the SEIRD model
 struct State
 {
@@ -101,6 +168,10 @@ struct State
                     immune = false;
                 }
             }
+        }
+        // Check if p_transmit is available to set up cell state
+        if (cfg["p_transmit"]) {
+            p_transmit = initialize_p_transmit(cfg["p_transmit"], rng);
         }
     }
 };

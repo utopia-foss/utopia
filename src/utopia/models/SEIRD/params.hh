@@ -2,9 +2,12 @@
 #define UTOPIA_MODELS_SEIRD_PARAMS_HH
 
 #include <queue>
+#include <memory>
 
 #include <utopia/core/types.hh>
 #include <utopia/data_io/cfg_utils.hh>
+
+#include "state.hh"  // for Kind enum
 
 namespace Utopia::Models::SEIRD
 {
@@ -178,6 +181,81 @@ struct ImmunityContParams
         }()} {};
 };
 
+/// Parameters specifying the transmit control
+struct TransmitContParams
+{
+    // -- Type definitions ----------------------------------------------------
+    /// Type of the times queue
+    using TimesQueue = std::queue<std::size_t>;
+
+    /// The type of the change p_transmit tuples
+    using TimesValuesQueue =
+        std::queue<std::tuple<std::size_t, unsigned, Kind, double>>;
+
+    // -- Parameters ----------------------------------------------------
+    /// Whether immunity control is enabled
+    const bool enabled;
+
+    /// Change p_transmit to new value at given times
+    /** Each element of this container provides a tuple of [time,  num_cells,
+     * cell_kind, p_transmit]. If the iteration step (time) of the simulation is
+     * reached p_transmit is set to p_transmit for a subset of num_cells
+     * randomly drawn cells of kind cell_kind.
+     */
+    mutable TimesValuesQueue change_p_transmit;
+
+    /// Configuration constructor
+    /** Construct an TransmitContParams object with required parameters being
+     *  extracted from a configuration node with the same parameter names.
+     */
+    TransmitContParams(const DataIO::Config& cfg) :
+        enabled(get_as<bool>("enabled", cfg)), change_p_transmit {[&]() {
+            // Check the parameter
+            if (not cfg["change_p_transmit"] or
+                not cfg["change_p_transmit"].size()) {
+                // Key did not exist or was empty; return empty queue.
+                return TimesValuesQueue {};
+            }
+            else if (not cfg["change_p_transmit"].IsSequence()) {
+                // Inform about bad type of the given configuration entry
+                throw std::invalid_argument(
+                    "Parameter change_p_transmit need be "
+                    "a sequence of tuples, but was not! Given transmit control "
+                    "parameters:\n" +
+                    DataIO::to_string(cfg));
+            }
+
+            // Create the container with Kind as type in the third place
+            // and fill it up with the
+            std::vector<std::tuple<std::size_t, unsigned, Kind, double>> cont;
+            for (const auto& cfg_item :
+                 get_as<DataIO::Config>("change_p_transmit", cfg)) {
+                const auto time      = get_as<std::size_t>("time", cfg_item);
+                const auto num_cells = get_as<unsigned>("num_cells", cfg_item);
+                const auto cell_kind =
+                    parse_kind(get_as<std::string>("cell_kind", cfg_item));
+                const auto p_transmit = get_as<double>("p_transmit", cfg_item);
+
+                cont.emplace_back(time, num_cells, cell_kind, p_transmit);
+            }
+
+            // Sort such that low times are in the beginning of the queue
+            std::sort(cont.begin(),
+                      cont.end(),
+                      [](const auto& a, const auto& b) {
+                          return std::get<0>(a) < std::get<0>(b);
+                      });
+
+            // Copy elements into the queue
+            TimesValuesQueue q {};
+            for (const auto& v : cont) {
+                q.push(v);
+            }
+
+            return q;
+        }()} {};
+};
+
 /// Parameters of the SEIRD
 struct Params
 {
@@ -226,6 +304,9 @@ struct Params
     /// Immunity control parameters
     const ImmunityContParams immunity_control;
 
+    /// Transmit control parameters
+    const TransmitContParams transmit_control;
+
     /// Construct the parameters from the given configuration node
     Params(const DataIO::Config& cfg) :
         p_susceptible(get_as<double>("p_susceptible", cfg)),
@@ -240,7 +321,8 @@ struct Params
         move_away_from_infected(get_as<bool>("move_away_from_infected", cfg)),
         p_move_randomly(get_as<double>("p_move_randomly", cfg)),
         exposure_control(get_as<DataIO::Config>("exposure_control", cfg)),
-        immunity_control(get_as<DataIO::Config>("immunity_control", cfg))
+        immunity_control(get_as<DataIO::Config>("immunity_control", cfg)),
+        transmit_control(get_as<DataIO::Config>("transmit_control", cfg))
     {
         if ((p_susceptible > 1) or (p_susceptible < 0)) {
             throw std::invalid_argument(

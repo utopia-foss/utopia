@@ -393,6 +393,56 @@ class SEIRD : public Model<SEIRD, CDTypes>
         }
     }
 
+    /// Apply transmit control
+    /** Change the transmitting probability p_transmit for a subset of
+     *  cells of a specified kind if the iteration step matches the ones
+     *  specified in the configuration. The parameter ``p_transmit`` is changed
+     *  to a new value at given times for a number of randomly chosen cells of
+     *  specified kins. This can happen multiple times. Parameter:
+     *  ``change_p_transmit``
+     */
+    void transmit_control()
+    {
+        // Change p_transmit if the iteration step matches the ones
+        // specified in the configuration. This leads to constant time
+        // lookup.
+        if (not _params.transmit_control.change_p_transmit.empty()) {
+            // Extract parameters
+            const auto change_p_transmit =
+                _params.transmit_control.change_p_transmit.front();
+
+            const auto iteration_step = std::get<0>(change_p_transmit);
+            const auto num_cells      = std::get<1>(change_p_transmit);
+            const auto cell_kind      = std::get<2>(change_p_transmit);
+            const auto p_transmit     = std::get<3>(change_p_transmit);
+
+            if (this->_time == iteration_step) {
+                // Select cells that are of desired kind
+                const auto cells_pool =
+                    _cm.select_cells<SelectionMode::condition>(
+                        [&](const auto& cell) {
+                            return (cell->state.kind == cell_kind);
+                        });
+
+                // Sample cells from the pool and ...
+                CellContainer sample {};
+                std::sample(cells_pool.begin(),
+                            cells_pool.end(),
+                            std::back_inserter(sample),
+                            num_cells,
+                            *this->_rng);
+
+                // ... and change p_transmit for the sampled cells
+                for (const auto& cell : sample) {
+                    cell->state.p_transmit = p_transmit;
+                }
+
+                // Done. Can now remove the element from the queue.
+                _params.transmit_control.change_p_transmit.pop();
+            }
+        }
+    }
+
     // .. Rule functions ......................................................
 
     /// Define the update rule
@@ -443,6 +493,12 @@ class SEIRD : public Model<SEIRD, CDTypes>
                     state.immune = false;
                 }
 
+                // Initialize the probability p_transmit of the cell from
+                // the configuration node
+                state.p_transmit = initialize_p_transmit(
+                    get_as<DataIO::Config>("p_transmit", this->_cfg),
+                    this->_rng);
+
                 // The new susceptible cell does not yet have recoveries
                 state.num_recoveries = 0;
 
@@ -474,18 +530,22 @@ class SEIRD : public Model<SEIRD, CDTypes>
                     // Go through neighbor cells (according to Neighborhood
                     // type) and check if they are infected
                     // (or an infection source).
-                    // If yes, expose cell with the probability
-                    // 1-p_random_immunity.
+                    // If yes, expose the cell with the probability p_transmit
+                    // given by the neighbor's cell state if no random immunity
+                    // given by p_random_immunity occurs.
                     for (const auto& nb : this->_cm.neighbors_of(cell)) {
                         // Get the neighbor cell's state
                         const auto& nb_state = nb->state;
 
-                        // TODO Include Kind::exposed?
                         if (nb_state.kind == Kind::infected or
+                            nb_state.kind == Kind::exposed or
                             nb_state.kind == Kind::source) {
-                            // With a certain probability, become exposed
-                            if (_prob_distr(*this->_rng) >
-                                _params.p_random_immunity) {
+                            // With the probability given by the neighbors cell
+                            // p_transmit become exposed if no random immunity
+                            // occurs
+                            if (_prob_distr(*this->_rng) <
+                                ((1. - _params.p_random_immunity) *
+                                 nb_state.p_transmit)) {
                                 state.kind = Kind::exposed;
                                 return state;
                             }
@@ -688,6 +748,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Apply immunity control if enabled
         if (_params.immunity_control.enabled) {
             immunity_control();
+        }
+
+        // Apply transmit control if enabled
+        if (_params.transmit_control.enabled) {
+            transmit_control();
         }
 
         // Apply the update rule to all cells.
