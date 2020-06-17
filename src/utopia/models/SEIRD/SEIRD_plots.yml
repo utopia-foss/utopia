@@ -3,12 +3,62 @@
 # --- Plot of all densities over time -----------------------------------------
 densities:
   based_on: densities
-  
-# --- Create a phase plot of two densities ------------------------------------
-phase_diagram_SI:
+
+
+# --- Distribution plots ------------------------------------------------------
+age_distribution/final:
+  based_on: [age_distribution, style.prop_cycle.seird]
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+    # Select the last time step
+    - .isel: [!dag_prev , {time: -1}]
+      tag: counts
+
+  helpers:
+    set_title:
+      title: Final Age Distribution
+
+
+age_distribution/time_series:
+  based_on: [age_distribution, style.prop_cycle.seird, .animation.ffmpeg]
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        normalize: false  # optional. Default: false
+      tag: counts
+
+  # Represent the time dimension as frames of the animation
+  frames: time
+
+
+age_distribution/deceased:
+  based_on: [age_distribution, style.prop_cycle.deceased]
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        compute_for_kinds: [deceased]
+    - print
+    - .sum: [!dag_prev , time]
+    - print: !dag_prev
+      tag: counts
+
+  helpers:
+    set_title:
+      title: Deceased Age Distribution
+
+
+# --- Phase diagrams from two densities ---------------------------------------
+phase_diagram/SI:
   based_on: phase_diagram
 
-  # Select from what densities to create the phase diagram
+  # Select from which densities to create the phase diagram
   x: susceptible
   y: infected
 
@@ -16,17 +66,10 @@ phase_diagram_SI:
     set_labels:
       x: Susceptible Density [1/A]
       y: Infected Density [1/A]
-    set_limits:
-      x: [0, max]
-      y: [0, max]
 
-  # Parameters that are passed on to plot.scatter
-  s: 10
-
-phase_diagram_SE:
+phase_diagram/SE:
   based_on: phase_diagram
 
-  # Select from what densities to create the phase diagram
   x: susceptible
   y: exposed
 
@@ -34,17 +77,10 @@ phase_diagram_SE:
     set_labels:
       x: Susceptible Density [1/A]
       y: Exposed Density [1/A]
-    set_limits:
-      x: [0, max]
-      y: [0, max]
 
-  # Parameters that are passed on to plot.scatter
-  s: 10
-
-phase_diagram_EI:
+phase_diagram/EI:
   based_on: phase_diagram
 
-  # Select from what densities to create the phase diagram
   x: exposed
   y: infected
 
@@ -52,12 +88,7 @@ phase_diagram_EI:
     set_labels:
       x: Exposed Density [1/A]
       y: Infected Density [1/A]
-    set_limits:
-      x: [0, max]
-      y: [0, max]
 
-  # Parameters that are passed on to plot.scatter
-  s: 10
 
 # --- Snapshots and animations of the spatial grid ----------------------------
 # NOTE These are both based on the snapshot base plots and add the remaining
@@ -73,6 +104,7 @@ CA_snapshot:
 CA:
   based_on: [CA_snapshot, .ca.state.anim_ffmpeg]
 
+
 # ... The CA age ..........................................................
 CA_age_snapshot:
   based_on: CA_age_snapshot
@@ -82,6 +114,7 @@ CA_age_snapshot:
 CA_age:
   based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg]
 
+
 # ... The clusters ............................................................
 clusters_snapshot:
   based_on: clusters_snapshot
@@ -90,6 +123,7 @@ clusters_snapshot:
 
 clusters:
   based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
+
 
 # --- Miscellaneous -----------------------------------------------------------
 # ... Combined plot of CA states and clusters .............................

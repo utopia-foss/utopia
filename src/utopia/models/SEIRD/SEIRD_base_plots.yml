@@ -1,7 +1,7 @@
 # Base configuration for SEIRD model plots
 ---
-# -- Help configurations ------------------------------------------------------
-colors:
+# -- Shared Definitions -------------------------------------------------------
+_cmap: &cmap
   empty: &color_empty darkkhaki
   susceptible: &color_susceptible forestgreen
   exposed: &color_exposed darkorange
@@ -10,6 +10,27 @@ colors:
   deceased: &color_deceased black
   source: &color_source maroon
   stone: &color_stone moccasin
+
+_style:
+  constrained_layout: &constrained_layout
+    figure.constrained_layout.use: true
+
+# .. Property cycles ..........................................................
+# Using these as base configurations allows to have consistent kind colors
+style.prop_cycle.seird:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
+      # NOTE The fstr has to match the order of the compute_for_kinds argument
+      #      of the SEIRD.compute_age_distribution operation
+      cmap: *cmap
+
+style.prop_cycle.deceased:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[deceased]:}'])"
+      cmap: *cmap
+
 
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
@@ -26,6 +47,12 @@ phase_diagram:
   helpers:
     set_title:
       title: Phase Diagram
+    set_limits:
+      x: [0, ~]
+      y: [0, ~]
+
+  # Parameters that are passed on to plt.scatter
+  s: 10
 
 
 # -- Densities plot -----------------------------------------------------------
@@ -104,13 +131,38 @@ densities:
       loc: best
 
 
+# --- Distributions -----------------------------------------------------------
+
+age_distribution:
+  based_on:
+    - .default_style_and_helpers
+    - .creator.universe
+    - .dag.generic.histogram
+
+  select:
+    age: age
+    kind: kind
+  dag_options:
+    select_path_prefix: data/SEIRD
+
+  x: age
+  hue: kind
+
+  helpers:
+    set_labels:
+      x: Age
+      y: Counts
+    set_title:
+      title: Age Distribution
+
+
 # --- Grid Snapshots ----------------------------------------------------------
 # NOTE These can also be used as basis for grid animations.
-# ... The CA ..............................................................
+# ... The CA ..................................................................
 CA_snapshot:
   based_on: .ca.state
   model_name: SEIRD
-  
+
   to_plot:
     kind:
       title: ""
@@ -126,7 +178,10 @@ CA_snapshot:
         source: *color_source
         stone: *color_stone
 
-# ... The CA age ..........................................................
+  style:
+    <<: [*constrained_layout]
+
+# ... The CA age ..............................................................
 CA_age_snapshot:
   based_on: .ca.state
   model_name: SEIRD
@@ -152,3 +207,6 @@ clusters_snapshot:
     cluster_id:
       - where: ['!=', 0]       # 0 is masked: not part of a cluster
       - mod: 20                # ... to match the tab20 color map
+
+  style:
+    <<: [*constrained_layout]

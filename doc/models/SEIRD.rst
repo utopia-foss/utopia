@@ -6,7 +6,7 @@ This is a simple model combining concepts and ideas from the well known `SEIR (S
 
 Fundamentals
 ------------
-We model a population of agents on a two-dimensional grid of cells that can move randomly or away of infected agents. Each cell can be in one of the following different states: 
+We model a population of agents on a two-dimensional grid of cells that can move randomly or away from infected agents. Each cell can be in one of the following states: 
 
 - ``empty``: there is no agent on the cell
 - ``susceptible``: the agent on the cell is healthy but susceptible to the disease and can be exposed if in contact with the disease
@@ -24,16 +24,15 @@ The implementation allows for a range of different storylines by changing the pa
 
 Update Rules
 ^^^^^^^^^^^^
-Each time step the cells update their respective states according to the
-following rules:
+Each time step the cells update their respective states asynchronously but randomly shuffled to reduce artifacts according to the following rules:
 
 1. A living (susceptible, exposed, infected, or recovered) cell becomes empty with probability ``p_empty``.
 2. An ``empty`` cell turns into a ``susceptible`` one with probability ``p_susceptible``. With probability ``p_immune`` the cell is ``immune`` to being infected.
-3. A ``susceptible`` cell either randomly becomes exposed with probability ``p_exposure`` or becomes exposed with probability ``1-p_random_immunity`` if a neighboring cell is ``exposed`` or ``infected``if the cell is _not_ ``immune``.
-4. An ``exposed`` cell becomes ``infected`` after an ``incubation_period``.
+3. A ``susceptible`` cell either becomes randomly exposed with probability ``p_exposure`` or becomes exposed with probability ``p_transmit * (1 - p_random_immunity)`` if a neighboring cell is ``exposed`` or ``infected`` with ``p_transmit`` being the neighboring cell's probability of transmitting the disease. Disease transmission happens only if the cell is _not_ ``immune``.
+4. An ``exposed`` cell becomes ``infected`` with probability ``p_infected``.
 5. An ``infected`` cell recovers with probability ``p_recover`` and becomes ``immune``, becomes ``deceased`` with probability ``p_decease``, or else stays infected.
-6. A ``recovered`` cell can lose its immunity with ``p_lose_immunity`` and becomes ``susceptible`` again 
-7. A ``deceased`` cell turns into an ``empty`` cell
+6. A ``recovered`` cell can lose its immunity with ``p_lose_immunity`` and becomes ``susceptible`` again.
+7. A ``deceased`` cell turns into an ``empty`` cell.
 
 Movement
 ^^^^^^^^
@@ -63,6 +62,12 @@ Via the ``exposure_control`` parameter in the model configuration, additional ex
 
 The exposures are introduced before the update rule above is carried out.
 
+Transmit Control
+^^^^^^^^^^^^^^^^
+Via the ``transmit_control`` parameter in the model configuration, the cell-specific state ``p_transmit`` can be manipulated.
+
+The cell state manipulation happens before the update rule above is carried out.
+
 Data Output
 ^^^^^^^^^^^
 The following data is stored alongside the simulation:
@@ -78,7 +83,7 @@ The following data is stored alongside the simulation:
    * ``6``: ``source``, is constantly ignited
    * ``7``: ``stone``, does not take part in any interaction 
 
-* ``age``: the age of each cell, reset after a cell gets empty or deceases
+* ``age``: the age of each cell, reset after a cell gets empty
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-living cells. Recovered cells do not count into it.
 * ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
 * ``exposed_time``: the time steps a living cell is already exposed to the disease for each cell
