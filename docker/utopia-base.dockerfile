@@ -13,24 +13,32 @@ FROM ubuntu:$UBUNTU_VERSION
 LABEL maintainer="Utopia Developers <utopia-dev@iup.uni-heidelberg.de>"
 
 # install dependencies
-RUN apt-get update \
+RUN export DEBIAN_FRONTEND=noninteractive; \
+    export DEBCONF_NONINTERACTIVE_SEEN=true; \
+    echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections; \
+    echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections; \
+    apt-get update -y \
     && apt-get install -y \
-        cmake \
+        tzdata \
+    && apt-get install -y \
         curl \
-        doxygen \
-        gcc \
-        g++ \
-        clang \
-        gfortran \
+        locales \
+        pkg-config \
         git \
+        cmake \
+        doxygen \
+        gcc-10 \
+        g++-10 \
+        gfortran-10 \
+        clang \
         libarmadillo-dev \
         libboost-dev \
         libboost-test-dev \
         libhdf5-dev \
         libspdlog-dev \
+        # NOTE: Clang package currently depends on wrong lib version
+        libstdc++-10-dev \
         libyaml-cpp-dev \
-        locales \
-        pkg-config \
         python3-dev \
         python3-pip \
         python3-venv \
@@ -43,6 +51,9 @@ RUN apt-get update \
     && apt-get clean
 # NOTE Not all packages above are _required_ by Utopia; some are added for
 #      convenience in downstream images, like: vim and nano
+
+# Make CMake use GCC 10 as compiler
+ENV CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10
 
 # manage locales
 RUN rm -rf /var/lib/apt/lists/* \
