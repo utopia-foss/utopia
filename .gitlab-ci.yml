@@ -153,6 +153,7 @@ setup:utopia-base:
   only:
     - master
     - web
+    - 27-parallelize-synchronous-apply_rule-2
   script:
     - docker build -f docker/utopia-base.dockerfile
                    -t $BASE_IMAGE
