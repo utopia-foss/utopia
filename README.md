@@ -72,7 +72,7 @@ _Note:_ If you have [Anaconda][Anaconda] installed, you already have a working P
 However, notice that there might be issues during [the configuration step](#4-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
-##### On Ubuntu (19.10)
+##### On Ubuntu (20.04)
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
@@ -299,6 +299,27 @@ The [Sphinx][Sphinx]-built user documentation will then be located at `build/doc
 The C++ [doxygen][doxygen]-documentation can be found at `build/doc/doxygen/html/`.
 Open the respective `index.html` files to browse the documentation.
 
+### Choosing a different compiler
+CMake will inspect your system paths and use the default compiler.
+You can use the `CC` and `CXX` environment variables to select a specific C and C++ compiler, respectively.
+As compiler paths are cached by CMake, changing the compiler requires you to delete the `build` directory and re-run CMake.
+
+Ubuntu 20.04 LTS (Focal Fossa), for example, provides GCC 9 and GCC 10.
+To use GCC 10, first install it via APT:
+
+```bash
+apt update && apt install gcc-10 g++-10
+```
+
+Then create the build directory, enter it, and set the `CC` and `CXX` environment variables when calling CMake:
+
+```bash
+mkdir build && cd build
+CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake ..
+```
+
+Alternatively, you can `export` these variables in separate bash commands before executing CMake.
+
 ### Build Types
 If you followed the instructions above, you have a `Release` build which is
 optimized for maximum performance. If you need to debug, you should reconfigure
@@ -482,25 +503,23 @@ of it.
 
 ## Dependencies
 
-| Software             | Version    | Comments                    |
-| -------------------- | ---------- | --------------------------- |
-| GCC                  | >= 9       | Full C++17 support required |
-| _or:_ clang          | >= 9       | Full C++17 support required |
-| _or:_ Apple LLVM     | >= 9       | Full C++17 support required |
-| [CMake][cmake]       | >= 3.13    | ‡ |
-| pkg-config           | >= 0.29    | |
-| [HDF5][HDF5]         | >= 1.10.4  | ‡ |
-| [Boost][Boost]       | >= 1.67    | ‡ |
-| [Armadillo][arma]    | >= 9.600   | ‡ |
-| [yaml-cpp][yamlcpp]  | >= 0.6.2   | ‡ |
-| [spdlog][spdlog]     | >= 1.3     | ‡ |
-| [Python3][Python3]   | >= 3.7     | ‡ |
+| Software             | Required Version    | Tested Version  | Comments                    |
+| -------------------- | ------------------- | --------------- | --------------------------- |
+| GCC                  | >= 9                | 10              | Full C++17 support required |
+| _or:_ clang          | >= 9                | 10.0            | Full C++17 support required |
+| _or:_ Apple LLVM     | >= 9                |                 | Full C++17 support required |
+| [CMake][cmake]       | >= 3.13             | 3.16            | |
+| pkg-config           | >= 0.29             | 0.29            | |
+| [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
+| [Boost][Boost]       | >= 1.67             | 1.71            | |
+| [Armadillo][arma]    | >= 9.600            | 9.800           | |
+| [yaml-cpp][yamlcpp]  | >= 0.6.2            | 0.6.2           | |
+| [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |
+| [Python3][Python3]   | >= 3.6              | 3.8.2           | |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
-The version numbers noted above are those made available by the Ubuntu release that Utopia is tested against.
-Only version requirements that are marked with a `‡` are _enforced_ by the Utopia build system.
-
-If you encounter difficulties with any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
+Currently, Utopia is tested against the packages provided by **Ubuntu 20.04**.
+However the above version _requirements_ (i.e., those _enforced_ by the build system) can be fulfilled also with Ubuntu 19.10.
 
 To get Utopia running on a system with an earlier Ubuntu version, the above dependencies still need to be fulfilled.
 You can use the [Ubuntu Package Search][Ubuntu-packages] to find the versions available on your system.
@@ -508,6 +527,7 @@ If a required version is not available, private package repositories may help to
 
 If you cannot achieve these dependencies on your current installation, there is the option to use the Utopia [support branches](#support-branches), which provide compatibility with earlier versions of selected dependencies.
 
+If you encounter difficulties with the installation procedure for any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
 
 
 #### Python

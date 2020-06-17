@@ -773,10 +773,6 @@ Container select_entities(const Manager& mngr,
         throw std::invalid_argument("Argument p_attach needs to be a "
             "probability, i.e. be in interval [0., 1.]!");
     }
-    if (num_passes < 0) {
-        throw std::invalid_argument("Argument num_passes needs to be a "
-            "positive value or zero!");
-    }
 
     mngr.log()->debug("Selecting cell clusters ... (p_seed: {}, p_attach: {}, "
                       "num_passes: {})", p_seed, p_attach, num_passes);

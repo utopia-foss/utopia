@@ -151,13 +151,13 @@
     writer_kwargs:
       frames:
         saving:
-          dpi: 92
-      
+          dpi: 254
+
       ffmpeg:
         init:
           fps: 10
         saving:
-          dpi: 92
+          dpi: 254
 
 
 # .. .ca.state specializations for different animation writers ................
@@ -233,7 +233,7 @@
 .time_series.density:
   creator: universe
   universes: all
-  
+
   module: .time_series
   plot_func: density
 
@@ -247,7 +247,7 @@
 .time_series.densities:
   creator: universe
   universes: all
-  
+
   module: .time_series
   plot_func: densities
 
@@ -262,7 +262,7 @@
 .time_series.phase_space:
   creator: universe
   universes: all
-  
+
   module: .time_series
   plot_func: phase_space
 
@@ -325,7 +325,7 @@
 .dag.generic.facet_grid:
   module: dantro.plot_creators.ext_funcs.generic
   plot_func: facet_grid
-  
+
   helpers:
     <<: *default_helpers
   style:
