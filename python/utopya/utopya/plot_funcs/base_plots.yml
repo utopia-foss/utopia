@@ -3,7 +3,7 @@
 # The names of the configuration entries should follow a module path naming
 # scheme, i.e. what is specified for the `module` and `plot_func` keys.
 ---
-# -- Definition of default helpers and styles ---------------------------------
+# -- Defaults -----------------------------------------------------------------
 # .. A config with defaults styles and helpers ................................
 # This can be used then creating a model plot and desiring default styles that
 # are consistent with the utopya plot functions' styles
@@ -24,6 +24,41 @@
   helpers:
     save_figure:
       dpi: 254
+
+
+# .. Default parameters for creators ..........................................
+.creator.universe:
+  creator: universe
+  universes: all
+
+.creator.multiverse:
+  creator: multiverse
+
+
+# .. Default parameters for animations ........................................
+.animation.frames:
+  file_ext: pdf
+  animation:
+    enabled: true
+    writer: frames
+
+    writer_kwargs: &default_writer_kwargs
+      frames:
+        saving:
+          dpi: 254
+      ffmpeg:
+        init:
+          fps: 10
+        saving:
+          dpi: 254
+
+.animation.ffmpeg:
+  file_ext: mp4
+  animation:
+    enabled: true
+    writer: ffmpeg
+    writer_kwargs: *default_writer_kwargs
+
 
 # -- Basic plots --------------------------------------------------------------
 # .. Basic lineplot from universe data ........................................
@@ -146,20 +181,8 @@
   # All animation configuration for this plot
   animation: &ca_state_animation
     enabled: false  # has to be manually enabled
-
     writer: frames  # assuming ffmpeg is not installed
-
-    # Configuration for each writer
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 254
-
-      ffmpeg:
-        init:
-          fps: 10
-        saving:
-          dpi: 254
+    writer_kwargs: *default_writer_kwargs
 
 
 # .. .ca.state specializations for different animation writers ................
@@ -354,6 +377,20 @@
   style:
     <<: *default_style
 
+
+# .. Distributions ............................................................
+# A histogram plot that supports stacking
+.dag.generic.histogram:
+  creator: universe
+  universes: all
+
+  module: .dag.generic
+  plot_func: histogram
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
 
 # .. Graph plots ..............................................................
 .dag.graph:
