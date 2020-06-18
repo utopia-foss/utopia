@@ -1,0 +1,43 @@
+# Configuration file used to test that the initialization of the model is correct
+---
+
+parameter_space:
+  num_steps: 20
+
+# Load the model config
+  SEIRD: !model
+    model_name: SEIRD  # imports the model config for the CopyMe model
+    cell_manager:
+      grid:
+        resolution: 32
+      cell_params:
+        p_susceptible: 1.
+        p_transmit:
+          mode: value
+          value:
+            default: 0.
+
+    stones:
+      enabled: false
+
+    p_susceptible: 1.
+    p_exposed: 0.1
+    p_infected: 0.0
+    p_deceased: 0.7
+    p_recovered: 0.
+
+    infection_source:
+      enabled: false
+
+    exposure_control:
+      enabled: false
+
+    transmission_control:
+      enabled: true
+
+      change_p_transmit:
+        - time: 5
+          num_cells: 6
+          cell_kind: exposed
+          p_transmit: 1.
+        

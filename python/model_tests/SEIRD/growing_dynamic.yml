@@ -9,7 +9,8 @@ parameter_space:
       grid:
         resolution: 3
     cell_params:
-      p_tree: 0.
+      p_susceptible: 0.
+      p_immune: 0.
 
     stones:
       enabled: false
@@ -17,5 +18,7 @@ parameter_space:
     infection_source:
       enabled: false
     
-    p_growth: 1.
-    p_infect: 0.
+    p_susceptible: 1.
+    p_immune: 0.
+    p_random_immunity: 0.
+    p_exposure: 0.

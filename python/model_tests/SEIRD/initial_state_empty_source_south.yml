@@ -4,14 +4,17 @@ parameter_space:
   num_steps: 23
 
   SEIRD:
+    space:
+      periodic: false
+
     cell_manager:
       grid:
         resolution: 32
-    cell_params:
-      p_tree: 0
+      cell_params:
+        p_susceptible: 0
 
-    p_infect: 0.
-    p_growth: 0.
+    p_susceptible: 0.
+    p_exposure: 0.
 
     stones: 
       enabled: false

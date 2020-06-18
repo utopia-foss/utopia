@@ -8,7 +8,7 @@ parameter_space:
       grid:
         resolution: 32
     cell_params:
-      p_tree: 0
+      p_susceptible: 0
 
     stones:
       enabled: true

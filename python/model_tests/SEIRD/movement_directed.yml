@@ -1,0 +1,37 @@
+# Configuration file used to test that the initialization of the model is
+# correct
+---
+parameter_space:
+  num_steps: 11
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 32
+
+      cell_params:
+        # Have a quite dense susceptible cell concentration
+        p_susceptible: 0.4
+
+    # No dynamics
+    p_susceptible: 0.1
+    p_immune: 0.
+    p_transmit:
+      mode: value
+      value:
+        default: 1.
+    p_random_immunity: 0.
+    p_exposure: 0.01
+    p_infected: 1.
+    p_recover: 0.
+    p_decease: 0.
+    p_empty: 0
+
+    stones:
+      enabled: false
+    
+    infection_source:
+      enabled: false
+      
+    p_move_randomly: 0.
+    move_away_from_infected: true

@@ -2,7 +2,7 @@
 # correct
 ---
 parameter_space:
-  num_steps: 0
+  num_steps: 3
 
   SEIRD:
     cell_manager:
@@ -10,7 +10,18 @@ parameter_space:
         resolution: 32
 
       cell_params:
-        p_susceptible: 0
+        p_susceptible: 0.1
+
+    # No dynamics
+    p_susceptible: 0
+    p_immune: 0.
+    p_transmit: 0.
+    p_random_immunity: 0.
+    p_exposure: 0.
+    p_infected: 0.
+    p_recover: 0.
+    p_decease: 0.
+    p_empty: 0
 
     stones:
       enabled: false
@@ -18,3 +29,4 @@ parameter_space:
     infection_source:
       enabled: false
       
+    p_move_randomly: 0.5

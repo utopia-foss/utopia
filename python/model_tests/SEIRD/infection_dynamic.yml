@@ -5,12 +5,20 @@ parameter_space:
   num_steps: 3
 
   SEIRD:
+    space:
+      periodic: false
+
     cell_manager:
       grid:
-        resolution: 3
-    
-    cell_params:
-      p_tree: 0.
+        resolution: 4
+      
+      cell_params:
+        p_susceptible: 0.
+        p_immune: 0.
+        p_transmit:
+          mode: value
+          value: 
+            default: 1.
 
     stones:
       enabled: false
@@ -18,6 +26,8 @@ parameter_space:
     infection_source:
       enabled: true
 
-    p_growth: 1
+    p_susceptible: 1
     p_immunity: 0
-    p_infect: 0
+    p_random_immunity: 0
+    p_exposure: 0.
+    p_infected: 1.
