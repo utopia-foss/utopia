@@ -7,8 +7,8 @@ parameter_space:
     cell_manager:
       grid:
         resolution: 32
-    cell_params:
-      p_tree: 0
+      cell_params:
+        p_tree: 0
 
     p_infect: 0.
     p_growth: 0.
