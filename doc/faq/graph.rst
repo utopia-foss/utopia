@@ -110,7 +110,7 @@ YAML file looks like this:
       #                     connected to the vertex at the opposite location.
       # "ErdosRenyi"        Create a random graph using the Erdös-Rényi model
       # "WattsStrogatz"     Create a small-world graph using the Watts-Strogatz
-      #                     model
+      #                     model (for directed graphs, rewiring of in_edges)
       # "BarabasiAlbert"    Create a scale-free graph using the Barabási-Albert 
       #                     model (for undirected graphs)
       # "BollobasRiordan"   Create a scale-free graph using the Bollobas-Riordan
