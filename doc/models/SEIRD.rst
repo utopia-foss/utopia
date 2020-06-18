@@ -62,8 +62,8 @@ Via the ``exposure_control`` parameter in the model configuration, additional ex
 
 The exposures are introduced before the update rule above is carried out.
 
-Transmit Control
-^^^^^^^^^^^^^^^^
+Transmission Control
+^^^^^^^^^^^^^^^^^^^^
 Via the ``transmission_control`` parameter in the model configuration, the cell-specific state ``p_transmit`` can be manipulated.
 
 The cell state manipulation happens before the update rule above is carried out.

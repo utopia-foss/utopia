@@ -81,7 +81,7 @@ p_infected: 0.2
 # Probability to recover if infected
 # Note that p_recovered + p_deceased need to be smaller than 1
 # The default is set to 1/14=0.0714, modeling that, on average, infection
-# takes place for 14 days.
+# require approximately 14 days to go away.
 p_recovered: 0.0714
 
 # Probability to decease if the cell is infected
@@ -103,13 +103,13 @@ p_empty: 0
 # common influenca virus with roughly one year. However, there are studies
 # suggesting that especially for light Covid-19 infections, new infections
 # can happen with a probably non-negligable rate.
-# The given default tries to roughly incorporate and estiate both effects.
+# The given default tries to roughly incorporate and estimate both effects.
 p_lose_immunity: 0.01
 
 # ... Movement ...............................................................
 # Whether to allow cells to move away from infected neighboring cells
 # If a neighbor is infected a cell searches for a random empty neighboring
-# place and moves towards it. If there is no space do nothing
+# place and moves towards it. If there is no space do nothing.
 move_away_from_infected: false
 
 # Probability to move in a random direction
@@ -172,8 +172,8 @@ immunity_control:
 
 
 # --- Transmission Control ----------------------------------------------------
-# Transmit control to investigate the time-dependent influence of actively
-# changing decease transmition probabilities. Note that transmit control is
+# Transmission control to investigate the time-dependent influence of actively
+# changing decease transmition probabilities. Note that transmission control is
 # applied at the beginning of an iteration step after the exposure and immunity
 # control. It's effect is seen in the following time step
 transmission_control:
