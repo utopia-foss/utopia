@@ -18,7 +18,7 @@ struct ExposureContParams
     /// Type of the times queue
     using TimesQueue = std::queue<std::size_t>;
 
-    /// The type of the change p_exposure pairs
+    /// The type of the change p_exposed pairs
     using TimesValuesQueue = std::queue<std::pair<std::size_t, double>>;
 
     // -- Parameters ----------------------------------------------------
@@ -36,7 +36,7 @@ struct ExposureContParams
      *   If the iteration step (time) of the simulation is reached
      *   p_expose is set to new_value
      */
-    mutable TimesValuesQueue change_p_expose;
+    mutable TimesValuesQueue change_p_exposed;
 
     /// Configuration constructor
     /** Construct an ExposureContParams object with required parameters being
@@ -59,24 +59,24 @@ struct ExposureContParams
 
             return q;
         }()},
-        change_p_expose {[&]() {
+        change_p_exposed {[&]() {
             // Check the parameter
-            if (not cfg["change_p_expose"] or
-                not cfg["change_p_expose"].size()) {
+            if (not cfg["change_p_exposed"] or
+                not cfg["change_p_exposed"].size()) {
                 // Key did not exist or was empty; return empty queue.
                 return TimesValuesQueue {};
             }
-            else if (not cfg["change_p_expose"].IsSequence()) {
+            else if (not cfg["change_p_exposed"].IsSequence()) {
                 // Inform about bad type of the given configuration entry
                 throw std::invalid_argument(
-                    "Parameter change_p_expose need be "
+                    "Parameter change_p_exposed need be "
                     "a sequence of pairs, but was not! Given infection control "
                     "parameters:\n" +
                     DataIO::to_string(cfg));
             }
 
             auto cont = get_as<std::vector<std::pair<std::size_t, double>>>(
-                "change_p_expose",
+                "change_p_exposed",
                 cfg);
 
             // Sort such that times low times are in the beginning of the queue
@@ -265,13 +265,13 @@ struct Params
     /// Probability per transition to susceptible via p_susceptible to be immune
     mutable double p_immune;
 
-    /// Probability per site and time step for a tree cell to not become
-    /// infected if an infected cell is in the neighborhood.
+    /// Probability per site and time step for a susceptible cell to not become
+    /// exposed if an exposed or infected cell is in the neighborhood.
     const double p_random_immunity;
 
     /// Probability per susceptible cell and  time step to transition to exposed
     /// state
-    mutable double p_exposure;
+    mutable double p_exposed;
 
     /// Probability per exposed cell and time step to transition to infected
     /// state
@@ -281,10 +281,10 @@ struct Params
     mutable double p_infected;
 
     /// Probability for a cell to recover
-    double p_recover;
+    double p_recovered;
 
     /// Probability for a cell to desease
-    double p_decease;
+    double p_deceased;
 
     /// Probability for a cell to become empty
     double p_empty;
@@ -305,24 +305,24 @@ struct Params
     const ImmunityContParams immunity_control;
 
     /// Transmit control parameters
-    const TransmitContParams transmit_control;
+    const TransmitContParams transmission_control;
 
     /// Construct the parameters from the given configuration node
     Params(const DataIO::Config& cfg) :
         p_susceptible(get_as<double>("p_susceptible", cfg)),
         p_immune(get_as<double>("p_immune", cfg)),
         p_random_immunity(get_as<double>("p_random_immunity", cfg)),
-        p_exposure(get_as<double>("p_exposure", cfg)),
+        p_exposed(get_as<double>("p_exposed", cfg)),
         p_infected(get_as<double>("p_infected", cfg)),
-        p_recover(get_as<double>("p_recover", cfg)),
-        p_decease(get_as<double>("p_decease", cfg)),
+        p_recovered(get_as<double>("p_recovered", cfg)),
+        p_deceased(get_as<double>("p_deceased", cfg)),
         p_empty(get_as<double>("p_empty", cfg)),
         p_lose_immunity(get_as<double>("p_lose_immunity", cfg)),
         move_away_from_infected(get_as<bool>("move_away_from_infected", cfg)),
         p_move_randomly(get_as<double>("p_move_randomly", cfg)),
         exposure_control(get_as<DataIO::Config>("exposure_control", cfg)),
         immunity_control(get_as<DataIO::Config>("immunity_control", cfg)),
-        transmit_control(get_as<DataIO::Config>("transmit_control", cfg))
+        transmission_control(get_as<DataIO::Config>("transmission_control", cfg))
     {
         if ((p_susceptible > 1) or (p_susceptible < 0)) {
             throw std::invalid_argument(
@@ -346,31 +346,31 @@ struct Params
                 "[0, 1], was " +
                 std::to_string(p_random_immunity));
         }
-        if ((p_exposure > 1) or (p_exposure < 0)) {
-            throw std::invalid_argument("Invalid p_exposure! Need be a value "
+        if ((p_exposed > 1) or (p_exposed < 0)) {
+            throw std::invalid_argument("Invalid p_exposed! Need be a value "
                                         "in range [0, 1], was " +
-                                        std::to_string(p_exposure));
+                                        std::to_string(p_exposed));
         }
         if ((p_infected > 1) or (p_infected < 0)) {
             throw std::invalid_argument("Invalid p_infected! Need be a value "
                                         "in range [0, 1], was " +
                                         std::to_string(p_infected));
         }
-        if ((p_recover > 1) or (p_recover < 0)) {
-            throw std::invalid_argument("Invalid p_recover! Need be a value "
+        if ((p_recovered > 1) or (p_recovered < 0)) {
+            throw std::invalid_argument("Invalid p_recovered! Need be a value "
                                         "in range [0, 1], was " +
-                                        std::to_string(p_recover));
+                                        std::to_string(p_recovered));
         }
-        if ((p_decease > 1) or (p_decease < 0)) {
-            throw std::invalid_argument("Invalid p_decease! Need be a value "
+        if ((p_deceased > 1) or (p_deceased < 0)) {
+            throw std::invalid_argument("Invalid p_deceased! Need be a value "
                                         "in range [0, 1], was " +
-                                        std::to_string(p_decease));
+                                        std::to_string(p_deceased));
         }
-        if (((p_decease + p_recover) > 1)) {
+        if (((p_deceased + p_recovered) > 1)) {
             throw std::invalid_argument(
-                "Invalid p_decease and p_recover! The sum needs to be a value "
+                "Invalid p_deceased and p_recovered! The sum needs to be a value "
                 "smaller than 1, was " +
-                std::to_string(p_decease + p_recover));
+                std::to_string(p_deceased + p_recovered));
         }
         if ((p_empty > 1) or (p_empty < 0)) {
             throw std::invalid_argument("Invalid p_empty! Need be a value "

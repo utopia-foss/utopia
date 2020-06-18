@@ -17,10 +17,10 @@ parameter_space:
       enabled: false
 
     p_susceptible: 1.
-    p_exposure: 0.0
+    p_exposed: 0.0
     p_infected: 1.0
-    p_deceased: 0.7
-    p_recover: 0.
+    p_deceasedd: 0.7
+    p_recovered: 0.
 
     infection_source:
       enabled: false
@@ -32,7 +32,7 @@ parameter_space:
 
       at_times: []
 
-      change_p_expose: 
+      change_p_exposed: 
         - [0, 0.]
         - [10, 0.2]
         - [15, 1.]

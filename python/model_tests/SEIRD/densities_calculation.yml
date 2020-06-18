@@ -21,4 +21,4 @@ parameter_space:
     p_susceptible: 1.
     p_immune: 0.
     p_random_immunity: 0.
-    p_exposure: 0.
+    p_exposed: 0.

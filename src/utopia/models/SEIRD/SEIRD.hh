@@ -33,17 +33,7 @@ using CDTypes = ModelTypes<>;
 
 /// SEIRD model on a grid
 /** In this model, we model the spread of a disease using a SEIRD
- * (susceptible-exposed-infected-recovered-deceased) model on a 2D grid. Each
- * cell can have one of five different states: empty, susceptible, infected,
- * source or empty. Each time step, cells update their state according to the
- * update rules. Empty cells will convert with a certain probability to tress,
- * while susceptibles represent cells that can be infected. Infection can happen
- * either through a neighboring cells, or through random point infection. An
- * infected cells reverts back to empty after one time step. Stones represent
- * cells that can not be infected, therefore represent a blockade for the spread
- * of the infection. Infection sources are cells that continuously spread
- * infection without dying themselves. Different starting conditions, and update
- * mechanisms can be configured.
+ * (susceptible-exposed-infected-recovered-deceased) model on a 2D grid.
  */
 class SEIRD : public Model<SEIRD, CDTypes>
 {
@@ -282,9 +272,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
      *
      *  1.  At specified times (parameter: ``at_times``) a number of additional
      *      exposures is added (parameter: ``num_additional_exposures``)
-     *  2.  The parameter ``p_exposure`` is changed to a new value at given
+     *  2.  The parameter ``p_exposed`` is changed to a new value at given
      *      times. This can happen multiple times.
-     *      Parameter: ``change_p_expose``
+     *      Parameter: ``change_p_exposed``
      */
     void exposure_control()
     {
@@ -319,17 +309,17 @@ class SEIRD : public Model<SEIRD, CDTypes>
             }
         }
 
-        // Change p_exposure if the iteration step matches the ones
+        // Change p_exposed if the iteration step matches the ones
         // specified in the configuration. This leads to constant time lookup.
-        if (not _params.exposure_control.change_p_expose.empty()) {
-            const auto change_p_expose =
-                _params.exposure_control.change_p_expose.front();
+        if (not _params.exposure_control.change_p_exposed.empty()) {
+            const auto change_p_exposed =
+                _params.exposure_control.change_p_exposed.front();
 
-            if (this->_time == change_p_expose.first) {
-                _params.p_exposure = change_p_expose.second;
+            if (this->_time == change_p_exposed.first) {
+                _params.p_exposed = change_p_exposed.second;
 
                 // Done. Can now remove the element from the queue.
-                _params.exposure_control.change_p_expose.pop();
+                _params.exposure_control.change_p_exposed.pop();
             }
         }
     }
@@ -393,7 +383,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         }
     }
 
-    /// Apply transmit control
+    /// Apply transmission control
     /** Change the transmitting probability p_transmit for a subset of
      *  cells of a specified kind if the iteration step matches the ones
      *  specified in the configuration. The parameter ``p_transmit`` is changed
@@ -401,15 +391,15 @@ class SEIRD : public Model<SEIRD, CDTypes>
      *  specified kins. This can happen multiple times. Parameter:
      *  ``change_p_transmit``
      */
-    void transmit_control()
+    void transmission_control()
     {
         // Change p_transmit if the iteration step matches the ones
         // specified in the configuration. This leads to constant time
         // lookup.
-        if (not _params.transmit_control.change_p_transmit.empty()) {
+        if (not _params.transmission_control.change_p_transmit.empty()) {
             // Extract parameters
             const auto change_p_transmit =
-                _params.transmit_control.change_p_transmit.front();
+                _params.transmission_control.change_p_transmit.front();
 
             const auto iteration_step = std::get<0>(change_p_transmit);
             const auto num_cells      = std::get<1>(change_p_transmit);
@@ -438,7 +428,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 }
 
                 // Done. Can now remove the element from the queue.
-                _params.transmit_control.change_p_transmit.pop();
+                _params.transmission_control.change_p_transmit.pop();
             }
         }
     }
@@ -451,8 +441,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
      * - Cells in neighborhood of an infected cell do not get exposed
      *   with the probability p_random_immunity.
      * - Exposed cells become infected cells after a certain incubation period.
-     * - Infected cells die with probability p_decease and become an empty cell
-     *   or they become recovered cells with 1-p_decease.
+     * - Infected cells die with probability p_deceased and become an empty cell
+     *   or they become recovered cells with 1-p_deceased.
      */
     RuleFunc _update = [this](const auto& cell) {
         // Get the current state of the cell and reset its cluster ID
@@ -521,7 +511,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
                 // Determine whether there will be a point infection resulting
                 // in an exposed agent.
-                if (_prob_distr(*this->_rng) < _params.p_exposure) {
+                if (_prob_distr(*this->_rng) < _params.p_exposed) {
                     // Yes, point infection occurred.
                     state.kind = Kind::exposed;
                     return state;
@@ -575,12 +565,12 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // the infected time adds to the total exposed time.
             ++state.exposed_time;
 
-            if (_prob_distr(*this->_rng) < _params.p_recover) {
+            if (_prob_distr(*this->_rng) < _params.p_recovered) {
                 state.kind   = Kind::recovered;
                 state.immune = true;
                 ++state.num_recoveries;
             }
-            else if (_prob_distr(*this->_rng) < _params.p_decease) {
+            else if (_prob_distr(*this->_rng) < _params.p_deceased) {
                 state.kind = Kind::deceased;
                 // Do not reset the cell states here to keep them for
                 // write out and analysis. Resetting happens in the deceased
@@ -751,8 +741,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
         }
 
         // Apply transmit control if enabled
-        if (_params.transmit_control.enabled) {
-            transmit_control();
+        if (_params.transmission_control.enabled) {
+            transmission_control();
         }
 
         // Apply the update rule to all cells.

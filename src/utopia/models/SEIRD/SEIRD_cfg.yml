@@ -33,7 +33,7 @@ cell_manager:
 
     # The cell specific probability p_transmit to transmit the disease to other
     # cells. This parameter sets the initial value for each cell.
-    # This probability can be manipulated using the transmit_control to either
+    # This probability can be manipulated using the transmission_control to either
     # manipulate it for all cell or for a subset of cells at specified times.
     # This allows for example to set some cells to be superspreader.
     p_transmit: &p_transmit
@@ -72,24 +72,24 @@ p_random_immunity: 0.
 
 # Probability per susceptible cell and time step for a random point exposure
 # NOTE This is affected by the exposure control, see below.
-p_exposure: 0.001
+p_exposed: 0.001
 
 # Probability per exposed cell and time step to transition to infected state
 # The default corresponds to a mean incubation period of 5 time steps
 p_infected: 0.2
 
 # Probability to recover if infected
-# Note that p_recover + p_decease need to be smaller than 1
+# Note that p_recovered + p_deceased need to be smaller than 1
 # The default is set to 1/14=0.0714, modeling that, on average, infection
 # takes place for 14 days.
-p_recover: 0.0714
+p_recovered: 0.0714
 
 # Probability to decease if the cell is infected
-# Note that p_recover + p_decease need to be smaller than 1
+# Note that p_recovered + p_deceased need to be smaller than 1
 # The default is set to 2%, approximating the infection fatality rate
 # (see e.g. https://ourworldindata.org/mortality-risk-covid for a rough
 # explanation).
-p_decease: 0.02
+p_deceased: 0.02
 
 # Probability per site and time step to transition to empty
 # As default, there are no living cells vanishing by chance i.e. the system
@@ -140,7 +140,7 @@ exposure_control:
   # ... will set p_expose from the default value to .5 at time 10 and set it
   # back to 0. at time 42.
   # To disable, pass an empty sequence.
-  change_p_expose: []
+  change_p_exposed: []
 
 
 # --- Immunity Control --------------------------------------------------------
@@ -176,7 +176,7 @@ immunity_control:
 # changing decease transmition probabilities. Note that transmit control is
 # applied at the beginning of an iteration step after the exposure and immunity
 # control. It's effect is seen in the following time step
-transmit_control:
+transmission_control:
   enabled: false
   # Change the probability to transmit a decease of a number of randomly
   # selected exposed or infected cells.

@@ -13,10 +13,10 @@ parameter_space:
     stones:
       enabled: false
 
-    p_exposure: 0.
+    p_exposed: 0.
     p_susceptible: 1.
-    p_decease: 1.
-    p_recover: 0.
+    p_deceased: 1.
+    p_recovered: 0.
 
     infection_source:
       enabled: false

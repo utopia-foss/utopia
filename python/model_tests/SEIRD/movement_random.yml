@@ -17,10 +17,10 @@ parameter_space:
     p_immune: 0.
     p_transmit: 0.
     p_random_immunity: 0.
-    p_exposure: 0.
+    p_exposed: 0.
     p_infected: 0.
-    p_recover: 0.
-    p_decease: 0.
+    p_recovered: 0.
+    p_deceased: 0.
     p_empty: 0
 
     stones:

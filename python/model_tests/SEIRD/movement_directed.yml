@@ -21,10 +21,10 @@ parameter_space:
       value:
         default: 1.
     p_random_immunity: 0.
-    p_exposure: 0.01
+    p_exposed: 0.01
     p_infected: 1.
-    p_recover: 0.
-    p_decease: 0.
+    p_recovered: 0.
+    p_deceased: 0.
     p_empty: 0
 
     stones:

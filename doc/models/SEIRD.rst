@@ -28,9 +28,9 @@ Each time step the cells update their respective states asynchronously but rando
 
 1. A living (susceptible, exposed, infected, or recovered) cell becomes empty with probability ``p_empty``.
 2. An ``empty`` cell turns into a ``susceptible`` one with probability ``p_susceptible``. With probability ``p_immune`` the cell is ``immune`` to being infected.
-3. A ``susceptible`` cell either becomes randomly exposed with probability ``p_exposure`` or becomes exposed with probability ``p_transmit * (1 - p_random_immunity)`` if a neighboring cell is ``exposed`` or ``infected`` with ``p_transmit`` being the neighboring cell's probability of transmitting the disease. Disease transmission happens only if the cell is _not_ ``immune``.
+3. A ``susceptible`` cell either becomes randomly exposed with probability ``p_exposed`` or becomes exposed with probability ``p_transmit * (1 - p_random_immunity)`` if a neighboring cell is ``exposed`` or ``infected`` with ``p_transmit`` being the neighboring cell's probability of transmitting the disease. Disease transmission happens only if the cell is _not_ ``immune``.
 4. An ``exposed`` cell becomes ``infected`` with probability ``p_infected``.
-5. An ``infected`` cell recovers with probability ``p_recover`` and becomes ``immune``, becomes ``deceased`` with probability ``p_decease``, or else stays infected.
+5. An ``infected`` cell recovers with probability ``p_recovered`` and becomes ``immune``, becomes ``deceased`` with probability ``p_deceased``, or else stays infected.
 6. A ``recovered`` cell can lose its immunity with ``p_lose_immunity`` and becomes ``susceptible`` again.
 7. A ``deceased`` cell turns into an ``empty`` cell.
 
@@ -64,7 +64,7 @@ The exposures are introduced before the update rule above is carried out.
 
 Transmit Control
 ^^^^^^^^^^^^^^^^
-Via the ``transmit_control`` parameter in the model configuration, the cell-specific state ``p_transmit`` can be manipulated.
+Via the ``transmission_control`` parameter in the model configuration, the cell-specific state ``p_transmit`` can be manipulated.
 
 The cell state manipulation happens before the update rule above is carried out.
 
