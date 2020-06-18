@@ -828,8 +828,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         _dset_age->write(_cm.cells().begin(),
                          _cm.cells().end(),
                          [](const auto& cell) {
-                             return static_cast<unsigned short int>(
-                                 cell->state.age);
+                             return cell->state.age;
                          });
 
         // Identify clusters and write them out
