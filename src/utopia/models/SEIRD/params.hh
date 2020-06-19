@@ -233,7 +233,7 @@ struct TransmitContParams
                 const auto time      = get_as<std::size_t>("time", cfg_item);
                 const auto num_cells = get_as<unsigned>("num_cells", cfg_item);
                 const auto cell_kind =
-                    parse_kind(get_as<std::string>("cell_kind", cfg_item));
+                    kind_from_string.at(get_as<std::string>("cell_kind", cfg_item));
                 const auto p_transmit = get_as<double>("p_transmit", cfg_item);
 
                 cont.emplace_back(time, num_cells, cell_kind, p_transmit);

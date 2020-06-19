@@ -33,43 +33,15 @@ enum class Kind : char
     COUNT = 8,
 };
 
-/// Parse the Kind of a cell from a kind name
-/** This function takes a string as name and translates it to the corresponding
- *  enum class Kind.
- */
-auto parse_kind = [](const std::string& kind_name) {
-    if (kind_name == "empty") {
-        return Kind::empty;
-    }
-    else if (kind_name == "susceptible") {
-        return Kind::susceptible;
-    }
-    else if (kind_name == "exposed") {
-        return Kind::exposed;
-    }
-    else if (kind_name == "infected") {
-        return Kind::infected;
-    }
-    else if (kind_name == "recovered") {
-        return Kind::recovered;
-    }
-    else if (kind_name == "deceased") {
-        return Kind::deceased;
-    }
-    else if (kind_name == "source") {
-        return Kind::source;
-    }
-    else if (kind_name == "stone") {
-        return Kind::stone;
-    }
-    else {
-        throw std::invalid_argument(
-            "Invalid kind name! Need be a valid cell "
-            "kind. Valid options: 'empty', 'susceptible', 'exposed', "
-            "'infected', 'recovered', 'deceased', 'source', or 'stone'."
-            " Was: " +
-            kind_name);
-    }
+/// Map the Kind name given as a string to the actual Kind
+const std::map<const std::string, Kind> kind_from_string {
+    {"susceptible", Kind::susceptible},
+    {"exposed", Kind::exposed},
+    {"infected", Kind::infected},
+    {"recovered", Kind::recovered},
+    {"deceased", Kind::deceased},
+    {"source", Kind::source},
+    {"stone", Kind::stone}
 };
 
 /// Initialize p_transmit from a configuration node.
