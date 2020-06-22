@@ -696,8 +696,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
         // Directly return the state if the cell is of kind empty, source,
         // or inert.
-        if ((state.kind == Kind::empty) or (state.kind == Kind::source) or
-            (state.kind == Kind::inert)) {
+        if ((state.kind == Kind::empty) or
+            (state.kind == Kind::source) or
+            (state.kind == Kind::inert))
+        {
             return state;
         }
 

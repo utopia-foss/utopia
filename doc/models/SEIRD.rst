@@ -2,11 +2,14 @@
 ``SEIRD`` — Model of Susceptible-Exposed-Infected-Recovered-Deceased Contagious Disease Spread
 ==============================================================================================
 
-This is a simple model combining concepts and ideas from the well known `SEIR (Susceptible-Exposed-Infected-Recovered) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SEIR_model>`_ and `SIRD (Susceptible-Infected-Recovered-Deceased) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIRD_model>`_ models adopting them to a spatial 2D grid model. 
+This is a simple model combining concepts and ideas from the well known `SEIR (Susceptible-Exposed-Infected-Recovered) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SEIR_model>`_ and `SIRD (Susceptible-Infected-Recovered-Deceased) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIRD_model>`_ models adopting them to a spatial 2D grid model.
+
+.. _SEIRD_fundamentals:
 
 Fundamentals
 ------------
-We model a population of agents on a two-dimensional grid of cells that can move randomly or away from infected agents. Each cell can be in one of the following states: 
+We model a population of agents on a two-dimensional grid of cells that can move randomly or away from infected agents.
+Each cell can be in one of the following states:
 
 - ``empty``: there is no agent on the cell
 - ``susceptible``: the agent on the cell is healthy but susceptible to the disease and can be exposed if in contact with the disease
@@ -14,14 +17,23 @@ We model a population of agents on a two-dimensional grid of cells that can move
 - ``infected``: the agent on the cell is infected and can infect neighboring agents
 - ``recovered``: the agent on the cell is recovered, thus, it is immune to the disease. However, it can lose its immunity after a while and get susceptible again.
 - ``deceased``: the agent on the cell is deceased. The cell will be empty in the next time step again.
+
+Special Cell States
+^^^^^^^^^^^^^^^^^^^
+Additionally, cells can also have the following "special" states.
+
 - ``source``: the cells are infection sources, thus, they can transition neighboring agents from the susceptible to the exposed state.
-- ``inert``: Inert cells are cells that do not partake in the model dynamics and consequently do not change their state. 
-             They can be used to model spatial heterogeneities for example through clusters or spatial compartmentalization, much like stones in the ForestFire model.
+- ``inert``: Inert cells are cells that do not partake in *any* of the model dynamics.
+  They can be used to model spatial heterogeneities like compartmentalization, much like ``stones`` in the :doc:`Forest Fire model <ForestFire>`.
+
+Cells that are initialized in one of these states should not be regarded as representing agents:
+There is no movement for these cells, nor can these cells change their state.
 
 
 Implementation
 --------------
-The implementation allows for a range of different storylines by changing the parameters. Keep in mind that individual processes can often be disabled by setting probabilities to zero.
+The implementation allows for a range of different storylines by changing the parameters.
+Keep in mind that individual processes can often be disabled by setting probabilities to zero.
 
 Update Rules
 ^^^^^^^^^^^^
@@ -37,43 +49,55 @@ Each time step the cells update their respective states asynchronously but rando
 
 Movement
 ^^^^^^^^
-Each time step the agents on the cells can move to ``empty`` neighboring cells according to the following rules:
+Each time step, the agents on the cells can move to ``empty`` neighboring cells according to the following rules:
 
-1. A living (susceptible, exposed, infected, or recovered) cell moves with probability ``p_move_randomly`` to a randomly chosen ``empty`` neighboring cell if there is any.
+1. A living (susceptible, exposed, infected, or recovered) cell moves with probability ``p_move_randomly`` to a randomly chosen ``empty`` neighboring cell, if there is any.
 2. A living cell moves away from an ``infected`` neighboring cell to a randomly selected neighboring ``empty`` cell if there is any.
+
+.. note::
+
+    Movement is meant to represent an *agent* moving from one cell to another.
+    Thus, the agents also take along their agent-specific properties, ``immune`` and ``p_transmit``.
+
+    This is implemented using a swap operation of the corresponding ``State`` objects.
+
 
 Heterogeneities
 ^^^^^^^^^^^^^^^
 As in the :doc:`Forest Fire model <ForestFire>`, there is the possibility to introduce heterogeneities into the grid that are implemented as two additional possible cell states:
 
-* ``source``: These are constant exposure sources. They spread the infection like normal infected or exposed cells, but don't revert to the empty state. If activated, they are per default on the lower boundary of the grid. 
-* ``inert``: * ``inert``: Inert cells are cells that do not partake in the dynamics of the model, and hence they can be used to represent barriers. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed inert cells whose neighbors have a certain probability to also be inert.
+* ``source``: These are constant exposure sources.
+  They spread the infection like normal infected or exposed cells, but don't revert to the empty state.
+  If activated, they are per default on the lower boundary of the grid.
+* ``inert``: Inert cells are cells that do not partake in the dynamics of the model, and hence they can be used to represent barriers.
+  If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed inert cells whose neighbors have a certain probability to also be inert.
 
 Both make use of the :ref:`entity selection interface <entity_selection>`.
 
 Immunity Control
 ^^^^^^^^^^^^^^^^
-Via the ``immunity_control`` parameter in the model configuration, additional immunities can be introduced at desired times manipulating a cells ``immune`` state. This feature can be used to investigate for example the effect of vaccination.
+Via the ``immunity_control`` parameter in the model configuration, additional immunities can be introduced at desired times manipulating a cells ``immune`` state.
+This feature can be used to investigate for example the effect of vaccination.
 
-The immunities are introduced before the update rule above is carried out.
+The immunities are introduced *before* the update rule above is carried out.
 
 Exposure Control
 ^^^^^^^^^^^^^^^^
 Via the ``exposure_control`` parameter in the model configuration, additional exposures can be introduced at desired times.
 
-The exposures are introduced before the update rule above is carried out.
+The exposures are introduced *before* the update rule above is carried out.
 
 Transmission Control
 ^^^^^^^^^^^^^^^^^^^^
 Via the ``transmission_control`` parameter in the model configuration, the cell-specific state ``p_transmit`` can be manipulated.
 
-The cell state manipulation happens before the update rule above is carried out.
+The cell state manipulation happens *before* the update rule above is carried out.
 
 Data Output
 ^^^^^^^^^^^
 The following data is stored alongside the simulation:
 
-* ``kind``: the state of each cell. Possible values:
+* ``kind``: the :ref:`state of each cell <SEIRD_fundamentals>`:
 
    * ``0``: ``empty``
    * ``1``: ``susceptible``
@@ -81,8 +105,8 @@ The following data is stored alongside the simulation:
    * ``3``: ``infected``
    * ``4``: ``recovered``
    * ``5``: ``deceased``
-   * ``6``: ``source``, is constantly ignited
-   * ``7``: ``inert``, does not take part in any interaction 
+   * ``6``: ``source``, is constantly infectious
+   * ``7``: ``inert``, does not take part in any interaction
 
 * ``age``: the age of each cell, reset after a cell gets empty
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-living cells. Recovered cells do not count into it.
