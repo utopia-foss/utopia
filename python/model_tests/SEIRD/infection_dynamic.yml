@@ -20,7 +20,7 @@ parameter_space:
           value: 
             default: 1.
 
-    stones:
+    inert_cells:
       enabled: false
 
     infection_source:

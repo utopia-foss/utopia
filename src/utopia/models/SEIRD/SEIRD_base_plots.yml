@@ -9,7 +9,7 @@ _cmap: &cmap
   recovered: &color_recovered slategray
   deceased: &color_deceased black
   source: &color_source maroon
-  stone: &color_stone moccasin
+  inert: &color_inert moccasin
 
 _style:
   constrained_layout: &constrained_layout
@@ -111,12 +111,12 @@ densities:
       label: source
       color: *color_source
 
-    stone:
+    inert:
       transform_data:
-        - sel: { kind: stone }
+        - sel: { kind: inert }
       path_to_data: densities
-      label: stone
-      color: *color_stone
+      label: inert
+      color: *color_inert
 
   helpers:
     set_limits:
@@ -176,7 +176,7 @@ CA_snapshot:
         recovered: *color_recovered
         deceased: *color_deceased
         source: *color_source
-        stone: *color_stone
+        inert: *color_inert
 
   style:
     <<: [*constrained_layout]

@@ -24,7 +24,7 @@ enum class Kind : char
     /// Cell is an infection source: constantly infected, spreading infection
     source = 6,
     /// Cell cannot be infected
-    stone = 7,
+    inert = 7,
 
     /// The number of kinds (COUNT)
     /** \attention The COUNT should _always_ be the last member of the enum
@@ -41,7 +41,7 @@ const std::map<const std::string, Kind> kind_from_string {
     {"recovered", Kind::recovered},
     {"deceased", Kind::deceased},
     {"source", Kind::source},
-    {"stone", Kind::stone}
+    {"inert", Kind::inert}
 };
 
 /// Initialize p_transmit from a configuration node.

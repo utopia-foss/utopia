@@ -17,7 +17,7 @@ parameter_space:
           value:
             default: 0.
 
-    stones:
+    inert_cells:
       enabled: false
 
     p_susceptible: 1.

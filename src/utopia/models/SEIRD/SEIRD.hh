@@ -160,28 +160,28 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
         // Cells are already set up by the CellManager.
         // Remaining initialization steps regard only macroscopic quantities,
-        // e.g. the setup of heterogeneities: Stones and infection source.
+        // e.g. the setup of heterogeneities: Inert cells and infection source.
 
-        // Stones
-        if (_cfg["stones"] and get_as<bool>("enabled", _cfg["stones"])) {
-            this->_log->info("Setting cells to be stones ...");
+        // Inert
+        if (_cfg["inert_cells"] and get_as<bool>("enabled", _cfg["inert_cells"])) {
+            this->_log->info("Setting cells to be inert ...");
 
             // Get the container
-            auto to_turn_to_stone = _cm.select_cells(_cfg["stones"]);
+            auto make_inert = _cm.select_cells(_cfg["inert_cells"]);
 
-            // Apply a rule to all cells of that container: turn to stone
+            // Apply a rule to all cells of that container: turn to an inert cell
             apply_rule<Update::async, Shuffle::off>(
                 [](const auto& cell) {
                     auto& state = cell->state;
-                    state.kind  = Kind::stone;
+                    state.kind  = Kind::inert;
                     return state;
                 },
-                to_turn_to_stone);
+                make_inert);
 
-            this->_log->info("Set {} cells to be stones using selection mode "
+            this->_log->info("Set {} cells to be inert using selection mode "
                              "'{}'.",
-                             to_turn_to_stone.size(),
-                             get_as<std::string>("mode", _cfg["stones"]));
+                             make_inert.size(),
+                             get_as<std::string>("mode", _cfg["inert_cells"]));
         }
 
         // Ignite some cells permanently: infection sources
@@ -216,7 +216,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                                                                  "recovered",
                                                                  "deceased",
                                                                  "source",
-                                                                 "stone"});
+                                                                 "inert"});
         this->_log->debug("Added coordinates to densities dataset.");
 
         // Initialization should be finished here.
@@ -284,7 +284,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // Check whether time has come for exposures
             if (this->_time == _params.exposure_control.at_times.front()) {
                 // Select cells that are susceptibles
-                // (not empty, stones, infected, or source)
+                // (not empty, inert, infected, or source)
                 const auto cells_pool =
                     _cm.select_cells<SelectionMode::condition>(
                         [&](const auto& cell) {
@@ -343,7 +343,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // Check whether time has come for immmunities
             if (this->_time == _params.immunity_control.at_times.front()) {
                 // Select cells that are susceptibles
-                // (not empty, exposed, infected, stones, infected, or source)
+                // (not empty, exposed, infected, inert, infected, or source)
                 const auto cells_pool =
                     _cm.select_cells<SelectionMode::condition>(
                         [&](const auto& cell) {
@@ -453,7 +453,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Note that this allows for empty cells to become susceptible directly
         // in the same update step. Having it at the end would, however, create
         // a similar issue with just appearing agents.
-        // Be explicit in the kinds to assure that stones and sources do not
+        // Be explicit in the kinds to assure that inert and sources do not
         // convert to empty cells
         // Note that this could probably be made more efficient through
         // sampling if more performance is needed.
@@ -682,7 +682,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
     };
 
     /// Move randomly to a neighboring cell if that cell is empty
-    /** If the cell is not empty, a stone, or a source move to a neighboring
+    /** If the cell is not empty, an inert cell, or a source move to a neighboring
      *  empty location with probability p_move_randomly. If no neighboring
      * cell is empty do nothing.
      */
@@ -691,9 +691,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
         auto& state = cell->state;
 
         // Directly return the state if the cell is of kind empty, source,
-        // or stone.
+        // or inert.
         if ((state.kind == Kind::empty) or (state.kind == Kind::source) or
-            (state.kind == Kind::stone)) {
+            (state.kind == Kind::inert)) {
             return state;
         }
 
@@ -782,7 +782,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Update densities and write them
         update_densities();
         _dset_densities->write(_densities);
-        // NOTE Although stones and source density are not changing, they
+        // NOTE Although inert cells and source density are not changing, they
         // are
         //      calculated anyway and writing them again is not a big cost
         //      (two doubles) while making analysis much easier.

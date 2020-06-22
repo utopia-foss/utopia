@@ -23,7 +23,7 @@ parameter_space:
     p_deceased: 0.
     p_empty: 0
 
-    stones:
+    inert_cells:
       enabled: false
     
     infection_source:

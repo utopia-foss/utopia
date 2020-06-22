@@ -10,7 +10,7 @@ parameter_space:
     cell_params:
       p_susceptible: 0
 
-    stones: 
+    inert_cells: 
       enabled: true
 
       initialization:

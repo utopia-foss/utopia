@@ -200,12 +200,12 @@ transmission_control:
 
 
 # --- Heterogeneities ---------------------------------------------------------
-# Some cells can be permanently infected or turned into stones.
+# Some cells can be permanently infected or turned into inert cells.
 # Both these features are using the `select_entities` interface; consult the
 # documentation regarding information on available selection modes.
 
-# Turn some cells into stones: these do not take part in any of the processes
-stones:
+# Make some cells inert: these do not take part in any of the processes
+inert_cells:
   enabled: false
   mode: clustered_simple
 
@@ -214,7 +214,7 @@ stones:
   p_attach: .1               # Attachment probability (per neighbor)
   num_passes: 5              # How many attachment procedures to perform
 
-# Set some cells to be permanently infected (invoked after stones are set)
+# Set some cells to be permanently infected (invoked after inert cells are set)
 infection_source:
   enabled: false
   mode: boundary

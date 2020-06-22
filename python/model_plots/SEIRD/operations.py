@@ -17,7 +17,7 @@ STATE_MAP = {
     4 : "recovered",
     5 : "deceased",
     6 : "source",
-    7 : "stone",
+    7 : "inert",
 }
 INV_STATE_MAP = {v: k for k, v in STATE_MAP.items()}
 

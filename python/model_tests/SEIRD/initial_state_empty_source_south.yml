@@ -16,7 +16,7 @@ parameter_space:
     p_susceptible: 0.
     p_exposed: 0.
 
-    stones: 
+    inert_cells: 
       enabled: false
     
     infection_source:

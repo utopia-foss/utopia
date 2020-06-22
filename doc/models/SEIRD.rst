@@ -15,7 +15,8 @@ We model a population of agents on a two-dimensional grid of cells that can move
 - ``recovered``: the agent on the cell is recovered, thus, it is immune to the disease. However, it can lose its immunity after a while and get susceptible again.
 - ``deceased``: the agent on the cell is deceased. The cell will be empty in the next time step again.
 - ``source``: the cells are infection sources, thus, they can transition neighboring agents from the susceptible to the exposed state.
-- ``stones``: the cells are stones, thus, they lie around doing nothing but blocking space on the grid. Stones can be used to model spatial heterogeneities for example through clusters or spatial compartmentalization.
+- ``inert``: Inert cells are cells that do not partake in the model dynamics and consequently do not change their state. 
+             They can be used to model spatial heterogeneities for example through clusters or spatial compartmentalization, much like stones in the ForestFire model.
 
 
 Implementation
@@ -46,7 +47,7 @@ Heterogeneities
 As in the :doc:`Forest Fire model <ForestFire>`, there is the possibility to introduce heterogeneities into the grid that are implemented as two additional possible cell states:
 
 * ``source``: These are constant exposure sources. They spread the infection like normal infected or exposed cells, but don't revert to the empty state. If activated, they are per default on the lower boundary of the grid. 
-* ``stone``: Stones are cells that can't be exposed nor turn into trees. They are used to represent barriers. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed stones whose neighbors have a certain probability to also be a stone.
+* ``inert``: * ``inert``: Inert cells are cells that do not partake in the dynamics of the model, and hence they can be used to represent barriers. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed inert cells whose neighbors have a certain probability to also be inert.
 
 Both make use of the :ref:`entity selection interface <entity_selection>`.
 
@@ -81,7 +82,7 @@ The following data is stored alongside the simulation:
    * ``4``: ``recovered``
    * ``5``: ``deceased``
    * ``6``: ``source``, is constantly ignited
-   * ``7``: ``stone``, does not take part in any interaction 
+   * ``7``: ``inert``, does not take part in any interaction 
 
 * ``age``: the age of each cell, reset after a cell gets empty
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-living cells. Recovered cells do not count into it.

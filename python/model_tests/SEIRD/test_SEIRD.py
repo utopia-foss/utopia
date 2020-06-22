@@ -24,16 +24,16 @@ def test_initial_state_empty():
     # Check if all cells are empty
     assert (grp["kind"] == 0).all()
 
-def test_initial_stones():
+def test_initial_inert():
     """
-    Tests that if stones are activated any cells are "stone".
+    Tests that if inert are activated any cells are "inert".
     """
-    mv, dm = mtc.create_run_load(from_cfg="initial_stones.yml")
+    mv, dm = mtc.create_run_load(from_cfg="initial_inert.yml")
 
     # Get data
     grp = dm['multiverse'][0]['data/SEIRD']
 
-    # Check if any cell is in stone state
+    # Check if any cell is in inert state
     assert (grp["kind"] == 7).any()
 
 def test_initial_state_source_south():
@@ -145,7 +145,7 @@ def test_exposure_control_add_inf():
     recovered = 4
     deceased = 5
     source = 6
-    stones = 7
+    inert = 7
 
     for t in range(20):
         s = data.isel(time=t)
@@ -161,7 +161,7 @@ def test_exposure_control_add_inf():
             assert recovered not in unique 
             assert deceased not in unique 
             assert source not in unique 
-            assert stones not in unique 
+            assert inert not in unique 
 
         # The time step after the exposure control should have a lot fewer
         # susceptible cells than in the previous iteration step because in every 
