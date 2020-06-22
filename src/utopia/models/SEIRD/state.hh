@@ -1,12 +1,17 @@
 #ifndef UTOPIA_MODELS_SEIRD_STATE_HH
 #define UTOPIA_MODELS_SEIRD_STATE_HH
 
+#include <algorithm>
+
 #include <utopia/core/types.hh>
+
 
 namespace Utopia::Models::SEIRD
 {
-/// The kind of the cell: empty, susceptible, exposed, recovered, infected,
-/// source, stone
+
+// -- Kind enum (and related constants) ---------------------------------------
+
+/// The kind of the cell
 enum class Kind : char
 {
     /// Unoccupied
@@ -23,7 +28,7 @@ enum class Kind : char
     deceased = 5,
     /// Cell is an infection source: constantly infected, spreading infection
     source = 6,
-    /// Cell cannot be infected
+    /// Cell does not partake in the dynamics
     inert = 7,
 
     /// The number of kinds (COUNT)
@@ -35,6 +40,7 @@ enum class Kind : char
 
 /// Map the Kind name given as a string to the actual Kind
 const std::map<const std::string, Kind> kind_from_string {
+    {"empty", Kind::empty},
     {"susceptible", Kind::susceptible},
     {"exposed", Kind::exposed},
     {"infected", Kind::infected},
@@ -44,33 +50,40 @@ const std::map<const std::string, Kind> kind_from_string {
     {"inert", Kind::inert}
 };
 
-/// Initialize p_transmit from a configuration node.
-template<typename RNG>
-double initialize_p_transmit(const DataIO::Config& cfg,
-                             const std::shared_ptr<RNG>& rng)
-{
-    const auto mode = get_as<std::string>("mode", cfg);
+/// The inverse of the `kind_from_string` mapping
+/** This can be used to retrieve a string corresponding to a certain Kind value
+  */
+const std::map<const Kind, std::string> string_from_kind =
+    [](){
+        auto sfk = std::map<const Kind, std::string>{};
 
-    if (mode == "value") {
-        // Return the default value
-        return get_as<double>("default", get_as<DataIO::Config>("value", cfg));
-    }
-    else if (mode == "uniform") {
-        const auto range = get_as<std::pair<double, double>>(
-            "range",
-            get_as<DataIO::Config>("uniform", cfg));
+        for (auto i = 0u; i < static_cast<char>(Kind::COUNT); i++) {
+            const Kind kind = static_cast<Kind>(i);
+            const auto item =
+                std::find_if(kind_from_string.begin(), kind_from_string.end(),
+                             [&](const auto& kv){ return kv.second == kind; });
+            sfk[kind] = item->first;
+        }
 
-        // Create a uniform real distribution from the specified range
-        std::uniform_real_distribution<double> distr(range.first, range.second);
+        return sfk;
+    }();
 
-        // Draw a random number from the range and return it
-        return distr(*rng);
-    }
-    else {
-        throw std::invalid_argument(
-            "Invalid mode! Need be either 'value' or 'uniform', was " + mode);
-    }
-};
+/// The associated string names of each Kind enum entry
+/** The indices of this array correspond to the char value used when writing
+  * out data. It thus is a mapping from char to Kind names, which is a mapping
+  * that is useful to have on frontend side.
+  */
+const std::array<std::string, static_cast<char>(Kind::COUNT)> kind_names =
+    [](){
+        auto names = std::array<std::string, static_cast<char>(Kind::COUNT)>{};
+        for (auto i = 0u; i < static_cast<char>(Kind::COUNT); i++) {
+            names[i] = string_from_kind.at(static_cast<Kind>(i));
+        }
+        return names;
+    }();
+
+
+// -- State -------------------------------------------------------------------
 
 /// The full cell struct for the SEIRD model
 struct State
@@ -99,9 +112,15 @@ struct State
 
     /// Construct the cell state from a configuration and an RNG
     template<class RNG>
-    State(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng) :
-        kind(Kind::empty), immune(false), p_transmit(1), exposed_time(0),
-        age(0), num_recoveries(0), cluster_id(0)
+    State(const DataIO::Config& cfg, const std::shared_ptr<RNG>& rng)
+    :
+        kind(Kind::empty),
+        immune(false),
+        p_transmit(1),
+        exposed_time(0),
+        age(0),
+        num_recoveries(0),
+        cluster_id(0)
     {
         // Check if p_susceptible is available to set up cell state
         if (cfg["p_susceptible"]) {
@@ -146,6 +165,38 @@ struct State
             p_transmit = initialize_p_transmit(cfg["p_transmit"], rng);
         }
     }
+
+    /// Initialize p_transmit from a configuration node.
+    template<typename RNG>
+    static double initialize_p_transmit(const DataIO::Config& cfg,
+                                        const std::shared_ptr<RNG>& rng)
+    {
+        const auto mode = get_as<std::string>("mode", cfg);
+
+        if (mode == "value") {
+            // Return the default value
+            return get_as<double>("default",
+                                  get_as<DataIO::Config>("value", cfg));
+        }
+        else if (mode == "uniform") {
+            const auto range = get_as<std::pair<double, double>>(
+                "range",
+                get_as<DataIO::Config>("uniform", cfg));
+
+            // Create a uniform real distribution from the specified range
+            std::uniform_real_distribution<double> distr(range.first,
+                                                         range.second);
+
+            // Draw a random number from the range and return it
+            return distr(*rng);
+        }
+        else {
+            throw std::invalid_argument(fmt::format(
+                "Invalid mode! Need be either 'value' or 'uniform', was '{}'!",
+                mode)
+            );
+        }
+    };
 };
 
 }  // namespace Utopia::Models::SEIRD

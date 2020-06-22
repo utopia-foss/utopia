@@ -59,7 +59,7 @@ p_susceptible: 0
 # via p_susceptible.
 p_immune: *p_immune
 
-# Cell specific probability to be transmit the disease per transition
+# Cell specific probability to transmit the disease set at transition
 # from an empty to a susceptible cell via p_susceptible. This sets the cell
 # state `p_transmit` used in the model dynamics.
 p_transmit: *p_transmit
@@ -128,7 +128,7 @@ exposure_control:
   num_additional_exposures: 10
 
   # Add the additional exposures at the given times
-  # Note the the !listgen tag creates a list from the parameters
+  # Note that the !listgen tag creates a list from the parameters
   # (start, stop, step_size)
   # To disable, pass an empty sequence.
   at_times: !listgen [0, 100, 20]
@@ -155,7 +155,7 @@ immunity_control:
   num_additional_immunities: 10
 
   # Add the additional immunities at the given times
-  # Note the the !listgen tag creates a list from the parameters
+  # Note that the !listgen tag creates a list from the parameters
   # (start, stop, step_size)
   # To disable, pass an empty sequence.
   at_times: !listgen [0, 100, 20]

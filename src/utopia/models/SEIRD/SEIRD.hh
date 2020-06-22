@@ -163,7 +163,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // e.g. the setup of heterogeneities: Inert cells and infection source.
 
         // Inert
-        if (_cfg["inert_cells"] and get_as<bool>("enabled", _cfg["inert_cells"])) {
+        if (_cfg["inert_cells"] and
+            get_as<bool>("enabled", _cfg["inert_cells"]))
+        {
             this->_log->info("Setting cells to be inert ...");
 
             // Get the container
@@ -186,7 +188,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
         // Ignite some cells permanently: infection sources
         if (_cfg["infection_source"] and
-            get_as<bool>("enabled", _cfg["infection_source"])) {
+            get_as<bool>("enabled", _cfg["infection_source"]))
+        {
             this->_log->info("Setting cells to be infection sources ...");
             auto source_cells = _cm.select_cells(_cfg["infection_source"]);
 
@@ -205,19 +208,15 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 get_as<std::string>("mode", _cfg["infection_source"]));
         }
 
+        // Store the kind names (see state.hh) in the dataset attributes.
+        _dset_kind->add_attribute("kind_names", kind_names);
+        this->_log->debug("Stored metadata in 'kind' dataset.");
+
         // Add attributes to density dataset that provide coordinates
         _dset_densities->add_attribute("dim_name__1", "kind");
         _dset_densities->add_attribute("coords_mode__kind", "values");
-        _dset_densities->add_attribute("coords__kind",
-                                       std::vector<std::string> {"empty",
-                                                                 "susceptible",
-                                                                 "exposed",
-                                                                 "infected",
-                                                                 "recovered",
-                                                                 "deceased",
-                                                                 "source",
-                                                                 "inert"});
-        this->_log->debug("Added coordinates to densities dataset.");
+        _dset_densities->add_attribute("coords__kind", kind_names);
+        this->_log->debug("Added coordinates to 'densities' dataset.");
 
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
@@ -441,8 +440,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
      * - Cells in neighborhood of an infected cell do not get exposed
      *   with the probability p_random_immunity.
      * - Exposed cells become infected cells after a certain incubation period.
-     * - Infected cells die with probability p_deceased and become an empty cell
-     *   or they become recovered cells with 1-p_deceased.
+     * - Infected cells die with probability p_deceased and become an empty
+     *   cell or they become recovered cells with 1-p_deceased.
      */
     RuleFunc _update = [this](const auto& cell) {
         // Get the current state of the cell and reset its cluster ID
@@ -458,8 +457,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Note that this could probably be made more efficient through
         // sampling if more performance is needed.
         if ((state.kind == Kind::susceptible) or
-            (state.kind == Kind::exposed) or (state.kind == Kind::infected) or
-            (state.kind == Kind::recovered)) {
+            (state.kind == Kind::exposed) or
+            (state.kind == Kind::infected) or
+            (state.kind == Kind::recovered))
+        {
             if (_prob_distr(*this->_rng) < _params.p_empty) {
                 state.kind           = Kind::empty;
                 state.num_recoveries = 0;
@@ -485,7 +486,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
                 // Initialize the probability p_transmit of the cell from
                 // the configuration node
-                state.p_transmit = initialize_p_transmit(
+                state.p_transmit = State::initialize_p_transmit(
                     get_as<DataIO::Config>("p_transmit", this->_cfg),
                     this->_rng);
 
@@ -529,13 +530,15 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
                         if (nb_state.kind == Kind::infected or
                             nb_state.kind == Kind::exposed or
-                            nb_state.kind == Kind::source) {
+                            nb_state.kind == Kind::source)
+                        {
                             // With the probability given by the neighbors cell
                             // p_transmit become exposed if no random immunity
                             // occurs
                             if (_prob_distr(*this->_rng) <
                                 ((1. - _params.p_random_immunity) *
-                                 nb_state.p_transmit)) {
+                                 nb_state.p_transmit))
+                            {
                                 state.kind = Kind::exposed;
                                 return state;
                             }
@@ -629,13 +632,14 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
         // Perform the percolation
         for (unsigned int i = 0; i < cluster.size(); ++i) {
-            // Iterate over all potential cluster members c, i.e. all
+            // Iterate over all potential cluster members nb, i.e. all
             // neighbors of cell cluster[i] that is already in the cluster
             for (const auto& nb : this->_cm.neighbors_of(cluster[i])) {
                 // If it is a susceptible that is not yet in the cluster, add
                 // it.
                 if (nb->state.cluster_id == 0 and
-                    nb->state.kind == Kind::susceptible) {
+                    nb->state.kind == Kind::susceptible)
+                {
                     nb->state.cluster_id = _cluster_id_cnt;
                     cluster.push_back(nb);
                     // This extends the outer for-loop...
@@ -670,10 +674,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
                         break;
                     }
                 }
-                // It is important to leave the outer loop because the
-                // neighbors container over which it is iterated was
-                // shuffled. This could result in undefined behavior and
-                // breaking code
+                // NOTE It is important to leave the outer loop because the
+                //      neighbors container over which it is iterated was
+                //      shuffled. This could result in undefined behavior and
+                //      breaking code
                 break;
             }
         }
@@ -682,9 +686,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
     };
 
     /// Move randomly to a neighboring cell if that cell is empty
-    /** If the cell is not empty, an inert cell, or a source move to a neighboring
-     *  empty location with probability p_move_randomly. If no neighboring
-     * cell is empty do nothing.
+    /** If the cell is not empty, an inert cell, or a source: move to
+     *  neighboring empty location with probability `p_move_randomly`. If no
+     *  neighboring cell is empty, do nothing.
      */
     RuleFunc _move_randomly = [this](const auto& cell) {
         // Get the state reference to directly manipulate the state
@@ -716,10 +720,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
     };
 
   public:
-    // -- Public Interface
-    // ----------------------------------------------------
-    // .. Simulation Control
-    // ..................................................
+    // -- Public Interface ----------------------------------------------------
+    // .. Simulation Control ..................................................
 
     /// Iterate a single time step
     /** This updates all cells (synchronously) according to the _update
@@ -748,8 +750,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Apply the update rule to all cells.
         apply_rule<Update::sync>(_update, _cm.cells());
         // NOTE The cell state is updated synchronously, i.e.: only after
-        // all cells have been visited and know their state for the next
-        // step
+        // all cells have been visited and know their state for the next step
 
         // Move cells randomly with probability p_move_randomly
         apply_rule<Update::async, Shuffle::on>(_move_randomly,
@@ -774,18 +775,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
     }
 
     /// Write data
-    /** Writes out the cell state and the densities of cells with the states
-     * empty, susceptible, or infected (i.e.: those that may change)
-     */
     void write_data()
     {
         // Update densities and write them
         update_densities();
         _dset_densities->write(_densities);
-        // NOTE Although inert cells and source density are not changing, they
-        // are
-        //      calculated anyway and writing them again is not a big cost
-        //      (two doubles) while making analysis much easier.
 
         // If only the densities are to be written, can stop here.
         if (_write_only_densities) {
