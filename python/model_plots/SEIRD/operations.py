@@ -8,27 +8,6 @@ import xarray as xr
 from dantro.utils.data_ops import count_unique
 
 
-# Available states
-STATE_MAP = {
-    0 : "empty",
-    1 : "susceptible",
-    2 : "exposed",
-    3 : "infected",
-    4 : "recovered",
-    5 : "deceased",
-    6 : "source",
-    7 : "inert",
-}
-INV_STATE_MAP = {v: k for k, v in STATE_MAP.items()}
-
-DEFAULT_AGE_DISTRIBUTION_KINDS = (
-    'susceptible',
-    'exposed',
-    'infected',
-    'recovered',
-    'deceased',
-)
-
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
@@ -38,7 +17,8 @@ def compute_age_distribution(
     age: xr.DataArray,
     kind: xr.DataArray,
     coarsen_by: int = 1,
-    compute_for_kinds: Sequence[str] = DEFAULT_AGE_DISTRIBUTION_KINDS,
+    compute_for_kinds: Sequence[str] = ('susceptible', 'exposed', 'infected',
+                                        'recovered', 'deceased',),
     count_over: Sequence[str] = ('x', 'y'),
     normalize: bool=False
 ) -> xr.DataArray:
@@ -61,10 +41,16 @@ def compute_age_distribution(
             Note that ``age`` coordinates represent the lower *edge* of their
             respective bin.
     """
+    # Retrieve the inverse state map (name -> int) from the `kind` dataset
+    state_map = list(kind.attrs['kind_names'])
+    assert len(state_map) == 8  # sanity check
+    inv_state_map = {k: v for v, k in enumerate(state_map)}
+
+    # The dataset to store distributions in
     dists = xr.Dataset()
 
     for kind_str in compute_for_kinds:
-        kind_id = INV_STATE_MAP[kind_str]
+        kind_id = inv_state_map[kind_str]
 
         # Get the ages for this kind
         age_for_this_kind = age.where(kind == kind_id)
