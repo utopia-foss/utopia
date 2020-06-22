@@ -138,22 +138,22 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
         // Create the dataset for the densities; shape is known
         _dset_densities(
-            this->create_dset("densities", {static_cast<char>(Kind::COUNT)})),
+            this->create_dset("densities", {static_cast<char>(Kind::COUNT)}, 3)),
 
         // Create dataset for cell states
-        _dset_kind(this->create_cm_dset("kind", _cm)),
+        _dset_kind(this->create_cm_dset("kind", _cm, 3)),
 
         // Create dataset for cell immune state
-        _dset_immune(this->create_cm_dset("immune", _cm)),
+        _dset_immune(this->create_cm_dset("immune", _cm, 3)),
 
         // Create dataset for cell num_recoveries state
-        _dset_num_recoveries(this->create_cm_dset("num_recoveries", _cm)),
+        _dset_num_recoveries(this->create_cm_dset("num_recoveries", _cm, 3)),
 
         // Create dataset for susceptible age
-        _dset_age(this->create_cm_dset("age", _cm)),
+        _dset_age(this->create_cm_dset("age", _cm, 3)),
 
         // Create dataset for cluster id
-        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm))
+        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm, 3))
     {
         // Make sure the densities are not undefined
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
