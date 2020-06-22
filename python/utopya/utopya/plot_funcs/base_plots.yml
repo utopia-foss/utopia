@@ -136,6 +136,13 @@
 
   file_ext: pdf
 
+  default_imshow_kwargs:
+    interpolation: 'none'
+
+  # Can use constrained layout, because axis labels don't change
+  style:
+    figure.constrained_layout.use: true
+
   helpers:
     <<: *default_helpers
     # NOTE As the PlotHelper.save_figure method is _not_ invoked during
@@ -151,13 +158,13 @@
     writer_kwargs:
       frames:
         saving:
-          dpi: 254
+          dpi: 96
 
       ffmpeg:
         init:
           fps: 10
         saving:
-          dpi: 254
+          dpi: 96
 
 
 # .. .ca.state specializations for different animation writers ................

@@ -1,5 +1,6 @@
 """This module provides plotting functions to visualize cellular automata."""
 
+import copy
 import logging
 from typing import Union, Dict, Callable
 
@@ -12,6 +13,7 @@ from matplotlib.colors import ListedColormap
 from .. import DataManager, UniverseGroup
 from ..plotting import UniversePlotCreator, PlotHelper, is_plot_func
 from ..dataprocessing import transform
+from ..tools import recursive_update
 
 
 # Get a logger
@@ -32,13 +34,14 @@ def state(dm: DataManager, *,
           to_plot: dict,
           time_idx: int,
           transform_data: dict=None, transformations_log_level: int=10,
-          preprocess_funcs: Dict[str, Callable]=None):
-    """Plots the state of the cellular automaton as a 2D heat map. 
+          preprocess_funcs: Dict[str, Callable]=None,
+          default_imshow_kwargs: dict=None):
+    """Plots the state of the cellular automaton as a 2D heat map.
     This plot function can be used for a single plot, but also supports
     animation.
-    
+
     Which properties of the state to plot can be defined in ``to_plot``.
-    
+
     Args:
         dm (DataManager): The DataManager that holds all loaded data
         uni (UniverseGroup): The currently selected universe, parsed by the
@@ -51,6 +54,7 @@ def state(dm: DataManager, *,
             navigate to data of submodels. Each of these keys is expected to
             hold yet another dict, supporting the following configuration
             options (all optional):
+
                 - cmap (str or dict): The colormap to use. If it is a dict, a
                     discrete colormap is assumed. The keys will be the labels
                     and the values the color. Association happens in the order
@@ -58,6 +62,8 @@ def state(dm: DataManager, *,
                 - title (str): The title for this sub-plot
                 - limits (2-tuple, list): The fixed heat map limits of this
                     property; if not given, limits will be auto-scaled.
+                - **imshow_kwargs: passed on to imshow invocation
+
         time_idx (int): Which time index to plot the data of. Is ignored when
             creating an animation.
         transform_data (dict, optional): Transformations to apply to the data.
@@ -75,7 +81,10 @@ def state(dm: DataManager, *,
             by implementing another plot function, which defines this dict and
             passes it to this function.
             NOTE If possible, use ``transform_data``.
-    
+        default_imshow_kwargs (dict, optional): The default parameters passed
+            to the underlying imshow plotting function. These are updated by
+            the values given via ``to_plot``.
+
     Raises:
         ValueError: Shape mismatch of data selected by ``to_plot``
 
@@ -95,7 +104,7 @@ def state(dm: DataManager, *,
             log.warning("Received both arguments `transform_data` and "
                         "`preprocess_funcs`! Will perform first the "
                         "transformations, then the additional preprocessing.")
-        
+
         if transform_data:
             data = transform(data, *transform_data.get(prop_name, {}),
                              log_level=transformations_log_level)
@@ -112,7 +121,7 @@ def state(dm: DataManager, *,
                       **cbar_kwargs):
         """Helper function to plot a property on a given axis and return
         an imshow object
-        
+
         Args:
             prop_name (str): The property to plot
             data (xr.DataArray): The array-like data to plot as image
@@ -124,10 +133,10 @@ def state(dm: DataManager, *,
                 markings (ticks and tick labels)
             imshow_kwargs (dict, optional): Passed to plt.imshow
             **cbar_kwargs: Passed to fig.colorbar
-        
+
         Returns:
             imshow object
-        
+
         Raises:
             TypeError: For invalid ``cmap`` argument.
         """
@@ -148,17 +157,20 @@ def state(dm: DataManager, *,
                             "discrete colormap. Was: {} with value: '{}'"
                             "".format(type(cmap), cmap))
 
-        # Fill imshow_kwargs
+        # Fill imshow_kwargs, using defaults
         imshow_kwargs = imshow_kwargs if imshow_kwargs else {}
+        imshow_kwargs = recursive_update(copy.deepcopy(imshow_kwargs),
+                                         default_imshow_kwargs
+                                         if default_imshow_kwargs else {})
         if limits:
-            imshow_kwargs = dict(vmin=limits[0], vmax=limits[1],
-                                 **imshow_kwargs)
+            imshow_kwargs['vmin'] = limits[0]
+            imshow_kwargs['vmax'] = limits[1]
 
         # Create imshow object on the currently selected axis
         im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
                             origin='lower', aspect='equal',
                             **imshow_kwargs)
-        
+
         # Parse additional colorbar kwargs and set some default values
         add_cbar_kwargs = dict()
         if 'fraction' not in cbar_kwargs:
@@ -184,10 +196,9 @@ def state(dm: DataManager, *,
         if no_cbar_markings:
             cbar.set_ticks([])
             cbar.ax.set_yticklabels([])
-        
+
         # Remove main axis labels and ticks
         hlpr.ax.axis('off')
-        # TODO should be done by helper
 
         # Provide configuration options to plot helper
         hlpr.provide_defaults('set_title',
@@ -207,7 +218,7 @@ def state(dm: DataManager, *,
         raise ValueError("Shape mismatch of properties {}: {}! Cannot plot."
                          "".format(", ".join(to_plot.keys()), shapes))
 
-    # Can now be sure they all have the same shape, 
+    # Can now be sure they all have the same shape,
     # so its fine to take the first shape to extract the number of steps
     num_steps = shapes[0][0]  # TODO use xarray
 
@@ -227,14 +238,14 @@ def state(dm: DataManager, *,
 
         # Get the data for this time step
         data = prepare_data(prop_name, all_data=all_data, time_idx=time_idx)
-        
+
         # In the first time step create a new imshow object
         ims[prop_name] = plot_property(prop_name, data=data, **props)
 
     # End of single frame CA state plot function ..............................
     # NOTE The above variables are all available below, but the update function
     #      is supposed to start plotting from frame 0.
-    
+
     def update_data():
         """Updates the data of the imshow objects"""
         log.info("Plotting animation with %d frames of %d %s each ...",
