@@ -21,6 +21,12 @@ def basic_sc():
                             name="wall timeout")
 
 @pytest.fixture
+def false_true_sc():
+    return sc.StopCondition(to_check=[dict(func=lambda _: False),
+                                      dict(func=lambda _: True)],
+                            name="false and true")
+
+@pytest.fixture
 def task() -> WorkerTask:
     """Generates a WorkerTask object, manipulating it somewhat to act as a
     mock object.
@@ -40,16 +46,16 @@ def test_init():
 
     # Empty should also work
     sc.StopCondition(to_check=[])
-    
+
     # These should fail
     # no to_check argument
     with pytest.raises(TypeError, match="Need at least one of the required"):
         sc.StopCondition()
-    
+
     # invalid function name
     with pytest.raises(ImportError, match="Could not find a callable named"):
         sc.StopCondition(to_check=[dict(func="I am not a function.")])
-    
+
     # non-callable
     with pytest.raises(TypeError, match="Given `func` needs to be a callable"):
         sc.StopCondition(to_check=[dict(func=123.456)])
@@ -79,18 +85,48 @@ def test_representer():
         assert f.getvalue() == ("!stop-condition {func: timeout_wall, "
                                 "seconds: 123}\n")
 
-def test_magic_methods(basic_sc):
+def test_magic_methods(basic_sc, false_true_sc):
     """Tests magic methods of the StopCond class."""
-    str(basic_sc)
+    assert basic_sc.description is None
+    s1 = str(basic_sc)
+    assert basic_sc.name in s1
 
-def test_fulfilled(basic_sc, task):
+    # with description
+    basic_sc.description = "foo bar"
+    s2 = str(basic_sc)
+    assert s1 != s2
+    assert basic_sc.name in s2
+    assert basic_sc.description in s2
+
+    # with multiple to_check
+    s3 = str(false_true_sc)
+    assert false_true_sc.name in s3
+
+    # without name: auto-generating one
+    sc4 = sc.StopCondition(to_check=[dict(func=lambda _: False),
+                                     dict(func=lambda _: True)])
+    assert "&&" in str(sc4)
+
+def test_fulfilled(basic_sc, false_true_sc, task):
     """Tests magic methods of the StopCond class."""
-    # Test if it is fulfilled (should always be the case when using the fixtures)
+    assert not basic_sc.fulfilled_for
+
+    # Test if it is fulfilled (should always be the case for the fixture)
     assert basic_sc.fulfilled(task) is True
+    assert task in basic_sc.fulfilled_for
 
     # Disable it: should now be false
     basic_sc.enabled = False
     assert basic_sc.fulfilled(task) is False
+
+    # Task is still in the set, because it was checked previously
+    assert task in basic_sc.fulfilled_for
+
+    # Test with a stop condition that has multiple to_check entries
+    sc = false_true_sc
+    assert not sc.fulfilled_for
+    assert not false_true_sc.fulfilled(task)
+    assert not sc.fulfilled_for
 
 
 # Tests of the stop condition methods -----------------------------------------

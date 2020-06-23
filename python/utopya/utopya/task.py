@@ -137,7 +137,7 @@ class Task:
             callbacks (Dict[str, Callable], optional): A dict of callback funcs
                 that are called at different points of the life of this task.
                 The function gets passed as only argument this task object.
-            progress_func (Callable, optional): Invoked by the `progress`
+            progress_func (Callable, optional): Invoked by the ``progress``
                 property and used to calculate the progress given the current
                 task object as argument
         """

@@ -2,7 +2,7 @@
 
 These all get passed the worker process, information and additional kwargs.
 
-Required signature:  (task: WorkerTask, **kws) -> bool
+Required signature:  ``(task: WorkerTask, **kws) -> bool``
 """
 
 import logging
@@ -26,7 +26,7 @@ OPERATORS = {
 
 # -----------------------------------------------------------------------------
 
-def timeout_wall(task, *, seconds: float) -> bool:
+def timeout_wall(task: 'WorkerTask', *, seconds: float) -> bool:
     """Checks the wall timeout of the given worker
 
     Args:
@@ -38,7 +38,8 @@ def timeout_wall(task, *, seconds: float) -> bool:
     """
     return bool((time.time() - task.profiling['create_time']) > seconds)
 
-def check_monitor_entry(task, *, entry_name: str, operator: str, value: float) -> bool:
+def check_monitor_entry(task: 'WorkerTask', *, entry_name: str,
+                        operator: str, value: float) -> bool:
     """Checks if a monitor entry compares in a certain way to a given value
 
     Args:

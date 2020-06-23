@@ -1,11 +1,24 @@
+# Test configuration for stop conditions#
+#
+# NOTE This is literalincluded into the docs!
 ---
 run_kwargs:
-  # A list of StopCondition objects to check during the run _for each worker_
+  # The total timeout (in seconds) for finishing _all_ simulations
+  timeout: !expr 60*60*24   # 24h in this case. Default: None
+
+  # A list of StopCondition objects to check during the run _for each worker_.
   # The entries of the following list are OR-connected, i.e. it suffices that
-  # one is fulfilled for the corresponding worker to be stopped
+  # one is fulfilled for the corresponding worker to be stopped.
   stop_conditions:
+    # First condition (using the shortest possible syntax)
     - !stop-condition
-      name: single simulation timeout
+      func: timeout_wall
+      seconds: 0.4
+      # further arguments to utopya.stopcond_funcs.timeout_wall
+
+    # Second condition (for showcasing the long syntax)
+    - !stop-condition
+      name: single simulation timeout (in long syntax)
       description: terminates a worker if it ran for too long
       enabled: true
       to_check:
@@ -15,8 +28,14 @@ run_kwargs:
           # will look for utopya.stopcond_funcs.timeout_wall method
           seconds: 0.4
           # further arguments to utopya.stopcond_funcs.timeout_wall
+
+    # Third condition: Terminating depending on a monitor entry
     - !stop-condition
-      name: single simulation timeout (in short syntax)
-      func: timeout_wall
-      seconds: 0.4
-      # further arguments to utopya.stopcond._sc_timeout_wall
+      name: extinction
+      description: terminates a simulation if entity density goes to zero
+      to_check:
+        - func: check_monitor_entry
+          entry_name: MyModel.density   # TODO set your monitor entry name here
+          operator: <=
+          value: 0.
+          # Will stop if: {monitor entry} <= 0.

@@ -1001,8 +1001,11 @@ class WorkerManagerReporter(Reporter):
             parts += [""]
 
         # If stop conditions were fulfilled, inform about those
-        if self.wm.stopped_tasks:
-            _task_names = lambda sc: sorted([t.name for t in sc.fulfilled_for])
+        if self.wm.stop_conditions:
+            def task_names(sc: set) -> str:
+                if not sc.fulfilled_for:
+                    return "(None)"
+                return ", ".join(sorted([t.name for t in sc.fulfilled_for]))
 
             parts += ["Stop Conditions"]
             parts += ["---------------"]
@@ -1012,7 +1015,7 @@ class WorkerManagerReporter(Reporter):
                       "following stop conditions:"]
             parts += [""]
             parts += [f"  {sc}\n"
-                      f"      {', '.join(_task_names(sc))}\n"
+                      f"      {task_names(sc)}\n"
                       for sc in self.wm.stop_conditions]
             parts += [""]
             parts += [""]

@@ -47,6 +47,20 @@ def test_task_init():
         t = Task(name="foo")
         t.name = "bar"
 
+def test_task_progress():
+    # No progess after init
+    assert Task().progress == 0.
+
+    # Bad progress function
+    t = Task(progress_func=lambda _: 1.01)
+    with pytest.raises(ValueError, match="value outside"):
+        t.progress
+
+    # Valid progress function
+    t._progress_func = lambda _: 0.5
+    assert t.progress == 0.5
+
+
 def test_task_sorting(tasks):
     """Tests whether different task objects are sortable"""
     # Put into a normal list, as the TaskList does not support sorting

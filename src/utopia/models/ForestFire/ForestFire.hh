@@ -483,11 +483,7 @@ public:
         );
     }
 
-    /// Provide monitoring data: tree density and number of clusters
-    /** \details The monitored data relies on tracking data variables
-     *           that need not correspond exactly to the actual value at this
-     *           time. They are calculated before the writing them out.
-     */
+    /// Provide monitoring information to the frontend: `tree_density`
     void monitor () {
         this->_monitor.set_entry("tree_density", calculate_tree_density());
     }

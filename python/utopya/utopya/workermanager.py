@@ -436,6 +436,8 @@ class WorkerManager:
             ValueError: For invalid (i.e., negative) timeout value
             WorkerManagerTotalTimeout: Upon a total timeout
         """
+        log.progress("Preparing to work ...")
+
         # Determine timeout arguments
         if timeout:
             if timeout <= 0:
@@ -444,8 +446,6 @@ class WorkerManager:
 
             # Already calculate the time after which a timeout would be reached
             self.times['timeout'] = time.time() + timeout
-
-            log.debug("Set timeout time to now + %f seconds", timeout)
 
         # Set the variable needed for checking; if above condition was not
         # fulfilled, this will be None
@@ -462,9 +462,16 @@ class WorkerManager:
         poll_no = 0
         self.times['start_working'] = dt.now()
 
+        # Inform about timeout and stop conditions
+        if timeout:
+            _to_fstr = "%X" if timeout < 60*60*12 else "%X, %d.%m.%y"
+            _to_at = dt.fromtimestamp(timeout_time).strftime(_to_fstr)
+        log.note("  Timeout:         %s", "None" if not timeout
+                 else f"{_to_at} (in {format_time(timeout)})")
+        log.note("  Stop conditions: %s", "None" if not stop_conditions
+                 else ", ".join([sc.name for sc in stop_conditions]))
+
         log.hilight("Starting to work ...")
-        log.debug("  Timeout:             now + %ss", timeout)
-        log.debug("  Stop conditions:     %s", stop_conditions)
 
         # Keep track of the stop condition objects
         if stop_conditions:
@@ -796,11 +803,11 @@ class WorkerManager:
         can just add an exception object to it and they get handled during
         working of the WorkerManager.
 
-        Currently, this method handles the following exception types in a
-        specific manner:
+        This method handles the following exception types in a specific manner:
 
-            - ``WorkerTaskStopConditionFulfilled``
-            - ``WorkerTaskNonZeroExit``
+            - ``WorkerTaskStopConditionFulfilled``: never raising or logging
+            - ``WorkerTaskNonZeroExit``: raising or logging depending on the
+              value of the ``nonzero_exit_handling`` property
 
         Returns:
             None
@@ -840,12 +847,9 @@ class WorkerManager:
                           "raising!")
                 raise exc
 
-            # NOTE: can check for other exception types here, but will need
-            # restructuring/encapsulation of the part below ...
-
             log.debug("Handling %s ...", exc.__class__.__name__)
 
-            # Take care of stop conditions, which do not need to be raised
+            # Take care of stop conditions, which do NOT need to be raised
             if isinstance(exc, WorkerTaskStopConditionFulfilled):
                 continue
 

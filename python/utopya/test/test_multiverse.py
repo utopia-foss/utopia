@@ -22,6 +22,7 @@ USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
 BASE_PLOTS_PATH = resource_filename('test', 'cfg/base_plots.yml')
 UPDATE_BASE_PLOTS_PATH = resource_filename('test', 'cfg/update_base_plots.yml')
 SWEEP_CFG_PATH = resource_filename('test', 'cfg/sweep_cfg.yml')
+STOP_COND_CFG_PATH = resource_filename('test','cfg/stop_conds_integration.yml')
 CLUSTER_MODE_CFG_PATH = resource_filename('test', 'cfg/cluster_mode_cfg.yml')
 
 # Fixtures ----------------------------------------------------------------
@@ -253,6 +254,14 @@ def test_multiple_runs_not_allowed(mv_kwargs):
     # Another run should not be possible
     with pytest.raises(RuntimeError, match="Could not add simulation task"):
         mv.run_single()
+
+def test_stop_conditions(mv_kwargs):
+    """An integration test for stop conditions"""
+    mv_kwargs['run_cfg_path'] = STOP_COND_CFG_PATH
+    mv = Multiverse(**mv_kwargs)
+    mv.run_sweep()
+    assert len(mv.wm.tasks) == 13
+    assert len(mv.wm.stopped_tasks) == 13  # all stopped
 
 def test_renew_plot_manager(mv_kwargs):
     """Tests the renewal of PlotManager instances in the Multiverse"""

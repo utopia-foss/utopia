@@ -76,8 +76,8 @@ class StopCondition:
 
     @property
     def fulfilled_for(self) -> Set['Task']:
+        """The set of tasks this stop condition was fulfilled for"""
         return self._fulfilled_for
-
 
     @staticmethod
     def _resolve_sc_funcs(to_check: List[dict], func: Callable,
@@ -149,6 +149,9 @@ class StopCondition:
         return funcs_and_kws
 
     def __str__(self) -> str:
+        """A string representation for this StopCondition, including the name
+        and, if given, the description.
+        """
         if self.description:
             return f"StopCondition '{self.name}': {self.description}"
         return f"StopCondition '{self.name}'"
