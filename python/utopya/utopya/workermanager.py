@@ -729,8 +729,7 @@ class WorkerManager:
         for sc in stop_conds:
             log.debug("Checking stop condition '%s' ...", sc.name)
 
-            # Compile the list of tasks that fulfil a stop condition, leaving
-            # out those that are already in the sc_fulfilled list.
+            # Compile the list of tasks that fulfil a stop condition
             fulfilled = [t for t in self.active_tasks
                          if (t not in self.stopped_tasks and sc.fulfilled(t))]
 

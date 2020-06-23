@@ -11,7 +11,7 @@ import signal
 import warnings
 import logging
 from functools import partial
-from typing import Callable, Union, Dict, List, Sequence
+from typing import Callable, Union, Dict, List, Sequence, Set
 from typing.io import BinaryIO
 
 import numpy as np
@@ -117,7 +117,8 @@ class Task:
     associate tasks with the corresponding workers and vice versa.
     """
 
-    __slots__ = ('_name', '_priority', '_uid', '_progress_func', 'callbacks')
+    __slots__ = ('_name', '_priority', '_uid', '_progress_func',
+                 '_stop_conditions', 'callbacks')
 
     def __init__(self, *,
                  name: str=None,
@@ -151,8 +152,12 @@ class Task:
         self.callbacks = callbacks
         self._progress_func = progress_func
 
+        # The to-be-populated set of _fulfilled_ stop conditions
+        self._stop_conditions = set()
+
         log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
                   self.name, self.priority, self.uid)
+
 
     # Properties ..............................................................
 
@@ -198,6 +203,15 @@ class Task:
                          "value outside of the allowed range [0, 1]!"
                          "".format(self._progress_func.__name__, self.name))
 
+    @property
+    def fulfilled_stop_conditions(self) -> Set['StopCondition']:
+        """The set of *fulfilled* stop conditions for this task. Typically,
+        this is set by the StopCondition itself as part of its evaluation in
+        :py:meth:`utopya.stopcond.StopCondition.fulfilled`.
+        """
+        return self._stop_conditions
+
+
     # Magic methods ...........................................................
 
     def __hash__(self) -> int:
@@ -220,6 +234,7 @@ class Task:
         return bool(self is other)
         # NOTE we trust 'uuid' that the IDs are unique therefore different
         #      tasks can not get the same ID --> are different in ordering
+
 
     # Private methods .........................................................
 
@@ -386,12 +401,14 @@ class WorkerTask(Task):
         """Returns the list of objects parsed from the 'out' stream"""
         return self.streams['out']['log_parsed']
 
+
     # Magic methods ...........................................................
 
     def __str__(self) -> str:
         """Return basic WorkerTask information."""
         return ("WorkerTask<uid: {}, priority: {}, worker_status: {}>"
                 "".format(self.uid, self.priority, self.worker_status))
+
 
     # Public API ..............................................................
 
@@ -843,6 +860,7 @@ class WorkerTask(Task):
 
         self._invoke_callback('after_signal')
         return signal, signum
+
 
     # Private API .............................................................
 

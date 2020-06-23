@@ -127,8 +127,7 @@ class StopCondition:
 
             elif not callable(func):
                 raise TypeError("Given `func` needs to be a callable, but was "
-                                "{} with value {}."
-                                "".format(type(func), func))
+                                f"{type(func)} with value {func}.")
 
             # else: is callable, has the __name__ attribute
             func_name = func.__name__
@@ -142,19 +141,20 @@ class StopCondition:
         return funcs_and_kws
 
     def __str__(self) -> str:
-        return ("StopCondition '{name:}':\n"
-                "  {desc:}\n".format(name=self.name, desc=self.description))
+        return f"StopCondition '{self.name}':\n  {self.description}\n"
 
-    def fulfilled(self, task) -> bool:
+    def fulfilled(self, task: 'Task') -> bool:
         """Checks if the stop condition is fulfilled for the given worker,
         using the information from the dict.
 
         All given stop condition functions are evaluated; if all of them return
         True, this method will also return True.
 
+        Furthermore, if the stop condition is fulfilled, the task's set of
+        fulfilled stop conditions will
+
         Args:
             task (Task): Task object that is to be checked
-            worker_info (dict): The information dict for this specific worker
 
         Returns:
             bool: If all stop condition functions returned true for the given
@@ -172,6 +172,7 @@ class StopCondition:
                 return False
 
         # All were True -> fulfilled
+        task.fulfilled_stop_conditions.add(self)
         return True
 
     # YAML Constructor & Representer ..........................................
