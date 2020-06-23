@@ -347,6 +347,7 @@ test:models:
     - utopia run Geomorphology --debug
     - utopia run PredatorPrey --debug
     - utopia run SandPile --debug
+    - utopia run SEIRD --debug --num-steps 50
     - utopia run SimpleEG --debug
     - utopia run Vegetation --debug
   artifacts:

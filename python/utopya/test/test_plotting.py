@@ -324,8 +324,17 @@ def test_bifurcation_diagram_2d(tmpdir):
     mv.pm.plot_from_cfg(plots_cfg=BIFURCATION_DIAGRAM_2D_PLOTS,
                         plot_only=["bifurcation_diagram_2d_fixpoint_to_plot"])
 
+
+def test_generic_dag_plots(tmpdir):
+    """Tests the plot_funcs.dag.generic module"""
+    mv, _ = ModelTest('SEIRD').create_run_load()
+    mv.pm.plot_from_cfg(plot_only=['age_distribution/final',
+                                   'age_distribution/time_series',
+                                   'age_distribution/deceased'])
+
+
 def test_graph_plots(tmpdir):
-    """Tests the plot_funcs.graph module"""
+    """Tests the plot_funcs.dag.graph module"""
     # Create and run simulation
     raise_exc = {'plot_manager': {'raise_exc': True}}
     mv = Multiverse(model_name='CopyMeGraph',

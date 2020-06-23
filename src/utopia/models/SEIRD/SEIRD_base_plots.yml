@@ -1,0 +1,212 @@
+# Base configuration for SEIRD model plots
+---
+# -- Shared Definitions -------------------------------------------------------
+_cmap: &cmap
+  empty: &color_empty darkkhaki
+  susceptible: &color_susceptible forestgreen
+  exposed: &color_exposed darkorange
+  infected: &color_infected firebrick
+  recovered: &color_recovered slategray
+  deceased: &color_deceased black
+  source: &color_source maroon
+  inert: &color_inert moccasin
+
+_style:
+  constrained_layout: &constrained_layout
+    figure.constrained_layout.use: true
+
+# .. Property cycles ..........................................................
+# Using these as base configurations allows to have consistent kind colors
+style.prop_cycle.seird:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
+      # NOTE The fstr has to match the order of the compute_for_kinds argument
+      #      of the SEIRD.compute_age_distribution operation
+      cmap: *cmap
+
+style.prop_cycle.deceased:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[deceased]:}'])"
+      cmap: *cmap
+
+
+# -- Any kind of phase plot ---------------------------------------------------
+phase_diagram:
+  based_on: .default_style_and_helpers
+
+  creator: universe
+  universes: all
+
+  module: model_plots.SEIRD
+  plot_func: phase_diagram
+
+  cmap: viridis_r
+
+  helpers:
+    set_title:
+      title: Phase Diagram
+    set_limits:
+      x: [0, ~]
+      y: [0, ~]
+
+  # Parameters that are passed on to plt.scatter
+  s: 10
+
+
+# -- Densities plot -----------------------------------------------------------
+densities:
+  based_on: .basic_uni.lineplots
+
+  model_name: SEIRD
+
+  to_plot:
+    empty:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: empty }
+      label: empty
+      color: *color_empty
+
+    susceptible:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: susceptible }
+      label: susceptible
+      color: *color_susceptible
+
+    exposed:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: exposed }
+      label: exposed
+      color: *color_exposed
+
+    infected:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: infected }
+      label: infected
+      color: *color_infected
+
+    recovered:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: recovered }
+      label: recovered
+      color: *color_recovered
+
+    deceased:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: deceased }
+      label: deceased
+      color: *color_deceased
+
+    source:
+      path_to_data: densities
+      transform_data:
+        - sel: { kind: source }
+      label: source
+      color: *color_source
+
+    inert:
+      transform_data:
+        - sel: { kind: inert }
+      path_to_data: densities
+      label: inert
+      color: *color_inert
+
+  helpers:
+    set_limits:
+      x: [min, max]
+      y: [0., 1.]
+    set_labels:
+      x: Time [Iteration Steps]
+      y: Density [1/A]
+    set_title:
+      title: Densities
+    set_legend:
+      loc: best
+
+
+# --- Distributions -----------------------------------------------------------
+
+age_distribution:
+  based_on:
+    - .default_style_and_helpers
+    - .creator.universe
+    - .dag.generic.histogram
+
+  select:
+    age: age
+    kind: kind
+  dag_options:
+    select_path_prefix: data/SEIRD
+
+  x: age
+  hue: kind
+
+  helpers:
+    set_labels:
+      x: Age
+      y: Counts
+    set_title:
+      title: Age Distribution
+
+
+# --- Grid Snapshots ----------------------------------------------------------
+# NOTE These can also be used as basis for grid animations.
+# ... The CA ..................................................................
+CA_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+
+  to_plot:
+    kind:
+      title: ""
+      limits: [0, 7]
+      # Be aware that the colors need to be in the correct ordering!
+      cmap:
+        empty: *color_empty
+        susceptible: *color_susceptible
+        exposed: *color_exposed
+        infected: *color_infected
+        recovered: *color_recovered
+        deceased: *color_deceased
+        source: *color_source
+        inert: *color_inert
+
+  style:
+    <<: [*constrained_layout]
+
+# ... The CA age ..............................................................
+CA_age_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+
+  to_plot:
+    age:
+      title: Age
+      cmap: YlGn
+
+# ... The clusters ............................................................
+clusters_snapshot:
+  based_on: .ca.state
+  model_name: SEIRD
+
+  to_plot:
+    cluster_id:
+      title: Clusters
+      limits: [0, 20]
+      cmap: tab20
+      no_cbar_markings: true
+
+  transform_data:
+    cluster_id:
+      - where: ['!=', 0]       # 0 is masked: not part of a cluster
+      - mod: 20                # ... to match the tab20 color map
+
+  style:
+    <<: [*constrained_layout]

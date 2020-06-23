@@ -1,0 +1,33 @@
+# Configuration file used to test the infection dynamics
+
+---
+parameter_space:
+  num_steps: 3
+
+  SEIRD:
+    space:
+      periodic: false
+
+    cell_manager:
+      grid:
+        resolution: 4
+      
+      cell_params:
+        p_susceptible: 0.
+        p_immune: 0.
+        p_transmit:
+          mode: value
+          value: 
+            default: 1.
+
+    inert_cells:
+      enabled: false
+
+    infection_source:
+      enabled: true
+
+    p_susceptible: 1
+    p_immunity: 0
+    p_random_immunity: 0
+    p_exposed: 0.
+    p_infected: 1.
