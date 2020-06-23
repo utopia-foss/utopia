@@ -838,7 +838,8 @@ class WorkerTask(Task):
         else:
             log.debug("Sending %s (%d) to worker of task %s ...",
                       signal, signum, self.name)
-            self.worker.send_signal(signal)
+            self.worker.send_signal(SIGMAP[signal] if isinstance(signal, str)
+                                    else signal)
 
         self._invoke_callback('after_signal')
         return signal, signum

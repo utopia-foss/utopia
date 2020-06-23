@@ -8,8 +8,12 @@ from typing import List, Callable, Union
 
 import utopya.stopcond_funcs as sc_funcs
 
-# Initialise logger
+# Local constants
 log = logging.getLogger(__name__)
+
+# Name of the signal to use for stopping workers with stop conditions fulfilled
+SIG_STOPCOND = 'SIGUSR1'
+
 
 # -----------------------------------------------------------------------------
 
@@ -26,7 +30,7 @@ class StopCondition:
                  description: str=None, enabled: bool=True,
                  func: Union[Callable, str]=None, **func_kwargs):
         """Create a new stop condition
-        
+
         Args:
             to_check (List[dict], optional): A list of dicts, that holds the
                 functions to call and the arguments to call them with. The only
@@ -75,7 +79,7 @@ class StopCondition:
         def retrieve_func(func_name: str) -> Callable:
             """Given a function name, returns the callable from the utopya
             module stopcond_funcs.
-            """                
+            """
             log.debug("Getting function with name '%s' from the "
                       "stopcond_funcs module ...", func_name)
             func = sc_funcs.__dict__.get(func_name)
@@ -132,7 +136,7 @@ class StopCondition:
 
             # Valid. Append the information to the list
             funcs_and_kws.append((func, func_name, func_dict))
-        
+
         log.debug("Resolved %d stop condition function(s).",
                   len(funcs_and_kws))
         return funcs_and_kws
@@ -144,14 +148,14 @@ class StopCondition:
     def fulfilled(self, task) -> bool:
         """Checks if the stop condition is fulfilled for the given worker,
         using the information from the dict.
-        
+
         All given stop condition functions are evaluated; if all of them return
         True, this method will also return True.
-        
+
         Args:
             task (Task): Task object that is to be checked
             worker_info (dict): The information dict for this specific worker
-        
+
         Returns:
             bool: If all stop condition functions returned true for the given
                 worker and its current information
@@ -181,7 +185,7 @@ class StopCondition:
         Args:
             representer (ruamel.yaml.representer): The representer module
             node (type(self)): The node, i.e. an instance of this class
-        
+
         Returns:
             a yaml mapping that is able to recreate this object
         """

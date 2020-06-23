@@ -524,7 +524,15 @@ public:
             iterate();
 
             if (stop_now.load()) {
-                _log->warn("Was told to stop. Not iterating further ...");
+                const auto signum = received_signum.load();
+
+                if (signum == SIGUSR1) {
+                    _log->warn("The stop condition for this run is fulfilled. "
+                               "Not iterating further ...");
+                }
+                else {
+                    _log->warn("Was told to stop. Not iterating further ...");
+                }
                 throw GotSignal(received_signum.load());
             }
         }
@@ -799,9 +807,15 @@ public:
 private:
     // -- Private Helper Methods ----------------------------------------------
 
-    /// Attaches signal handlers for SIGINT and SIGTERM
+    /// Attaches signal handlers: SIGINT, SIGTERM, SIGUSR1
     /** These signals are caught and handled such that the run method is able
-      * to finish in an ordered manner, preventing data corruption.
+      * to finish in an ordered manner, preventing data corruption. This is
+      * done by invoking attach_signal_handler and attaching the
+      * default_signal_handler to them.
+      *
+      * The SIGUSR1 signal is sent by the frontend if the stop conditions for
+      * this simulation are all fulfilled. It will likewise lead to the
+      * invocation of the default_signal_handler.
       */
     void __attach_sig_handlers() {
         _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
@@ -809,7 +823,11 @@ private:
         attach_signal_handler(SIGINT);
         attach_signal_handler(SIGTERM);
 
-        _log->debug("Signal handler attached.");
+        _log->debug("Attaching signal handler for stop conditions, triggered "
+                    "by SIGUSR1 ({:d}) ...", SIGUSR1);
+        attach_signal_handler(SIGUSR1);
+
+        _log->debug("Signal handlers attached.");
     }
 };
 
