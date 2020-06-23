@@ -9,8 +9,8 @@ parameter_space:
       grid:
         resolution: 3
     
-    cell_params:
-      p_tree: 0.
+      cell_params:
+        p_tree: 0.
 
     stones:
       enabled: false

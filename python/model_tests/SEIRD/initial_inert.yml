@@ -3,14 +3,14 @@
 parameter_space:
   num_steps: 0
 
-  ContDisease:
+  SEIRD:
     cell_manager:
       grid:
         resolution: 32
-      cell_params:
-        p_tree: 0
+    cell_params:
+      p_susceptible: 0
 
-    stones:
+    inert_cells:
       enabled: true
 
     infection_source:
