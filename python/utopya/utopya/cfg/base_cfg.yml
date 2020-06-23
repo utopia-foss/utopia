@@ -80,7 +80,9 @@ reporter:
       write_to:
         file:
           path: _report.txt
-      min_report_intv: 10     # update the file if min_report_intv seconds have passed.
+      min_report_intv: 10             # don't update this one too often
+      min_num: 4                      # min. number of universes for statistics
+      show_individual_runtimes: true  # for large number of universes, disable
 
   # Can define a default format to use
   # default_format: ~

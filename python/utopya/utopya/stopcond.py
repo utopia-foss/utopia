@@ -4,7 +4,7 @@ WorkerManager to stop a worker process in certain situations."""
 import copy
 import logging
 import warnings
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Set
 
 import utopya.stopcond_funcs as sc_funcs
 
@@ -62,6 +62,9 @@ class StopCondition:
         self.name = name if name else " && ".join([fspec[1]
                                                    for fspec in self.to_check])
 
+        # Keep track of tasks this stop condition was fulfilled for
+        self._fulfilled_for = set()
+
         # Store the initialization kwargs such that they can be used for yaml
         # representation
         self._init_kwargs = dict(to_check=to_check, name=name,
@@ -70,6 +73,11 @@ class StopCondition:
 
         log.debug("Initialized stop condition '%s' with %d checking "
                   "function(s).", self.name, len(self.to_check))
+
+    @property
+    def fulfilled_for(self) -> Set['Task']:
+        return self._fulfilled_for
+
 
     @staticmethod
     def _resolve_sc_funcs(to_check: List[dict], func: Callable,
@@ -141,7 +149,9 @@ class StopCondition:
         return funcs_and_kws
 
     def __str__(self) -> str:
-        return f"StopCondition '{self.name}':\n  {self.description}\n"
+        if self.description:
+            return f"StopCondition '{self.name}': {self.description}"
+        return f"StopCondition '{self.name}'"
 
     def fulfilled(self, task: 'Task') -> bool:
         """Checks if the stop condition is fulfilled for the given worker,
@@ -173,6 +183,7 @@ class StopCondition:
 
         # All were True -> fulfilled
         task.fulfilled_stop_conditions.add(self)
+        self._fulfilled_for.add(task)
         return True
 
     # YAML Constructor & Representer ..........................................

@@ -728,8 +728,13 @@ class WorkerTask(Task):
                 if final:
                     f.write("\n"
                             "\n---"
-                            "\nend of log. exit code: {}"
-                            "".format(self.worker_status))
+                            f"\nend of log. exit code: {self.worker_status}\n")
+
+                    if self.fulfilled_stop_conditions:
+                        _fsc = "\n  - ".join([str(sc) for sc in
+                                              self.fulfilled_stop_conditions])
+                        f.write("\nFulfilled stop condition(s):\n"
+                                f"  - {_fsc}\n")
 
                 # Ensure new line at the end
                 f.write("\n")

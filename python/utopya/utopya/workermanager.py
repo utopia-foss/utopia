@@ -123,6 +123,7 @@ class WorkerManager:
         self._task_q = QueueCls()
         self._active_tasks = []
         self.stopped_tasks = TaskList()
+        self._stop_conditions = set()
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
@@ -228,7 +229,7 @@ class WorkerManager:
     @property
     def num_finished_tasks(self) -> int:
         """The number of finished tasks. Incremented whenever a task leaves
-        the active_tasks list.
+        the active_tasks list, regardless of its exit status.
         """
         return self._num_finished_tasks
 
@@ -253,6 +254,14 @@ class WorkerManager:
                           "significant CPU load. Consider choosing a higher "
                           "value.", UserWarning)
         self._poll_delay = val
+
+    @property
+    def stop_conditions(self) -> Set[StopCondition]:
+        """All stop conditions that were ever passed to
+        :py:meth:`~utopya.workermanager.WorkerManager.start_working` during the
+        life time of this WorkerManager.
+        """
+        return self._stop_conditions
 
     @property
     def nonzero_exit_handling(self) -> str:
@@ -364,10 +373,10 @@ class WorkerManager:
               on the run time of the task and its exit status
             - in debug mode, performs an action upon non-zero task exit status
             """
-            self._invoke_report('task_finished', force=True)
-
             if self.reporter is not None:
                 self.reporter.register_task(task)
+
+            self._invoke_report('task_finished', force=True)
 
             # If there was a (non-zero) exit and the handling mode is set
             # accordingly, generate an exception and add it to the list of
@@ -456,6 +465,10 @@ class WorkerManager:
         log.hilight("Starting to work ...")
         log.debug("  Timeout:             now + %ss", timeout)
         log.debug("  Stop conditions:     %s", stop_conditions)
+
+        # Keep track of the stop condition objects
+        if stop_conditions:
+            self._stop_conditions.update(set(stop_conditions))
 
         # Start with the polling loop
         # Basically all working time will be spent in there ...
