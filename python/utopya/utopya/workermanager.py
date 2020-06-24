@@ -10,10 +10,10 @@ import time
 from datetime import datetime as dt
 from typing import Union, Callable, Sequence, List, Set, Dict
 
-from utopya.task import WorkerTask, TaskList, SIGMAP
-from utopya.stopcond import StopCondition
-from utopya.reporter import WorkerManagerReporter
-from utopya.tools import format_time
+from .task import WorkerTask, TaskList, SIGMAP
+from .stopcond import StopCondition, SIG_STOPCOND
+from .reporter import WorkerManagerReporter
+from .tools import format_time
 
 # Initialise logger
 log = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 class WorkerManager:
     """The WorkerManager class manages WorkerTasks.
-    
+
     Attributes:
         nonzero_exit_handling (str): Stores the WorkerManager's behavior upon
             a worker exiting with a non-zero exit code. For 'ignore', nothing
@@ -56,7 +56,7 @@ class WorkerManager:
                  cluster_mode: bool=False,
                  resolved_cluster_params: dict=None):
         """Initialize the worker manager.
-        
+
         Args:
             num_workers (Union[int, str], optional): The number of workers
                 that can work in parallel. If 'auto' (default), uses
@@ -110,7 +110,7 @@ class WorkerManager:
                 between nodes.
             resolved_cluster_params (dict, optional): The corresponding cluster
                 parameters.
-        
+
         Raises:
             ValueError: For too negative `num_workers` argument
         """
@@ -123,6 +123,7 @@ class WorkerManager:
         self._task_q = QueueCls()
         self._active_tasks = []
         self.stopped_tasks = TaskList()
+        self._stop_conditions = set()
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
@@ -228,7 +229,7 @@ class WorkerManager:
     @property
     def num_finished_tasks(self) -> int:
         """The number of finished tasks. Incremented whenever a task leaves
-        the active_tasks list.
+        the active_tasks list, regardless of its exit status.
         """
         return self._num_finished_tasks
 
@@ -255,6 +256,14 @@ class WorkerManager:
         self._poll_delay = val
 
     @property
+    def stop_conditions(self) -> Set[StopCondition]:
+        """All stop conditions that were ever passed to
+        :py:meth:`~utopya.workermanager.WorkerManager.start_working` during the
+        life time of this WorkerManager.
+        """
+        return self._stop_conditions
+
+    @property
     def nonzero_exit_handling(self) -> str:
         """The action upon non-zero WorkerTask exit code."""
         return self._nonzero_exit_handling
@@ -262,10 +271,10 @@ class WorkerManager:
     @nonzero_exit_handling.setter
     def nonzero_exit_handling(self, val: str):
         """Set the nonzero_exit_handling attribute.
-        
+
         Args:
             val (str): The value to set it to. Can be: ignore, warn, raise
-        
+
         Raises:
             ValueError: For invalid value
         """
@@ -273,7 +282,7 @@ class WorkerManager:
         if val not in allowed_vals:
             raise ValueError("`nonzero_exit_handling` needs to be one of {}, "
                              "but was '{}'.".format(allowed_vals, val))
-        
+
         self._nonzero_exit_handling = val
 
     @property
@@ -315,7 +324,7 @@ class WorkerManager:
 
     def add_task(self, **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
-        
+
         Args:
             **task_kwargs: All arguments needed for WorkerTask initialization.
                 See utopya.task.WorkerTask.__init__ for all valid arguments.
@@ -355,7 +364,7 @@ class WorkerManager:
 
             # Invoke the report
             self._invoke_report('task_spawned', force=True)
-        
+
         def task_finished(task):
             """Performs actions after a task has finished.
 
@@ -364,17 +373,21 @@ class WorkerManager:
               on the run time of the task and its exit status
             - in debug mode, performs an action upon non-zero task exit status
             """
-            self._invoke_report('task_finished', force=True)
-
             if self.reporter is not None:
                 self.reporter.register_task(task)
 
-            # If there was a non-zero exit and the handling mode is set
+            self._invoke_report('task_finished', force=True)
+
+            # If there was a (non-zero) exit and the handling mode is set
             # accordingly, generate an exception and add it to the list of
-            # pending exceptions
-            if (self.nonzero_exit_handling != 'ignore'
-                and task.worker_status not in [0, None]):
-                self.pending_exceptions.put_nowait(WorkerTaskNonZeroExit(task))
+            # pending exceptions. Handle exit codes that result from a stop
+            # condition being fulfilled separately.
+            if self.nonzero_exit_handling != 'ignore' and task.worker_status:
+                if task.worker_status == 128+abs(SIGMAP[SIG_STOPCOND]):
+                    exc = WorkerTaskStopConditionFulfilled(task)
+                else:
+                    exc = WorkerTaskNonZeroExit(task)
+                self.pending_exceptions.put_nowait(exc)
 
         def monitor_updated(task):
             """Performs actions when there was a parsed object in the task's
@@ -403,7 +416,7 @@ class WorkerManager:
                       stop_conditions: Sequence[StopCondition]=None,
                       post_poll_func: Callable=None) -> None:
         """Upon call, all enqueued tasks will be worked on sequentially.
-        
+
         Args:
             detach (bool, optional): If False (default), the WorkerManager
                 will block here, as it continuously polls the workers and
@@ -417,22 +430,22 @@ class WorkerManager:
             post_poll_func (Callable, optional): If given, this is called after
                 all workers have been polled. It can be used to perform custom
                 actions during a the polling loop.
-        
+
         Raises:
             NotImplementedError: for `detach` True
             ValueError: For invalid (i.e., negative) timeout value
             WorkerManagerTotalTimeout: Upon a total timeout
         """
+        log.progress("Preparing to work ...")
+
         # Determine timeout arguments
         if timeout:
             if timeout <= 0:
                 raise ValueError("Invalid value for argument `timeout`: {} -- "
                                  "needs to be positive.".format(timeout))
-            
+
             # Already calculate the time after which a timeout would be reached
             self.times['timeout'] = time.time() + timeout
-
-            log.debug("Set timeout time to now + %f seconds", timeout) 
 
         # Set the variable needed for checking; if above condition was not
         # fulfilled, this will be None
@@ -444,14 +457,25 @@ class WorkerManager:
             raise NotImplementedError("It is currently not possible to "
                                       "detach the WorkerManager from the "
                                       "main thread.")
-        
+
         # Set some variables needed during the run
         poll_no = 0
         self.times['start_working'] = dt.now()
 
+        # Inform about timeout and stop conditions
+        if timeout:
+            _to_fstr = "%X" if timeout < 60*60*12 else "%X, %d.%m.%y"
+            _to_at = dt.fromtimestamp(timeout_time).strftime(_to_fstr)
+        log.note("  Timeout:         %s", "None" if not timeout
+                 else f"{_to_at} (in {format_time(timeout)})")
+        log.note("  Stop conditions: %s", "None" if not stop_conditions
+                 else ", ".join([sc.name for sc in stop_conditions]))
+
         log.hilight("Starting to work ...")
-        log.debug("  Timeout:             now + %ss", timeout)
-        log.debug("  Stop conditions:     %s", stop_conditions)
+
+        # Keep track of the stop condition objects
+        if stop_conditions:
+            self._stop_conditions.update(set(stop_conditions))
 
         # Start with the polling loop
         # Basically all working time will be spent in there ...
@@ -473,7 +497,7 @@ class WorkerManager:
                     except queue.Empty:
                         # There were no tasks left in the task queue
                         pass
-                        
+
                     else:
                         # Succeeded in grabbing a task; worker spawned
                         self.active_tasks.append(new_task)
@@ -504,7 +528,7 @@ class WorkerManager:
                     self.stopped_tasks += fulfilled
 
                     # Now signal those workers such that they terminate.
-                    self._signal_workers(fulfilled, signal='SIGTERM')
+                    self._signal_workers(fulfilled, signal=SIG_STOPCOND)
 
                 # Poll the workers. (Will also remove no longer active workers)
                 self._poll_workers()
@@ -537,7 +561,7 @@ class WorkerManager:
                 self.reporter.suppress_cr = True
 
             log.critical("Did not finish working! See above for error log.")
-            
+
             # Now terminate the remaining active tasks
             log.hilight("Terminating active tasks ...")
             self._signal_workers(self.active_tasks, signal='SIGTERM')
@@ -550,7 +574,7 @@ class WorkerManager:
             if isinstance(err, WorkerTaskNonZeroExit):
                 log.critical("Exiting now ...")
                 sys.exit(err.task.worker_status)
-            
+
             # Some other error occurred; just raise
             log.critical("Re-raising error ...")
             raise
@@ -615,7 +639,7 @@ class WorkerManager:
             if self.interrupt_params.get('exit', True):
                 # Exit with appropriate exit code (128 + abs(signum))
                 log.warning("Exiting after KeyboardInterrupt ...")
-                sys.exit(128 + SIGMAP[signal])
+                sys.exit(128 + abs(SIGMAP[signal]))
 
             log.warning("Continuing after KeyboardInterrupt ...")
             return
@@ -634,7 +658,7 @@ class WorkerManager:
         """Helper function to invoke the reporter's report function"""
         if self.reporter is None:
             return
-        
+
         # Check whether to suppress this rf_spec
         if self._suppress_rf_specs and rf_spec_name in self._suppress_rf_specs:
             # Do not report this one
@@ -642,7 +666,7 @@ class WorkerManager:
 
         # Resolve the spec name
         rfs = self.rf_spec[rf_spec_name]
-        
+
         if not isinstance(rfs, list):
             rfs = [rfs]
 
@@ -652,10 +676,10 @@ class WorkerManager:
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it
         spawns its worker process.
-        
+
         Returns:
             WorkerTask: The WorkerTask grabbed from the queue.
-        
+
         Raises:
             queue.Empty: If the task queue was empty
         """
@@ -667,7 +691,7 @@ class WorkerManager:
         except queue.Empty as err:
             raise queue.Empty("No more tasks available in tasks queue."
                               ) from err
-        
+
         else:
             log.debug("Got task %s from queue. (Priority: %s)",
                       task.uid, task.priority)
@@ -677,7 +701,7 @@ class WorkerManager:
 
         # Now return the task
         return task
-    
+
     def _poll_workers(self) -> None:
         """Will poll all workers that are in the working list and remove them
         from that list if they are no longer alive.
@@ -710,11 +734,11 @@ class WorkerManager:
                           ) -> Set[WorkerTask]:
         """Checks the given stop conditions for the active tasks and compiles
         a list of tasks that needs to be terminated.
-        
+
         Args:
             stop_conds (Sequence[StopCondition]): The stop conditions that
                 are to be checked.
-        
+
         Returns:
             List[WorkerTask]: The WorkerTasks whose workers need to be
                 terminated
@@ -725,15 +749,14 @@ class WorkerManager:
         for sc in stop_conds:
             log.debug("Checking stop condition '%s' ...", sc.name)
 
-            # Compile the list of tasks that fulfil a stop condition, leaving
-            # out those that are already in the sc_fulfilled list.
+            # Compile the list of tasks that fulfil a stop condition
             fulfilled = [t for t in self.active_tasks
                          if (t not in self.stopped_tasks and sc.fulfilled(t))]
 
             if fulfilled:
-                log.warning("Stop condition '%s' fulfilled for "
-                            "%d task(s):  %s", sc.name, len(fulfilled),
-                            ", ".join([t.name for t in fulfilled]))
+                log.debug("Stop condition '%s' fulfilled for %d task(s):  %s",
+                          sc.name, len(fulfilled),
+                          ", ".join([t.name for t in fulfilled]))
                 to_terminate += fulfilled
 
         # Return as set to be sure that they are unique
@@ -742,7 +765,7 @@ class WorkerManager:
     def _signal_workers(self, tasks: Union[str, List[WorkerTask]],
                         *, signal: Union[str, int]) -> None:
         """Send signals to a list of WorkerTasks.
-        
+
         Args:
             tasks (Union[str, List[WorkerTask]]): strings 'all' or 'active' or
                 a list of WorkerTasks to signal
@@ -760,12 +783,12 @@ class WorkerManager:
 
         if not tasks:
             log.debug("No worker tasks to signal.")
-            return 
+            return
 
         log.debug("Sending signal %s to %d task(s) ...", signal, len(tasks))
         for task in tasks:
             task.signal_worker(signal)
-        
+
         log.debug("All tasks signalled. Tasks' worker status:\n  %s",
                   ", ".join([str(t.worker_status) for t in tasks]))
 
@@ -780,13 +803,15 @@ class WorkerManager:
         can just add an exception object to it and they get handled during
         working of the WorkerManager.
 
-        Currently, this method only handles WorkerTaskNonZeroExit in a special
-        manner. It can however be extended in order to also handle other
-        exception types.
-        
+        This method handles the following exception types in a specific manner:
+
+            - ``WorkerTaskStopConditionFulfilled``: never raising or logging
+            - ``WorkerTaskNonZeroExit``: raising or logging depending on the
+              value of the ``nonzero_exit_handling`` property
+
         Returns:
             None
-        
+
         Raises:
             exc: The exception that was added first to the queue of pending
                 exceptions
@@ -821,11 +846,12 @@ class WorkerManager:
                 log.error("Encountered a pending exception that requires "
                           "raising!")
                 raise exc
-            
-            # NOTE: can check for other exception types here, but will need
-            # restructuring/encapsulation of the part below ...
 
             log.debug("Handling %s ...", exc.__class__.__name__)
+
+            # Take care of stop conditions, which do NOT need to be raised
+            if isinstance(exc, WorkerTaskStopConditionFulfilled):
+                continue
 
             # Distinguish different ways of handling these exceptions
             # Ignore all
@@ -844,7 +870,7 @@ class WorkerManager:
                 self.reporter.suppress_cr = True
 
             # Provide some info on the exit status
-            
+
             if self.nonzero_exit_handling in ['warn', 'warn_all']:
                 # Print the error and the last few lines of the error log
                 log.warning(str(exc))
@@ -860,7 +886,7 @@ class WorkerManager:
             # By raising here, the except block in start_working will be
             # invoked and terminate workers before calling sys.exit
             raise exc
-            
+
         # The pending_exceptions list is now empty
         log.debug("Handled all pending exceptions.")
 
@@ -895,12 +921,16 @@ class WorkerTaskNonZeroExit(WorkerTaskError):
         signals = [signal for signal, signum in SIGMAP.items()
                    if signum == abs(self.task.worker_status)]
 
-        return ("Task '{}' exited with non-zero exit status: {}.\n"
-                "This may originate from the following signals:  {}.\n"
+        return (f"Task '{self.task.name}' exited with non-zero exit "
+                f"status: {self.task.worker_status}.\nThis may originate from "
+                f"the following signals:  {', '.join(signals)}.\n"
                 "Googling these might help with identifying the error. "
                 "Also, inspect the log and the log file for further error "
                 "messages. To increase verbosity, run in debug mode, e.g. by "
-                "passing the --debug flag to the CLI."
-                "".format(self.task.name,
-                          self.task.worker_status,
-                          ", ".join(signals)))
+                "passing the --debug flag to the CLI.")
+
+
+class WorkerTaskStopConditionFulfilled(WorkerTaskNonZeroExit):
+    """An exception that is raised when a worker-specific stop condition was
+    fulfilled. This allows being handled separately to other non-zero exits.
+    """

@@ -51,9 +51,9 @@ public:
 class GotSignal : public Exception {
 public:
     /// Construct a GotSignal exception, which has a standardized what message
-    /** @details The constructor takes the number of the signal that triggered
-      *         this exception and computes an exit code from that according to
-      *         Unix convention, i.e.: 128 + abs(signum)
+    /** The constructor takes the number of the signal that triggered this
+      * exception and computes an exit code from that according to Unix
+      * convention, i.e.: `128 + abs(signum)`
       */
     GotSignal(const int signum)
     :

@@ -566,6 +566,8 @@ Stop Conditions – Dynamically stop simulations
         :start-after: # Below, an EXAMPLE for two OR-connected stop conditions
         :end-before: # End of StopCondition example
         :dedent: 6
+* 📚
+  :ref:`stop_conds`
 
 
 .. _feature_utopia_env:

@@ -571,11 +571,11 @@ class WorkerManagerReporter(Reporter):
 
     @property
     def task_counters(self) -> OrderedDict:
-        """Returns a dict of task statistics:
-        total: total number of tasks associated with the WorkerManager
-        finished: number of finished tasks
-        active: number of active tasks
-        queued: number of unfinished tasks
+        """Returns a dict of task statistics, including the following keys:
+
+            - ``total``: total number of registered WorkerManager tasks
+            - ``active``: number of active tasks
+            - ``finished``: number of finished tasks
         """
         num = OrderedDict()
         num['total'] = self.wm.task_count
@@ -647,7 +647,7 @@ class WorkerManagerReporter(Reporter):
 
     # Methods working on data .................................................
 
-    def register_task(self, task):
+    def register_task(self, task: 'Task'):
         """Given the task object, extracts and stores some information.
 
         The information currently extracted is the run time and the exit code.
@@ -789,7 +789,7 @@ class WorkerManagerReporter(Reporter):
         if pb_width < 4:
             return " {:>5.1f}% ".format(cntr['finished']/cntr['total'] * 100)
 
-        # Calculate the ticks
+        # Calculate the ticks for finished tasks
         ticks = dict()
         factor = pb_width / cntr['total']
         ticks['finished'] = int(round(cntr['finished'] * factor))
@@ -948,18 +948,20 @@ class WorkerManagerReporter(Reporter):
                           show_individual_runtimes: bool=True) -> str:
         """Parses the report of the simulation into a multiline string
 
-        Keyword Arguments:
+        Args:
             fstr (str, optional): The format string to use. Gets passed the
-                keys 'k' and 'v' where k is the name of the entry and v its
-                value.
+                keys ``k`` and ``v`` where ``k`` is the name of the entry and
+                ``v`` its value. Note that this format string is also used
+                with ``v`` being a non-numeric value.
             min_num (int, optional): The minimum number of universes needed to
                 calculate runtime statistics.
             report_no (int, optional): Passed by ReportFormat call
             show_individual_runtimes (bool, optional): Whether to report
-                individual universe runtimes; default: True
+                individual universe runtimes; default: True. This should be
+                disabled if there are a huge number of universes.
 
         Returns:
-            str: The multi-line simulation report
+            str: The multi-line simulation report string
         """
         # List that contains the parts that will be written
         parts = []
@@ -968,19 +970,16 @@ class WorkerManagerReporter(Reporter):
         rtstats = self.calc_runtime_statistics(min_num=min_num)
 
         if rtstats is not None:
-            # Add header
             parts += ["Runtime Statistics"]
             parts += ["------------------"]
             parts += [""]
-            parts += ["This report contains the runtime statistics of a "
-                      "multiverse simulation run."]
+            parts += ["These are the runtime statistics of a multiverse "
+                      "simulation run."]
             parts += ["The statistics are calculated from universe run times."]
             parts += [""]
             parts += ["  # universes:  {} / {}".format(len(self.runtimes),
                                                        len(self.wm.tasks))]
             parts += [""]
-
-            # Add the runtime statistics
             parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
                       for k, v in rtstats.items()]
             parts += [""]
@@ -988,18 +987,39 @@ class WorkerManagerReporter(Reporter):
 
         # In cluster mode, add more information
         if self.wm.cluster_mode:
-            rcps = self.wm.resolved_cluster_params
+            _rcps = self.wm.resolved_cluster_params
 
             parts += ["Cluster Mode Information"]
             parts += ["------------------------"]
             parts += [""]
-            parts += [fstr.format(k=k, v=rcps[k])
+            parts += [fstr.format(k=k, v=_rcps[k])
                       for k in ('node_name', 'node_index', 'num_nodes',
                                 'node_list', 'job_id', 'job_name',
                                 'job_account', 'cluster_name', 'num_procs')
-                      if rcps.get(k) is not None]
+                      if _rcps.get(k) is not None]
             parts += [""]
             parts += [""]
+
+        # If stop conditions were fulfilled, inform about those
+        if self.wm.stop_conditions:
+            def task_names(sc: set) -> str:
+                if not sc.fulfilled_for:
+                    return "(None)"
+                return ", ".join(sorted([t.name for t in sc.fulfilled_for]))
+
+            parts += ["Stop Conditions"]
+            parts += ["---------------"]
+            parts += [""]
+            parts += [f"  {len(self.runtimes)} / {len(self.wm.tasks)} "
+                      "universes were stopped due to at least one of the "
+                      "following stop conditions:"]
+            parts += [""]
+            parts += [f"  {sc}\n"
+                      f"      {task_names(sc)}\n"
+                      for sc in self.wm.stop_conditions]
+            parts += [""]
+            parts += [""]
+
 
         # Add individual universe run times
         if show_individual_runtimes:

@@ -213,7 +213,7 @@ mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?
 autoclass_content = "both"
 
 # Sort members in the same way they were sorted in source (devs had reasons)
-autodoc_member_order = "by_source"
+autodoc_member_order = "bysource"
 
 
 #### Breathe configuration ---------------------------------------------------

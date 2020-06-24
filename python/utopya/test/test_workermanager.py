@@ -9,6 +9,7 @@ import pytest
 
 from utopya.workermanager import WorkerManager, WorkerManagerTotalTimeout
 from utopya.task import SIGMAP
+from utopya.stopcond import SIG_STOPCOND
 from utopya.yaml import load_yml
 
 # Some constants
@@ -51,7 +52,7 @@ def wm_with_tasks(sleep_task):
                                                'complex world")'),
                                          read_stdout=True),
                       priority=0))
-    
+
     tasks.append(sleep_task)
     tasks.append(dict(worker_kwargs=dict(args=('python3', '-c', 'pass'),
                                          read_stdout=False)))
@@ -91,12 +92,12 @@ def test_init():
     with pytest.raises(ValueError, match="Need positive integer"):
         # Not positive
         WorkerManager(num_workers=0)
-    
+
     with pytest.raises(ValueError,
                        match="Received invalid argument `num_workers`"):
         # Too negative
         WorkerManager(num_workers=-1000)
-    
+
     with pytest.raises(ValueError, match="Need positive integer"):
         # not int
         WorkerManager(num_workers=1.23)
@@ -105,7 +106,7 @@ def test_init():
     with pytest.raises(ValueError):
         # negative
         WorkerManager(num_workers=1, poll_delay=-1000)
-    
+
     with pytest.warns(UserWarning):
         # small value
         WorkerManager(num_workers=1, poll_delay=0.001)
@@ -133,7 +134,7 @@ def test_add_tasks(wm, sleep_task):
     # This one should work
     wm.add_task(**sleep_task)
 
-    # Test that warnings and errors propagate through    
+    # Test that warnings and errors propagate through
     with pytest.warns(UserWarning, match="`worker_kwargs` given but also"):
         wm.add_task(setup_kwargs=dict(foo="bar"),
                     worker_kwargs=dict(foo="bar"))
@@ -189,7 +190,7 @@ def test_nonzero_exit_handling(wm):
 
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         wm.start_working()
-    
+
     assert pytest_wrapped_e.type == SystemExit
     assert pytest_wrapped_e.value.code == 1
     assert wm.num_finished_tasks == 5
@@ -202,7 +203,7 @@ def test_interrupt_handling(wm, sleep_task, tmpdir):
     def ppf():
         time.sleep(0.2)  # To give the task enough time to start up ...
         raise KeyboardInterrupt
-    
+
     # Work with specific worker parameters
     wm.num_workers = 4
     wm.interrupt_params['send_signal'] = 'SIGTERM'
@@ -279,7 +280,7 @@ def test_signal_workers(wm, longer_sleep_task):
     for task in wm.tasks[-3:]:
         assert task.worker_status in [-SIGMAP['SIGTERM'], -SIGMAP['SIGKILL']]
         # NOTE sleep task _might_ not allow SIGTERM, will then be killed
-    
+
     for _ in range(3):
         wm.add_task(**sleep_task)
     ppf = lambda: wm._signal_workers('active', signal='SIGINT')
@@ -333,23 +334,31 @@ def test_timeout(wm, sleep_task):
 
 def test_stopconds(wm, wm_with_tasks, longer_sleep_task, sc_run_kws):
     """Tests the stop conditions"""
+    assert not wm.stop_conditions
+
     # Populate the basic wm with two sleep tasks
     wm.add_task(**longer_sleep_task)
     wm.add_task(**longer_sleep_task)
 
-    # Start working, with timeout_wall == 0.4 seconds
+    # Start working. Stop conditions:
+    #   - timeout_wall == 0.4 seconds
+    #   - monitor check (to a non-existing monitor entry)
+    assert not wm.stop_conditions
     wm.start_working(**sc_run_kws)
+    assert len(wm.stop_conditions) == 3
 
-    # Assert that there are no workers remaining and that both have exit status -15
+    # Assert that there are no workers remaining and that both have as exit
+    # status -SIGUSR1, 128 + 30 on UNIX systems, wrapped around
     assert wm.active_tasks == []
     for task in wm.tasks:
-        assert task.worker_status == -15
+        assert task.worker_status == -SIGMAP[SIG_STOPCOND]
 
-    # Now to the more complex setting
-    wm = wm_with_tasks
-    wm.start_working(**sc_run_kws)
+        # Also, the tasks should have the stop conditions associated
+        assert len(task.fulfilled_stop_conditions) == 2  # only 2 of 3
 
-    # TODO more tests here
+        # And the stop conditions should know about these tasks
+        for sc in task.fulfilled_stop_conditions:
+            assert task in sc.fulfilled_for
 
 @pytest.mark.skip("Properly implement this!")
 def test_read_stdout(wm):
@@ -370,7 +379,7 @@ def test_priority_queue(wm_priQ, sleep_task):
     # If priorites are equal, the task added first have higher priority
     # NOTE cannot just order the list of tasks, because then there would be
     # no ground truth (the same ordering mechanism between tasks would be used)
-    
+
     # Add tasks to the WorkerManager, keeping track of addition order
     tasks = []
     for prio in prios:
@@ -392,6 +401,6 @@ def test_priority_queue(wm_priQ, sleep_task):
     # Sort task list by correct order and by creation times
     tasks_by_correct_order = [t for _, t in sorted(zip(correct_order, tasks))]
     tasks_by_creation_time = [t for _, t in sorted(zip(creation_times, tasks))]
-    
+
     # Check that the two lists compare equal
     assert tasks_by_correct_order == tasks_by_creation_time
