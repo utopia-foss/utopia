@@ -19,7 +19,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 
 // Functions for determining if a type is an STL-container are provided here.
 // This is used if we wish to make hdf5 types for storing such data in an

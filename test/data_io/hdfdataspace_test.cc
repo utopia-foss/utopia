@@ -12,7 +12,7 @@
 #include "utopia/data_io/hdfutilities.hh"
 #include <utopia/data_io/hdfdataspace.hh>
 
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 
 #include <boost/test/included/unit_test.hpp> // for unit tests
 

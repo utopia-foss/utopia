@@ -3,7 +3,7 @@
 
 // metaprogramming
 #include "../../core/metaprogramming.hh"
-#include "../../core/utils.hh"
+#include "../../core/type_traits.hh"
 
 // for hdf5 support
 #include "../hdfdataset.hh"

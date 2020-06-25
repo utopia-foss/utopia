@@ -7,10 +7,12 @@
 #include <hdf5.h>
 
 #include "../core/logging.hh"
-#include "../core/utils.hh"
+#include "../core/type_traits.hh"
+#include "../core/ostream.hh"
 
 #include "hdfobject.hh"
 #include "hdfutilities.hh"
+
 
 namespace Utopia
 {

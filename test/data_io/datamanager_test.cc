@@ -7,7 +7,7 @@
 #include <boost/test/included/unit_test.hpp> // for unit tests
 
 #include <utopia/core/logging.hh>
-#include <utopia/core/utils.hh> // for output operators, get size...
+#include <utopia/core/type_traits.hh> // for output operators, get size...
 
 #include <utopia/data_io/hdfdataset.hh> // for messing around with datasets
 #include <utopia/data_io/hdffile.hh>    // for buiding model mock class

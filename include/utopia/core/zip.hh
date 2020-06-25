@@ -11,7 +11,7 @@
 #include <boost/hana/transform.hpp>
 #include <boost/hana/for_each.hpp>
 
-#include "utils.hh"
+#include "type_traits.hh"
 
 namespace Utopia
 {

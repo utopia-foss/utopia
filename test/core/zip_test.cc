@@ -10,8 +10,9 @@
 #include <iterator>
 #include <iostream>
 #include <string>
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 #include <utopia/core/zip.hh>
+#include <utopia/core/ostream.hh>
 
 struct Containers {
     static constexpr int size = 5;

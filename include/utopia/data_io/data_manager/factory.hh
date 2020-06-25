@@ -20,7 +20,7 @@
 
 // utopia includes
 #include "../../core/logging.hh"
-#include "../../core/utils.hh"
+#include "../../core/type_traits.hh"
 #include "../cfg_utils.hh"
 #include "data_manager.hh"
 #include "defaults.hh"
@@ -137,7 +137,7 @@ class TaskFactory
         {
             // do nothing here, because nothing shall be done ;)
         }
-        else if constexpr (Utopia::Utils::is_tuple_like_v< AttrType >)
+        else if constexpr (Utopia::Utils::has_static_size_v< AttrType >)
         {
 
             using std::get;
@@ -179,7 +179,7 @@ class TaskFactory
         else
         {
             static_assert(
-                Utils::is_callable_object_v< AttrType >,
+                Utils::is_callable_v< AttrType >,
                 "Error, if the given attribute argument is not a tuple/pair "
                 "and not 'Nothing', it has to be a function");
 

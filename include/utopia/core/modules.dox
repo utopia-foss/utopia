@@ -265,4 +265,57 @@ iterator adaptor and a set of containers.
 Have a look at the Utopia::TestTools namespace for more specific information.
 \}
 
+
+\defgroup Metaprogramming Metaprogramming and type restrictions
+\{
+\ingroup Core
+\brief Metafunctions to `classify` types, in order to be
+able to restrict template parameters, and some other helpers for type computation
+
+\details These functions are executed by the compiler, 
+not at runtime, and can be used to restrict the typse that can be passed to template 
+functions or discriminate between them during execution via `if constexpr`.
+The functions introduced here can later be
+employed to implement c++20 concepts that serve the same purpose, but with less 
+syntactic overhead and cleaner error messages. 
+ Note that we call metafunctions implemented here
+`concepts` for bervity as well, despite the ambiguity with the C++20 concepts feature.
+Note also that while some of them are named like C++
+NamedRequirements (e.g. is_container), they do not check if a type actually
+fullfills the respective NamedRequirement.
+The metafunctions in `type_traits.hh` implement a type hierarchy:
+- an iterable is a type that has a subtype `iterator`.
+- a string is either std::basic_string<T>, std::basic_string_view<T> or char* or const char*
+- a container is an iterable that is not a string. Note that C++ defines
+std::basic_string as a container as well, but HDF5 does treat arrays and strings
+differently and hence this distinction is necessary here in order to get the
+DataIO backend to work correctly.
+- an associative container is a container T that defines T::key_type and T::key_compare
+- an unordered associative container is a container that defines T::key_type, T::value_type and T::hasher.
+- a linear container is a container that is not an associative container or
+unordered associative container
+- a random access container is a linear container the iterator of which has
+std::random_access_iterator tag or another tag that can be converted to std::random_access_iterator_tag. 
+- a type T is array-like if it is a container and has compile time constant size
+given by an overload of the `get_size` metafunction.
+- a type T is tuple-like if it has compile time constant size given by an
+overload of the `get_size` metafunction. 
+- a type is a graph if it has both vertex-descriptor and edge-descriptor
+subtypes.
+
+Aside from these type-restriction metafunctions, many more metafunctions are
+implemented therein that help modify types in a useful way, like recursively removing
+type extensions (const volative T****& --> T) or similar, or for checking if a
+type is callable or not.
+\}
+
+\defgroup OutputStreams Output stream operators
+\{
+\ingroup Core
+\brief  Pretty-print types like containers, tuples and various others to std::ostream or std::ofstream.
+        To use them, put a using Utopia::Utils::operator<< before the first call. Then you 
+        can do std::cout << many << funny << things << std::endl; as always.
+\}
+
+
 */
