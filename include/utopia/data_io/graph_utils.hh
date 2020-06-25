@@ -14,7 +14,7 @@
 #include <hdf5.h>
 
 #include "../core/logging.hh"
-#include "../core/utils.hh"
+#include "../core/type_traits.hh"
 #include "../core/graph/iterator.hh"
 #include "hdfdataset.hh"
 #include "hdfgroup.hh"
@@ -166,7 +166,7 @@ auto generate_write_function(const Graph& g,
         // ... 1D case if second element of write_spec is a callable object
         //     such that the write specifications are of the form
         //     write_spec = (std::string name_adaptor, lambda adaptor)
-        if constexpr (Utils::is_callable_object_v<std::tuple_element_t<1, 
+        if constexpr (Utils::is_callable_v<std::tuple_element_t<1, 
                                     std::decay_t<decltype(write_spec)>>>)
         {
             const auto dset = grp->open_dataset(label, { num_entities });

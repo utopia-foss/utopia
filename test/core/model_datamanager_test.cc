@@ -10,7 +10,7 @@
 #include <boost/test/included/unit_test.hpp>
 
 // utopia
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 #include <utopia/data_io/cfg_utils.hh>
 #include <utopia/data_io/data_manager/factory.hh>
 #include <utopia/data_io/hdfattribute.hh>

@@ -1,7 +1,7 @@
 #ifndef UTOPIA_DATAIO_DATA_MANAGER_UTILS_HH
 #define UTOPIA_DATAIO_DATA_MANAGER_UTILS_HH
 
-#include "../../core/utils.hh"
+#include "../../core/type_traits.hh"
 #include "../../core/zip.hh"
 #include "../cfg_utils.hh"
 
@@ -35,7 +35,7 @@ namespace _DMUtils
  */
 template < typename... T >
 struct all_callable
-    : std::conjunction< Utopia::Utils::is_callable_object< T >... >
+    : std::conjunction< Utopia::Utils::is_callable< T >... >
 {
 };
 
@@ -57,7 +57,7 @@ unpack_shared(KVPairs&& kv_pairs, ObjMap&& map)
     using namespace Utopia::Utils;
 
     // Distinguish between tuple-like key value pairs and others
-    if constexpr (is_tuple_like_v< remove_qualifier_t< KVPairs > >)
+    if constexpr (has_static_size_v< remove_qualifier_t< KVPairs > >)
     {
         using std::get; // enable ADL
 

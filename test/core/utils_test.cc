@@ -1,114 +1,312 @@
+#define BOOST_TEST_MODULE utils test
+
 #include <iostream>
+
 #include <list>
-#include <map>
-#include <string>
-#include <type_traits>
+#include <forward_list>
 #include <vector>
+#include <deque>
 
-#include <utopia/core/utils.hh>
+#include <string>
 
-int main()
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
+#include <type_traits>
+
+#include <utopia/core/type_traits.hh>
+
+#include <boost/test/included/unit_test.hpp>
+#include <boost/mpl/vector.hpp>
+
+#include <boost/graph/adjacency_list.hpp>
+
+struct CustomIterable
 {
-    // test remove_pointer metafunction
-    constexpr bool a = std::is_same_v<Utopia::Utils::remove_pointer_t<double*>, double>;
-    static_assert(a == true, "remove_pointer failed");
+    using iterator = int*;
+};
 
-    constexpr bool b = std::is_same_v<Utopia::Utils::remove_pointer_t<double****>, double>;
-    static_assert(b == true, "remove_pointer failed");
+// demonstrate custom addition of get_size overloads to add new
+// array like or tuple_like types
+namespace Utopia
+{
+namespace Utils
+{
 
-    constexpr bool c = std::is_same_v<Utopia::Utils::remove_pointer_t<double>, double>;
-    static_assert(c == true, "remove_pointer failed");
+// the char*** seems not useful, just for demonstration here
+template < arma::uword N, arma::uword M >
+using special_matrix = arma::Mat< char*** >::fixed< N, M >;
 
-    // test is_string typetrait thing
-    static_assert(Utopia::Utils::is_string_v<const std::string*&> == true,
-                  "is_string failed");
-    static_assert(Utopia::Utils::is_string_v<int> == false, "is_string failed");
-    static_assert(Utopia::Utils::is_string_v<std::vector<int>> == false,
-                  "is_string failed");
-    static_assert(Utopia::Utils::is_string_v<const char*> == true,
-                  "is_string failed");
-    static_assert(Utopia::Utils::is_string_v<char*> == true,
-                  "is_string failed");
+template < arma::uword N, arma::uword M >
+struct get_size< special_matrix< N, M > >
+    : std::integral_constant< std::size_t, N * M >
+{
+};
 
-    using maptype = std::map<int, double>;
+template < arma::uword I, arma::uword J, arma::uword K >
+struct get_size< arma::cube::fixed< I, J, K > >
+    : std::integral_constant< std::size_t, I * J * K >
+{
+};
+}
+}
 
-    // test is_containter value types
-    static_assert(Utopia::Utils::is_container_v<std::vector<double>> == true,
-                  "is_container failed for std::vector<double>");
-    static_assert(Utopia::Utils::is_container_v<maptype> == true,
-                  "is_container failed for std::map<int, double>");
-    static_assert(Utopia::Utils::is_container_v<int> == false,
-                  "is_container failed for int");
-    static_assert(Utopia::Utils::is_container_v<std::string> == false,
-                  "is_container failed for std::string"); // of special importance
+using iterables = boost::mpl::vector< std::vector< int >,
+                                      std::list< int >,
+                                      std::string,
+                                      std::vector< std::array< int, 3 > >,
+                                      std::array< int, 3 >,
+                                      std::string_view,
+                                      CustomIterable >;
 
-    // test against rvalue refs
-    static_assert(Utopia::Utils::is_container_v<std::vector<double>&&> == true,
-                  "is_container failed for std::vector<double>&&");
-    static_assert(Utopia::Utils::is_container_v<maptype&&> == true,
-                  "is_container failed for maptype&&");
-    static_assert(Utopia::Utils::is_container_v<int&&> == false,
-                  "is_container failed for int&&");
-    static_assert(Utopia::Utils::is_container_v<std::string&&> == false,
-                  "is_container failed for std::string&&"); // of special importance
+using containers = boost::mpl::vector< std::vector< int >,
+                                       std::list< int >,
+                                       std::vector< std::array< int, 3 > >,
+                                       CustomIterable,
+                                       std::map< int, double > >;
 
-    // test against const refs
-    static_assert(Utopia::Utils::is_container_v<const std::vector<double>&> == true,
-                  "is_container failed for const std::vector<double>&");
-    static_assert(Utopia::Utils::is_container_v<const maptype&> == true,
-                  "is_container failed for conststd::map<int, double>& ");
-    static_assert(Utopia::Utils::is_container_v<const int&> == false,
-                  "is_container failed for const int&");
-    static_assert(Utopia::Utils::is_container_v<const std::string&> == false,
-                  "is_container failed for const std::string&"); // of special importance
+using strings = boost::mpl::vector< std::basic_string< int >,
+                                    std::string,
+                                    const char*,
+                                    char*,
+                                    std::basic_string_view< int > >;
 
-    // test against pointers
-    static_assert(Utopia::Utils::is_container_v<std::vector<double>*> == true,
-                  "is_container failed for std::vector<double>*");
-    static_assert(Utopia::Utils::is_container_v<maptype*> == true,
-                  "is_container failed for std::map<int, double>*");
-    static_assert(Utopia::Utils::is_container_v<int*> == false,
-                  "is_container failed for int*");
-    static_assert(Utopia::Utils::is_container_v<std::string*> == false,
-                  "is_container failed for std::string*"); // of special importance
+using associatives = boost::mpl::vector< std::map< int, double >,
+                                         std::set< int >,
+                                         std::multimap< int, std::size_t >,
+                                         std::multiset< int > >;
 
-    // test against const pointers
-    static_assert(Utopia::Utils::is_container_v<const std::vector<double>*> == true,
-                  "is_container failed for const std::vector<double>*");
-    static_assert(Utopia::Utils::is_container_v<const maptype*> == true,
-                  "is_container failed for const maptype*");
-    static_assert(Utopia::Utils::is_container_v<const int*> == false,
-                  "is_container failed for const int*");
-    static_assert(Utopia::Utils::is_container_v<const std::string*> == false,
-                  "is_container failed for const std::string*"); // of special importance
+using unordered_associatives =
+    boost::mpl::vector< std::unordered_map< int, double >,
+                        std::unordered_set< int >,
+                        std::unordered_multimap< int, std::size_t >,
+                        std::unordered_multiset< int > >;
 
-    // test against some more complicated (pathological) stuff
-    static_assert(Utopia::Utils::is_container_v<const std::vector<double>*&> == true,
-                  "is_container failed for const std::vector<double>*&");
-    static_assert(Utopia::Utils::is_container_v<std::vector<double>*&&> == true,
-                  "is_container failed for std::vector<double>*&&");
+using linear_containers = boost::mpl::vector< std::vector< std::vector< int > >,
+                                              std::list< int >,
+                                              std::deque< int >,
+                                              std::array< int, 6 >,
+                                              arma::Mat< double >,
+                                              arma::Row< double >,
+                                              arma::Col< int >::fixed< 7 > >;
 
-    static_assert(Utopia::Utils::is_container_v<const std::string*&> == false,
-                  "is_container failed for const std::string*&");
-    static_assert(Utopia::Utils::is_container_v<std::string*&&> == false,
-                  "is_container failed for  std::string*&&");
+using random_access_containers =
+    boost::mpl::vector< std::vector< int >,
+                        std::deque< int >,
+                        std::array< double, 4 >,
+                        arma::Mat< double >,
+                        arma::Row< double >,
+                        arma::Col< int >::fixed< 7 > >;
 
-    constexpr std::size_t sarr = Utopia::Utils::get_size_v<std::array<int, 4>>;
-    static_assert(sarr == 4, "get_size failed for arary of size 4");
+using array_like_types = boost::mpl::vector< std::array< int, 4 >,
+                                             arma::vec::fixed< 3 >,
+                                             arma::ivec::fixed< 4 >,
+                                             arma::Col< int32_t >::fixed< 3 >,
+                                             arma::Col< uint32_t >::fixed< 6 >,
+                                             arma::rowvec::fixed< 2 >,
+                                             arma::irowvec::fixed< 20 >,
+                                             arma::Mat< double >::fixed< 3, 4 >,
+                                             arma::cube::fixed< 1, 2, 3 > >;
 
-    constexpr bool y = Utopia::Utils::is_array_like_v<std::tuple<int, double, char>>;
-    constexpr bool z = Utopia::Utils::is_array_like_v<std::list<float>>;
+using tuple_like_types =
+    boost::mpl::vector< std::tuple< int, double, std::string >,
+                        std::pair< int, std::size_t >,
+                        std::array< int, 3 >,
+                        arma::mat::fixed< 3, 4 >,
+                        Utopia::Utils::special_matrix< 5, 6 >,
+                        arma::cube::fixed< 1, 2, 3 > >;
 
-    static_assert(y == false, "is_arraylike failed for tuple");
-    static_assert(z == false, "is_arraylike failed for list");
+using non_iterables = boost::mpl::vector< int, double, const char* >;
+using non_containers =
+    boost::mpl::vector< std::basic_string< int >, std::string, int**, double >;
 
-    constexpr bool y1 = Utopia::Utils::is_tuple_like_v<std::tuple<int, double, char>>;
-    constexpr bool y2 = Utopia::Utils::is_tuple_like_v<std::array<int, 3>>;
-    constexpr bool z1 = Utopia::Utils::is_tuple_like_v<std::list<float>>;
+using non_random_access_containers =
+    boost::mpl::vector< std::list< int >, std::forward_list< int > >;
 
-    static_assert(y1 == true, "is_tuple_like failed for tuple");
-    static_assert(y2 == true, "is_tuple_like failed for array");
-    static_assert(z1 == false, "is_tuple_like failed for list");
+// for graph stuff
 
-    return 0;
+// .. Helper ..................................................................
+/// The test vertex struct
+struct Vertex
+{
+    int i;
+};
+
+// The vertex and edge container
+using vertex_cont = boost::vecS;
+using edge_cont   = boost::vecS;
+
+// .. Actual Graphs .........................................................
+
+using graphs =
+    boost::mpl::vector< boost::adjacency_list< boost::vecS, // edge container
+                                               boost::vecS, // vertex container
+                                               boost::undirectedS,
+                                               Vertex >,
+                        boost::adjacency_list< boost::vecS, // edge container
+                                               boost::vecS, // vertex container
+                                               boost::bidirectionalS,
+                                               Vertex >,
+                        boost::adjacency_list< boost::listS, // edge container
+                                               boost::listS, // vertex container
+                                               boost::undirectedS,
+                                               Vertex >,
+                        boost::adjacency_list< boost::listS, // edge container
+                                               boost::listS, // vertex container
+                                               boost::bidirectionalS,
+                                               Vertex > >;
+
+[[maybe_unused]] auto lambda = [](double v, double x) -> double {
+    return v + x;
+};
+
+struct Operator
+{
+
+    int
+    operator()(int x)
+    {
+        return x * 2;
+    }
+};
+
+using callables = boost::mpl::
+    vector< std::function< void(int) >, decltype(lambda), Operator >;
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(iterable_test, T, iterables)
+{
+    BOOST_TEST(Utopia::Utils::is_iterable_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_iterable_test, T, non_iterables)
+{
+    BOOST_TEST(not Utopia::Utils::is_iterable_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(container_test, T, containers)
+{
+    BOOST_TEST(Utopia::Utils::is_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_container_test, T, non_containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(string_test, T, strings)
+{
+    BOOST_TEST(Utopia::Utils::is_string_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_string_test, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_string_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(associative_test, T, associatives)
+{
+    BOOST_TEST(Utopia::Utils::is_associative_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_associative_test, T, unordered_associatives)
+{
+    BOOST_TEST(not Utopia::Utils::is_associative_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(unordered_associative_test,
+                              T,
+                              unordered_associatives)
+{
+    BOOST_TEST(Utopia::Utils::is_unordered_associative_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_unordered_associative_test, T, associatives)
+{
+    BOOST_TEST(not Utopia::Utils::is_unordered_associative_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(linear_container_test, T, linear_containers)
+{
+    BOOST_TEST(Utopia::Utils::is_linear_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_linear_container_test, T, associatives)
+{
+    BOOST_TEST(not Utopia::Utils::is_linear_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(random_access_container_test,
+                              T,
+                              random_access_containers)
+{
+    BOOST_TEST(Utopia::Utils::is_random_access_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_random_access_container_test,
+                              T,
+                              non_random_access_containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_random_access_container_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(tuple_like_test, T, tuple_like_types)
+{
+    BOOST_TEST(Utopia::Utils::has_static_size_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_tuple_like_test, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::has_static_size_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(array_like_test, T, array_like_types)
+{
+    BOOST_TEST(Utopia::Utils::is_array_like_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(non_array_like_test, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_array_like_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(has_vertex_descr, T, graphs)
+{
+    BOOST_TEST(Utopia::Utils::has_vertex_descriptor_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(not_has_vertex_descr, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::has_vertex_descriptor_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(has_edge_descr, T, graphs)
+{
+    BOOST_TEST(Utopia::Utils::has_edge_descriptor_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(not_has_edge_descr, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::has_edge_descriptor_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(is_graph_test, T, graphs)
+{
+    BOOST_TEST(Utopia::Utils::is_graph_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(not_is_graph_test, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_graph_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(is_callable_test, T, callables)
+{
+    BOOST_TEST(Utopia::Utils::is_callable_v< T >);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(not_is_callable_test, T, containers)
+{
+    BOOST_TEST(not Utopia::Utils::is_callable_v< T >);
 }

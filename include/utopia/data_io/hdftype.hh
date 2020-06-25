@@ -12,7 +12,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 
 #include "hdfobject.hh"
 #include "hdfutilities.hh"

@@ -6,7 +6,7 @@
 #include "utopia/data_io/hdfutilities.hh"
 
 #include "utopia/core/logging.hh"
-#include <utopia/core/utils.hh>
+#include <utopia/core/type_traits.hh>
 
 #include <boost/test/included/unit_test.hpp> // for unit tests
 

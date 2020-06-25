@@ -18,7 +18,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include "../core/utils.hh"
+#include "../core/type_traits.hh"
 
 #include "hdfattribute.hh"
 #include "hdfbufferfactory.hh"

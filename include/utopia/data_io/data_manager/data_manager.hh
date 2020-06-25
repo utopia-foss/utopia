@@ -11,7 +11,7 @@
 
 // utopia includes
 #include "../../core/logging.hh"
-#include "../../core/utils.hh"
+#include "../../core/type_traits.hh"
 #include "../cfg_utils.hh"
 #include "defaults.hh"
 #include "utils.hh"

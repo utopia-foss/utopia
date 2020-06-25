@@ -6,7 +6,7 @@
 #include <boost/mpl/list.hpp>                // type lists for testing
 #include <boost/test/included/unit_test.hpp> // for unit tests
 
-#include <utopia/core/utils.hh> // for output operators, get size...
+#include <utopia/core/type_traits.hh> // for output operators, get size...
 #include <utopia/data_io/data_manager/data_manager.hh>
 #include <utopia/data_io/data_manager/defaults.hh>
 #include <utopia/data_io/data_manager/factory.hh>

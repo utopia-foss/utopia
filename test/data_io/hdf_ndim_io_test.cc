@@ -1,4 +1,4 @@
-#include "utopia/core/utils.hh"
+#include "utopia/core/type_traits.hh"
 #define BOOST_TEST_MODULE HDF5_WRITE_ND_IO_TEST
 
 #include <array>

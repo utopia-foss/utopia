@@ -4,7 +4,7 @@
  */
 #ifndef UTOPIA_CORE_COMPILETIME_ALGOS_HH
 #define UTOPIA_CORE_COMPILETIME_ALGOS_HH
-#include "utils.hh"
+#include "type_traits.hh"
 
 namespace Utopia {
 // namespace for implementing tuple for each
