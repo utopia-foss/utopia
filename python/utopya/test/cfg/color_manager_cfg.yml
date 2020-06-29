@@ -1,0 +1,101 @@
+# Test configurations of the `plot_funcs._mpl_helpers.ColorHandler`.
+---
+from_centers:
+  cmap:
+    bad: w
+    over: w
+    under: w
+    from_values:
+      0: r
+      1: g
+      4: b
+  labels:
+    0: foo
+    1: bar
+    4: baz
+
+from_intervals:
+  cmap:
+    from_values:
+      [-.5,0.5]: r
+      [0.5,1.5]: g
+      [1.5,4.5]: b
+
+simple_syntax:
+  cmap: Greys
+  norm: NoNorm
+  vmin: ~
+  vmax: 42
+  labels:
+    0: 0
+  cbar_kwargs:
+    orientation: horizontal
+
+advanced_syntax:
+  cmap:
+    name: Greys
+    over:
+      color: k
+      alpha: 0.5
+    under:
+      color: k
+      alpha: 0.5
+  vmin: 0
+  vmax: 1
+  norm:
+    name: PowerNorm
+    gamma: 0.5
+
+# -- Different norms ----------------------------------------------------------
+Normalize:
+  norm: Normalize
+
+BoundaryNorm:
+  norm:
+    name: BoundaryNorm
+    boundaries: [0,1,2]
+    ncolors: 5
+
+NoNorm:
+  norm: NoNorm
+
+LogNorm:
+  norm: LogNorm
+
+PowerNorm:
+  norm:
+    name: PowerNorm
+    gamma: 0.5
+
+SymLogNorm:
+  norm:
+    name: SymLogNorm
+    linthresh: 1.
+
+TwoSlopeNorm:
+  norm:
+    name: TwoSlopeNorm
+    vcenter: 1.
+
+# -- Failing configurations ---------------------------------------------------
+invalid_norm:
+  norm: norrrm
+
+invalid_cmap:
+  cmap: cmappp
+  
+disconnected_intervals:
+  cmap:
+    from_values:
+      [0,1]: r
+      [2,3]: g
+
+decreasing_boundaries:
+  cmap:
+    from_values:
+      [1,0]: r
+
+single_bin_center:
+  cmap:
+    from_values:
+      0: r

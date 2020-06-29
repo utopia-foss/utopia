@@ -3,10 +3,14 @@ Analysis of the attractor
 
 .. automodule:: utopya.plot_funcs.attractor
 
+.. contents::
+    :local:
+    :depth: 1
+
 ----
 
-Bifurcation in on parameter dimension
--------------------------------------
+Bifurcation in one parameter dimension
+--------------------------------------
 
 For a bifurcation diagram in a single parameter dimension, there is the 
 ``attractor.bifurcation_diagram`` method. It takes a Sequence of analysis steps

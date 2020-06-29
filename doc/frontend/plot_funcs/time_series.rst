@@ -3,6 +3,10 @@ Time Series Plots
 
 .. automodule:: utopya.plot_funcs.time_series
 
+.. contents::
+    :local:
+    :depth: 1
+
 ----
 
 Density

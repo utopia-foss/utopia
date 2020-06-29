@@ -350,7 +350,8 @@ def test_graph_plots(tmpdir):
     # Single graph plots
     mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
                         plot_only=["Graph", "DiGraph", "MultiGraph",
-                                   "MultiDiGraph", "ExternalProperties"])
+                                   "MultiDiGraph", "ExternalProperties",
+                                   "Example_graph_plot"])
 
     # Try using a graphviz node layout, which requires pydot
     try:
@@ -361,10 +362,18 @@ def test_graph_plots(tmpdir):
     else:
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
 
-    # Try plotting a colorbar for directed edges
-    with pytest.raises(PlotCreatorError, match="No colorbar can be shown"):
+
+    # Try plotting a colorbar for directed edges with arrows=True
+    with pytest.warns(UserWarning, match="No colorbar can be shown"):
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
                             plot_only=["colorbar_for_directed_edges"])
+
+    # Try using the BoundaryNorm for directed edges with arrows=True
+    with pytest.raises(PlotCreatorError, match="only the "
+                                "matplotlib.colors.Normalize base class is "
+                                "supported."):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["BoundaryNorm_for_directed_edges"])
 
     # Passing the 'labels' key for edge labels
     with pytest.raises(PlotCreatorError, match="Received 'labels' key"):

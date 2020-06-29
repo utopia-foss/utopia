@@ -9,100 +9,176 @@ Graph: &base
   helpers:
     set_title:
       title: graph
-  graph_cfg:
-    graph_creation: &graph_creation
-      at_time_idx: -1
-      node_props: ['some_trait', 'some_state']
-      edge_props: ['weights']
-      directed: False
-      parallel_edges: False
-    graph_drawing: &graph_drawing
-      positions:
-        model: random
-      nodes:
-        node_color:
-          from_property: some_state
-        node_size:
-          from_property: degree
-          scale_to_interval: [200, 400]
-      edges:
-        edge_color: orange
-        width:
-          from_property: weights
+  graph_creation: &graph_creation
+    at_time_idx: -1
+    node_props: ['some_trait', 'some_state']
+    edge_props: ['weights']
+    directed: False
+    parallel_edges: False
+  graph_drawing: &graph_drawing
+    positions:
+      model: random
+    nodes:
+      node_color:
+        from_property: some_state
+      node_size:
+        from_property: some_state
+        scale_to_interval: [200, 400]
+      cmap: cividis
+      cmap_norm: ~
+    edges:
+      edge_color: [1, 0, 1]
+      width:
+        from_property: weights
+    mark_nodes:
+      nodelist: [0, 1]
+      color: r
+    mark_edges:
+      edgelist: [[0, 1], [1, 2]]
+      color: '#1f78b4'
 
 DiGraph:
   <<: *base
   file_ext: pdf
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-      directed: True
-      parallel_edges: False
-    graph_drawing:
-      <<: *graph_drawing
-      positions:
-        model: spring
-        seed: 42
-      select:
-        nodes: !listgen [0, 6]
-      nodes:
-        node_size: 200
-      node_labels:
-        enabled: True
-        show_only: [0, 1, 2]
+  graph_creation:
+    <<: *graph_creation
+    directed: True
+    parallel_edges: False
+  graph_drawing:
+    positions:
+      model: spring
+      seed: 42
+    select:
+      nodelist: !listgen [0, 6]
+      drop: False
+      open_edges: True
+    nodes:
+      node_size: 200
+      node_color:
+        from_property: some_state
+      ### Start -- graph_coloring_discrete
+      cmap:
+        from_values:
+          0: red
+          1: green
+          2: blue
+      colorbar:
+        enabled: true  # enabled by default, if property mapping was done for the node colors
         labels:
-          0: label0
-          1: label1
+          0: foo
+          1: bar
+          2: baz
+        # additional colorbar styling arguments:
+        shrink: .2
+        aspect: 10
+        orientation: horizontal
+      ### End ---- graph_coloring_discrete
+      vmin: 0.42
+      vmax: 42.
+    edges:
+      arrows: False
+    node_labels:
+      enabled: True
+      show_only: [0, 1, 2]
+      format: '{label:.2f}'
+      labels:
+        0: label0
+        1: label1
+    edge_labels:
+      enabled: True
       edge_labels:
-        enabled: True
-        show_only: [[0,1],[0,2],[1,2]]
+        [0, 1]: foo
+        [0, 2]: bar
+      show_only: [[0, 1], [0, 2], [1, 2]]
+    mark_edges:
+      colors:
+        [0, 1]: r
+        [1, 2]: g
 
 MultiGraph:
   <<: *base
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-      directed: False
-      parallel_edges: True
-    graph_drawing:
-      <<: *graph_drawing
-      select:
-        radial: True
-        center: 0
-        radius: 100
-      edges:
-        edge_color:
-          from_property: weights
-      node_labels:
+  graph_creation:
+    <<: *graph_creation
+    directed: False
+    parallel_edges: True
+  graph_drawing:
+    select:
+      center: 0
+      radius: 100
+      open_edges: True
+      drop: True
+    nodes:
+      node_size:
+        from_property: degree
+      node_color:
+        from_property: some_state
+      ### Start -- graph_coloring_lognorm
+      cmap:
+        name: magma
+        under: black
+        over: white
+        bad: red
+      cmap_norm:
+        name: LogNorm   # Can be Normalize, NoNorm, LogNorm, PowerNorm, BoundaryNorm, 
+                        # SymLogNorm, TwoSlopeNorm.
+                        # Specify via `name` key in order to provide additional
+                        # arguments if needed
+      vmin: 0.1
+      vmax: 1000
+      colorbar:
+        enabled: true
+        extend: both    # to show under/over
+      ### End ---- graph_coloring_lognorm
+    edges:
+      edge_color:
+        from_property: weights
+      colorbar:
         enabled: True
-        show_only: [0, 1, 2]
         labels:
-          from_property: some_trait
+          -0.5: red_color
+          16: green_color
+      edge_cmap:
+        from_values:
+          [-1,0]: r
+          [0,32]: g
+      edge_vmin: 0
+      edge_vmax: 42
+    node_labels:
+      enabled: True
+      show_only: [0, 1, 2]
+      labels:
+        from_property: some_trait
+    edge_labels:
+      enabled: True
       edge_labels:
-        enabled: True
-        edge_labels:
-          from_property: weights
+        from_property: weights
+        format: '{label:.2f}'
+    mark_nodes:
+      colors:
+        0: b
+        1: k
 
 MultiDiGraph:
   <<: *base
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-      directed: True
-      parallel_edges: True
-    graph_drawing:
-      <<: *graph_drawing
-      select:
-        radial: True
-        center: 0
-        radius: 1
-      node_labels:
-        enabled: True
-        labels:
-          0: label0
-          1: label1
-      edge_labels:
-        enabled: True
+  graph_creation:
+    <<: *graph_creation
+    directed: True
+    parallel_edges: True
+  graph_drawing:
+    <<: *graph_drawing
+    select:
+      drop: False
+      center: 0
+      radius: 1
+    nodes:
+      node_size:
+        from_property: in_degree
+    node_labels:
+      enabled: True
+      labels:
+        0: label0
+    edge_labels:
+      enabled: True
 
 ExternalProperties: &ext_prop
   <<: *base
@@ -114,52 +190,66 @@ ExternalProperties: &ext_prop
       transform:
         - operation: squared
   register_property_maps: ['some_state_transformed']
-  graph_cfg:
-    graph_creation:
-      at_time_idx: -1
-      node_props: ['some_trait', 'some_state_transformed']
-      directed: False
-      parallel_edges: False
-    graph_drawing:
-      nodes:
-        node_color:
-          from_property: some_state_transformed
+  graph_creation:
+    at_time_idx: -1
+    node_props: ['some_trait', 'some_state_transformed']
+    directed: False
+    parallel_edges: False
+  graph_drawing:
+    nodes:
+      node_color:
+        from_property: some_state_transformed
+      colorbar:
+        enabled: True
 
 # -- Single plots that raise Errors or Warnings -------------------------------
 Graphviz:
   <<: *base
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-    graph_drawing:
-      <<: *graph_drawing
-      positions:
-        model: graphviz_dot
+  graph_creation:
+    <<: *graph_creation
+  graph_drawing:
+    <<: *graph_drawing
+    positions:
+      model: graphviz_dot
 
 wrong_edge_label_kwarg:
   <<: *base
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-    graph_drawing:
-      <<: *graph_drawing
-      edge_labels:
-        enabled: True
-        labels:
-          [0,1]: foo
+  graph_creation:
+    <<: *graph_creation
+  graph_drawing:
+    <<: *graph_drawing
+    edge_labels:
+      enabled: True
+      labels:
+        [0,1]: foo
+
+BoundaryNorm_for_directed_edges:
+  <<: *base
+  graph_creation:
+    <<: *graph_creation
+    directed: True
+    parallel_edges: False
+  graph_drawing:
+    <<: *graph_drawing
+    edges:
+      edge_color:
+        from_property: weights
+      edge_cmap:
+        from_values:
+          0: r
+          1: g
 
 colorbar_for_directed_edges:
   <<: *base
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-      directed: True
-      parallel_edges: False
-    graph_drawing:
-      <<: *graph_drawing
-      edges:
-        edge_color:
-          from_property: weights
+  graph_creation:
+    <<: *graph_creation
+    directed: True
+    parallel_edges: False
+  graph_drawing:
+    <<: *graph_drawing
+    edges:
+      edge_color:
+        from_property: weights
 
 invalid_ext_prop:
   <<: *ext_prop
@@ -171,42 +261,108 @@ graph_anim1:
   animation:
     enabled: True
     writer: frames
-
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-    graph_drawing:
-      <<: *graph_drawing
-    graph_animation:
-      times:
-        from_property: weights
+  suptitle_kwargs:
+    title: 'time: {value}'
+  graph_creation:
+    <<: *graph_creation
+  graph_drawing:
+    <<: *graph_drawing
+  graph_animation:
+    times:
+      from_property: weights
 
 graph_anim2:
   <<: *base
   animation:
     enabled: True
     writer: frames
-
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-    graph_drawing:
-      <<: *graph_drawing
-    graph_animation:
-      times:
-        isel: [0, -1]
+  graph_creation:
+    <<: *graph_creation
+  graph_drawing:
+    <<: *graph_drawing
+  graph_animation:
+    times:
+      isel: [0, -1]
 
 graph_anim3:
   <<: *base
   animation:
     enabled: True
     writer: frames
+  graph_creation:
+    <<: *graph_creation
+  graph_drawing:
+    <<: *graph_drawing
+  graph_animation:
+    times:
+      sel: [0, 1, 2]
 
-  graph_cfg:
-    graph_creation:
-      <<: *graph_creation
-    graph_drawing:
-      <<: *graph_drawing
-    graph_animation:
-      times:
-        sel: [0, 1, 2]
+# -- Documentation example ----------------------------------------------------
+### Start -- graph_plot_cfg
+Example_graph_plot:
+  based_on: .dag.graph
+
+  select:
+    graph_group: data/CopyMeGraph/g_dynamic
+
+  # The `graph_creation` configuration is passed to  `GraphGroup.create_graph`
+  graph_creation:
+    at_time_idx: -1
+    node_props:
+      - some_state
+      - some_trait
+    edge_props:
+      - weights
+
+  # `graph_drawing` contains all the layout configurations
+  graph_drawing:
+    positions:                        
+      model: spring     # Specify the node positioning model to be used. The
+                        # spring model reduces overall edge lengths.
+      k: 1              # The spring model can mainly be tweaked by changing
+      iterations: 100   # the optimal edge length `k'` and the maximum number
+                        # of iterations that are done.
+    
+    # Only plot a subgraph induced by a set of nodes.
+    select:
+      center: 0        # Do radial node selection
+      radius: 2
+
+    # The four entries below configure the layout of nodes, edges, node-labels,
+    # and edge-labels. After property mapping is applied, they are passed to
+    # the respective networkx plot functions.
+    # Have a look at the networkx documentation for a list of additional kwargs:
+    # https://networkx.github.io/documentation/stable/reference/drawing.html
+    nodes:
+      node_size:
+        from_property: some_trait     # Map the 'some_trait' property to the
+                                      # node size.
+        scale_to_interval: [30, 250]  # Linearly rescale the node sizes (the
+                                      # default node size is 300).
+    edges:
+      edge_color:
+        from_property: weights        # The 'weights' are mapped to the edge
+                                      # color.
+      edge_cmap: magma
+    node_labels:
+      enabled: True                   # Labels have to be enabled explicitly.
+      labels:                         # Provide a dict of custom node labels.
+        0: label0
+        1: label1
+        2: label2
+      show_only: [0, 1]
+    edge_labels:
+      enabled: True
+      edge_labels:
+        [0, 1]: label01
+        [1, 3]: label13
+
+    # Highlight some nodes and edges
+    mark_nodes:
+      nodelist: [1, 4, 2]
+      color: 'r'
+    mark_edges:
+      colors:
+        [0, 1]: 'r'
+        [1, 2]: 'g'
+### End ---- graph_plot_cfg
