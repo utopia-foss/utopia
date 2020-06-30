@@ -121,8 +121,8 @@ class ColorManager:
             norm_kwargs['vmin'] = vmin
             norm_kwargs['vmax'] = vmax
 
-            log.remark("norm.vmin and norm.vmax set to %d and %d.", vmin, vmax)
-        
+            log.remark("norm.vmin and norm.vmax set to %s and %s.", vmin, vmax)
+
         self._cmap = self._create_cmap(**cmap_kwargs)
         self._norm = self._create_norm(**norm_kwargs)
         self._labels = labels
