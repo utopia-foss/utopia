@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 INSTALL_DEPS = [
     'numpy>=1.13',
     'scipy>=1.1.0',
-    'matplotlib>=3.1',
+    'matplotlib>=3.2.1',
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
 
