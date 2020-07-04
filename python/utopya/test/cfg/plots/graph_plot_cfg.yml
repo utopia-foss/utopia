@@ -297,6 +297,15 @@ graph_anim3:
     times:
       sel: [0, 1, 2]
 
+graph_anim_external:
+  <<: *ext_prop
+  animation:
+    enabled: True
+    writer: frames
+  graph_animation:
+    times:
+      from_property: some_state_transformed
+
 # -- Documentation example ----------------------------------------------------
 ### Start -- graph_plot_cfg
 Example_graph_plot:
