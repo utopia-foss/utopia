@@ -98,10 +98,11 @@ def draw_graph(*, hlpr: PlotHelper,
                     ``kamada_kawai``, ``planar``, ``random``, ``spectral``,
                     ``spiral``.
                     
-                    If `graphviz <https://pypi.org/project/graphviz/>`_ is
-                    available, the following models can be selected with a
-                    prepended ``graphviz_``: ``dot``, ``neato``, ``fdp``,
-                    ``sfdp``, ``twopi``, ``circo``. (Passed as ``prog`` to
+                    If installed, `GraphViz <https://pypi.org/project/graphviz/>`_
+                    models can be selected with a prepended ``graphviz_``.
+                    Options depend on the ``GraphViz`` version but may include:
+                    ``dot``, ``neato``, ``fdp``, ``sfdp``, ``twopi``,
+                    ``circo``. (Passed as ``prog`` to
                     `networkx.graphviz_layout <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pydot.graphviz_layout.html>`_).
                 further kwargs:
                     Passed on to the chosen layout model.
@@ -241,8 +242,9 @@ def draw_graph(*, hlpr: PlotHelper,
             the following arguments:
 
             from_property (str, optional):
-                Extract the times from the time coords of the given
-                node or edge property.
+                Extract the animation times from the ``time`` coordinates of
+                a container within the ``GraphGroup`` or from registered
+                external data.
             sel (list, optional):
                 Select the times by value.
             isel (list, optional):
@@ -1051,9 +1053,13 @@ def draw_graph(*, hlpr: PlotHelper,
             times = None
             time_idxs = None
 
+            # Times can be extracted from any container stored in the graph
+            # group or from any registered external data.
             if 'from_property' in kwargs:
-                times = list(graph_group[kwargs['from_property']]
-                             .coords['time'].values)
+                times = list(
+                    graph_group._get_item_or_pmap(kwargs['from_property'])
+                    .coords['time'].values
+                )
 
             elif 'sel' in kwargs:
                 times = kwargs['sel']

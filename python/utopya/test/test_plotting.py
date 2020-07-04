@@ -389,4 +389,5 @@ def test_graph_plots(tmpdir):
 
     # Animation plots
     mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
-                        plot_only=["graph_anim1", "graph_anim2", "graph_anim3"])
+                        plot_only=["graph_anim1", "graph_anim2", "graph_anim3",
+                                   "graph_anim_external"])
