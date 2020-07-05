@@ -334,10 +334,10 @@ class SEIRD : public Model<SEIRD, CDTypes>
                             _params.exposure_control.num_additional_exposures,
                             *this->_rng);
 
-                // ... and infect the sampled cells
+                // ... and expose the sampled cells
                 for (const auto& cell : sample) {
-                    cell->state.kind = Kind::infected;
-                    _counts.infected_via_exposure_control()++;
+                    cell->state.kind = Kind::exposed;
+                    _counts.exposed_via_exposure_control()++;
                 }
 
                 // Done. Can now remove first element of the queue.

@@ -25,7 +25,7 @@ private:
         "infected_to_deceased",
         "recovered_to_susceptible",
         "deceased_to_empty",
-        "infected_via_exposure_control",
+        "exposed_via_exposure_control",
         "move_randomly",
         "move_away_from_infected"
     };
@@ -89,7 +89,7 @@ public:
         return _counts[8];
     }
 
-    Counter& infected_via_exposure_control () {
+    Counter& exposed_via_exposure_control () {
         return _counts[9];
     }
 
