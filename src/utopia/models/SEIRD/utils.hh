@@ -19,10 +19,17 @@ namespace Utopia::Models::SEIRD {
   */
 template<class Counter>
 struct Counters {
-private:
-    std::array<Counter, 11> _counts {};
+    /// Number of counters
+    /** \NOTE When adjusting this, make sure to adjust the _labels as well!
+      */
+    static constexpr std::size_t size = 11;
 
-    inline static const std::array<std::string, 11> _labels {
+private:
+    /// The array holding the counter values
+    std::array<Counter, size> _counts {};
+
+    /// The array holding the corresponding counter labels
+    inline static const std::array<std::string, size> _labels {
         "empty_to_susceptible",
         "living_to_empty",
         "susceptible_to_exposed_local",

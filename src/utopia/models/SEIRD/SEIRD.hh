@@ -164,8 +164,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                               _compression)
         ),
         _dset_counts(
-            this->create_dset("counts", {_counts.counts().size()},
-                              _compression)
+            this->create_dset("counts", {_counts.size}, _compression)
         ),
 
         // Create CellManager-based datasets
