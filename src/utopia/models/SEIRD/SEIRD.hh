@@ -89,10 +89,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
      */
     std::array<double, static_cast<char>(Kind::COUNT)> _densities;
 
-    /// Counters for state transitions and other global counters
-    /** Is reset at the beginning of each step.
-      */
-    Counters<unsigned int> _counts;
+    /// *Cumulative* counters for state transitions and other events
+    Counters<unsigned long> _counts;
 
 
     // .. Data-Output related members .........................................
@@ -105,7 +103,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
     /// 2D dataset (densities array and time) of density values
     std::shared_ptr<DataSet> _dset_densities;
 
-    /// 2D dataset (counts array and time) of state counters
+    /// 2D dataset (counts array and time) of cumulative state counters
     std::shared_ptr<DataSet> _dset_counts;
 
     /// 2D dataset (cell ID and time) of cell kinds
@@ -337,7 +335,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 // ... and expose the sampled cells
                 for (const auto& cell : sample) {
                     cell->state.kind = Kind::exposed;
-                    _counts.exposed_via_exposure_control()++;
+                    _counts.susceptible_to_exposed_controlled()++;
                 }
 
                 // Done. Can now remove first element of the queue.
@@ -645,7 +643,6 @@ class SEIRD : public Model<SEIRD, CDTypes>
             state.kind           = Kind::empty;
             state.immune         = false;
             state.num_recoveries = 0;
-            _counts.deceased_to_empty()++;  // ... for completeness
 
             // Reset the age for the next susceptible cell
             state.age = 0;
@@ -782,9 +779,6 @@ class SEIRD : public Model<SEIRD, CDTypes>
      */
     void perform_step()
     {
-        // Reset the state transition counters
-        _counts.reset();
-
         // Apply exposure control if enabled
         if (_params.exposure_control.enabled) {
             exposure_control();

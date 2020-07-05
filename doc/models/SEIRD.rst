@@ -113,6 +113,28 @@ The following data is stored alongside the simulation:
 * ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
 * ``exposed_time``: the time steps a living cell is already exposed to the disease for each cell
 * ``immunity``: whether a cell is immune or not for each cell
+* ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
+* ``counts``: *cumulative* counters for a number of events, e.g. state transitions. This is a 2D array with the dimensions ``time`` and ``label``, where the latter describes the name of the counted event:
+
+    * ``empty_to_susceptible``, i.e. "birth"
+    * ``living_to_empty``, i.e. "random death"
+    * ``susceptible_to_exposed_local``, via a neighbor
+    * ``susceptible_to_exposed_random``, via a random point exposure, controlled by ``p_exposed``
+    * ``susceptible_to_exposed_controlled``, via :ref:`SEIRD_exposure_control`
+    * ``exposed_to_infected``, as controlled by ``p_infected``
+    * ``infected_to_recovered``, as controlled by ``p_recovered``
+    * ``infected_to_deceased``, as controlled by ``p_deceased``
+    * ``recovered_to_susceptible``, which happens when losing immunity, as controlled by ``p_lose_immunity``
+    * ``move_randomly``, as controlled by ``p_move_randomly``
+    * ``move_away_from_infected``, as enabled by ``move_away_from_infected``
+
+.. hint::
+
+    When setting the ``write_ca_data`` parameter to ``False``, only the ``densities`` and ``counts`` are stored.
+    If spatially resolved information is not required, it is recommended to use this option, as it improves on the run time and reduced the amount of needed disk space (which can be very large for large grids).
+
+    If spatial information is required, the ``write_start`` and ``write_every`` options can help to cut down on disk space.
+
 
 Default configuration parameters
 --------------------------------

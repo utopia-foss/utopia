@@ -10,22 +10,28 @@
 namespace Utopia::Models::SEIRD {
 
 /// A struct holding counters for state transitions and other global counters
+/** This struct is meant to count certain events over the time of a simulation
+  * run. The individual counters can be accessed via the reference-returning
+  * methods to individual entries of the underlying array.
+  *
+  * The counters implemented here should be understood as *cumulative*. Thus,
+  * only the `++` operation should be invoked on them.
+  */
 template<class Counter>
 struct Counters {
 private:
-    std::array<Counter, 12> _counts {};
+    std::array<Counter, 11> _counts {};
 
-    inline static const std::array<std::string, 12> _labels {
+    inline static const std::array<std::string, 11> _labels {
         "empty_to_susceptible",
         "living_to_empty",
         "susceptible_to_exposed_local",
         "susceptible_to_exposed_random",
+        "susceptible_to_exposed_controlled",
         "exposed_to_infected",
         "infected_to_recovered",
         "infected_to_deceased",
         "recovered_to_susceptible",
-        "deceased_to_empty",
-        "exposed_via_exposure_control",
         "move_randomly",
         "move_away_from_infected"
     };
@@ -33,7 +39,7 @@ private:
 public:
     /// Counstruct a Counters object with all counts set to zero
     Counters () {
-        reset();
+        _counts.fill(0);
     }
 
     /// Return a copy of the current value of all counts
@@ -48,57 +54,59 @@ public:
         return _labels;
     }
 
-    /// Reset all counts
-    void reset () {
-        _counts.fill(0);
-    }
-
+    /// Counts transitions from empty to susceptible
     Counter& empty_to_susceptible () {
         return _counts[0];
     }
 
+    /// Counts transitions from living to empty
     Counter& living_to_empty () {
         return _counts[1];
     }
 
+    /// Counts transitions from susceptible to exposed via local interaction
     Counter& susceptible_to_exposed_local () {
         return _counts[2];
     }
 
+    /// Counts transitions from susceptible to exposed via random infections
     Counter& susceptible_to_exposed_random () {
         return _counts[3];
     }
 
-    Counter& exposed_to_infected () {
+    /// Counts transitions from susceptible to exposed via Exposure Control
+    Counter& susceptible_to_exposed_controlled () {
         return _counts[4];
     }
 
-    Counter& infected_to_recovered () {
+    /// Counts transitions from exposed to infected
+    Counter& exposed_to_infected () {
         return _counts[5];
     }
 
-    Counter& infected_to_deceased () {
+    /// Counts transitions from infected to recovered
+    Counter& infected_to_recovered () {
         return _counts[6];
     }
 
-    Counter& recovered_to_susceptible () {
+    /// Counts transitions from infected to deceased
+    Counter& infected_to_deceased () {
         return _counts[7];
     }
 
-    Counter& deceased_to_empty () {
+    /// Counts transitions from recovered to susceptible
+    Counter& recovered_to_susceptible () {
         return _counts[8];
     }
 
-    Counter& exposed_via_exposure_control () {
+    /// Counts random movement events
+    Counter& move_randomly () {
         return _counts[9];
     }
 
-    Counter& move_randomly () {
-        return _counts[10];
-    }
-
+    /// Counts events where an agent moves away from an infected agent
     Counter& move_away_from_infected () {
-        return _counts[11];
+        return _counts[10];
     }
 };
 
