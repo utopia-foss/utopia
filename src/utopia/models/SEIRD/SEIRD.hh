@@ -96,8 +96,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
 
 
     // .. Data-Output related members .........................................
-    /// If true, write only densities and counters
-    bool _write_only_densities;
+    /// The compression level used for all datasets
+    const int _compression;
+
+    /// If false, writes only the non-spatial `densities` and `counts` data
+    bool _write_ca_data;
 
     /// 2D dataset (densities array and time) of density values
     std::shared_ptr<DataSet> _dset_densities;
@@ -153,22 +156,31 @@ class SEIRD : public Model<SEIRD, CDTypes>
         _counts{},
 
         // Data output . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-        _write_only_densities(get_as<bool>("write_only_densities", this->_cfg)),
+        // Get output-related parameters
+        _compression(get_as<int>("compression", this->_cfg)),
+        _write_ca_data(get_as<bool>("write_ca_data", this->_cfg)),
 
         // Create the dataset for the densities and counts; shape is known
         _dset_densities(
-            this->create_dset("densities", {static_cast<char>(Kind::COUNT)}, 3)
+            this->create_dset("densities", {static_cast<char>(Kind::COUNT)},
+                              _compression)
         ),
         _dset_counts(
-            this->create_dset("counts", {_counts.counts().size()}, 3)
+            this->create_dset("counts", {_counts.counts().size()},
+                              _compression)
         ),
 
         // Create CellManager-based datasets
-        _dset_kind(this->create_cm_dset("kind", _cm, 3)),
-        _dset_immune(this->create_cm_dset("immune", _cm, 3)),
-        _dset_num_recoveries(this->create_cm_dset("num_recoveries", _cm, 3)),
-        _dset_age(this->create_cm_dset("age", _cm, 3)),
-        _dset_cluster_id(this->create_cm_dset("cluster_id", _cm, 3))
+        _dset_kind(
+            this->create_cm_dset("kind", _cm, _compression)),
+        _dset_immune(
+            this->create_cm_dset("immune", _cm, _compression)),
+        _dset_num_recoveries(
+            this->create_cm_dset("num_recoveries", _cm, _compression)),
+        _dset_age(
+            this->create_cm_dset("age", _cm, _compression)),
+        _dset_cluster_id(
+            this->create_cm_dset("cluster_id", _cm, _compression))
     {
         // Make sure the densities are not undefined
         _densities.fill(std::numeric_limits<double>::quiet_NaN());
@@ -239,8 +251,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
         this->_log->debug("Added coordinate labels to 'densities' and "
                           "'counts' datasets.");
 
-        // Initialization should be finished here.
-        this->_log->debug("{} model fully set up.", this->_name);
+        // Initialization should be finished here. Provide some info
+        this->_log->info("{} model fully set up.", this->_name);
+        this->_log->info("  Writing CA data?    {}",
+                         _write_ca_data ? "Yes" : "No");
+        this->_log->info("  Compression level:  {}", _compression);
     }
 
   protected:
@@ -823,8 +838,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Store the counts
         _dset_counts->write(_counts.counts());
 
-        // If only the densities are to be written, can stop here.
-        if (_write_only_densities) {
+        // If CA data is not to be written, can return here
+        if (not _write_ca_data) {
             return;
         }
 
