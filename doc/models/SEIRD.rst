@@ -81,6 +81,8 @@ This feature can be used to investigate for example the effect of vaccination.
 
 The immunities are introduced *before* the update rule above is carried out.
 
+.. _SEIRD_exposure_control:
+
 Exposure Control
 ^^^^^^^^^^^^^^^^
 Via the ``exposure_control`` parameter in the model configuration, additional exposures can be introduced at desired times.
@@ -110,7 +112,6 @@ The following data is stored alongside the simulation:
 
 * ``age``: the age of each cell, reset after a cell gets empty
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-living cells. Recovered cells do not count into it.
-* ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
 * ``exposed_time``: the time steps a living cell is already exposed to the disease for each cell
 * ``immunity``: whether a cell is immune or not for each cell
 * ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
