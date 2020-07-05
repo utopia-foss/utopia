@@ -13,6 +13,8 @@
 // SEIRD-realted includes
 #include "params.hh"
 #include "state.hh"
+#include "utils.hh"
+
 
 namespace Utopia::Models::SEIRD
 {
@@ -87,11 +89,21 @@ class SEIRD : public Model<SEIRD, CDTypes>
      */
     std::array<double, static_cast<char>(Kind::COUNT)> _densities;
 
+    /// Counters for state transitions and other global counters
+    /** Is reset at the beginning of each step.
+      */
+    Counters<unsigned int> _counts;
+
+
     // .. Data-Output related members .........................................
+    /// If true, write only densities and counters
     bool _write_only_densities;
 
     /// 2D dataset (densities array and time) of density values
     std::shared_ptr<DataSet> _dset_densities;
+
+    /// 2D dataset (counts array and time) of state counters
+    std::shared_ptr<DataSet> _dset_counts;
 
     /// 2D dataset (cell ID and time) of cell kinds
     std::shared_ptr<DataSet> _dset_kind;
@@ -108,6 +120,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
     /// The dataset for storing the cluster ID associated with each cell
     std::shared_ptr<DataSet> _dset_cluster_id;
 
+
   public:
     /// Construct the SEIRD model
     /** \param name             Name of this model instance; is used to extract
@@ -121,7 +134,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
     template<class ParentModel>
     SEIRD(const std::string& name,
           ParentModel& parent_model,
-          const DataIO::Config& custom_cfg = {}) :
+          const DataIO::Config& custom_cfg = {})
+    :
         // Initialize first via base model
         Base(name, parent_model, custom_cfg),
 
@@ -132,27 +146,28 @@ class SEIRD : public Model<SEIRD, CDTypes>
         _params(this->_cfg),
 
         // Initialize remaining members
-        _prob_distr(0., 1.), _cluster_id_cnt(), _cluster_members(),
-        _densities {},  // undefined here, will be set in constructor body
+        _prob_distr(0., 1.),
+        _cluster_id_cnt(),
+        _cluster_members(),
+        _densities{},  // undefined here, will be set in constructor body
+        _counts{},
+
+        // Data output . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         _write_only_densities(get_as<bool>("write_only_densities", this->_cfg)),
 
-        // Create the dataset for the densities; shape is known
+        // Create the dataset for the densities and counts; shape is known
         _dset_densities(
-            this->create_dset("densities", {static_cast<char>(Kind::COUNT)}, 3)),
+            this->create_dset("densities", {static_cast<char>(Kind::COUNT)}, 3)
+        ),
+        _dset_counts(
+            this->create_dset("counts", {_counts.counts().size()}, 3)
+        ),
 
-        // Create dataset for cell states
+        // Create CellManager-based datasets
         _dset_kind(this->create_cm_dset("kind", _cm, 3)),
-
-        // Create dataset for cell immune state
         _dset_immune(this->create_cm_dset("immune", _cm, 3)),
-
-        // Create dataset for cell num_recoveries state
         _dset_num_recoveries(this->create_cm_dset("num_recoveries", _cm, 3)),
-
-        // Create dataset for susceptible age
         _dset_age(this->create_cm_dset("age", _cm, 3)),
-
-        // Create dataset for cluster id
         _dset_cluster_id(this->create_cm_dset("cluster_id", _cm, 3))
     {
         // Make sure the densities are not undefined
@@ -212,11 +227,17 @@ class SEIRD : public Model<SEIRD, CDTypes>
         _dset_kind->add_attribute("kind_names", kind_names);
         this->_log->debug("Stored metadata in 'kind' dataset.");
 
-        // Add attributes to density dataset that provide coordinates
+        // Add coordinate attributes to density and counts datasets
         _dset_densities->add_attribute("dim_name__1", "kind");
         _dset_densities->add_attribute("coords_mode__kind", "values");
         _dset_densities->add_attribute("coords__kind", kind_names);
-        this->_log->debug("Added coordinates to 'densities' dataset.");
+
+        _dset_counts->add_attribute("dim_name__1", "label");
+        _dset_counts->add_attribute("coords_mode__label", "values");
+        _dset_counts->add_attribute("coords__label", _counts.labels());
+
+        this->_log->debug("Added coordinate labels to 'densities' and "
+                          "'counts' datasets.");
 
         // Initialization should be finished here.
         this->_log->debug("{} model fully set up.", this->_name);
@@ -301,6 +322,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 // ... and infect the sampled cells
                 for (const auto& cell : sample) {
                     cell->state.kind = Kind::infected;
+                    _counts.infected_via_exposure_control()++;
                 }
 
                 // Done. Can now remove first element of the queue.
@@ -465,6 +487,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 state.kind           = Kind::empty;
                 state.num_recoveries = 0;
                 state.immune         = false;
+                _counts.living_to_empty()++;
             }
         }
 
@@ -474,6 +497,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // susceptible
             if (_prob_distr(*this->_rng) < _params.p_susceptible) {
                 state.kind = Kind::susceptible;
+                _counts.empty_to_susceptible()++;
 
                 // If a new susceptible cell appears it is immune with the
                 // probability p_immune.
@@ -515,6 +539,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 if (_prob_distr(*this->_rng) < _params.p_exposed) {
                     // Yes, point infection occurred.
                     state.kind = Kind::exposed;
+                    _counts.susceptible_to_exposed_random()++;
                     return state;
                 }
                 else {
@@ -540,6 +565,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                                  nb_state.p_transmit))
                             {
                                 state.kind = Kind::exposed;
+                                _counts.susceptible_to_exposed_local()++;
                                 return state;
                             }
                         }
@@ -555,6 +581,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // p_infected
             if (_prob_distr(*this->_rng) < _params.p_infected) {
                 state.kind = Kind::infected;
+                _counts.exposed_to_infected()++;
                 return state;
             }
 
@@ -572,9 +599,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 state.kind   = Kind::recovered;
                 state.immune = true;
                 ++state.num_recoveries;
+                _counts.infected_to_recovered()++;
             }
             else if (_prob_distr(*this->_rng) < _params.p_deceased) {
                 state.kind = Kind::deceased;
+                _counts.infected_to_deceased()++;
                 // Do not reset the cell states here to keep them for
                 // write out and analysis. Resetting happens in the deceased
                 // case below.
@@ -587,10 +616,11 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // Increase the age of the recovered cell
             ++state.age;
 
-            // Cells can loose their immunity and get susceptible again
+            // Cells can lose their immunity and get susceptible again
             if (_prob_distr(*this->_rng) < _params.p_lose_immunity) {
                 state.immune = false;
                 state.kind   = Kind::susceptible;
+                _counts.recovered_to_susceptible()++;
             }
 
             return state;
@@ -600,6 +630,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             state.kind           = Kind::empty;
             state.immune         = false;
             state.num_recoveries = 0;
+            _counts.deceased_to_empty()++;  // ... for completeness
 
             // Reset the age for the next susceptible cell
             state.age = 0;
@@ -615,7 +646,8 @@ class SEIRD : public Model<SEIRD, CDTypes>
     /// Identify each cluster of susceptibles
     RuleFunc _identify_cluster = [this](const auto& cell) {
         if (cell->state.cluster_id != 0 or
-            cell->state.kind != Kind::susceptible) {
+            cell->state.kind != Kind::susceptible)
+        {
             // already labelled, nothing to do. Return current state
             return cell->state;
         }
@@ -635,8 +667,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
             // Iterate over all potential cluster members nb, i.e. all
             // neighbors of cell cluster[i] that is already in the cluster
             for (const auto& nb : this->_cm.neighbors_of(cluster[i])) {
-                // If it is a susceptible that is not yet in the cluster, add
-                // it.
+                // If it is susceptible and not yet in the cluster, add it.
                 if (nb->state.cluster_id == 0 and
                     nb->state.kind == Kind::susceptible)
                 {
@@ -671,6 +702,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                     if (_nb->state.kind == Kind::empty) {
                         // Swap the states and leave the loop
                         std::swap(state, _nb->state);
+                        _counts.move_away_from_infected()++;
                         break;
                     }
                 }
@@ -713,6 +745,7 @@ class SEIRD : public Model<SEIRD, CDTypes>
                 if (_nb->state.kind == Kind::empty) {
                     // Swap the states and leave the loop
                     std::swap(state, _nb->state);
+                    _counts.move_randomly()++;
                     break;
                 }
             }
@@ -734,6 +767,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
      */
     void perform_step()
     {
+        // Reset the state transition counters
+        _counts.reset();
+
         // Apply exposure control if enabled
         if (_params.exposure_control.enabled) {
             exposure_control();
@@ -768,12 +804,13 @@ class SEIRD : public Model<SEIRD, CDTypes>
     }
 
     /// Monitor model information
-    /** Supplies the `densities` array to the monitor.
+    /** Supplies the `densities` and `counts` arrays to the monitor.
      */
     void monitor()
     {
         update_densities();
         this->_monitor.set_entry("densities", _densities);
+        this->_monitor.set_entry("counts", _counts.counts());
     }
 
     /// Write data
@@ -782,6 +819,9 @@ class SEIRD : public Model<SEIRD, CDTypes>
         // Update densities and write them
         update_densities();
         _dset_densities->write(_densities);
+
+        // Store the counts
+        _dset_counts->write(_counts.counts());
 
         // If only the densities are to be written, can stop here.
         if (_write_only_densities) {
