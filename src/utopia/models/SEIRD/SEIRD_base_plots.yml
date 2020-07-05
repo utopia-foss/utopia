@@ -31,6 +31,10 @@ style.prop_cycle.deceased:
       fstr: "cycler('color', ['{cmap[deceased]:}'])"
       cmap: *cmap
 
+style.prop_cycle.default:
+  style:
+    axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
+
 
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
@@ -129,6 +133,39 @@ densities:
       title: Densities
     set_legend:
       loc: best
+
+
+# --- Counter-based -----------------------------------------------------------
+
+counters:
+  based_on:
+    - .creator.universe
+    - .dag.generic.facet_grid
+
+  select:
+    counts: counts
+    d_counts:
+      path: counts
+      transform:
+        - .diff: [!dag_prev , time]
+  dag_options:
+    select_path_prefix: data/SEIRD
+
+  style:
+    # Set the default prop cycle; somehow lost for categorical label dimension
+    axes.prop_cycle: *default_prop_cycle
+
+  helpers:
+    set_limits:
+      x: [0, max]
+      y: [0, ~]
+
+    # Only set the x labels on the bottom row, as x-axes are shared.
+    axis_specific:
+      bottom_row:
+        axis: [~, -1]
+        set_labels:
+          x: Time [Iteration Steps]
 
 
 # --- Distributions -----------------------------------------------------------
