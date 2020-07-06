@@ -119,7 +119,7 @@ The following data is stored alongside the simulation:
 
     * ``empty_to_susceptible``, i.e. "birth"
     * ``living_to_empty``, i.e. "random death"
-    * ``susceptible_to_exposed_local``, via a neighbor
+    * ``susceptible_to_exposed_contact``, via local contact to a neighbor
     * ``susceptible_to_exposed_random``, via a random point exposure, controlled by ``p_exposed``
     * ``susceptible_to_exposed_controlled``, via :ref:`SEIRD_exposure_control`
     * ``exposed_to_infected``, as controlled by ``p_infected``

@@ -18,7 +18,7 @@ transitions/raw:
         label:
           - empty_to_susceptible
           - living_to_empty
-          - susceptible_to_exposed_local
+          - susceptible_to_exposed_contact
           - susceptible_to_exposed_random
           - susceptible_to_exposed_controlled
           - exposed_to_infected
