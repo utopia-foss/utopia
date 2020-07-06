@@ -70,7 +70,7 @@ def test_growing_dynamic():
 
 def test_infection_dynamic():
     """
-    Test that with a p_immunity and p_random_immunity probability of 0, 
+    Test that with a p_immunity and p_random_immunity probability of 0,
     a p_susceptible probability of 1
     and an empty initial state, with an infection source south the infection
     spreads according to the expectations.
@@ -127,6 +127,27 @@ def test_densities_calculation():
     assert densities.sel(time=0, kind="infected").item() == 0
 
 
+def test_counters():
+    mv, dm = mtc.create_run_load(from_cfg="counters.yml")
+
+    # Get the 2D counters
+    counters = dm['multiverse/0/data/SEIRD/counts']
+
+    # There should be 11 counters
+    assert counters.coords['label'].size == 11
+    # NOTE If this fails, make sure to adapt not only this test, but also the
+    #      model documentation and make sure that the Counters struct contains
+    #      the correct labels!
+
+    # Counters should be non-negative and grow only monotonically
+    assert (counters >= 0).all()
+    assert (counters.diff('time') >= 0).all()
+
+    # For this configuration, some counters can only have specific values
+    assert np.isin(counters.sel(label='susceptible_to_exposed_controlled'),
+                   [0, 3]).all()
+
+
 def test_exposure_control_add_inf():
     """
     Test that the exposure control via adding of a fixed number of infected
@@ -149,27 +170,27 @@ def test_exposure_control_add_inf():
 
     for t in range(20):
         s = data.isel(time=t)
-        
+
         unique, counts = np.unique(s, return_counts=True)
         d_counts = {u:c for u, c in zip(unique, counts)}
         print(d_counts)
 
         # At the start there should only be susceptible cells and empty spots
         if t < 5:
-            assert exposed not in unique 
-            assert infected not in unique 
-            assert recovered not in unique 
-            assert deceased not in unique 
-            assert source not in unique 
-            assert inert not in unique 
+            assert exposed not in unique
+            assert infected not in unique
+            assert recovered not in unique
+            assert deceased not in unique
+            assert source not in unique
+            assert inert not in unique
 
         # The time step after the exposure control should have a lot fewer
-        # susceptible cells than in the previous iteration step because in every 
-        # exposure control step all susceptible cells are getting infected 
+        # susceptible cells than in the previous iteration step because in every
+        # exposure control step all susceptible cells are getting infected
         # and only the newly appearing susceptible cells remain
         if t in [6, 21, 41]:
             s_prev = data.isel(time=t-1)
-        
+
             unique_prev, counts_prev = np.unique(s_prev, return_counts=True)
             d_counts_prev = {u:c for u, c in zip(unique_prev, counts_prev)}
 
@@ -194,7 +215,7 @@ def test_exposure_control_change_p_random_inf():
 
     for t in range(20):
         s = data.isel(time=t)
-        
+
         unique, counts = np.unique(s, return_counts=True)
         d_counts = {u:c for u, c in zip(unique, counts)}
 
@@ -203,9 +224,9 @@ def test_exposure_control_change_p_random_inf():
             assert exposed not in unique
             assert infected not in unique
 
-        # There are susceptible cells as well as exposed and infected cells 
+        # There are susceptible cells as well as exposed and infected cells
         # for 5 time steps.
-        # However, there should be more susceptible cells than exposed or 
+        # However, there should be more susceptible cells than exposed or
         # infected ones
         if 11 == t:
             assert susceptible in unique
@@ -222,7 +243,7 @@ def test_exposure_control_change_p_random_inf():
 
 def test_transmission_control():
     """
-    Test that the transmission control via change of the probability p_transmit 
+    Test that the transmission control via change of the probability p_transmit
     works correctly.
     """
     mv, dm = mtc.create_run_load(from_cfg="transmission_control.yml")
@@ -238,7 +259,7 @@ def test_transmission_control():
 
     for t in range(20):
         s = data.isel(time=t)
-        
+
         unique, counts = np.unique(s, return_counts=True)
 
         if t < 5:

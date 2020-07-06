@@ -53,7 +53,7 @@ cell_manager:
 # susceptible.
 # As default, there are no randomly appearing susceptible cells coming into
 # the system.
-p_susceptible: 0
+p_susceptible: 0.
 
 # Probability to be immune per transition from an empty to a susceptible cell
 # via p_susceptible.
@@ -94,7 +94,7 @@ p_deceased: 0.02
 # Probability per site and time step to transition to empty
 # As default, there are no living cells vanishing by chance i.e. the system
 # is approximated to be closed for the given time scales.
-p_empty: 0
+p_empty: 0.
 
 # The probability to loose immunity if a cell is recovered
 # This value is quite uncertain because it is not known whether and with what
@@ -151,7 +151,7 @@ exposure_control:
 immunity_control:
   enabled: false
 
-  # The number of additional immunitys to be placed on the grid
+  # The number of additional immunities to be placed on the grid
   num_additional_immunities: 10
 
   # Add the additional immunities at the given times
@@ -223,7 +223,15 @@ infection_source:
   boundary: bottom
 
 
+
 # --- Output Configuration ----------------------------------------------------
-# Whether to only write out the densities; useful for runs on large grids
-# where spatial information is not needed.
-write_only_densities: false
+# Whether to write out spatially resolved data from the CA
+# If false, will write only the non-spatial `densities` and `counts` datasets.
+# Setting this to false can be useful if no spatial analysis is required or if
+# using very large grids.
+write_ca_data: true
+
+# HDF5 Compression level for all datasets
+# A value of 1-3 is a good default. Choose a lower value if speed is limited by
+# the CPU or a higher value if speed is limited by data writing.
+compression: 3

@@ -1,0 +1,20 @@
+# Configuration file used to test counters
+# This enables all options that have an effect on the counters
+---
+parameter_space:
+  num_steps: 100
+
+  SEIRD:
+    cell_params:
+      p_susceptible: 0
+
+    p_susceptible: .03
+    p_exposed: .01
+    p_empty: .03
+
+    move_away_from_infected: true
+
+    exposure_control:
+      enabled: true
+      num_additional_exposures: 3
+      at_times: !listgen [0, 1000, 100]
