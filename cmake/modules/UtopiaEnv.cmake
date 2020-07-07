@@ -14,7 +14,7 @@
 find_package(Python 3.7 REQUIRED)
 
 # search for a Bash environment
-find_package(UnixCommands)
+find_package(UnixCommands QUIET)
 if (NOT DEFINED BASH)
     message(SEND_ERROR "Bash is required to execute commands in the virtual "
                        "environment")

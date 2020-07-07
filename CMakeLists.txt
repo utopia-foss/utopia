@@ -96,6 +96,16 @@ add_dependencies(test_all
                     test_utopya
                     test_models)
 
+# --- Summary ---
+
+# Summarize detected packages
+include(FeatureSummary)
+feature_summary(QUIET_ON_EMPTY
+                WHAT REQUIRED_PACKAGES_FOUND
+                     OPTIONAL_PACKAGES_FOUND
+                     OPTIONAL_PACKAGES_NOT_FOUND
+                     REQUIRED_PACKAGES_NOT_FOUND)
+
 # --- Build Tree Packaging Routine ---
 
 # Functions for writing config files
