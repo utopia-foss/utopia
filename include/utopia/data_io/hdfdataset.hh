@@ -160,24 +160,6 @@ class HDFDataset final : public HDFObject< HDFCategory::dataset >
             "refcount of dataset after creation {}: {}", _path, get_refcount());
     }
 
-    /**
-     * @brief Adds attributes for rank, current_extent and capacity
-     *
-     */
-    void
-    __add_topology_attributes__()
-    {
-        this->_log->debug(
-            "Adding topology attributes to dataset {} {}", _path, get_C_id());
-        add_attribute("rank", _rank);
-        this->_log->debug("refcount after rank {}", get_refcount());
-
-        add_attribute("current_extent", _current_extent);
-        this->_log->debug("refcount after current_extent {}", get_refcount());
-
-        add_attribute("capacity", _capacity);
-        this->_log->debug("refcount after capacity {}", get_refcount());
-    }
 
     /**
      * @brief Writes containers to the dataset
@@ -1644,18 +1626,6 @@ class HDFDataset final : public HDFObject< HDFCategory::dataset >
             }
         }
 
-        this->_log->debug(
-            "Dataset {} 's refcount before writing topology attributes: {}",
-            _path,
-            get_refcount());
-
-        // this adds information about the shape and properties of the dataset
-        __add_topology_attributes__();
-
-        this->_log->debug(
-            "Dataset {} 's refcount after writing topology attributes: {}",
-            _path,
-            get_refcount());
     }
 
     /**
