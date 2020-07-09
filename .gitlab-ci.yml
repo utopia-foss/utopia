@@ -188,11 +188,12 @@ build:debug: &build_debug
   stage: build
   <<: *ssh_access
   allow_failure: true
+  variables:
+    CXXFLAGS: -Werror
   script:
     - mkdir build && cd build
     - cmake
         -DCMAKE_BUILD_TYPE=Debug
-        -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
     # Build all the tests
     - make $MAKE_FLAGS_BUILD build_tests_core
@@ -206,13 +207,14 @@ build:debug: &build_debug
 
 build:debug-clang:
   <<: *build_debug
+  variables:
+    CC: clang
+    CXX: clang++
+    CXXFLAGS: -Werror
   script:
     - mkdir build && cd build
     - cmake
         -DCMAKE_BUILD_TYPE=Debug
-        -DCMAKE_C_COMPILER=clang
-        -DCMAKE_CXX_COMPILER=clang++
-        -DCMAKE_CXX_FLAGS_DEBUG='-Werror'
       ..
     # Build all the tests
     - make $MAKE_FLAGS_BUILD build_tests_core
