@@ -257,44 +257,59 @@ def test_enqueue_lines():
 
     # Test a working example
     enqueue_lines(queue=q,
-                  stream=io.BytesIO(bytes("hello", 'utf-8')))
+                  stream=io.StringIO("hello"))
     assert q.get_nowait() == ("hello", None)
+    assert q.empty()
 
     # Test passing a custom parse function
     enqueue_lines(queue=q,
-                  stream=io.BytesIO(bytes("hello yourself", 'utf-8')),
+                  stream=io.StringIO("hello yourself"),
                   parse_func=lambda s: s + "!")
     assert q.get_nowait() == ("hello yourself", "hello yourself!")
-
-    # should not fail with bad encoding either, just remain bytestring
-    enqueue_lines(queue=q,
-                  stream=io.BytesIO(bytes("hellö", 'latin-1')))
-    assert q.get_nowait() == (bytes("hellö", 'latin-1'), None)
+    assert q.empty()
 
     # integer parsable should remain strings
     enqueue_lines(queue=q,
-                  stream=io.BytesIO(bytes("1", 'latin-1')))
+                  stream=io.StringIO("1"))
     assert q.get_nowait() == ("1", None)
+    assert q.empty()
 
-def test_enqueue_json():
-    """Test the enqueue json method"""
+    # how about multiple lines?
+    enqueue_lines(queue=q,
+                  stream=io.StringIO("hello\nworld\n!"))
+    assert q.get_nowait() == ("hello", None)
+    assert q.get_nowait() == ("world", None)
+    assert q.get_nowait() == ("!", None)
+    assert q.empty()
+
+def test_enqueue_lines_parse_yaml():
+    """Test the yaml parsing method for enqueue_lines"""
     # Create a queue to add to and check the output in
     q = queue.Queue()
 
-    enqueue_json = partial(enqueue_lines, parse_func=parse_yaml_dict)
+    enqueue_yaml = partial(enqueue_lines, parse_func=parse_yaml_dict)
 
     # Working example
-    enqueue_json(queue=q,
-                 stream=io.BytesIO(bytes("!!map {\"foo\": 123}", 'utf-8')))
+    enqueue_yaml(queue=q,
+                 stream=io.StringIO("!!map {\"foo\": 123}"))
     assert q.get_nowait()[1] == dict(foo=123)
+    assert q.empty()
 
     # Something not matching the start string should yield no parsed object
-    enqueue_json(queue=q,
-                 stream=io.BytesIO(bytes("1", 'utf-8')))
+    enqueue_yaml(queue=q,
+                 stream=io.StringIO("1"))
     assert q.get_nowait()[1] == None
+    assert q.empty()
 
     # Invalid syntax should also return None instead of a parsed object
-    enqueue_json(queue=q,
-                 stream=io.BytesIO(bytes("!!map {\"foo\": 123, !!invalid}",
-                                         'utf-8')))
+    enqueue_yaml(queue=q,
+                 stream=io.StringIO("!!map {\"foo\": 123, !!invalid}"))
     assert q.get_nowait()[1] == None
+    assert q.empty()
+
+    # Line break within the YAML string will lead to parsing failure
+    enqueue_yaml(queue=q,
+                 stream=io.StringIO("!!map {\"foo\": \n 123}"))
+    assert q.get_nowait()[1] == None
+    assert q.get_nowait()[1] == None
+    assert q.empty()
