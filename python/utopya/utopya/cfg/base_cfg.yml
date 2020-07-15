@@ -186,8 +186,12 @@ worker_kwargs:
   # The log level at which the streams should be forwarded to stdout
   streams_log_lvl: ~  # if None, uses print instead of the logging module
 
-  # Changes to entries below here have not been tested!
-  popen_kwargs: {}
+  # Arguments to subprocess.Popen
+  popen_kwargs:
+    # The encoding of the streams (STDOUT, STDERR) coming from the simulation.
+    # NOTE If your locale is set to some other encoding, or the simulation uses
+    #      a custom one, overwrite this value accordingly via the user config.
+    encoding: utf8
 
 
 # Cluster mode configuration

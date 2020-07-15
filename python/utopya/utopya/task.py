@@ -12,7 +12,7 @@ import warnings
 import logging
 from functools import partial
 from typing import Callable, Union, Dict, List, Sequence, Set
-from typing.io import BinaryIO
+from typing.io import TextIO
 
 import numpy as np
 
@@ -29,40 +29,35 @@ SIGMAP = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 # Helper methods
 # These solely relate to the WorkerTask class, thus not in the tools module
 
-def enqueue_lines(*, queue: queue.Queue, stream: BinaryIO,
+def enqueue_lines(*, queue: queue.Queue, stream: TextIO,
                   parse_func: Callable=None) -> None:
-    """From the given stream, read line-buffered lines and add them to the
-    provided queue.
+    """From the given text stream, read line-buffered lines and add them to the
+    provided queue as 2-tuples, (line, parsed object).
 
-    They are added to the queue in form (decoded string, parsed object)
+    This function is meant to be passed to an individual thread in which it can
+    read individual lines separately from the main thread. Before exiting this
+    function, the stream is closed.
 
     Args:
-        queue (queue.Queue): The queue object to put the read line into
-        stream (BinaryIO): The stream identifier
+        queue (queue.Queue): The queue object to put the read line and parsed
+            objects into.
+        stream (TextIO): The stream identifier. If this is not a text stream,
+            be aware that the elements added to the queue might need decoding.
         parse_func (Callable, optional): A parse function that the read line
-            is passed through
+            is passed through. This should be a unary function that either
+            returns a successfully parsed line or None.
     """
-    # Define a parse function, if none was given
-    if not parse_func:
-        # ...a lambda that always returns None -> no parser
-        parse_func = lambda line: None
+    # Define a pass-through parse function, if none was given
+    parse_func = parse_func if parse_func else lambda _: None
 
     # Read the lines and put them into the queue
-    for line in iter(stream.readline, b''): # <-- thread waits here for new
-                                            #     lines, without idle looping
-        # Got a line (byte-string, assumed utf8-encoded)
-        try:
-            # Try to decode and strip newline
-            line = line.decode('utf8').rstrip()
+    for line in iter(stream.readline, ''): # <-- thread waits here for new
+                                           #     lines, without idle looping
+        # Got a line; strip the whitespace on the right (new-line character)
+        line = line.rstrip()
 
-        except UnicodeDecodeError:
-            # Remains a bytestring
-            pass
-
-        # else: successfully decoded
-
-        # Add it to the queue as a tuple: (decoded string, parsed object),
-        # where the parsed object can also be None
+        # Add it to the queue as a tuple: (string, parsed object), where the
+        # parsed object can also be None
         queue.put_nowait((line, parse_func(line)))
 
     # Everything read. Close the stream
@@ -457,6 +452,10 @@ class WorkerTask(Task):
         forward_raw = worker_kwargs.get('forward_raw', True)
         streams_log_lvl = worker_kwargs.get('streams_log_lvl', None)
 
+        # Set encoding such that stream reading is in text mode; provides
+        # backwards-compatibilibty to cases where popen_kwargs is empty.
+        popen_kwargs['encoding'] = popen_kwargs.get('encoding', 'utf8')
+
         # Perform some checks
         if not isinstance(args, tuple):
             raise TypeError("Need argument `args` to be of type tuple, "
@@ -491,6 +490,9 @@ class WorkerTask(Task):
                                     bufsize=1,  # line buffered
                                     stdout=stdout, stderr=stderr,
                                     **popen_kwargs)
+            # NOTE bufsize = 1 is important here, as we don't _ever_ want lines
+            #      to be interrupted. As this only works in text mode, the
+            #      encoding specified via popen_kwargs is crucial here.
 
         except FileNotFoundError as err:
             raise FileNotFoundError("No executable found for task '{}'! "
