@@ -207,9 +207,25 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
         );
 
 * With a rule that accepts more than one argument, additional container-like arguments can be passed to ``apply_rule``, leading to a ``zip``-iteration. For each entity, the arguments from the containers are then unpacked into the respective call to the rule function.
+* ``apply_rule`` for manual state updates offers overloads with parallel execution policies.
+  The rule will then be applied according to the selected policy, similar to a :ref:`parallel STL algorithm <feature_parallel_stl>` (it actually uses them internally).
+  Even with a sequential policy (or none), internals of the ``apply_rule`` algorithms may parallelize if the feature is enabled.
+  Enabling parallel features happens through the :ref:`parameter space configuration <feature_meta_config>`, or explicitly, see :ref:`feature_parallel_stl`.
+
+  .. code-block:: c++
+
+      // Apply a rule with multithreading
+      apply_rule<Update::sync>(ExecPolicy::par,
+                              // NOTE: Rule must avoid data races!
+                              [](const auto& cell){
+                                  return cell->state + 1;
+                              },
+                              _cm.cells());
+
 * 📚
   `Doxygen <../doxygen/html/group___rules.html>`_,
-  :ref:`apply_rule on graph entities <apply_rule_graph>`
+  :ref:`apply_rule on graph entities <apply_rule_graph>`,
+  :ref:`parallel STL algorithm overloads <feature_parallel_stl>`
 
 
 .. _feature_entity:
@@ -277,6 +293,35 @@ Iterate Over Graph Entities
     for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g):
         std::cout << g[vertex].property << "\n";
 
+.. _feature_parallel_stl:
+
+Parallel STL Algorithms
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* Utopia overloads several STL algorithms with runtime execution policies for multithreading and vectorization.
+  The code is agnostic to whether the optional dependencies for multithreading are installed.
+
+  .. code-block:: c++
+
+      #include <utopia/core/parallel.hh>
+
+      // Enable parallel execution (will do nothing if requirements are not met)
+      Utopia::ParallelExecution::set(Utopia::ParallelExecution::Setting::enabled);
+
+      // Copy in parallel, if enabled
+      std::vector<double> in(1E6, 1.0), out(1E6);
+      std::copy(Utopia::ExecPolicy::par_unseq,
+                begin(in),
+                end(in),
+                begin(out));
+
+* Utopia ``ExecPolicy`` mirrors `STL execution policies <https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t>`_.
+* Parallel features can be controlled via the :ref:`meta-configuration <feature_meta_config>`.
+  The ``PseudoParent`` enables or disables them depending on the ``parallel_execution`` node in the parameter space.
+* Depending on the execution policies, programmers will have to avoid `data races <https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races>`_.
+* 📚
+  `Doxygen <../doxygen/html/group___parallel.html>`_,
+  :ref:`Parallel apply_rule <feature_apply_rule>`
 
 |
 |

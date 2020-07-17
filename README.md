@@ -148,14 +148,14 @@ cd utopia
 mkdir build
 ```
 
-Now, enter the build directory and invoke CMake:
+Now, enter the build directory and invoke CMake (and mind the caveats below):
 
 ```bash
 cd build
 cmake ..
 ```
 
-**Note:** If you use **MacPorts**, append the location of your Python installation to the CMake command:
+**Note:** If you use **MacPorts**, append the location of your Python installation to the CMake command (this is only required when calling CMake on a clean `build` directory):
 
 ```bash
 cmake -DPython_ROOT_DIR=/opt/local ..
@@ -194,6 +194,53 @@ _This step is optional, but recommended._
 
 To make sure that Utopia works as expected on your machine, [build and carry out all tests](#testing).
 
+### Optional Installation Steps
+
+The following instructions will enable additional, optional features of Utopia.
+
+#### Enable Multithreading in Utopia Models
+
+1. Install the optional dependencies for multithreading.
+
+    * On **Ubuntu**:
+
+        ```bash
+        apt update && apt install libtbb-dev
+        ```
+
+    * On **macOS**, with **Homebrew** (please mind the note below!):
+
+        ```bash
+        brew update && brew install parallelstl
+        ```
+
+1. Enter the Utopia build directory, and call CMake again.
+
+    ```bash
+    cd build
+    cmake ..
+    ```
+
+    **Note:** If you installed ParallelSTL on **macOS** via **Homebrew**, specify the path to the installation in `/usr/local/Cellar/`:
+
+    ```bash
+    cmake -DParallelSTL_ROOT=/usr/local/Cellar/parallelstl/<version>/ ..
+    ```
+
+    Make sure to replace `<version>` with the version installed on your machine; use `brew list parallelstl` to find the correct path.
+
+    You will only have to add this path to the CMake call **once**.
+    It will be stored until you delete the contents of the build directory.
+
+    At the end of its output, CMake should now report that the "Multithreading" feature has been enabled.
+
+1. Re-compile the models. Inside the build directory, call
+
+    ```bash
+    make all
+    ```
+
+1. Depending on the algorithms used inside the respective model, it will automatically exploit the multithreading capabilities of your system when executed! 🎉
 
 ### Utopia via Docker
 [Docker][docker] is a free OS-level virtualization software.
@@ -550,6 +597,8 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 | [doxygen][doxygen]    | >= 1.8  | Builds the C++ code documentation |
 | [graphviz][graphviz]  | >= 2.40 | Used by doxygen to create dependency diagrams |
 | [ffmpeg][ffmpeg]      | >= 4.1  | Used for creating videos |
+| [ParallelSTL][pstl]   |         | Parallelization of STL algorithms (included in GCC >= 9) |
+| [TBB][tbb]            | >= 2018.5  | Intel parallelization library required by ParallelSTL |
 
 
 ### Support Branches
@@ -644,3 +693,5 @@ make all -j4
 [gcovr]: https://gcovr.com/en/stable/
 [pytest-usage]: https://docs.pytest.org/en/latest/usage.html
 [pytest-cov]: https://github.com/pytest-dev/pytest-cov
+[tbb]: https://github.com/oneapi-src/oneTBB
+[pstl]: https://github.com/oneapi-src/oneDPL
