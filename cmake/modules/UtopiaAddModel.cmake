@@ -12,12 +12,29 @@
 #   appended to the Cache for relaying them to the utopya Python module.
 #   Additionally, the source directory is also appended to a cached list.
 #
+#   Options:
+#
+#   * `DISABLE_PARALLEL`: Will disable all parallel execution features of the
+#                         model, independently from the actual detection of
+#                         parallel capabilities. Can be re-enabled at any time
+#                         using the `enable_parallel()` function.
+#
 function(add_model target_name)
+    # Parse unnamed arguments
+    include(CMakeParseArguments)
+    set(OPTIONS DISABLE_PARALLEL)
+    cmake_parse_arguments(KW "${OPTIONS}" "" "" ${ARGN})
+
     # register regularly
-    add_executable(${target_name} ${ARGN})
+    add_executable(${target_name} ${KW_UNPARSED_ARGUMENTS})
 
     # link to Utopia target
     target_link_libraries(${target_name} PUBLIC Utopia::utopia)
+
+    # Enable parallel by default
+    if (NOT KW_DISABLE_PARALLEL)
+        enable_parallel(${target_name})
+    endif ()
 
     # Add coverage flags if enabled
     if(CPP_COVERAGE)

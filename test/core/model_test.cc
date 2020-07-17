@@ -63,6 +63,20 @@ const auto initial_state = state_vec(SIZE, 0.0);
 /// Tests that all use the Setup fixture
 BOOST_FIXTURE_TEST_SUITE (test_model_base_class, Setup)
 
+BOOST_AUTO_TEST_CASE (parallel_setup)
+{
+    // Pseudo parent should have enabled parallel features based on config
+    BOOST_TEST(Utopia::ParallelExecution::is_enabled());
+
+    // ...but parallel features are not enabled through build system
+    BOOST_TEST(not Utopia::ParallelExecution::is_applied());
+
+    // Now explicitly disable
+    Utopia::ParallelExecution::set(
+        Utopia::ParallelExecution::Setting::disabled);
+    BOOST_TEST(not Utopia::ParallelExecution::is_enabled());
+    BOOST_TEST(not Utopia::ParallelExecution::is_applied());
+}
 
 /// Check model iteration and some basic properties
 BOOST_AUTO_TEST_CASE (test_model_iterate) {

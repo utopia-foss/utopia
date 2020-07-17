@@ -11,6 +11,7 @@ file(COPY
         "model_nested_test.yml"
         "model_setup_test.yml"
         "neighborhood_test.yml"
+        "parallel_stl_test.yml"
         "select_test.yml"
         "space_test.yml"
         "testtools_test.yml"
@@ -40,6 +41,7 @@ set(TESTS_CORE
     model_setup_test
     model_datamanager_test
     neighborhood_test
+    parallel_stl_test
     select_test
     signal_test
     space_test
@@ -57,4 +59,33 @@ foreach(test ${TESTS_CORE})
                   SOURCES ${test}.cc)
 endforeach(test)
 
-# custom dependencies of certain tests can be added below
+# Add the same test again for running it in parallel
+add_unit_test(NAME apply_parallel_test
+              GROUP core
+              SOURCES apply_test.cc)
+
+# Add parallel interface test
+# NOTE: Can only be compiled with ParallelSTL available
+if (HAVE_PSTL)
+    add_unit_test(NAME parallel_interface_test
+                GROUP core
+                SOURCES parallel_interface_test.cc)
+    enable_parallel(CORE_parallel_interface_test)
+endif()
+
+# Add parallel STL again test to run it sequentially
+add_unit_test(NAME parallel_stl_seq_test
+              GROUP core
+              SOURCES parallel_stl_test.cc)
+target_compile_definitions(CORE_parallel_stl_seq_test
+    PRIVATE
+        DISABLE_HAVE_PARALLEL_STL)
+
+# Enable parallel features for these tests
+enable_parallel(CORE_apply_parallel_test CORE_parallel_stl_test)
+
+# Skip tests if dependencies for parallel execution are not found
+set_tests_properties(CORE_apply_parallel_test
+                     CORE_parallel_stl_test
+    PROPERTIES
+        DISABLED $<IF:$<BOOL:${HAVE_PSTL}>,FALSE,TRUE>)

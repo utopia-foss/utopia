@@ -66,11 +66,18 @@ target_link_libraries(utopia INTERFACE
     armadillo
     Boost::boost
     hdf5
+    $<$<BOOL:${ParallelSTL_FOUND}>:pstl::ParallelSTL>
+    $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:TBB::tbb>
 )
 
 # Set preprocessor definitions
 target_compile_definitions(utopia INTERFACE
-    ARMA_USE_HDF5  # Enable HDF5 functions of Armadillo
+    # Enable HDF5 functions of Armadillo
+    ARMA_USE_HDF5
+    # Propagate availability of PSTL definitions
+    $<$<BOOL:${ParallelSTL_FOUND}>:HAVE_EXTERNAL_PSTL>
+    $<$<BOOL:${INTERNAL_PSTL}>:HAVE_INTERNAL_PSTL>
+    $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:USE_INTERNAL_PSTL>
 )
 
 # --- Include Config Tree ---
@@ -105,6 +112,8 @@ feature_summary(QUIET_ON_EMPTY
                 WHAT REQUIRED_PACKAGES_FOUND
                      OPTIONAL_PACKAGES_FOUND
                      OPTIONAL_PACKAGES_NOT_FOUND
+                     ENABLED_FEATURES
+                     DISABLED_FEATURES
                      REQUIRED_PACKAGES_NOT_FOUND)
 
 # --- Build Tree Packaging Routine ---
