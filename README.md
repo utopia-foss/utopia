@@ -503,9 +503,13 @@ python -m pytest -v utopya/test/test_multiverse.py --cov=utopya.multiverse --cov
 ##### C++ code coverage
 
 1. Compile the source code with code coverage flags. Utopia provides the CMake
-    configuration option `CPP_COVERAGE` for that purpose.
+    configuration option `CPP_COVERAGE` for that purpose,
 
-    When calling CMake, append `CPP_COVERAGE=On` to add the flags to all tests
+    ```bash
+    cmake -DCPP_COVERAGE=On ..
+    ```
+
+    This will add the appropriate compiler flags to all tests
     and models within the Utopia framework. Notice that code coverage is
     disabled for `Release` builds because aggressive compiler optimization
     produces unreliable coverage results.
