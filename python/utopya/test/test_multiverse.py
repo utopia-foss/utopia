@@ -15,9 +15,12 @@ import pytest
 
 from utopya import Multiverse, FrozenMultiverse
 from utopya.multiverse import DataManager, PlotManager, WorkerManager
+from utopya.parameter import ValidationError
 
 # Get the test resources
 RUN_CFG_PATH = resource_filename('test', 'cfg/run_cfg.yml')
+RUN_CFG_PATH_VALID = resource_filename('test', 'cfg/run_cfg_validation_valid.yml')
+RUN_CFG_PATH_INVALID = resource_filename('test', 'cfg/run_cfg_validation_invalid.yml')
 USER_CFG_PATH = resource_filename('test', 'cfg/user_cfg.yml')
 BASE_PLOTS_PATH = resource_filename('test', 'cfg/base_plots.yml')
 UPDATE_BASE_PLOTS_PATH = resource_filename('test', 'cfg/update_base_plots.yml')
@@ -172,6 +175,22 @@ def test_detect_doubled_folders(mv_kwargs):
         # NOTE this test assumes that the two calls are so close to each other
         #      that the timestamp is the same, that's why there are two calls
         #      so that the latest the second call should raise such an error
+
+def test_parameter_validation(mv_kwargs):
+    """Tests integration of the parameter validation feature"""
+    # Works
+    mv_kwargs['run_cfg_path'] = RUN_CFG_PATH_VALID
+    mv_kwargs['model_name'] = "ForestFire"
+    mv_kwargs['paths']['model_note'] = "valid"
+    mv = Multiverse(**mv_kwargs)
+    mv.run_single()
+
+    # Fails
+    mv_kwargs['run_cfg_path'] = RUN_CFG_PATH_INVALID
+    mv_kwargs['model_name'] = "ForestFire"
+    mv_kwargs['paths']['model_note'] = "invalid"
+    with pytest.raises(ValidationError, match="Validation failed for 3 para"):
+        mv = Multiverse(**mv_kwargs)
 
 def test_prepare_executable(mv_kwargs):
     """Tests handling of the executable, i.e. copying to a temporary location
@@ -408,7 +427,7 @@ def test_parallel_init(mv_kwargs):
     mv = Multiverse(**mv_kwargs)
     mv.run()
     log = mv.wm.tasks[0].streams['out']['log']
-    assert any((line.find("Parallel execution disabled") > 0 for line in log))
+    assert any(("Parallel execution disabled" in line for line in log))
 
     # Now override default setting
     mv_kwargs['parameter_space']['parallel_execution'] = dict(enabled=True)
@@ -416,7 +435,7 @@ def test_parallel_init(mv_kwargs):
     mv = Multiverse(**mv_kwargs)
     mv.run()
     log = mv.wm.tasks[0].streams['out']['log']
-    assert any((line.find("Parallel execution enabled") > 0 for line in log))
+    assert any(("Parallel execution enabled" in line for line in log))
 
 
 # FrozenMultiverse tests ------------------------------------------------------

@@ -95,6 +95,7 @@ In a complementary cumulative cluster size distribution plot, the scale-free nat
 .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/compl_cum_cluster_size_dist.png
   :width: 600
 
+.. _FFM_cfg:
 
 Default Configuration Parameters
 --------------------------------

@@ -1,0 +1,180 @@
+# Configurations for the Parameter class tests
+---
+to_extract:
+  param1:
+    subparam1: !param
+      default: 0.3
+      limits: [0, 2]
+      dtype: float
+    subparam2: 0.52
+    subparam3: !is-negative-int -3
+    subparam4: !is-positive 42.2
+  param2: !is-probability 0.5
+  param3:
+    subparam1: foo
+    subparam2y: !is-bool y
+    subparam2n: !is-bool n
+    subparam3: !param
+      default: baz
+      is_any_of: [foo, bar, baz, bam]
+      dtype: str
+  param4: !is-int 2
+  param5: !param
+    default: 0.4
+  param6: !is-string ~
+
+to_assert:
+  float1:
+    construct_param: !param
+      default: 0.4
+    validate_true: [1, -2, 3.3, 'foo', true, inf, -.inf, nan]
+    validate_false: []
+
+  float2:
+    construct_param: !param
+      default: 1.
+      limits: [0., 10.]
+      limits_mode: ()
+      dtype: float
+      description: some parameter
+    validate_true: [0.1, 1.5, 9.5, 1, 9]
+    validate_false: [0., 10., 11., 0, 10, 10.23, 20., -2., -10., -110000.2, .inf, -.inf, nan]
+
+  string:
+    construct_param: !param
+      default: foo
+      is_any_of: [foo, bar, baz, mil, mop]
+      dtype: str
+    validate_true: [foo, bar, baz, mil, mop]
+    validate_false:
+      - - fop
+        - "value 'fop' is not permissible. Valid options are:  'foo', 'bar', "
+      - BAR
+      - Baz
+      - 123
+
+  int:
+    construct_param: !param
+      default: 3
+      limits: [2, ~]
+      dtype: int
+    validate_true: [2, 4, 8, 100]
+    validate_false: [1, 1.2, -3, foo, .inf, .nan]
+
+  int2:
+    construct_param: !param
+      default: 4
+      limits: [~, 6]
+      dtype: int
+    validate_true: [2, -10, -100, 0]
+    validate_false:
+      - - 7
+        - 'required value in interval \(-inf, 6], but got 7.'
+      - 8
+      - 10
+
+  uint8:
+    construct_param: !param
+      default: 0
+      dtype: uint8
+    validate_true: [0, 1, 255]
+    validate_false:
+      - - -1
+        - required uint8-compatible type, but got int with value -1.
+      - - 256
+        - >-
+          cannot be correctly represented as the required type, uint8, but
+          would be coerced to 0 != 256
+
+  float32:
+    construct_param: !param
+      default: 0.
+      dtype: float32
+    validate_true: [0., 1., 2.123123123123123, .inf, .nan]
+    validate_false: []
+
+shorthands:
+  probability:
+    construct_param: !is-probability 0.2
+    expected_default: 0.2
+    validate_true: [0., 1., 0.5, 0, 1]
+    validate_false:
+      - 2
+      - - 4
+        - 'required value in interval \[0, 1\], but got 4.'
+      - -0.2
+      - - foo
+        - required float64-compatible type, but got str with value 'foo'
+
+  bool_true:
+    construct_param: !is-bool yes
+    expected_default: true
+    validate_true: [False, false, true]
+    validate_false: [0, 1, 2, 4, -0.2, foo, ~]
+    # NOTE (July 2020) due to an upstream error in ruamel.yaml, validate_true
+    #      fails for yes/no, on/off … despite this entry being handled
+    #      entirely by ruamel.yaml (no custom tag in front nor above).
+    #      This is not our responsibility, though, so we stick with testing
+    #      only for false and true, despite yes/no/on/off being possible in
+    #      other parts.
+
+  bool_false:
+    construct_param: !is-bool no
+    expected_default: false
+    validate_true: [False, false, true]
+    validate_false: [0, 1, 2, 4, -0.2, foo, ~]
+
+  pos:
+    construct_param: !is-positive 0.3
+    expected_default: 0.3
+    validate_true: [1, 2.0, 560, .inf]
+    validate_false:
+      - - 0
+        - 'required value in interval \(0, inf\), but got 0'
+      - -0.1
+      - -2.
+      - -.inf
+      - .nan
+      - foo
+
+  neg:
+    construct_param: !is-negative -0.3
+    expected_default: -0.3
+    validate_true: [-1, -2.0, -560, -.inf]
+    validate_false:
+      - - 0
+        - 'required value in interval \(-inf, 0\), but got 0'
+      - 0.1
+      - 2.
+      - .inf
+      - .nan
+      - foo
+
+  pos_int:
+    construct_param: !is-positive-int 42
+    expected_default: 42
+    validate_true: [1, 2, 3, 4, 100]
+    validate_false: [0, -3, -10., 0.2, foo, +.inf]
+
+  neg_int:
+    construct_param: !is-negative-int -2
+    expected_default: -2
+    validate_true: [-2, -10, -20]
+    validate_false: [0, 1, -2.3, 0.2, foo, -.inf, .nan]
+
+  unsigned:
+    construct_param: !is-unsigned 123
+    expected_default: 123
+    validate_true: [0, 1, 255, -0]
+    validate_false:
+      - 0.
+      - 1.234
+      - -1
+      - .inf
+      - .nan
+
+  string:
+    construct_param: !is-string foo
+    expected_default: foo
+    validate_true: [foo, bar, baz]
+    validate_false: [true, false, 1.3, -2, .inf, -.inf]

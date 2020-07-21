@@ -4,6 +4,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 # Silence some modules that are too verbose
+logging.getLogger('matplotlib').setLevel(logging.INFO)
 logging.getLogger('paramspace').setLevel(logging.INFO)
 
 logging.getLogger('utopya.task').setLevel(logging.INFO)

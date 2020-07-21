@@ -1,0 +1,12 @@
+# Tests validation of the ForestFire model with invalid parameters
+---
+parameter_space:
+  ForestFire: !model
+    model_name: ForestFire
+    p_lightning: 1.3           # bad value here
+    p_growth: !sweep
+      default: 7.5e-3
+      values: [0.9, 1.2, 1.3]  # bad sweep values here
+    p_immunity: !sweep
+      default: -1              # bad sweep default here
+      values: [0.1, 0.2, 0.3]

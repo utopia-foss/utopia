@@ -1,0 +1,17 @@
+# Tests the parameter validation feature integration using the ForestFire model
+---
+perform_sweep: true
+
+parameter_space:
+  seed: 1337
+  num_steps: 10
+  write_every: 2
+
+  ForestFire: !model
+    model_name: ForestFire
+
+    p_lightning: 0.5
+    p_growth: 0
+    p_immunity: !sweep
+      default: 0.5
+      values: [0, 0.1, 1]

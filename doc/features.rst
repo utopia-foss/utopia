@@ -453,9 +453,11 @@ Meta-Configuration – Controlling the Model Simulation
     #. **Temporary changes:** additional updates, defined via the CLI
 
 * The ``parameter_space`` key of the meta config is passed to the model; it can be conveniently sweeped over (see :ref:`below <feature_parameter_sweeps>`).
+* **Model parameters can be validated by the frontend.** This helps detecting wrongly-specified simulation runs *before* starting them and allows to reduce model implementation code.
 * 📚
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
   :py:class:`~utopya.multiverse.Multiverse`,
+  :ref:`config_validation`,
   :ref:`FAQ Entry <faq_config>`
 
 

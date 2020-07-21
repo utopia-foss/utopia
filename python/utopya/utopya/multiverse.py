@@ -7,9 +7,11 @@ import time
 import copy
 import re
 import logging
+import itertools
 from tempfile import TemporaryDirectory
 from shutil import copy2
 from pkg_resources import resource_filename
+from collections import defaultdict
 
 import paramspace as psp
 
@@ -17,6 +19,7 @@ from .model_registry import ModelInfoBundle, get_info_bundle, load_model_cfg
 from .cfg import get_cfg_path as _get_cfg_path
 from .datamanager import DataManager
 from .workermanager import WorkerManager
+from .parameter import ValidationError
 from .plotting import PlotManager
 from .reporter import WorkerManagerReporter
 from .yaml import load_yml, write_yml
@@ -143,6 +146,9 @@ class Multiverse:
             # NOTE Not taking a try-except approach here because it might get
             #      messy when multiple nodes try to backup the configuration
             #      at the same time ...
+
+        # Validate the parameters specified in the meta configuration
+        self._validate_meta_cfg()
 
         # Prepare the executable
         self._prepare_executable(**self.meta_cfg['executable_control'])
@@ -422,7 +428,9 @@ class Multiverse:
             user_cfg = load_yml(user_cfg_path)
 
         # Read in the configuration corresponding to the chosen model
-        model_cfg, model_cfg_path= load_model_cfg(info_bundle=self.info_bundle)
+        (model_cfg,
+         model_cfg_path,
+         params_to_validate) = load_model_cfg(info_bundle=self.info_bundle)
         # NOTE Unlike the other configuration files, this does not attach at
         # root level of the meta configuration but parameter_space.<model_name>
         # in order to allow it to be used as the default configuration for an
@@ -480,6 +488,11 @@ class Multiverse:
         meta_tmp['parameter_space'] = psp.ParamSpace(pspace)
         log.debug("Converted parameter_space to ParamSpace object.")
 
+        # Add the parameters that require validation
+        meta_tmp['parameters_to_validate'] = params_to_validate
+        log.debug("Added %d parameters requiring validation.",
+                  len(params_to_validate))
+
         # Prepare dict to store paths for config files in (for later backup)
         log.debug("Preparing dict of config parts ...")
         cfg_parts = dict(base=self.BASE_META_CFG_PATH,
@@ -487,7 +500,6 @@ class Multiverse:
                          model=model_cfg_path,
                          run=run_cfg_path,
                          update=update_meta_cfg)
-
         return meta_tmp, cfg_parts
 
     def _create_run_dir(self, *, out_dir: str, model_note: str=None) -> None:
@@ -641,17 +653,16 @@ class Multiverse:
                 executable. Note that these files can sometimes be quite large.
         """
         log.info("Performing backups ...")
-
         # Write the meta config to the config directory.
         write_yml(self.meta_cfg,
                   path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
-        log.note("Backed up meta configuration.")
+        log.note("  Backed up meta configuration.")
 
         # Separately, store the parameter space there.
         write_yml(self.meta_cfg['parameter_space'],
                   path=os.path.join(self.dirs['config'],
                                     "parameter_space.yml"))
-        log.note("Backed up parameter space representation.")
+        log.note("  Backed up parameter space representation.")
 
         # If configured, backup the other cfg files one by one.
         if backup_cfg_files:
@@ -671,7 +682,7 @@ class Multiverse:
                     log.debug("Dumping %s config dict ...", part_name)
                     write_yml(val, path=_path)
 
-            log.note("Backed up all involved configuration files.")
+            log.note("  Backed up all involved configuration files.")
 
         # If enabled, back up the executable as well
         if backup_executable:
@@ -680,7 +691,7 @@ class Multiverse:
 
             copy2(self.model_binpath,
                   os.path.join(backup_dir, self.model_name))
-            log.note("Backed up executable.")
+            log.note("  Backed up executable.")
 
     def _prepare_executable(self, *, run_from_tmpdir: bool=False) -> None:
         """Prepares the model executable, potentially copying it to a temporary
@@ -973,6 +984,77 @@ class Multiverse:
                                "".format(uni_basename)) from err
 
         log.debug("Added simulation task: %s.", uni_basename)
+
+    def _validate_meta_cfg(self) -> bool:
+        """Goes through the parameters that require validation, validates them,
+        and creates a useful error message if there were invalid parameters.
+
+        Returns:
+            bool: True if all parameters are valid; None if no check was done.
+                Note that False will never be returned, but a ValidationError
+                will be raised instead.
+
+        Raises:
+            ValidationError: If validation failed.
+        """
+        to_validate = self.meta_cfg.get('parameters_to_validate', {})
+
+        if not (to_validate or self.meta_cfg.get('perform_validation', True)):
+            log.info("Not performing parameter validation.")
+            return None
+        log.info("Validating %d parameters ...", len(to_validate))
+
+        pspace = self.meta_cfg['parameter_space']
+        log.remark("Parameter space volume:      %d", pspace.volume)
+
+        if pspace.volume >= 1000:
+            log.note("This may take a few seconds. To skip validation, set "
+                     "the `perform_validation` flag to False.")
+
+        # The dict to collect details on invalid parameters in.
+        #   - Keys are key sequences (tuple of str)
+        #   - Values are sets of error _messages_, hence suppressing duplicates
+        invalid_params = defaultdict(set)
+
+        # Iterate over the whole parameter space, including the default point
+        # TODO Can improve performance by directly checking sweep dimensions.
+        #      ... but be very careful about robustness here!
+        for params in itertools.chain(pspace, [pspace.default]):
+            for key_seq, param in to_validate.items():
+                # Retrieve the value from this point in parameter space
+                value = psp.tools.recursive_getitem(params, keys=key_seq)
+
+                # Validate it and store the error _message_ if invalid
+                try:
+                    param.validate(value)
+
+                except ValidationError as exc:
+                    invalid_params[key_seq].add(str(exc))
+
+        if not invalid_params:
+            log.note("All parameters valid.")
+            return True
+
+        # else: Validation failed. Create an informative error message
+        msg = (f"Validation failed for {len(invalid_params)} "
+               f"parameter{'s' if len(invalid_params) > 1 else ''}:\n\n")
+
+        # Get the length of longest key sequence (used for alignment)
+        _nd = max([len(".".join(ks)) for ks in invalid_params.keys()])
+
+        for key_seq, errs in invalid_params.items():
+            path = ".".join(key_seq)
+
+            if len(errs) == 1:
+                msg += f"  - {path:<{_nd}s}  :  {list(errs)[0]}\n"
+            else:
+                _details = "\n".join([f"     - {e}" for e in errs])
+                msg += (f"  - {path:<{_nd}s}  :  validation failed for "
+                        f"{len(errs)} sweep values:\n{_details}\n")
+
+        msg += ("\nInspect the details above and adjust the run configuration "
+                "accordingly.\n")
+        raise ValidationError(msg)
 
 
 # -----------------------------------------------------------------------------

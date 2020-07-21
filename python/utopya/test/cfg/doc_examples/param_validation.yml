@@ -1,0 +1,57 @@
+# Configuration files for the doc examples test of frontend/config_validation.rst
+---
+basic_tags:
+  ### Start -- config_validation_simple_tags
+# # The default configuation file for MyModel
+# ---
+  some_int: !param
+    name: my integer
+    description: some integer parameter
+    default: 3
+    dtype: int
+
+  another_int: !param
+    name: my negative integer
+    description: an integer less than zero
+    default: -2
+    limits: [~, 0]
+    limits_mode: ()
+
+  some_unsigned_int: !param
+    default: 0
+    dtype: uint8  # only allows integer values in [0, 255]
+
+  a_float: !param
+    default: 4.20
+    dtype: float
+
+  a_string: !param
+    default: foo
+    is_any_of: [foo, bar, baz]
+
+  some:
+    nested:
+      parameter: !param
+        default: spam
+        is_any_of: [spam, fish]
+        dtype: str
+  ### End ---- config_validation_simple_tags
+
+shorthand_tags:
+  ### Start -- config_validation_shorthand_tags
+# # The default configuation file for MyModel
+# ---
+  # ...
+
+  # a probability value, i.e. a float in [0, 1]
+  some_probability: !is-probability 0.3
+
+  # an integer
+  some_int: !is-int 3
+
+  # a positive value (strictly greater than 0)
+  some_positive_value: !is-positive 5
+
+  # a boolean
+  some_bool: !is-bool true
+  ### End ---- config_validation_shorthand_tags

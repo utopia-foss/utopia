@@ -39,22 +39,24 @@ def tmp_model_registry(tmp_cfg_dir) -> umr._ModelRegistry:
 def test_load_model_cfg():
     """Tests the loading of model configurations by name"""
     # Load the dummy configuration, for testing
-    mcfg, path = umr.load_model_cfg(model_name='dummy')
+    mcfg, path, params_to_validate = umr.load_model_cfg(model_name='dummy')
 
     # Assert correct types
     assert isinstance(mcfg, dict)
     assert isinstance(path, str)
+    assert isinstance(params_to_validate, dict)
 
     # Assert expected content
     assert mcfg['foo'] == 'bar'
     assert mcfg['spam'] == 1.23
     assert os.path.isfile(path)
+    assert not params_to_validate  # none specified for this model
 
 
 # Info Bundle module ----------------------------------------------------------
 
 def test_ModelInfoBundle(tmpdir, mib_kwargs):
-    """Tests the ModelInfoBundle"""    
+    """Tests the ModelInfoBundle"""
     # Most basic
     mib = umr.ModelInfoBundle(model_name="foo", **mib_kwargs)
 
@@ -106,7 +108,7 @@ def test_ModelInfoBundle_path_parsing(test_cfg):
 
         if not raises:
             mib = umr.ModelInfoBundle(**spec)
-        
+
         else:
             with pytest.raises(eval(raises), match=match):
                 umr.ModelInfoBundle(**spec)
@@ -187,7 +189,7 @@ def test_ModelRegistryEntry_bundle_handling(tmpdir, mib_kwargs):
     with pytest.raises(ModelRegistryError, match="already exists"):
         e.add_bundle(label="some_label", **mib_kwargs, some_val=345)
     assert len(e) == 2
-    
+
     e.add_bundle(label="some_label", **mib_kwargs, some_val=345,
                  overwrite_label=True)
     assert len(e) == 2

@@ -64,7 +64,7 @@ For details, please refer to the :doc:`COPYING`.
    faq/*
 
 .. toctree::
-   :caption: Miscelleanous
+   :caption: Miscellaneous
    :maxdepth: 1
    :glob:
 
