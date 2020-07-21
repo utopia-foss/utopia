@@ -52,6 +52,16 @@ perform_sweep: false
 #      Also, the `parameter_space` key (see below) will need to span at least
 #      a volume of 1 in order to be sweep-able.
 
+# Whether to perform parameter validation
+# For large sweeps, validation can take quite some time. For such scenarios, it
+# might make sense to disable parameter validation by setting this to false.
+perform_validation: true
+
+# Parameters that are to be validated
+# This is a mapping of key sequence -> Parameter object
+parameters_to_validate: {}
+
+
 
 # Reporter ....................................................................
 # The Multiverse owns a Reporter object to report on the progress of the

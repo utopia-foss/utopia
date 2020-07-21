@@ -12,11 +12,11 @@ def parse_update_args(args: argparse.Namespace, *,
                       mode: str) -> Tuple[dict, dict]:
     """Parses the given namespace, extracting update dictionaries for the
     Multiverse and the plots configuration
-    
+
     Args:
         args (argparse.Namespace): The arguments to extract info from
         mode (str): The mode argument. Can be ``run`` or ``eval``
-    
+
     Returns:
         Tuple[dict, dict]: Multiverse update config and plots update config
     """
@@ -30,7 +30,7 @@ def parse_update_args(args: argparse.Namespace, *,
         # Set model log level to DEBUG
         add_item('debug', add_to=update_dict,
                  key_path=['parameter_space', 'log_levels', 'model'])
-        
+
         # Let PlotManager raise exceptions
         add_item(True, add_to=update_dict,
                  key_path=['plot_manager', 'raise_exc'])
@@ -52,6 +52,11 @@ def parse_update_args(args: argparse.Namespace, *,
             add_item(args.sim_errors, add_to=update_dict,
                      key_path=['worker_manager', 'nonzero_exit_handling'])
 
+        # Disabling parameter validation
+        if args.skip_validation:
+            add_item(False, add_to=update_dict,
+                     key_path=['perform_validation'])
+
         # Number of simulation steps
         if args.num_steps is not None:
             add_item(args.num_steps, add_to=update_dict,
@@ -69,7 +74,7 @@ def parse_update_args(args: argparse.Namespace, *,
                      ErrorMsg= lambda v: ValueError("Argument --write-every "
                                                     "needs to be >= 1, "
                                                     "was {}.".format(v)))
-        
+
         # The root-level write_start parameter
         if args.write_start is not None:
             add_item(args.write_start, add_to=update_dict,
@@ -124,10 +129,10 @@ def parse_update_args(args: argparse.Namespace, *,
 
             add_from_kv_pairs(*args.set_params,
                               add_to=update_dict['parameter_space'])
-    
+
         if args.set_cfg:
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-        
+
         if args.update_plots_cfg:
             try:
                 add_from_kv_pairs(*args.update_plots_cfg,
@@ -140,7 +145,7 @@ def parse_update_args(args: argparse.Namespace, *,
     elif mode == 'eval':
         if args.set_cfg:
             add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-    
+
         if args.update_plots_cfg:
             add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
 
@@ -391,6 +396,11 @@ p_run_upd.add_argument('--sim-errors',
     choices=['ignore', 'warn', 'warn_all', 'raise'],
     help="Controls the value of the WorkerManager's `nonzero_exit_handling` "
          "flag which defines how errors in simulations are handled.")
+p_run_upd.add_argument('--skip-validation',
+    action='store_true',
+    help="If given, no parameter validation will be performed. Useful to set "
+         "if the parameter space volume is very large (>10k).")
+
 p_run_upd.add_argument('--num-steps',
     default=None, nargs='?', type=int,
     help="Sets the number of simulation steps.")
@@ -550,6 +560,7 @@ from utopya.tools import pformat, load_yml, add_item
 from utopya.cltools import (deploy_user_cfg, register_models, copy_model_files,
                             add_from_kv_pairs, prompt_for_new_plot_args)
 from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
+from utopya.parameter import ValidationError
 
 
 if __name__ == '__main__':
@@ -606,7 +617,7 @@ if __name__ == '__main__':
 
             log.info("Removing model registry entries for the following "
                      "models:\n  %s", ", ".join(model_names))
-            
+
             for model_name in model_names:
                 utopya.MODELS.remove_entry(model_name)
 
@@ -633,7 +644,7 @@ if __name__ == '__main__':
 
 
     # Run & eval subcommands ..................................................
-    # Prepare arguments for Multiverse . . . . . . . . . . . . . . . . . . . . 
+    # Prepare arguments for Multiverse . . . . . . . . . . . . . . . . . . . .
 
     log.info("Parsing additional command line arguments ...")
     update_dict, update_plots_cfg = parse_update_args(args, mode=args.mode)
@@ -643,8 +654,8 @@ if __name__ == '__main__':
         log.note("Updates to meta configuration:\n\n%s", pformat(update_dict))
 
     # Preparations finished now.
-    
-    
+
+
     # Create Model and perform the run  . . . . . . . . . . . . . . . . . . . .
     # Instantiate a Model object to take care of the rest
     model = utopya.Model(name=args.model_name)
@@ -652,8 +663,17 @@ if __name__ == '__main__':
 
     # Distinguish by CLI mode whether to create Multiverse or FrozenMultiverse
     if args.mode in ['run']:
-        # Get the Multiverse object and run a simulation
-        mv = model.create_mv(run_cfg_path=args.run_cfg_path, **update_dict)
+        # Create the Multiverse object
+        # If parameter validation failed, suppress the traceback
+        try:
+            mv = model.create_mv(run_cfg_path=args.run_cfg_path, **update_dict)
+
+        except ValidationError as err:
+            log.error("%s", err)
+            log.critical("Exiting now ...")
+            sys.exit(1)
+
+        # ... and run the simulation
         mv.run()
         log.success("Simulation run finished.\n")
 
@@ -698,7 +718,7 @@ if __name__ == '__main__':
     argv = [arg for arg in sys.argv[2:]]
 
     # While in interactive mode, the following loop is carried out repeatedly.
-    # A counter variable is used to 
+    # A counter variable is used to
     iap_session = 0
 
     while args.interactive:
@@ -733,13 +753,13 @@ if __name__ == '__main__':
         mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
                               raise_exc=args.debug)
         iap_session += 1
-        
+
         # Now, try to plot:
         try:
             mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
                                 plot_only=args.plot_only,
                                 **update_plots_cfg)
-        
+
         except KeyboardInterrupt:
             print("")
             log.warning("Interrupted current plotting session. Remaining in "

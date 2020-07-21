@@ -5,6 +5,7 @@ from typing import Union, Tuple
 
 from . import MODELS
 from .info_bundle import ModelInfoBundle
+from ..parameter import extract_validation_objects
 from .._yaml import load_yml
 
 log = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ def get_info_bundle(*, model_name: str=None, info_bundle: ModelInfoBundle=None,
                     bundle_key: Union[str, int]=None) -> ModelInfoBundle:
     """Determine the model info bundle in cases where both a model name
     and an info bundle are allowed as arguments.
-    
+
     Args:
         model_name (str, optional): The model name.
         info_bundle (ModelInfoBundle, optional): The info bundle object.
@@ -24,10 +25,10 @@ def get_info_bundle(*, model_name: str=None, info_bundle: ModelInfoBundle=None,
             name is given, the bundle_key can be used for item access, e.g. in
             cases where more than one bundle is available and access would be
             ambiguous.
-    
+
     Returns:
         ModelInfoBundle: The selected info bundle item
-    
+
     Raises:
         ValueError: If neither or both model_name and info_bundle were None
     """
@@ -42,39 +43,43 @@ def get_info_bundle(*, model_name: str=None, info_bundle: ModelInfoBundle=None,
         return MODELS[model_name].item()
     return MODELS[model_name][bundle_key]
 
-def load_model_cfg(**get_info_bundle_kwargs) -> Tuple[dict, str]:
+def load_model_cfg(**get_info_bundle_kwargs) -> Tuple[dict, str, dict]:
     """Loads the default model configuration file for the given model name,
     using the path specified in the info bundle.
-    
+
+    Furthermore, :py:func:`~utopya.parameter.extract_validation_objects` is
+    called to extract any Parameter objects that require validation, replace
+    them with their default values, and gather the Parameter class objects
+    into a separate dict.
+
     Args:
         **get_info_bundle_kwargs: Passed on to get_info_bundle
-    
+
     Returns:
-        Tuple[dict, str]: The corresponding model configuration and the path
-            to the model configuration file.
-    
+        Tuple[dict, str, dict]: The corresponding model configuration, the path
+            to the model configuration file, and the Parameter class objects
+            requiring validation.
+
     Raises:
         FileNotFoundError: On missing file
         ValueError: On missing model
-    
-    Deleted Parameters:
-        model_name (str): The name of the model to load
-        info_bundle (ModelInfoBundle, optional): The info bundle the
-            information is available in. If it is not given, will try to
-            extract it from model registry.
-        bundle_key (Union[str, int]): If the model registry entry is ambiguous,
-            this parameter can help disambiguate.
     """
     bundle = get_info_bundle(**get_info_bundle_kwargs)
     path = bundle.paths['default_cfg']
 
-    log.debug("Loading default model configuration for '%s' model ...\n  %s",
-              bundle.model_name, path)
+    log.debug(f"Loading default model configuration for '{bundle.model_name}' "
+              f"model ...\n  {path}")
 
     try:
-        return load_yml(path), path
+        model_cfg = load_yml(path)
 
     except FileNotFoundError as err:
         raise FileNotFoundError("Could not locate default configuration for "
                                 "'{}' model! Expected to find it at: {}"
                                 "".format(bundle.model_name, path)) from err
+
+    # Collect the validation objects from the model configuration and replace
+    # them with their default values
+    model_cfg, to_validate = extract_validation_objects(model_cfg,
+                                                        model_name=bundle.model_name)
+    return model_cfg, path, to_validate

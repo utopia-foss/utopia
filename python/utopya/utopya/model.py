@@ -106,7 +106,7 @@ class Model:
         """Returns the default model configuration by loading it from the file
         specified in the info bundle.
         """
-        cfg, _ = load_model_cfg(info_bundle=self.info_bundle)
+        cfg, _, _ = load_model_cfg(info_bundle=self.info_bundle)
         return cfg
 
     def run_and_eval_cfg_paths(self, *, search_dir: str='cfgs'

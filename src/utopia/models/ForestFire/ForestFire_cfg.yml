@@ -1,5 +1,5 @@
 # The model configuration for the ForestFire model
-# 
+#
 # NOTE This file holds the _default_ values for a single instance.
 #      Do NOT change the values here!
 #
@@ -7,35 +7,37 @@
 ---
 # --- Space -------------------------------------------------------------------
 space:
-  periodic: true
+  periodic: !is-bool true
 
 
 # --- CellManager and cell initialization -------------------------------------
 cell_manager:
   grid:
     structure: square
-    resolution: 64           # cells per unit length of space's extent
+    resolution: !is-positive 64
 
   neighborhood:
-    mode: vonNeumann         # can be: empty, vonNeumann, Moore
+    mode: !param
+      default: vonNeumann
+      is_any_of: [empty, vonNeumann, Moore]
 
   # Initialization parameters for each cell
   cell_params:
     # With this probability, a cell is initialized as tree (instead of empty)
-    p_tree: 0.2
+    p_tree: !is-probability 0.2
     # NOTE Macroscopically, this is equivalent to the initial tree density
 
 
 # --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree
-p_growth: 7.5e-3
+p_growth: !is-probability 7.5e-3
 
 # Probability per site and time step to transition to burning state, burning
 # down the whole cluster
-p_lightning: 1.0e-5
+p_lightning: !is-probability 1e-05
 
 # Probability (per neighbor) to _not_ catch fire from a burning neighbor
-p_immunity: 0.
+p_immunity: !is-probability 0.
 
 
 # --- Heterogeneities ---------------------------------------------------------
@@ -45,24 +47,40 @@ p_immunity: 0.
 
 # Turn some cells into stones: these do not take part in any of the processes
 stones:
-  enabled: false
-  mode: clustered_simple
+  enabled: !is-bool false
+  mode: !param
+    name: selection mode for stones
+    default: clustered_simple
+    is_any_of: &selection_modes
+      - sample
+      - probability
+      - position
+      - boundary
+      - lanes
+      - clustered_simple
 
   # Clustering parameters
-  p_seed: .02                # Probability with which a cell is a cluster seed
-  p_attach: .1               # Attachment probability (per neighbor)
-  num_passes: 5              # How many attachment procedures to perform
+  p_seed: !is-probability .02     # Probability for a cell being a cluster seed
+  p_attach: !is-probability .1    # Attachment probability (per neighbor)
+  num_passes: !is-unsigned 5      # How many attachment procedures to perform
+
+  # Depending on mode, can pass additional parameters here.
 
 # Set some cells on fire permanently (invoked after stones are set)
 ignite_permanently:
-  enabled: false
-  mode: boundary
+  enabled: !is-bool false
+  mode: !param
+    name: selection mode for permanently ignited cells
+    default: boundary
+    is_any_of: *selection_modes
 
   # Boundary selection parameters (requires space to be set to NON-periodic!)
-  boundary: bottom
+  boundary: !param
+    default: bottom
+    is_any_of: [bottom, top, left, right, all]
 
 
 # --- Output Configuration ----------------------------------------------------
 # Whether to only write out the tree density; useful for runs on large grids
 # where spatial information is not needed.
-write_only_tree_density: false
+write_only_tree_density: !is-bool false

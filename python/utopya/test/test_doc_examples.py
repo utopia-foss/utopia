@@ -32,6 +32,7 @@ In order to let the tests be independent, even for imports, there should NOT
 be any significant imports on the global level of this test file!
 """
 
+from itertools import chain
 from pkg_resources import resource_filename
 
 import pytest
@@ -39,6 +40,7 @@ import numpy as np
 
 import utopya
 from utopya.tools import load_yml
+from utopya.parameter import Parameter
 
 
 # Fixtures --------------------------------------------------------------------
@@ -73,3 +75,13 @@ def test_faq_frontend_yaml_tags():
     assert p['some_inf'] == np.inf
     assert p['some_ninf'] == - np.inf
 
+def test_config_validation_doc_params():
+    """Tests the validation parameter objects in frontend/config_validation.rst"""
+    path = resource_filename("test", "cfg/doc_examples/param_validation.yml")
+    cfg = load_yml(path)
+
+    for param_key, param in chain(cfg["basic_tags"].items(),
+                                  cfg["shorthand_tags"].items()):
+        # For those on the top level, perform validation
+        if isinstance(param, Parameter):
+            assert param.validate(param.default)
