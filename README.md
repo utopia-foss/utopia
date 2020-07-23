@@ -1,16 +1,9 @@
-# Utopia
-
-__Utopia__ (_gr.,_ no-place), a non-existent society described in considerable detail. [Wikipedia, 2016]
-
-Utopia is a comprehensive modelling framework for complex and evolving environmental systems.
-It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
-<!-- TODO Write more here ... -->
+# Installation
 
 Utopia is free software and licensed under the [GNU Lesser General Public License Version 3][LGPL] or any later version.
 For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
 
-#### Contents of this README
-* [Installation](#installation)
+* [How to install](#how-to-install)
     * [On your machine](#step-by-step-instructions)
     * [Alternative: docker image](#utopia-via-docker)
 * [Quickstart](#quickstart)
@@ -25,7 +18,7 @@ For the copyright notice and the list of copyright holders, see [`COPYING.md`](C
 
 <!-- ###################################################################### -->
 
-## Installation
+## How to install
 The following instructions will install Utopia into a development environment
 on your machine.
 
@@ -281,7 +274,7 @@ utopia run SomeModel
 
 where `SomeModel` needs to be replaced with a valid model name.
 To get a list of available models, run the `utopia models ls` command.
-Alternatively, have a look at the [`src/utopia/models`](src/utopia/models) directory, where they are implemented.
+Alternatively, have a look at the [`src/utopia/models`](../src/utopia/models) directory, where they are implemented.
 
 The `utopia run` command carries out a pre-configured simulation for that model, loads the data, and performs automated plots.
 
