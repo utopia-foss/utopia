@@ -26,7 +26,7 @@ How about some nice images here?
 .. toctree::
    :hidden:
 
-   About Utopia<about>
+   About the Utopia project<about>
    Features<features_showcase>
    
 .. toctree::
