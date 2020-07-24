@@ -7,7 +7,7 @@ Utopya
 .. toctree::
    :maxdepth: 4
 
-   api_utopya/utopya
+   ../api/api_utopya/utopya
 
 
 Paramspace
@@ -16,4 +16,4 @@ Paramspace
 .. toctree::
    :maxdepth: 4
 
-   api_paramspace/api_paramspace
+   ../api/api_paramspace/api_paramspace
