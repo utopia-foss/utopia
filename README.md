@@ -1,7 +1,6 @@
-# Installation
+# Utopia
 
-Utopia is free software and licensed under the [GNU Lesser General Public License Version 3][LGPL] or any later version.
-For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
+# Installation
 
 * [How to install](#how-to-install)
     * [On your machine](#step-by-step-instructions)
@@ -13,7 +12,6 @@ For the copyright notice and the list of copyright holders, see [`COPYING.md`](C
 * [Troubleshooting](#troubleshooting)
 
 ---
-
 
 
 <!-- ###################################################################### -->
@@ -38,7 +36,7 @@ If this does not resolve your installation problems, [please file an issue in th
 #### 1 — Clone Utopia
 First, create a `Utopia` directory at a place of your choice.
 This is where the Utopia repository will be cloned to.
-When working with or developing for Utopia, auxilary data will have a place
+When working with or developing for Utopia, auxiliary data will have a place
 there as well.
 
 In your terminal, enter the `Utopia` directory you just created.
@@ -451,7 +449,7 @@ Each _individual_ test also has an individual build target, the names of which
 you see in the output of the `make build_tests_*` command.
 For invoking the individual test executable, you need to go to the
 corresponding build directory, e.g. `build/tests/core/`, and run the executable
-from that directory, as some of the tests rely on auxilary files which are
+from that directory, as some of the tests rely on auxiliary files which are
 located relative to the executable.
 
 For invoking individual Python tests, there are no targets specified.
