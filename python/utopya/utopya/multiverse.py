@@ -162,7 +162,7 @@ class Multiverse:
         # Create a WorkerManager instance and its associated reporter
         self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
                                  **wm_cluster_kwargs)
-        self._reporter = WorkerManagerReporter(self.wm,
+        self._reporter = WorkerManagerReporter(self.wm, mv=self,
                                                report_dir=self.dirs['run'],
                                                **self.meta_cfg['reporter'])
 
