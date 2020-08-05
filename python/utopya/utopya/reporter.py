@@ -10,6 +10,7 @@ from typing import Union, List, Callable, Dict
 from collections import OrderedDict, Counter
 
 import numpy as np
+import paramspace as psp
 
 from .tools import format_time, TTY_COLS
 
@@ -482,27 +483,40 @@ class Reporter:
         else:
             print(prepend + s, flush=True, end='\n')
 
-    def _write_to_log(self, s: str, *, lvl: int=10):
+    def _write_to_log(self, s: str, *, lvl: int=10, skip_if_empty: bool=False):
         """Writes the given string via the logging module.
 
         Args:
             s (str): The string to log
-            lvl (int, optional): The level at which to log at; default: DEBUG
+            lvl (int, optional): The level at which to log at; default: DEBUG (10)
+            skip_if_empty (bool, optional): Whether to skip writing if ``s`` is
+                empty.
         """
+        if not s and skip_if_empty:
+            return
         log.log(lvl, s)
 
     def _write_to_file(self, s: str, *, path: str="_report.txt",
-                       mode: str='w'):
+                       mode: str='w', skip_if_empty: bool=False):
         """Writes the given string to a file
 
         Args:
             s (str): The string to write
-            path (str): The path to write it to; will be assumed relative to
-                the `report_dir` attribute; if that is not given, `path` needs
-                to be absolute. By default, assumes that there is a report_dir
-                given and writes to "_report.txt" in there.
+            path (str, optional): The path to write it to; will be assumed
+                relative to the ``report_dir`` attribute; if that is not
+                given, ``path`` needs to be absolute. By default, assumes that
+                there is a ``report_dir`` given.
             mode (str, optional): Writing mode of that file
+            skip_if_empty (bool, optional): Whether to skip writing if ``s`` is
+                empty.
+
+        Raises:
+            ValueError: If ``report_dir`` was not set and ``path`` is relative.
         """
+        if not s and skip_if_empty:
+            log.debug("Not writing to file because the given string is empty.")
+            return
+
         # For given relative paths, join them to the report directory
         if not os.path.isabs(path):
             if not self.report_dir:
@@ -526,17 +540,20 @@ class Reporter:
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
-    def __init__(self, wm, **reporter_kwargs):
+    def __init__(self, wm: 'WorkerManager', *,
+                 mv: 'Multiverse'=None, **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager.
 
         Args:
             wm (WorkerManager): The associated WorkerManager
+            mv (Multiverse, optional): The Multiverse this reporter is used in.
+                If this is provided, it can be used in report parsers, e.g. to
+                provide additional information on simulations.
             **reporter_kwargs: Passed on to parent method
         """
-
         super().__init__(**reporter_kwargs)
 
-        # Make sure that a format 'working' is available
+        # Make sure that formats 'while_working' and 'after_work' are available
         if 'while_working' not in self.report_formats:
             log.debug("No report format 'while_working' found; adding one "
                       "because it is needed by the WorkerManager.")
@@ -556,7 +573,8 @@ class WorkerManagerReporter(Reporter):
         wm.reporter = self
         log.debug("Associated reporter with WorkerManager.")
 
-        # Attributes
+        # Other attributes
+        self.mv = mv
         self.runtimes = []
         self.exit_codes = Counter()
 
@@ -1034,6 +1052,40 @@ class WorkerManagerReporter(Reporter):
                                           v=format_time(rt, ms_precision=1))]
 
         return " \n".join(parts)
+
+    def _parse_pspace_info(self, *, fstr: str, report_no: int=None) -> str:
+        """Provides information about the parameter space.
+
+        Extracts the ``parameter_space`` from the associated Multiverse's meta
+        configuration and provides information on that.
+
+        If there are multiple tasks specified, it is assumed that a sweep is or
+        was being carried out and an information string is retrieved from the
+        :py:class:`paramspace.paramspace.Paramspace` object, which is then
+        returned.
+        If only a single task was defined, returns an empty string.
+
+        Args:
+            report_no (int, optional): Passed by ReportFormat call
+
+        Returns:
+            str: If there is more than one task, returns the result of
+                :py:meth:`paramspace.paramspace.ParamSpace.get_info_str`.
+                If not, returns a string denoting that there was only one task.
+        """
+        if self.mv is None:
+            raise ValueError("No Multiverse associated with this reporter! "
+                             "Cannot parse ParamSpace information.")
+
+        pspace = self.mv.meta_cfg['parameter_space']
+        if not isinstance(pspace, psp.ParamSpace):
+            raise TypeError(f"Expected a ParamSpace object, got:\n\n{pspace}")
+
+        if len(self.wm.tasks) <= 1:
+            return ""
+
+        return fstr.format(num_tasks=len(self.wm.tasks),
+                           sweep_info=pspace.get_info_str())
 
 
     # Writer methods ..........................................................
