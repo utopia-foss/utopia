@@ -80,7 +80,9 @@ bool check_num_cells_and_shape(std::string grid_name,
     // For each space, retrieve the expected number of cells, and construct
     // a grid from it. Then check the number or, if given negative, whether
     // construction fails in the expected way
-    for (const auto [space_name, space]: spaces) {
+    for (const auto& sp: spaces) {
+        auto& space_name = sp.first;
+        auto space = sp.second;
 
         std::cout << "... in combination with '" << space_name << "' space ..."
                   << std::endl;
