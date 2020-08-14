@@ -46,16 +46,6 @@ public:
         Base(space, cfg)
     {}
 
-    /// Construct a hexagonal grid discretization
-    /** \param  space   The space to construct the discretization for; will be
-      *                 stored as shared pointer
-      * \param  cfg     Further configuration parameters
-      */
-    HexagonalGrid (Space& space, const Config& cfg)
-    :
-        HexagonalGrid(std::make_shared<Space>(space), cfg)
-    {}
-
 
     // -- Implementations of virtual base class functions ---------------------
     // .. Number of cells & shape .............................................
