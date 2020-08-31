@@ -186,6 +186,7 @@ The `utopia` command is now available and gives you control over running and eva
 utopia run dummy
 ```
 
+The model output will be written into `~/utopia_output/dummy/<timestamp>`.
 For more information on how to use the command line interface, see the [information for users](#how-to-run-a-model) below and the [documentation](#utopia-documentation).
 
 
