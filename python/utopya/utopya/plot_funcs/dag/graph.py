@@ -710,7 +710,7 @@ def draw_graph(*, hlpr: PlotHelper,
         if label_kwargs.get('labels', False):
             if label_kwargs['labels'].get('from_property', False):
                 prop = label_kwargs['labels']['from_property']
-                label_template = label_kwargs['labels'].get('format',"{label}")
+                label_template = label_kwargs['labels'].pop('format',"{label}")
                 label_kwargs['labels'] = {
                         n: label_template.format(
                                 label=(g.nodes[n][prop] if decode is None
@@ -778,7 +778,7 @@ def draw_graph(*, hlpr: PlotHelper,
         if label_kwargs.get('edge_labels', False):
             if label_kwargs['edge_labels'].get('from_property', False):
                 prop = label_kwargs['edge_labels']['from_property']
-                label_template = label_kwargs['edge_labels'].get('format',
+                label_template = label_kwargs['edge_labels'].pop('format',
                                                                  "{label}")
                 label_kwargs['edge_labels'] = {
                         e[:2]: label_template.format(
