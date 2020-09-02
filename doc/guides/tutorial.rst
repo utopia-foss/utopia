@@ -68,9 +68,21 @@ When working with *Utopia*, make sure to always be in this virtual environment.
 
 .. note::
 
-    **Virtual Environment** A python virtual environment is a software environment that is separated from the main python environment on your machine.
-    That way, the software installed into it does not interfere with the other python software you have installed.
+    **Virtual Environment** A Python virtual environment is a software environment that is separated from the main Python environment on your machine.
+    That way, the software installed into it does not interfere with the other Python software you have installed.
     The marker ``(utopia-env)`` tells you that you are within the Utopia virtual environment in your terminal session.
+
+.. warning::
+
+    If you are using ``csh`` or ``fish`` shells, you *cannot* use the command given above.
+    The Python ``venv`` package provides different ``activate`` scripts for these shells, and they are located in ``build/utopia-env/bin``.
+    In this case, execute
+
+    .. code-block:: console
+
+      $ cd build                           # Enter the Utopia build directory
+      $ source ./utopia-env/activate.csh   # Activate venv for csh, OR ...
+      $ source ./utopia-env/activate.fish  # ... for fish
 
 Let us now look at how to run a model using the CLI. Run on the command line:
 
