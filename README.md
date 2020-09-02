@@ -199,6 +199,8 @@ source ./activate
 to enter the virtual environment, where the Utopia Command Line Interface (CLI) is available.
 (If you later want to exit the virtual environment, call the `deactivate` command.)
 
+*Note:* If you are using `csh` or `fish` shells, use the respective `activate` scripts located in `build/utopia-env/bin/` (see [below](#how-to-run-a-model)).
+
 The `utopia` command is now available and gives you control over running and evaluating model simulations:
 
 ```bash
@@ -283,10 +285,13 @@ It's not more than a glimpse; after playing around with this, [consult the docum
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
-To conveniently work with the frontend, you should thus enter the virtual environment:
+To conveniently work with the frontend, you should thus enter the virtual environment.
+Execute *one* of the commands below depending on which type of shell you use:
 
 ```bash
-source ./build/activate
+source ./build/activate                  # For bash, zsh, or similar
+source ./build/utopia-env/activate.csh   # For csh
+source ./build/utopia-env/activate.fish  # For fish
 ```
 
 Now, your shell should be prefixed with `(utopia-env)`.
