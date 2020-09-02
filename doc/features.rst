@@ -380,7 +380,7 @@ Saving Dynamic Graphs
 Simulation Control & Configuration
 ----------------------------------
 To generate simulation data from a model, a model needs to be executed.
-This is controlled via the frontend of Utopia, ``utopya``, and a command line interface.
+This is controlled via the command line interface integrated into the Python frontend of Utopia, the :doc:`utopya package </api_utopya/utopya>`.
 
 
 
@@ -622,6 +622,7 @@ Stop Conditions – Dynamically stop simulations
 The ``utopia-env``
 ^^^^^^^^^^^^^^^^^^
 * A python virtual environment where all Utopia-related installation takes place; this insulates the installation of frontend dependencies from the rest of your system.
+* Contains the ``utopya`` frontend package.
 * Is created as part of the build process; checks dependencies and installs them if required.
 * In order to be able to run the ``utopia`` CLI command, make sure to have activated the virtual environment:
 
@@ -642,6 +643,8 @@ The ``utopia-env``
 
 Data Analysis & Plotting
 ------------------------
+
+Data analysis and plotting is implemented in the Python frontend of Utopia, the :doc:`utopya package </api_utopya/utopya>`.
 
 .. _feature_frontend_DataManager:
 

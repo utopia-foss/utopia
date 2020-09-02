@@ -2,12 +2,31 @@
 
 __Utopia__ (_gr.,_ no-place), a non-existent society described in considerable detail. [Wikipedia, 2016]
 
-Utopia is a comprehensive modelling framework for complex and evolving environmental systems.
+Utopia is a comprehensive modelling framework for complex and evolving systems.
 It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
-<!-- TODO Write more here ... -->
 
 Utopia is free software and licensed under the [GNU Lesser General Public License Version 3][LGPL] or any later version.
 For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
+
+## Overview
+
+Complex and evolving systems are investigated with a wide array of different models types.
+Among the most popular are cellular automata (CA), agent-based models (ABMs), and network models.
+Utopia provides a library to build these types of models in modern C++.
+Its `core` template library contains functions for implementing model dynamics and scaffoldings for building new models.
+The Utopia `dataIO` library is capable of storing hierarchical simulation data efficiently in the H5 file format.
+Within Utopia, and when using Utopia as a dependency, models are integrated into a simulation infrastructure for conveniently executing and analyzing them.
+
+The `utopya` Python package constitutes Utopia's frontend.
+It configures and performs the simulation runs and embeds the model into a data processing pipeline, such that the simulation data can directly be analyzed and visualized.
+All parts of the frontend make use of a hierarchic, recursively-updated YAML-based configuration structure.
+Using the [paramspace package](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace), this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
+The [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro)-based data processing pipeline automates visualization, thereby coupling the model implementation and its analysis closer together.
+
+Several models are readily included in the framework, among them Conway's Game of Life, as well as one CA- and one agent-based contagious disease model.
+Investigating these models by performing simulation runs with a few varying parameters, or sensitivity analysis over a large parameter space, requires little to no programming skills.
+
+For introductory guides, feature lists, FAQs, and API references refer to the online [user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/index.html).
 
 #### Contents of this README
 * [Installation](#installation)
