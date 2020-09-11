@@ -1,6 +1,7 @@
+.. _coding_guidelines:
 
 Coding Guidelines
-========================
+=================
 
 General
 -------
@@ -9,10 +10,10 @@ The **language** of Utopia code and documentation should be American English (to
 
 Python
 ------
-We use Python >= 3.6
+We use Python >= 3.7
 
 Orientation style guide: `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * very readable :)
   – This is the basic orientation. If you are unsure how to write things, look it up here.
@@ -78,7 +79,7 @@ C++ lacks as concrete style guides as the `PEP 8 <https://www.python.org/dev/pep
 It should be stressed that the **main goal** is to have *readable* code.
 Still, below are a few (partially harsh restrictions) we would like to impose on C++ code to keep some level of consistency:
 
-* 
+*
   Indentation:
 
   * use **spaces** instead of tabs
@@ -86,26 +87,26 @@ Still, below are a few (partially harsh restrictions) we would like to impose on
   * ``private``\ , ``protected``\ , and ``public`` use the enclosing indentation level
   * CPP flags are not indented at all or use the enclosing indentation level
 
-* 
+*
   Scopes (\ ``{ }``\ ):
 
   * every new scope creates an indentation, except ``namespace`` scopes and functions that are defined in one line
   * scope closure ``}`` is a single line, except for one-line-functions
   * scope closures of namespaces (or far away scope openings) should be denoted with a ``// namespace foo`` comment preceding the ``}``
 
-* 
+*
   Whitespace
 
   * leave a whitespace after any C++ keyword, before any scope opening, and before a function's parameter list
 
-* 
+*
   Naming:
 
   * use ``lower_case_with_underscores`` for variables, class members, methods, and functions
   * begin class member variable names with an underscore ``_``
   * use ``CapitalizedWords`` for classes, structs, and typedefs
 
-* 
+*
   Object initialization:
 
   * initialize objects with an assignment ``=`` if no special constructor should be called

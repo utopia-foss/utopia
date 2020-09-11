@@ -1,6 +1,7 @@
+.. _dev_workflow:
 
-Philosophy and Workflow
-=======================
+Development Workflow
+====================
 
 You do not know anything about Git, GitLab or the general workflow when working with Utopia? You have come to the right place! ✌
 
@@ -18,7 +19,7 @@ Philosophy
 
 So... to get you into the right mind-set for working with *Utopia*, please keep in mind the following philosophy when doing *anything* with Utopia.
 This basically is a selection of short sentences you can live by (at least within the group).
-Feel free to write them as an inspirational quote on an image and share them on your favorite social network. 😉 
+Feel free to write them as an inspirational quote on an image and share them on your favorite social network. 😉
 
 * **Just try it out.**
 * **Learning by doing.**
@@ -40,9 +41,9 @@ Workflow
 * You just want to try out something, but do not know whether you want to keep the changes or throw them away?
 
 Git and GitLab provide answers to these kinds of questions. Git is a version control system. So, you can keep a stable version of your code that works all the time while you develop the code in another place. You can think of these different stages of the code as a tree, which has a root, one big master branch, and many small outgoing branches.
-However, in Git outgoing branches can be merged again into the stable master branch. ... tell that to a tree! 🤔 
+However, in Git outgoing branches can be merged again into the stable master branch. ... tell that to a tree! 🤔
 
-For Utopia this means that there is always a master branch (a stable version), which you can download and which is guaranteed to work. All the development, so the things people are working on separately at the same time, happens on individual branches. 
+For Utopia this means that there is always a master branch (a stable version), which you can download and which is guaranteed to work. All the development, so the things people are working on separately at the same time, happens on individual branches.
 
 So, how do you create a new branch on which to work on?
 
@@ -86,7 +87,7 @@ If it is a larger thing you would like to discuss, it might make sense to invest
 .. note::
 
   If you are wondering whether an issue should go into the ``utopia`` framework project or the ``models`` project, the answer is simple:
-  
+
   If the issue relates solely to the implementation or enhancement of your *personal* project, e.g. a model you investigate as part of your MSc project,
   it goes into ``models``.
   Otherwise, your issue probably belongs into the ``utopia`` framework project;
@@ -103,15 +104,15 @@ This will redirect you automatically to a new page with your merge request. Furt
 
 There are two things you should do before you start writing code:
 
-#. 
+#.
    Provide information about what you want to implement. For this, click on the ``Edit`` button in the top right-hand corner of the page. As for the issue, you can also ``Choose a template``. Choose the ``Model-MR`` and fill in what you can already fill in. You should update this description alongside your work on the merge request, the latest when you are nearing the merge.
 
-#. 
+#.
    Your local machine still does not know that there is a new branch and, of course, is also not yet on this new branch. To change this search the ``checkout branch`` button and follow only the first two commands of it. Now, you should be on the right branch. You can check it by typing ``git status`` and make sure the first line of the output tells you that you are on your newly created branch.
 
 Well done! You are now on your own development branch. 🎉
 
-In the `How-to-build-a-model Guide <how-to-build-a-model>` you learn how to use the models that already exist in utopia, so you don't have to start your model implementation from scratch. 
+In the `How-to-build-a-model Guide <how-to-build-a-model>` you learn how to use the models that already exist in utopia, so you don't have to start your model implementation from scratch.
 
 Remove *WIP*\ : The "this should be merged into the master!" phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -129,7 +130,7 @@ Automatic Testing Pipeline
 """"""""""""""""""""""""""
 How do we ensure that everything that is implemented in Utopia works correctly? We write tests!
 
-With tests we can for example check that a function returns exactly what it should return in all possible cases. So, if you automatically check every subpart of your code with a test you can be quite sure that your code does what you want it to do. Even more, if someone changes something in the future, which would break your code, it will lead to failing tests because it will always be automatically checked if your code still works. 
+With tests we can for example check that a function returns exactly what it should return in all possible cases. So, if you automatically check every subpart of your code with a test you can be quite sure that your code does what you want it to do. Even more, if someone changes something in the future, which would break your code, it will lead to failing tests because it will always be automatically checked if your code still works.
 
 Where do the tests come from? You write them. You can write tests in C++ and/or Python. For examples, look at existing model tests:
 
@@ -163,7 +164,7 @@ The commands below demonstrate a typical way of committing files to the reposito
                            # Most importantly: Check you are on the desired branch
    git add path/to/file    # Add a file which has changes that should be stored
    git status              # Check that you did not stage any undesired files
-   git commit -m '<...>'   # The message that describes what has been changed. 
+   git commit -m '<...>'   # The message that describes what has been changed.
                            # Always think about the sentence: "If applied this commit will ..."
                            # Your commit message should start where the three dots end.
                            # A valid example would be:
@@ -173,7 +174,7 @@ The commands below demonstrate a typical way of committing files to the reposito
 .. note::
 
   If you are wondering when to commit and how to write a good commit message, have a look at these `Version Control Best Practices <https://www.git-tower.com/learn/git/ebook/en/command-line/appendix/best-practices>`_ and this `blog post <https://jasonmccreary.me/articles/when-to-make-git-commit/>`_.
-  
+
   Before you can commit anything, git prompts you to provide your name and email address with the given commands.
   When choosing your name, be aware that this name is immortalized in the git history (please choose your full name and a decent email address ;)).
 
@@ -200,10 +201,10 @@ Now, we need to go back to the feature branch and merge them:
 .. code-block:: shell
 
    git checkout <your_branch>   # replace <your_branch> by the name of your branch
-   git merge master             # A text editor should open with a commit message. 
+   git merge master             # A text editor should open with a commit message.
                                 # In general, it is ok to leave the message as it is, thus just save and exit the editor (in vim type: :x )
 
-Don't forget to re-build the code afterward. 😉 
+Don't forget to re-build the code afterward. 😉
 
 .. note::
 

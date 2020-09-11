@@ -1,7 +1,8 @@
 .. _api_paramspace:
 
-API Reference: :py:mod:`paramspace`
-===================================
+paramspace package
+==================
+
 This page includes an *extract* of the API reference of the :py:mod:`paramspace` package, which is used throughout :py:mod:`utopya`, the Utopia frontend.
 In its own description, the package does the following:
 
@@ -9,6 +10,8 @@ In its own description, the package does the following:
         :members:
 
 In everyday usage within Utopia, the :py:mod:`paramspace` objects are most easily defined directly inside the configuration files by using the specified YAML tags.
+
+Refer to paramspace's own `documentation <https://paramspace.readthedocs.io/en/latest/>`_ for more detailed information.
 
 .. contents::
     :local:

@@ -1,7 +1,7 @@
 .. _should_i_use:
 
-Should I start using Utopia?
-============================
+Should I Use Utopia?
+====================
 
 You might ask yourself: "Why not use `NetLogo <https://ccl.northwestern.edu/netlogo/index.shtml>`_?"
 Here's why:

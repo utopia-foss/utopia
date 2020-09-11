@@ -260,13 +260,13 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
 .. _cell_manager_faq:
 
 ``CellManager``-related FAQs
-============================
+----------------------------
 
 Neighborhood calculation
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Where and how are neighborhoods calculated?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""
 The neighborhood computation does not take place in the ``CellManager`` itself but in the underlying ``Grid`` object and based on the cells' IDs.
 The ``CellManager`` then retrieves the corresponding shared pointers from the IDs and makes them available via the ``neighbors_of`` method.
 
@@ -274,7 +274,7 @@ The available neighborhood modes vary depending on the chosen `grid specializati
 
 
 Are neighborhoods computed on the fly or can I cache them?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 **Yes,** the ``CellManager`` offers to cache the neighborhood computation's result.
 This feature can be controlled via the ``compute_and_store`` argument.
 

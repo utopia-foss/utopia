@@ -3,6 +3,11 @@ Relevant API References
 
 This is an excerpt of the relevant API references for the plotting framework.
 
+.. note::
+
+    These structures are derived from corresponding dantro structures.
+    For more information, visit the `dantro documentation <https://dantro.readthedocs.io/>`_.
+
 .. contents::
    :local:
    :depth: 2

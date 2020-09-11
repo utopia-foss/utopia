@@ -29,8 +29,7 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
 .. toctree::
    :hidden:
 
-   about/utopia_project
-   about/main_features
+   about/utopia
    about/should_i_use
    about/features
 
@@ -58,17 +57,9 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
    :maxdepth: 1
    :hidden:
 
-   usage/philosophy_workflow
-   usage/step_by_step
-   usage/handling_data
-   usage/plotting
-   usage/parameter-sweeps
-   usage/base_configs
-   usage/stop_conds
-   usage/interactive
-   usage/config_validation
-   usage/cpp_doc
-   usage/unit-tests
+   usage/implement/index
+   usage/run/index
+   usage/eval/index
 
 
 .. toctree::
@@ -81,20 +72,27 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
 
 
 .. toctree::
-   :caption: API References
+   :caption: References
    :maxdepth: 1
-   :glob:
    :hidden:
 
-   api/*
+   ref/cpp_doc
+   api/utopya/utopya
+   api/paramspace/paramspace
+   ref/utopya_base_cfg
+   ref/base_plots_cfg
+
 
 .. toctree::
-   :caption: For Developers
+   :caption: Utopia Development
    :maxdepth: 1
    :hidden:
 
-   for_devs/coding-guidelines
-   for_devs/model-requirements
+   dev/workflow
+   dev/coding-guidelines
+   dev/model-requirements
+   dev/writing-docs
+
 
 .. toctree::
    :caption: Miscellaneous
@@ -102,9 +100,8 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
    :hidden:
 
    COPYING.md
-   CODE_OF_CONDUCT.md
    CONTRIBUTING.md
-   examples
+   CODE_OF_CONDUCT.md
 
 
 .. * :ref:`Page Index <genindex>`

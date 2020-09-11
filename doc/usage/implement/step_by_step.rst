@@ -1,9 +1,10 @@
+.. _impl_step_by_step:
 
-Step-by-step guide
-=========================================
+Step-by-step Guide
+==================
 
 After having been through the :doc:`README <../README>`, the
-:doc:`tutorial <tutorial>`, and the :doc:`Greenhorn Guide <greenhorn-guide>`, this guide is for creating a new model in *Utopia*.
+:ref:`tutorial <tutorial>`, and the :ref:`workflow <workflow>`, this guide is for creating a new model in *Utopia*.
 
 .. note::
 

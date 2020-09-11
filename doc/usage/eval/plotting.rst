@@ -7,28 +7,11 @@ Furthermore, it extends the available plotting capabilities by providing a basic
 .. note::
 
     While this page and the linked documents aim to give an overview over the plot framework in the context of Utopia, the dantro documentation provides the full API reference and more detailed information.
-    To access it, visit the `project page <https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro>`_ or the `online dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/>`_.
+    To access it, visit the `project page <https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro>`_ or the `online dantro documentation <https://dantro.readthedocs.io/en/stable/index.html>`_.
 
 .. contents:: Overview
    :local:
    :depth: 2
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Further reading
-   :glob:
-
-   plotting/uni_and_mv_plots
-   plotting/plot_helper
-   plotting/animations
-   plotting/*
-
-.. toctree::
-   :maxdepth: 1
-   :caption: utopya plot functions
-   :glob:
-
-   plotting/plot_funcs/*
 
 ----
 
