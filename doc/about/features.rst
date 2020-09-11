@@ -18,9 +18,7 @@ Lines starting with the 📚 symbol also denote further reading material.
     :depth: 3
 
 |
-
 |
-
 |
 
 ----
@@ -639,7 +637,7 @@ The ``utopia-env``
         (utopia-env) $ utopia run dummy
 
 * 📚
-  :doc:`README <getting_started/README>`
+  :doc:`README <../README>`
 
 
 
@@ -760,8 +758,8 @@ Utopia makes it easy to define tests by providing both a C++- and a Python-based
 C++: Boost-based Model Tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Testing parts of a model implementation can be best done on C++ side, where you have access to the individual parts of the implementation. The Boost.Test framework offers a lot of support in defining tests for a model.
-* To build and run only model-specific tests, use ``make test_model_<name>``. Consult the :doc:`README <getting_started/README>` for more information on available test targets.
-* Model code coverage can also be evaluated; again, see :doc:`getting_started/README`.
+* To build and run only model-specific tests, use ``make test_model_<name>``. Consult the :doc:`README <../README>` for more information on available test targets.
+* Model code coverage can also be evaluated; again, see :doc:`../README`.
 * 📚
   :doc:`for_developers/unit-tests`,
   `Boost.Test documentation <https://www.boost.org/doc/libs/1_71_0/libs/test/doc/html/index.html>`_
@@ -785,7 +783,7 @@ Python-based Model Tests
 
         python -m pytest -v python/model_tests/MyModel
 
-  Consult the :doc:`getting_started/README` and the pytest documentation for more information on test invocation.
+  Consult the :doc:`../README` and the pytest documentation for more information on test invocation.
 * 📚
   :py:class:`~utopya.model.Model`,
   :py:class:`~utopya.testtools.ModelTest`,
