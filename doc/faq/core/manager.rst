@@ -11,7 +11,7 @@ Below, some frequently asked questions regarding the ``CellManager`` and ``Agent
 
 ----
 
-Trait objects
+Entity Traits
 -------------
 What are these trait objects needed for manager setup?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -206,8 +206,6 @@ In this mode, all cells have an identical initial state, which is passed down fr
   };
 
 
-Initialization with random number generator
--------------------------------------------
 Can I have a random number generator when constructing cells or agents?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -259,8 +257,8 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
 
 .. _cell_manager_faq:
 
-``CellManager``-related FAQs
-----------------------------
+``CellManager`` FAQs
+--------------------
 
 Neighborhood calculation
 ^^^^^^^^^^^^^^^^^^^^^^^^

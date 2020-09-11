@@ -1,3 +1,4 @@
+.. _run_parameter_sweeps:
 
 Multidimensional Model Runs
 ===========================
@@ -47,7 +48,7 @@ It can look something like this:
        # name: foo    # give a custom name to this parameter dimension. If not given, a unique
                       # name within the parameter space is generated, in this case: seed
 
-     # Now, load the configuration for your specific model         
+     # Now, load the configuration for your specific model
      MyFancyModel: !model
        model_name: MyFancyModel
        # The above two lines import the _default_ configuration, i.e. MyFancyModel_cfg.yml
@@ -86,7 +87,7 @@ If you have a plot function which uses *only* the data of a *single* universe, y
 
    state:
      creator: universe   # Create plots for the universes, not the multiverse
-     universes: all      # Choose all the universes. 
+     universes: all      # Choose all the universes.
 
      # Select the plot function just as for a simple simulation run, e.g.
      module: model_plots.MyFancyModel
@@ -141,12 +142,12 @@ In this case, you need to write a new plot function ``state_mean``. It looks som
 
    from ..tools import save_and_close
 
-   def mean_state(dm: DataManager, *, 
-                  out_path: str, 
+   def mean_state(dm: DataManager, *,
+                  out_path: str,
                   mv_data: xr.Dataset,     # Here, you get the actual data as an xarray DataSet object
                   #
                   # Below, you can add further model specific arguments
-                  save_kwargs: dict=None, 
+                  save_kwargs: dict=None,
                   **plot_kwargs):
        '''Plots the mean state of multiple universes'''
 

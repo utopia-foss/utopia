@@ -1,10 +1,9 @@
+.. _faq_graph:
+
 Graphs
 ======
 
-This part of the FAQ relates to the usage of
-`Boost Graph Library
-<https://www.boost.org/doc/libs/1_69_0/libs/graph/doc/index.html>`_ Features in
-Utopia.
+This part of the FAQ relates to the usage of the `Boost Graph Library <https://www.boost.org/doc/libs/1_74_0/libs/graph/doc/index.html>`_ in Utopia.
 
 .. contents::
    :local:
@@ -14,8 +13,8 @@ Utopia.
 
 .. _create_graphs:
 
-Create graphs
--------------
+Creating Graph Objects
+----------------------
 How do I attach custom objects to the vertices and edges of my graph?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -28,8 +27,8 @@ In the following example the structs ``Vertex`` and ``Edge`` are applied to an
 ``adjacency_list``. If you access e.g. a vertex with a ``vertex_descriptor vd``
 like ``g[vd]`` an object of type ``Vertex`` is returned which holds the properties
 ``id`` and ``state``.
-Introducing properties like this provides an easy way to set up and access 
-internal properties. For further information, see the `bundled property documentation 
+Introducing properties like this provides an easy way to set up and access
+internal properties. For further information, see the `bundled property documentation
 <https://www.boost.org/doc/libs/1_62_0/libs/graph/doc/bundles.html>`_ .
 
 .. code-block:: c++
@@ -49,7 +48,7 @@ internal properties. For further information, see the `bundled property document
     using EdgeCont = boost::vecS;
     using VertexCont = boost::vecS;
 
-    /// The graph type 
+    /// The graph type
     using Graph = boost::adjacency_list<EdgeCont,
                                         VertexCont,
                                         boost::undirectedS,
@@ -60,29 +59,30 @@ internal properties. For further information, see the `bundled property document
     Graph g;
 
 If you want to use Utopia's full graph functionality we strongly recommend
-that your graph is defined as described in the apply_rule section: 
+that your graph is defined as described in the apply_rule section:
 :ref:`Apply rules on Graph Entities <apply_rule_graph>`.
 
 .. note::
 
-    If you construct the `adjacency_list` take care that the ordering of the 
-    template arguments specifying the vertex/edge container type and their 
-    struct is correct! For the container types you first have to specify the 
+    If you construct the `adjacency_list` take care that the ordering of the
+    template arguments specifying the vertex/edge container type and their
+    struct is correct! For the container types you first have to specify the
     edge container type and then the vertex container type whereas for the structs
     you first need to specify the vertex struct and then the edge struct.
     You wonder why this is? Actually, we too... :thinking:
 
-Are there graph generating functions implemented in Utopia?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Yes. 
 
-Utopia contains a selection of graph creation algorithms. Even more, the 
-``Utopia::Graph::create_graph()`` function lets you switch easily between 
+Are there graph-generating functions available in Utopia?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Yes.
+
+Utopia contains a selection of graph creation algorithms. Even more, the
+``Utopia::Graph::create_graph()`` function lets you switch easily between
 different graph creation models.
 
 Let's assume that we have defined a graph type as done in the previous section.
 Let's further assume that we are inside of a Utopia model class, such that we
-have access to a model configuration (``this->_cfg``) and a random number 
+have access to a model configuration (``this->_cfg``) and a random number
 generator (``*this->_rng``). (Of course, you would need to adapt these two
 options if you use the function in another situation.)
 Then, we can just write:
@@ -92,7 +92,7 @@ Then, we can just write:
     Graph g = create_graph<Graph>(
                 this->_cfg["create_graph"], // You model configuration file
                                             // requires a "create_graph"
-                                            // entry. 
+                                            // entry.
                 *this->_rng
                 );
 
@@ -106,12 +106,12 @@ YAML file looks like this:
       # "regular"           Create a k-regular graph. Vertices are located on a
       #                     circle and connected symmetrically to their nearest
       #                     neighbors until the desired degree is reached.
-      #                     If the degree is uneven, then they are additionally 
+      #                     If the degree is uneven, then they are additionally
       #                     connected to the vertex at the opposite location.
       # "ErdosRenyi"        Create a random graph using the Erdös-Rényi model
       # "WattsStrogatz"     Create a small-world graph using the Watts-Strogatz
       #                     model (for directed graphs, rewiring of in_edges)
-      # "BarabasiAlbert"    Create a scale-free graph using the Barabási-Albert 
+      # "BarabasiAlbert"    Create a scale-free graph using the Barabási-Albert
       #                     model (for undirected graphs)
       # "BollobasRiordan"   Create a scale-free graph using the Bollobas-Riordan
       #                     model (for directed graphs)
@@ -128,7 +128,7 @@ YAML file looks like this:
       ErdosRenyi:
         # Allow parallel edges
         parallel: false
-    
+
         # Allow self edges
         self_edges: false
 
@@ -150,18 +150,20 @@ YAML file looks like this:
 
 
 
-This of course is a highly documented configuration. You only need to specify
-configuration options if the creation algorithm you set requires them, otherwise
-they will be just ignored.
+This of course is a highly documented configuration.
+You only need to specify configuration options if the creation algorithm you set requires them, otherwise they will be just ignored.
+
+
+
 
 .. _apply_rule_graph:
 
-Apply rule 
-----------
+Apply Rule Interface
+--------------------
 
-Utopia provides an interface to easily apply a rule to entities of 
-a graph. The user just needs to define a lambda function that takes one 
-graph entity descriptor as input and call the ``apply_rule`` function. 
+Utopia provides an interface to easily apply a rule to entities of
+a graph. The user just needs to define a lambda function that takes one
+graph entity descriptor as input and call the ``apply_rule`` function.
 This is best described through examples:
 
 .. literalinclude:: ../../test/core/graph_apply_doc_test.cc
@@ -176,10 +178,10 @@ This is best described through examples:
     in the file ``utopia/test/core/apply_rule_graph_doc_test.cc``.
 
 
-Prerequisits on Graph, Vertex, & Edge Type
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Note that this functionality can only be used if the vertices and edges of the 
-graph are derived from a   `Utopia::Entity <../doxygen/html/group___graph_entity.html>`_. 
+Prerequisits on Graph, Vertex, and Edge Type
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Note that this functionality can only be used if the vertices and edges of the
+graph are derived from a   `Utopia::Entity <../doxygen/html/group___graph_entity.html>`_.
 Your definition of the graph needs to look like this:
 
 
@@ -189,7 +191,7 @@ Your definition of the graph needs to look like this:
     :end-before: // End of the required graph types - doc reference line
 
 
-This graph structure is similar but a bit more sophisticated than described above 
+This graph structure is similar but a bit more sophisticated than described above
 in the section on :ref:`Graph Creation <create_graphs>`.
 
 In this graph definition the vertex and edge property access works as follows:
@@ -203,21 +205,24 @@ In this graph definition the vertex and edge property access works as follows:
     g[edge].state.e_prob;
 
 
-Can I modify the Graph structure while looping over a graph entity?
--------------------------------------------------------------------
+
+Can I modify the graph structure while looping over a graph entity?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In general you can do it but you should be really careful because the iterators
-you use to loop over the graph can easily be invalidated. Have a look at the 
-:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html>`_ 
+you use to loop over the graph can easily be invalidated. Have a look at the
+:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html>`_
 for further information.
 
-As a rule of thumb: If you want to change the graph structure 
+As a rule of thumb: If you want to change the graph structure
 - use ``boost::listS`` as the appropriate list and edge containers and
 - do not use the ``apply_rule`` functions because they can easily result in buggy behavior.
 
+
+
 .. _save_graph_properties:
 
-Save node & edge properties
----------------------------
+Save Node and Edge Properties
+-----------------------------
 How can values stored in vertex or edge objects be saved?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -259,9 +264,9 @@ time the graph was written.
 The example code will result in the following structure (the graph
 has 100 vertices):
 
-.. code-block:: bash
+::
 
-    └┬grp
+    └┬ grp
        └┬ id
            └─ graph0         < ... shape(100,)
         ├ state

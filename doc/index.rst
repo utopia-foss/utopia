@@ -11,11 +11,11 @@ For more information and a list of copyright holders, please refer to the :doc:`
 
 .. TODO Nice image (hosted outside of repo)
 .. image:: imgs/clusters.png
-   :alt: Desc
+   :alt: Nice image showing off Utopia capabilities
 
-If you want to know more about the Utopia project, have a look at ...
-
-If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>`!
+To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
+If you want to start using Utopia right away, head for the :ref:`tutorial`.
+To explore other parts of the documentation, use the navigation sidebar.
 
 .. note::
 
@@ -24,7 +24,7 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
 
 
 .. ----------------------------------------------------------------------------
-.. Invisible TOCtree – the sidebar should be used for navigation
+.. Hidden TOCtree – the sidebar should be used for navigation
 
 .. toctree::
    :hidden:
@@ -66,10 +66,10 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
 .. toctree::
    :caption: Frequently Asked Questions
    :maxdepth: 1
-   :glob:
    :hidden:
 
-   faq/*
+   faq/frontend
+   faq/core/index
 
 
 .. toctree::
@@ -103,7 +103,4 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
    COPYING.md
    CONTRIBUTING.md
    CODE_OF_CONDUCT.md
-
-
-.. * :ref:`Page Index <genindex>`
-.. * :ref:`Python Module Index <modindex>`
+   index_pages

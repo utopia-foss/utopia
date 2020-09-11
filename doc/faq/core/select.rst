@@ -1,12 +1,16 @@
 
 .. _entity_selection:
 
-Entity Selection Interface
-==========================
+Entity Selection
+================
 
 Utopia provides a config-accessible interface to select a subset of entities from a manager, e.g. cells from a ``CellManager``.
 
 This page aims to answer only basic questions regarding that interface. For a full documentation, it is crucial to consult the :ref:`cpp_docs`, e.g. starting from the module on entity selection.
+
+.. contents::
+   :local:
+   :depth: 2
 
 ----
 
@@ -31,8 +35,6 @@ There, the ``mode`` is crucial. Only those parameters that are relevant for the 
   The ``enabled`` key is not a part of the ``select_entities`` interface, but is implemented by the calling structure.
 
 
-Available selection modes
--------------------------
 Which selection modes are available?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The following is an excerpt from the C++ documentation. For information on parameters corresponding to each mode, see there.
@@ -41,8 +43,8 @@ The following is an excerpt from the C++ documentation. For information on param
   :project: utopia
 
 
-Boundary Cells of a ``CellManager``
------------------------------------
+Selecting from the ``CellManager``
+----------------------------------
 Why can't I select boundary cells?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Probably because you have configured a periodic space and for periodic space it does not really make sense to be able to configure a boundary.

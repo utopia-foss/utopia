@@ -1,15 +1,12 @@
-Configuration
-=============
+.. _faq_model_config:
+
+Model Configuration
+===================
 
 This part of the FAQs are concerned with all questions around the configuration
-of Utopia, its models, plots, and frontend. It does not cover the general
-aspects of YAML as a configuration language.
+of Utopia models.
+It does *not* cover the general aspects of YAML as a configuration language or the configuration of the frontend and the evaluation of simulations (see :ref:`the frontend FAQs <faq_frontend>` instead).
 
-.. contents::
-   :local:
-   :depth: 2
-
-----
 
 Passing configuration to the model
 ----------------------------------
@@ -48,7 +45,7 @@ If the name of your model instance is ``my_model_instance`` the instance can acc
       spam: fish
 
 This procedure maintains hierarchic encapsulation.
-See `the doxygen docs <../../doxygen/html/group___model.html>`_`_ for more information.
+See `the doxygen docs <../doxygen/html/group___model.html>`_ for more information.
 
 
 Can I pass a custom configuration to a model during initialization?
@@ -68,8 +65,8 @@ For the ``CopyMeBare`` model, it looks like this:
     :dedent: 4
 
 
-Read configuration
-------------------
+Read content from the configuration
+-----------------------------------
 In my model, how can I read entries from the configuration?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -88,11 +85,11 @@ One way of remembering the order of arguments is: "``get_as`` an object of type
 
 See below for the function signature and more information.
 
-.. doxygenfunction:: Utopia::get_as(const std::string&, const DataIO::Config&)
+.. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node)
+.. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node, ReturnType fallback)
+.. doxygenclass:: Utopia::KeyError
 
 
-Read linear algebra objects
----------------------------
 How can I read linear algebra objects (vectors, matrices, ...) from the config?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -131,5 +128,3 @@ cases.
 .. doxygenfunction:: Utopia::get_as_MultiIndex
 .. doxygentypedef:: Utopia::SpaceVecType
 .. doxygentypedef:: Utopia::MultiIndexType
-
-
