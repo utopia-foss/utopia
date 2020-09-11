@@ -57,6 +57,7 @@ If you want to start using Utopia, head right into the :ref:`Tutorial <tutorial>
    :maxdepth: 1
    :hidden:
 
+   usage/workflow
    usage/implement/index
    usage/run/index
    usage/eval/index
