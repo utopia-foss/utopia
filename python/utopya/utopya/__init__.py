@@ -1,7 +1,7 @@
 """The utopya package implements the frontend of Utopia"""
 
 # Specify the version
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 # NOTE This needs to correspond to the one in setup.py
 
 # Use the dantro-provided logging module (with additional log levels)
@@ -24,6 +24,7 @@ coloredlogs.install(logger=log,
                         note=dict(color='cyan'),
                         info=dict(bright=True),
                         progress=dict(color='green'),
+                        caution=dict(color=202),  # orange
                         hilight=dict(color='yellow', bold=True),
                         success=dict(color='green', bold=True),
                         warning=dict(color=202, bold=True),  # orange

@@ -11,10 +11,8 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.5.0',
-    'dantro~=0.13',
+    'dantro>=0.14.0b0',
     # NOTE Version need also be set in python/CMakeLists.txt
-    # See https://www.python.org/dev/peps/pep-0440/#compatible-release for
-    # details on the compatible release clause, `~=`.
 
     # Required for testing:
     'pytest>=3.4.0',
@@ -62,6 +60,7 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Topic :: Utilities'

@@ -1,7 +1,33 @@
 # Utopia
 
-# Installation
+Utopia is a comprehensive modelling framework for complex and evolving systems.
+It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 
+Utopia is free software and licensed under the [GNU Lesser General Public License Version 3][LGPL] or any later version.
+For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
+
+## Overview
+
+Complex and evolving systems are investigated with a wide array of different models types.
+Among the most popular are cellular automata (CA), agent-based models (ABMs), and network models.
+Utopia provides a library to build these types of models in modern C++.
+Its `core` template library contains functions for implementing model dynamics and scaffoldings for building new models.
+The Utopia `dataIO` library is capable of storing hierarchical simulation data efficiently in the H5 file format.
+Within Utopia, and when using Utopia as a dependency, models are integrated into a simulation infrastructure for conveniently executing and analyzing them.
+
+The `utopya` Python package constitutes Utopia's frontend.
+It configures and performs the simulation runs and embeds the model into a data processing pipeline, such that the simulation data can directly be analyzed and visualized.
+All parts of the frontend make use of a hierarchic, recursively-updated YAML-based configuration structure.
+Using the [paramspace package][paramspace], this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
+The [dantro][dantro]-based data processing pipeline automates visualization, thereby coupling the model implementation and its analysis closer together.
+
+Several models are readily included in the framework, among them Conway's Game of Life, as well as one CA- and one agent-based contagious disease model.
+Investigating these models by performing simulation runs with a few varying parameters, or sensitivity analysis over a large parameter space, requires little to no programming skills.
+
+For introductory guides, feature lists, FAQs, and API references refer to the online [user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/index.html).
+
+
+#### Contents of this README
 * [How to install](#how-to-install)
     * [On your machine](#step-by-step-instructions)
     * [Alternative: docker image](#utopia-via-docker)
@@ -171,12 +197,15 @@ source ./activate
 to enter the virtual environment, where the Utopia Command Line Interface (CLI) is available.
 (If you later want to exit the virtual environment, call the `deactivate` command.)
 
+*Note:* If you are using `csh` or `fish` shells, use the respective `activate` scripts located in `build/utopia-env/bin/` (see [below](#how-to-run-a-model)).
+
 The `utopia` command is now available and gives you control over running and evaluating model simulations:
 
 ```bash
 utopia run dummy
 ```
 
+The model output will be written into `~/utopia_output/dummy/<timestamp>`.
 For more information on how to use the command line interface, see the [information for users](#how-to-run-a-model) below and the [documentation](#utopia-documentation).
 
 
@@ -254,10 +283,13 @@ It's not more than a glimpse; after playing around with this, [consult the docum
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
-To conveniently work with the frontend, you should thus enter the virtual environment:
+To conveniently work with the frontend, you should thus enter the virtual environment.
+Execute *one* of the commands below depending on which type of shell you use:
 
 ```bash
-source ./build/activate
+source ./build/activate                  # For bash, zsh, or similar
+source ./build/utopia-env/activate.csh   # For csh
+source ./build/utopia-env/activate.fish  # For fish
 ```
 
 Now, your shell should be prefixed with `(utopia-env)`.
@@ -555,7 +587,7 @@ of it.
 | [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
 | [Boost][Boost]       | >= 1.67             | 1.71            | |
 | [Armadillo][arma]    | >= 9.600            | 9.800           | |
-| [yaml-cpp][yamlcpp]  | >= 0.6.2            | 0.6.2           | |
+| [yaml-cpp][yaml-cpp] | >= 0.6.2            | 0.6.2           | |
 | [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |
 | [Python3][Python3]   | >= 3.6              | 3.8.2           | |
 
@@ -581,7 +613,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | ------------------------ | ---------- | ------------------------------- |
 | [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
 | [paramspace][paramspace] | >= 2.4.1   | Makes parameter sweeps easy     |
-| [dantro][dantro]         | ~= 0.13    | Handle, transform, and visualize hierarchically organized data |
+| [dantro][dantro]         | >= 0.14    | Handle, transform, and visualize hierarchically organized data |
 
 
 #### Recommended
@@ -664,7 +696,7 @@ make all -j4
 [Utopia-tutorial]: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/guides/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
-[paramspace]: https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace
+[paramspace]: https://gitlab.com/blsqr/paramspace
 [dantro]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro
 
 [LGPL]: https://www.gnu.org/licenses/lgpl-3.0.en.html

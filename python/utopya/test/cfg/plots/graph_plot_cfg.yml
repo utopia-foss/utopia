@@ -80,7 +80,6 @@ DiGraph:
     node_labels:
       enabled: True
       show_only: [0, 1, 2]
-      format: '{label:.2f}'
       labels:
         0: label0
         1: label1

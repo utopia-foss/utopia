@@ -14,7 +14,8 @@
 // Import some types
 using Utopia::DataIO::Config;
 using namespace Utopia;
-using SpaceMap = std::map<std::string, DefaultSpace>;  // 2D space
+// 2D space
+using SpaceMap = std::map<std::string, std::shared_ptr<DefaultSpace>>;
 using MultiIndex = MultiIndexType<2>;
 using SpaceVec = SpaceVecType<2>;
 
@@ -80,8 +81,8 @@ bool check_num_cells_and_shape(std::string grid_name,
     // a grid from it. Then check the number or, if given negative, whether
     // construction fails in the expected way
     for (const auto& sp: spaces) {
-        auto space_name = sp.first;
-        auto space = std::make_shared<DefaultSpace>(sp.second);
+        auto& space_name = sp.first;
+        auto space = sp.second;
 
         std::cout << "... in combination with '" << space_name << "' space ..."
                   << std::endl;
@@ -199,50 +200,55 @@ int main() {
 
         spaces.emplace(
             std::make_pair("default",
-                           DefaultSpace())
+                           std::make_shared<DefaultSpace>())
         );
         spaces.emplace(
             std::make_pair("nice",
-                           DefaultSpace(cfg["spaces"]["nice"]))
+                           std::make_shared<DefaultSpace>(
+                                cfg["spaces"]["nice"]))
         );
         spaces.emplace(
             std::make_pair("uneven",
-                           DefaultSpace(cfg["spaces"]["uneven"]))
+                           std::make_shared<DefaultSpace>(
+                                cfg["spaces"]["uneven"]))
         );
         spaces.emplace(
             std::make_pair("uneven_np",
-                           DefaultSpace(cfg["spaces"]["uneven_np"]))
+                           std::make_shared<DefaultSpace>(
+                                cfg["spaces"]["uneven_np"]))
         );
         spaces.emplace(
             std::make_pair("nasty",
-                           DefaultSpace(cfg["spaces"]["nasty"]))
+                           std::make_shared<DefaultSpace>(
+                                cfg["spaces"]["nasty"]))
         );
         spaces.emplace(
             std::make_pair("devil",
-                           DefaultSpace(cfg["spaces"]["devil"]))
+                           std::make_shared<DefaultSpace>(
+                                cfg["spaces"]["devil"]))
         );
         std::cout << "Success." << std::endl << std::endl;
 
 
         std::cout << "Checking extents ..." << std::endl;
         
-        assert(spaces["default"].extent[0] == 1.);
-        assert(spaces["default"].extent[1] == 1.);
+        assert(spaces["default"]->extent[0] == 1.);
+        assert(spaces["default"]->extent[1] == 1.);
         
-        assert(spaces["nice"].extent[0] == 4.);
-        assert(spaces["nice"].extent[1] == 4.);
+        assert(spaces["nice"]->extent[0] == 4.);
+        assert(spaces["nice"]->extent[1] == 4.);
         
-        assert(spaces["uneven"].extent[0] == 2.);
-        assert(spaces["uneven"].extent[1] == 3.);
+        assert(spaces["uneven"]->extent[0] == 2.);
+        assert(spaces["uneven"]->extent[1] == 3.);
         
-        assert(spaces["uneven_np"].extent[0] == 2.);
-        assert(spaces["uneven_np"].extent[1] == 3.);
+        assert(spaces["uneven_np"]->extent[0] == 2.);
+        assert(spaces["uneven_np"]->extent[1] == 3.);
         
-        assert(spaces["nasty"].extent[0] == 1.25);
-        assert(spaces["nasty"].extent[1] == 3.2);
+        assert(spaces["nasty"]->extent[0] == 1.25);
+        assert(spaces["nasty"]->extent[1] == 3.2);
         
-        assert(spaces["devil"].extent[0] == 1.23);
-        assert(spaces["devil"].extent[1] == 3.14);
+        assert(spaces["devil"]->extent[0] == 1.23);
+        assert(spaces["devil"]->extent[1] == 3.14);
 
         std::cout << "Success." << std::endl << std::endl;
 

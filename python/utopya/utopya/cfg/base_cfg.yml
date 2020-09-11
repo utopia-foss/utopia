@@ -94,6 +94,18 @@ reporter:
       min_num: 4                      # min. number of universes for statistics
       show_individual_runtimes: true  # for large number of universes, disable
 
+    # Creates a parameter sweep information file
+    sweep_info:
+      parser: pspace_info
+      write_to:
+        file:
+          path: _sweep_info.txt
+          skip_if_empty: true
+        log:
+          lvl: 18
+          skip_if_empty: true
+      fstr: "Sweeping over the following parameter space:\n\n{sweep_info:}"
+
   # Can define a default format to use
   # default_format: ~
 
@@ -136,9 +148,10 @@ worker_manager:
   # by name here. They can also be lists, if multiple report formats should
   # be invoked.
   rf_spec:
-    while_working: while_working
-    task_spawned: while_working
-    monitor_updated: monitor_updated
+    before_working: [sweep_info]
+    while_working: [while_working]
+    task_spawned: [while_working]
+    monitor_updated: [monitor_updated]
     task_finished: [while_working, report_file]
     after_work: [after_work, report_file]
     after_abort: [after_work, report_file]

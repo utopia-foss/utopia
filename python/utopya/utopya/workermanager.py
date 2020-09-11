@@ -73,12 +73,13 @@ class WorkerManager:
                 report formats that should be invoked at different points of
                 the WorkerManager's operation.
                 Possible keys:
-                    'while_working', 'after_work', 'after_abort',
-                    'task_spawn', 'task_finished'
+                    ``before_working``, ``while_working``, ``after_work``,
+                    ``after_abort``, ``task_spawn``, ``task_finished``.
                 All other keys are ignored.
                 The values of the dict can be either strings or lists of
                 strings, where the strings always refer to report formats
-                registered with the WorkerManagerReporter
+                registered with the WorkerManagerReporter. This argument
+                updates the default report format specifications.
             nonzero_exit_handling (str, optional): How to react if a WorkerTask
                 exits with a non-zero exit code. For 'ignore', nothing happens.
                 For 'warn', a warning is printed and the last 5 lines of the
@@ -154,11 +155,12 @@ class WorkerManager:
         else:
             self.num_workers = num_workers
 
-        # Reporter-related
+        # Reporter-related, setting default rf_spec
         if reporter:
             self.reporter = reporter
 
-        self.rf_spec = dict(while_working='while_working',
+        self.rf_spec = dict(before_working='while_working',
+                            while_working='while_working',
                             task_spawned='while_working',
                             task_finished='while_working',
                             after_work='after_work',
@@ -436,6 +438,8 @@ class WorkerManager:
             ValueError: For invalid (i.e., negative) timeout value
             WorkerManagerTotalTimeout: Upon a total timeout
         """
+        self._invoke_report('before_working')
+
         log.progress("Preparing to work ...")
 
         # Determine timeout arguments
