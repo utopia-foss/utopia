@@ -50,7 +50,7 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (19.10) setups.
+These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (20.04 or newer) setups.
 
 _Note:_ Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.

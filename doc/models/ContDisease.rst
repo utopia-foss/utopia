@@ -1,6 +1,6 @@
 
-``ContDisease`` — Model of Contagious Diseases
-==============================================
+``ContDisease`` — Contagious Diseases
+=====================================
 
 This is a simple model of a contagious disease on a 2D grid. It is based
 on the description in the script of the CCEES lecture of Prof. Roth.
@@ -32,7 +32,7 @@ Heterogeneities
 ^^^^^^^^^^^^^^^
 As in the :doc:`Forest Fire model <ForestFire>`, there is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states:
 
-* ``source``: These are constant infection sources. They spread infection like normal infected trees, but don't revert back to the empty state. If activated, they are per default on the lower boundary of the grid. 
+* ``source``: These are constant infection sources. They spread infection like normal infected trees, but don't revert back to the empty state. If activated, they are per default on the lower boundary of the grid.
 * ``stone``: Stones are cells that can't be infected nor turn into trees. They are used to represent barriers in the forest. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed stones whose neighbours have a certain probability to also be a stone.
 
 Both make use of the :ref:`entity selection interface <entity_selection>`.
@@ -53,7 +53,7 @@ The following data is stored alongside the simulation:
    * ``1``: ``tree``
    * ``2``: ``infected``
    * ``3``: ``source``, is constantly ignited
-   * ``4``: ``stone``, does not take part in any interaction 
+   * ``4``: ``stone``, does not take part in any interaction
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells

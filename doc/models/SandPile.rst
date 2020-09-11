@@ -1,5 +1,5 @@
-``SandPile`` — Model of Sand Piles as Generic Complex System
-============================================================
+``SandPile`` — Sand Piles as Generic Complex System
+===================================================
 
 The ``SandPile`` model simulates the development of a sand pile when you add a grain of sand at each time step.
 

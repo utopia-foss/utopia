@@ -1,6 +1,6 @@
 
-``ForestFire`` — Model of Forest Fires
-======================================
+``ForestFire`` Model
+====================
 
 The ``ForestFire`` model simulates the development of a forest under influence of fires and was first proposed by P. Bak, K. Chen, and C. Tang in 1990.
 Trees grow on a random basis and lightning causes them and the trees in the same cluster to burn down instantaneously; this is the so-called "two state model".
@@ -42,7 +42,7 @@ The following data is stored alongside the simulation:
    * ``1``: ``tree``
    * ``2``: (not used)
    * ``3``: ``source``, is constantly ignited
-   * ``4``: ``stone``, does not take part in any interaction 
+   * ``4``: ``stone``, does not take part in any interaction
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells

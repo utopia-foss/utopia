@@ -1,6 +1,6 @@
 
-``SimpleEG`` — Model of Simple Evolutionary Games
-=================================================
+``SimpleEG`` — Simple Evolutionary Games
+========================================
 
 This is a model of simple evolutionary games (on regular grids). It is based on an extended and slightly modified version of Nowak & May (1992).
 
@@ -42,7 +42,7 @@ The neighbors of a player placed on a regular square grid are determined by the 
 Evolution – Simply the Best
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Evolution is modelled by a very simple imitation update scheme. After all games are played, every player looks in her neighborhood for the player with the highest payoff, thus, the player with the most successful strategy in her corresponding neighborhood. If this highest payoff is higher than the player's payoff, she adapts her strategy to the more successful neighbor's one. This means, in the next round, the player will participate in all the individual games with the strategy that locally yielded the best result in the previous round. 
+Evolution is modelled by a very simple imitation update scheme. After all games are played, every player looks in her neighborhood for the player with the highest payoff, thus, the player with the most successful strategy in her corresponding neighborhood. If this highest payoff is higher than the player's payoff, she adapts her strategy to the more successful neighbor's one. This means, in the next round, the player will participate in all the individual games with the strategy that locally yielded the best result in the previous round.
 
 If more than one player has the highest fitness in a neighborhood, one of these is selected randomly to pass on her strategy.
 
@@ -89,7 +89,7 @@ The interaction matrix that defines the interaction between the players can be p
    defined by the two parameters :math:`b` and :math:`c` with :math:`b>c`.
    :math:`b` encodes the benefit a player gets from a cooperative opponent and
    :math:`c` encodes the cost a cooperator pays for cooperating with the
-   opponent. 
+   opponent.
 
 #. Setting a general interaction matrix ``ia_matrix``: The first two options
    only define different parameterizations of the Prisoner's Dilemma. However,
@@ -97,7 +97,7 @@ The interaction matrix that defines the interaction between the players can be p
    interactions by setting all matrix elements explicitly. With the right
    choice of parameters, one can for example model a Hawk-Dove games, a
    Coordination Games, or a Laiséz-Faire game. For more details on these games
-   and their definitions see the theory section below. 
+   and their definitions see the theory section below.
 
 The interaction matrices of the individual options are collected here:
 
@@ -164,7 +164,7 @@ From a more biological perspective, it can be interpreted as the fitness advanta
 Type 1: Hawk-Dove game (HD game): :math:`a_0, a_1 >0`
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-In this parameter regime, the game has the characteristics of a *Hawk-Dove game*. It is also known as the *game of chicken* or *snowdrift game*. 
+In this parameter regime, the game has the characteristics of a *Hawk-Dove game*. It is also known as the *game of chicken* or *snowdrift game*.
 We describe its logic using the Hawk-Dove picture, although the same situation can be adapted to a multitude of situations that can be found in a multitude of areas such as biology or even international politics. This game was also used in the foundation of evolutionary game theory in the paper of May & Price (1973).
 
 In a Hawk-Dove game two players compete for a resource that cannot be split up. They can choose between two strategies: threat displays (Dove) or attack (Hawk). If both choose the Hawk strategy they attack each other and fight until one of them is injured and the other wins. If one player behaves as a Hawk and the other one as a Dove the Hawk defeats the Dove. If both players choose Dove, they both get a small benefit. However, the payoff is smaller than for a Hawk playing against a Dove.
@@ -197,23 +197,23 @@ Type 3a: Prisoner's Dilemma (PD Game): :math:`a_0, < 0 < a_1`
 
 The Prisoner's Dilemma is arguably the most famous social dilemma. The standard story to explain the nature of the dilemma uses two prisoner's from the same criminal gang. Let us call them A and B. They are confined separately and cannot communicate with each other. Their sentenzing is dependent on the desicion of the other prisoner: If A and B betray each other, each serves 2 years in prison. If A betrays B and B remains silent, then A will be set free and B will need to serve 3 years in prison. If they both remain silent, they will get a diminished punishment of 1 year. Therefore, the decision of one prisoner is dependent on the decision of the other one. Both face a social dilemma situation.
 
-To put it in the standard parameter set, a two dimensional interaction matrix of the form 
+To put it in the standard parameter set, a two dimensional interaction matrix of the form
 
 .. math::
 
    W = \begin{pmatrix}
    R & S \\
-   T & P 
+   T & P
    \end{pmatrix}
 
-defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: :math:`a_0, < 0 < a_1`. 
+defines a Prisoner's Dilemma if the parameters have the following relation: T (temptation) > R (reward) > P (punishment) > S (sucker's payoff). This formulation is equivalent to the condition: :math:`a_0, < 0 < a_1`.
 
 In a Prisoner's Dilemma the mean fitness :math:`\bar{w}` decreases with increasing frequency of the dominant strategy. This means that the more players defect the lower the mean fitness gets.
 
 Type 3b: Lasséz-Faire game (LF Game): :math:`a_1, < 0 < a_0`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-In the Lasséz-Faire game regime – defined by the relation :math:`a_1, < 0 < a_0` – there is no social dilemma any more. One strategy is dominant and also results in the highest mean payoff. The mean fitness :math:`\bar{w}` increases with increasing frequency of the dominant strategy. 
+In the Lasséz-Faire game regime – defined by the relation :math:`a_1, < 0 < a_0` – there is no social dilemma any more. One strategy is dominant and also results in the highest mean payoff. The mean fitness :math:`\bar{w}` increases with increasing frequency of the dominant strategy.
 
 Possible Future Extensions
 --------------------------
@@ -225,8 +225,8 @@ This section collects ideas of generalizing and extending the model:
 References
 ----------
 
-* Friedman, Daniel & Barry, Sinervo (2016). *Evolutionary Games in Natural, Social, and Virtual Worlds*. Oxford University Press 
+* Friedman, Daniel & Barry, Sinervo (2016). *Evolutionary Games in Natural, Social, and Virtual Worlds*. Oxford University Press
 * Nowak, Martin A. & May, Robert M. (1992). *Evolutionary Games and Spatial Chaos*. Nature
 * Nowak, Martin A. (2006). *Evolutionary Dynamics*. Harward University Press
-* Rousseau, Jean-Jaque (1754). *Discourse on the Origin and Basis of Inequality Among Men*. 
+* Rousseau, Jean-Jaque (1754). *Discourse on the Origin and Basis of Inequality Among Men*.
 * Smith, Maynard J. & Price, G.R. (1973). *The logic of animal conflict*. Nature. doi:10.1038/246015a0.

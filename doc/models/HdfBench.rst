@@ -3,7 +3,7 @@
 
 
 ``HdfBench`` — Benchmarks for Utopia Data Writing
-=====================================================
+=================================================
 
 This "model" implements benchmarking capabilities for Utopia's ``DataIO`` library, focussing on Hdf5 output.
 It is implemented as a regular model in order to use all the same structure and capabilities of the ``Model`` class and provide a benchmarking platform that is close to the real-world use case.

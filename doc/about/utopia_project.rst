@@ -1,6 +1,6 @@
 .. _about_utopia:
 
-About the Utopia project
+About the Utopia Project
 ========================
 
 This is a place to describe the evolution of Utopia, how it came about, who is

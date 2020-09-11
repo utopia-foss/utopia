@@ -1,8 +1,9 @@
 
-Contribute
-----------
-This documentation is generated with `Sphinx <http://www.sphinx-doc.org/en/master/>`_ 
-using the `reStructuredText syntax <http://docutils.sourceforge.net/rst.html>`_. 
+Documentation Examples
+----------------------
+
+This documentation is generated with `Sphinx <http://www.sphinx-doc.org/en/master/>`_
+using the `reStructuredText syntax <http://docutils.sourceforge.net/rst.html>`_.
 Here, you find some examples that help you write your own documentation entry.
 
 Examples

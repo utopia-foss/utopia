@@ -26,7 +26,7 @@ The erosion process is implemented by asynchronously updating all the cells (in 
     Finally, the height of each cell is incremented by the normally distributed :math:`u` that represents uplift.
 
 2. Set drainage network
-    
+
     1. Map all cells to their lowest neighbor, if none is lower than the cell itself, to itself.
 
     2. Fill sinks (no lower neighbor) with water, such that a lake forms and one of the lake cells has a lower neighbor or is an outflow boundary. All lake cells point to this cell.
@@ -34,7 +34,7 @@ The erosion process is implemented by asynchronously updating all the cells (in 
     3. Set drainage area. For every cell, pass the cells assigned drainage area (default 1., cummulated with that receved from other already called cells) downstream through the already initialized network (adding the drainage area to every cell on the way) and dump it on any cell passed by, that was not yet called or is an outflow boundary.
 
 3. Stream power erosion
-    
+
     .. math::
         \frac{dz}{dt} = c * \Delta z * \sqrt{A}
 
@@ -64,5 +64,5 @@ Further reading
 
 The model is analyzed in depth in the bachelor thesis of Julian Weninger (2016).
 
-* 
+*
   Weninger, J., 2016. Development of Mountain Ranges and their Rivers - A Cellular Automaton Simulation. Bachelor’s Thesis, IUP (TS&CCEES) at Universität Heidelberg.

@@ -1,6 +1,6 @@
 
-``Vegetation`` — Model of Simple Vegetations
-============================================
+``Vegetation`` — Simple Vegetation Model
+========================================
 
 This is a very simple implementation of a vegetation model. It is implemented
 as a stochastic cellular automaton on a grid, where the state of each cell is

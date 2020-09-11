@@ -46,9 +46,10 @@
 !.gitmodules
 
 
-# Again blacklist certain directories and files completely
+# Again blacklist certain directories and files completely, e.g. because they
+# contain automatically created build artefacts or test metadata
 build/
-/doc/api_*
+doc/api/utopya
 *.egg-info
 *.pytest_cache
 __pycache__

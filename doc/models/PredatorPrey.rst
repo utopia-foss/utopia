@@ -1,5 +1,5 @@
-``PredatorPrey`` — Model of Predator-Prey Dynamics
-==================================================
+``PredatorPrey`` — Predator-Prey Dynamics
+=========================================
 
 This model is a version of the Predator-Prey model from the CCEES lecture notes.
 It is implemented as a cellular automaton (CA) with the cells arranged on a two-dimensional grid and represents a simple case of spatially resolved population dynamics.
@@ -33,16 +33,16 @@ This is modeled using a CA. Each cell of the CA has four possible states:
 There cannot be two individuals of the same species on the same cell at the same time. Consequently, each cell contains a variable for each species in which the resource level of the respective individual is stored.
 The interaction is calculated for each time step and consists of four consecutively applied rules:
 
-#. **Cost:** Resources of each individual are reduced by the cost of living. 
+#. **Cost:** Resources of each individual are reduced by the cost of living.
    Individuals with negative or zero resources are removed.
-#. **Movement:** Predators move to a cell populated by prey in their 
+#. **Movement:** Predators move to a cell populated by prey in their
    neighborhood or to an empty cell if there is no prey.
    Prey that are on a  cell together with a predator flee to an empty cell in their neighborhood with a certain probability. If there are several cells in the neigborhood that meet the above condition, one is chosen at random.
 #. **Eating:**: Prey take up resources and predators eat prey if they are on
    the same cell.
 #. **Reproduction:** If an individual's resources exceed a certain value and
-   if there is a cell in its neighborhood that is not already populated by an 
-   individual of the same species, it reproduces and an individual of the same 
+   if there is a cell in its neighborhood that is not already populated by an
+   individual of the same species, it reproduces and an individual of the same
    species is created on the empty cell. 2 resource units are transferred to
    the descendant.
 

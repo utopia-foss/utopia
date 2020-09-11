@@ -1,6 +1,6 @@
 
-``Environment`` — Model for non-uniform parameter background
-============================================================
+``Environment`` — Generic Parameter Background Model
+====================================================
 
 The ``Environment`` model is designed to handle changing external parameters
 and the initialization and update of non-uniform parameter backgrounds to any
@@ -293,19 +293,19 @@ Eventually, coupled models require manual writing of the prolog and epilog
     /// Call the prolog of the sub-models and the model defaults
     void prolog () {
         _envm.prolog(); // prolog of the submodel
-        // NOTE the prolog has to be called before starting the iteration of a 
+        // NOTE the prolog has to be called before starting the iteration of a
         //      submodel. This can be at any time. Usually it will be here.
 
         this->__prolog();; // default prolog
     }
 
     /// Call the epilog of the sub-models
-    /** NOTE this overwrites the default of your model's epilog. So make 
-     *  sure, that everything that needs to be done is done.   
+    /** NOTE this overwrites the default of your model's epilog. So make
+     *  sure, that everything that needs to be done is done.
      */
     void epilog () {
         _envm.epilog(); // epilog of the submodel
-        // NOTE the epilog should be called at the end of the submodel's 
+        // NOTE the epilog should be called at the end of the submodel's
         //      iteration. This can be at any time. Usually it will be here.
 
         this->__epilog(); // default epilog

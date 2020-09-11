@@ -1,5 +1,5 @@
-``PredatorPreyPlant`` — Model of Predator-Prey Dynamics including Vegetation
-============================================================================
+``PredatorPreyPlant`` — Predator-Prey Dynamics including Vegetation
+===================================================================
 
 This is an expansion of the :doc:`Predator-Prey <PredatorPrey>` model where plants (the resource the prey feeds on) is modelled explicitly.
 
@@ -8,7 +8,7 @@ The main additions/changes are the following:
 * The movement mechanism changed and the movement rule now involves a movement radius so that each entity can move more than one cell per turn.
 * The presence of plants which can grow according to different growth models
 
- 
+
 Implementation Details
 ----------------------
 Movement
