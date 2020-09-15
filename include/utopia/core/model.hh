@@ -843,7 +843,7 @@ public:
         // Write additional attributes, if not specifically suppressed.
         if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
             // We know that the dimensions here refer to (time, cell ids). The
-            // time  information is already aded in create_dset; add the ID
+            // time  information is already added in create_dset; add the ID
             // information here
             dset->add_attribute("dim_name__1", "ids");
 
@@ -854,6 +854,68 @@ public:
 
             _log->debug("Added cell ID dimension labels and coordinates to "
                         "dataset '{}'.", name);
+        }
+
+        return dset;
+    }
+    
+    
+    /** @brief Create a dataset storing data from a AgentManager
+     *
+     * The required capacity - the shape of the dataset - is calculated using
+     * both data from the model and the AgentManager. Additionally, dimension
+     * and coordinate labels are added.
+     *
+     * @note   For the time dimension, the coordinates assume that data is
+     *         written the first time at time 0 and then every _write_every.
+     *         Time coordinates will be wrong if the model does not write the
+     *         data this way. For such cases, it is advised to suppress writing
+     *         of attributes by setting the _cfg['write_dim_labels_and_coords']
+     *         entry to false.
+     *
+     * @param name The name of the dataset
+     * @param am   The AgentManager whose agents' states are to be stored in
+     *             the dataset
+     * @param compression_level  The compression level
+     * @param chunksize          The chunk size
+
+     * @return std::shared_ptr<DataSet> The newly created HDFDataset
+     */ 
+    template<class AgentManager>
+    std::shared_ptr<DataSet> 
+        create_am_dset(const std::string name,
+                       const AgentManager& am, 
+                       const std::size_t compression_level=1,
+                       const std::vector<hsize_t> chunksize = {})    
+    {
+        // Forward to the main create_dset function
+        const auto dset = create_dset(
+            name,
+            _hdfgrp,
+            {am.agents().size()},  // --> 2D: time, agents
+            compression_level,
+            chunksize
+        );
+
+        // Set attribute to store the agent managers' extent of space
+        dset->add_attribute("space_extent", am.space()->extent);
+        
+        _log->debug("Added attribute to dataset '{}' to store space extent",
+                    name);
+        
+        // Write additional attributes, if not specifically suppressed.
+        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
+            // We know that the dimensions here refer to (time, agent ids). The
+            // time information is already added in create_dset; add only ID
+            // information here. Note that this assumes trivial and constant
+            // agent IDs!
+            dset->add_attribute("dim_name__1", "ids");
+
+            // For ids, the dimensions are trivial
+            dset->add_attribute("coords_mode__ids", "trivial");
+                                 
+           _log->debug("Added agent index dimension labels and coordinates "
+                       "to dataset '{}'.", name);
         }
 
         return dset;

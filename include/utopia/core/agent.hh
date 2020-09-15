@@ -87,8 +87,8 @@ public:
         _pos(initial_pos)
     {}
 
-    /// Return a copy of the current position of the agent
-    Position position() const {
+    /// Return a const reference of the current position of the agent
+    const Position& position() const {
         return _pos;
     };
 
