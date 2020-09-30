@@ -141,7 +141,7 @@ For more assertion macros, see the `Summary of the API for Writing Tests`_.
 Unit Tests on Templates
 -----------------------
 We often use templated code and must check if it works for different data types
-inserted. This can easily achieved by declaring a test function that takes
+inserted. This can be easily achieved by declaring a test function that takes
 several types and is executed for every type seperately. In the function
 signature, specify the test case name, the name of the type used inside the
 function, and the list of all types which should be used.
@@ -262,7 +262,7 @@ Floating-point Comparisons
 Comparing floating-point numbers often requires a tolerance in order to be stable and independent of the specific system a test is run on.
 
 With Boost Test, a tolerance can be defined both on the level of a test case and for individual assertions.
-If both are specified, the latter takes precendence over the former, as shown in this example:
+If both are specified, the latter takes precedence over the former, as shown in this example:
 
 .. code-block:: c++
 
@@ -326,7 +326,7 @@ Read more about different ways of comparing collections in the `corresponding do
 Writing A *Good* Boost Test
 ---------------------------
 
-Following the motiation of the remarks on :ref:`good_unit_test` above, the list below provides information on how to achieve this with the tools provided by Boost Test.
+Following the motivation of the remarks on :ref:`good_unit_test` above, the list below provides information on how to achieve this with the tools provided by Boost Test.
 
 * **Write small tests** and organize them into logical units, so-called *test suites*:
 
@@ -363,7 +363,7 @@ Following the motiation of the remarks on :ref:`good_unit_test` above, the list 
 
 Using ``Utopia::TestTools``
 ===========================
-Utopia provides a set of test tools that make it easier to apply the above.
+Utopia provides a set of test tools which make it easier to apply the above.
 
 Using these tools is as simple as including the ``utopia/core/testtools.hh`` header:
 
