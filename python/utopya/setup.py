@@ -10,8 +10,8 @@ INSTALL_DEPS = [
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
 
-    'paramspace>=2.5.0',
-    'dantro>=0.14.0b0',
+    'paramspace>=2.5.4',
+    'dantro>=0.14.0',
     # NOTE Version need also be set in python/CMakeLists.txt
 
     # Required for testing:
