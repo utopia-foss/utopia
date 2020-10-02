@@ -310,7 +310,9 @@ data_manager:
     cfg:
       loader: yaml                          # The loader function to use
       glob_str: 'config/*.yml'              # Which files to load
-      ignore: [config/parameter_space.yml]  # Which files to ignore
+      ignore:                               # Which files to ignore
+        - config/parameter_space.yml
+        - config/parameter_space_info.yml
       required: true                        # Whether these files are required
       path_regex: config/(\w+)_cfg.yml      # Extract info from the file path
       target_path: cfg/{match:}             # ...and use in target path

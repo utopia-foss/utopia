@@ -643,6 +643,13 @@ class Multiverse:
         of the run directory. All other relevant information is stored in an
         additionally created ``backup`` subdirectory.
 
+        .. warning::
+
+            These backups are created prior to the start of the actual
+            simulation run and contains information known at that point.
+            Any changes to the meta configuration made *after* initialization
+            of the Multiverse will not be reflected in these backups.
+
         Args:
             cfg_parts (dict): A dict of either paths to configuration files or
                 dict-like data that is to be dumped into a configuration file.
@@ -653,16 +660,21 @@ class Multiverse:
                 executable. Note that these files can sometimes be quite large.
         """
         log.info("Performing backups ...")
+        cfg_dir = self.dirs['config']
+
         # Write the meta config to the config directory.
         write_yml(self.meta_cfg,
-                  path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
+                  path=os.path.join(cfg_dir, "meta_cfg.yml"))
         log.note("  Backed up meta configuration.")
 
-        # Separately, store the parameter space there.
-        write_yml(self.meta_cfg['parameter_space'],
-                  path=os.path.join(self.dirs['config'],
-                                    "parameter_space.yml"))
-        log.note("  Backed up parameter space representation.")
+        # Separately, store the parameter space and its metadata
+        pspace = self.meta_cfg['parameter_space']
+        write_yml(pspace,
+                  path=os.path.join(cfg_dir, "parameter_space.yml"))
+        write_yml(dict(**pspace.get_info_dict(),
+                       perform_sweep=self.meta_cfg.get('perform_sweep')),
+                  path=os.path.join(cfg_dir, "parameter_space_info.yml"))
+        log.note("  Backed up parameter space and metadata.")
 
         # If configured, backup the other cfg files one by one.
         if backup_cfg_files:
@@ -670,8 +682,8 @@ class Multiverse:
                       len(cfg_parts))
 
             for part_name, val in cfg_parts.items():
-                _path = os.path.join(self.dirs['config'],
-                                     part_name + "_cfg.yml")
+                _path = os.path.join(cfg_dir, part_name + "_cfg.yml")
+
                 # Distinguish two types of payload that will be saved:
                 if isinstance(val, str):
                     # Assumed to be path to a config file; copy it

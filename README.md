@@ -20,8 +20,8 @@ Within Utopia, and when using Utopia as a dependency, models are integrated into
 The `utopya` Python package constitutes Utopia's frontend.
 It configures and performs the simulation runs and embeds the model into a data processing pipeline, such that the simulation data can directly be analyzed and visualized.
 All parts of the frontend make use of a hierarchic, recursively-updated YAML-based configuration structure.
-Using the [paramspace package](https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace), this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
-The [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro)-based data processing pipeline automates visualization, thereby coupling the model implementation and its analysis closer together.
+Using the [paramspace package][paramspace], this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
+The [dantro][dantro]-based data processing pipeline automates visualization, thereby coupling the model implementation and its analysis closer together.
 
 Several models are readily included in the framework, among them Conway's Game of Life, as well as one CA- and one agent-based contagious disease model.
 Investigating these models by performing simulation runs with a few varying parameters, or sensitivity analysis over a large parameter space, requires little to no programming skills.
@@ -589,7 +589,7 @@ of it.
 | [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
 | [Boost][Boost]       | >= 1.67             | 1.71            | |
 | [Armadillo][arma]    | >= 9.600            | 9.800           | |
-| [yaml-cpp][yamlcpp]  | >= 0.6.2            | 0.6.2           | |
+| [yaml-cpp][yaml-cpp] | >= 0.6.2            | 0.6.2           | |
 | [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |
 | [Python3][Python3]   | >= 3.6              | 3.8.2           | |
 
@@ -614,7 +614,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | Software                 | Version    | Comments                        |
 | ------------------------ | ---------- | ------------------------------- |
 | [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace][paramspace] | >= 2.4.1   | Makes parameter sweeps easy     |
+| [paramspace][paramspace] | >= 2.5.4   | Makes parameter sweeps easy     |
 | [dantro][dantro]         | >= 0.14    | Handle, transform, and visualize hierarchically organized data |
 
 
@@ -698,7 +698,7 @@ make all -j4
 [Utopia-tutorial]: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/guides/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
-[paramspace]: https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace
+[paramspace]: https://gitlab.com/blsqr/paramspace
 [dantro]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro
 
 [LGPL]: https://www.gnu.org/licenses/lgpl-3.0.en.html
