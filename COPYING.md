@@ -45,11 +45,13 @@ to as "Utopia Developers" in the respective copyright notices.
 * Lorenzo Biasi
 * Unai Fischer Abaigar
 * Thomas Gaskin
+* Leonhard Holtmann
 * Christian Kobrow
 * Fabian Krautgasser
 * Daniel Lake
 * Hendrik Leusmann (appears in commits as `H_Leusmann`)
 * Peter Manshausen
+* Robert Rauschen
 * Soeren Rubner
 * Laila Pilar Schmidt
 * Simeon Schreib
