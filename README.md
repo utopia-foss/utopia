@@ -28,7 +28,16 @@ Investigating these models by performing simulation runs with a few varying para
 
 For introductory guides, feature lists, FAQs, and API references refer to the online [user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/index.html).
 
-#### Contents of this README
+### How to cite Utopia
+
+Utopia was reviewed and published in the [Journal of Open Source Software (JOSS)](https://joss.theoj.org/).
+Please cite at least the following publication if you use Utopia (or a modified version thereof) for your own work:
+
+> Lukas Riedel, Benjamin Herdeanu, Harald Mack, Yunus Sevinchan, and Julian Weninger. 2020. **“Utopia: A Comprehensive and Collaborative Modeling Framework for Complex and Evolving Systems.”** *Journal of Open Source Software* 5 (53): 2165. DOI: [10.21105/joss.02165](https://doi.org/10.21105/joss.02165).
+
+The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation file format](https://citation-file-format.github.io/) and contains additional metadata to reference this software, its authors, and associated publications.
+
+### Contents of this README
 * [Installation](#installation)
     * [On your machine](#step-by-step-instructions)
     * [Alternative: docker image](#utopia-via-docker)

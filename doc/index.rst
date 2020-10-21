@@ -102,6 +102,7 @@ Contents of This Documentation
    :glob:
 
    Copyright Notice <COPYING>
+   cite
    Contribution Guide <CONTRIBUTING>
    Code of Conduct <CODE_OF_CONDUCT>
    Documentation Examples <examples>
