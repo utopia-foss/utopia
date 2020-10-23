@@ -438,6 +438,62 @@ def test_parallel_init(mv_kwargs):
     assert any(("Parallel execution enabled" in line for line in log))
 
 
+def test_shared_worker_manager(mv_kwargs):
+    """Tests using a shared WorkerManager between multiple Multiverses, an
+    experimental feature that allows to use the WorkerManager for running
+    multiple Multiverses.
+    """
+    mvs = list()
+    shared_wm = None
+
+    # Create a number of Multiverse, some with sweeps configured
+    for i in range(5):
+        _kws = copy.deepcopy(mv_kwargs)
+        _kws['paths']['model_note'] += f"_no{i}"
+        if i%2 == 0:
+            _kws['run_cfg_path'] = SWEEP_CFG_PATH
+
+        # Create Multiverse and manually add tasks
+        mv = Multiverse(**_kws, _shared_worker_manager=shared_wm)
+        mv._add_sim_tasks()
+
+        # Keep track of it
+        mvs.append(mv)
+
+        # Define the shared WorkerManager instance (for the next iteration)
+        shared_wm = mvs[0].wm
+
+    # There should now be a total of 14 tasks, 4 each from Multiverses 0, 2,
+    # and 4, and one each from Multiverses 1 and 3
+    assert len(mvs) == 5
+    assert len(shared_wm.tasks) == (4 + 1 + 4 + 1 + 4)
+
+    # Let the shared WorkerManager start working
+    shared_wm.start_working()
+
+    # Check the output directories of each Multiverse were created (proxy for
+    # the run having succeeded)
+    for i, mv in enumerate(mvs):
+        if i%2 == 0:
+            uni_names = ('uni1', 'uni2', 'uni3', 'uni4')
+        else:
+            uni_names = ('uni0',)
+
+        for uni_name in uni_names:
+            assert os.path.isdir(os.path.join(mv.dirs['data'], uni_name))
+
+        # Report files will only be created for the first Multiverse, because
+        # there is (and can be) only one Reporter instance.
+        _report_file = os.path.join(mv.dirs['run'], '_report.txt')
+        _sweep_info_file = os.path.join(mv.dirs['run'], '_sweep_info.txt')
+        if i == 0:
+            assert os.path.isfile(_report_file)
+            assert os.path.isfile(_sweep_info_file)
+        else:
+            assert not os.path.isfile(_report_file)
+            assert not os.path.isfile(_sweep_info_file)
+
+
 # FrozenMultiverse tests ------------------------------------------------------
 
 def test_FrozenMultiverse(mv_kwargs, cluster_env):
