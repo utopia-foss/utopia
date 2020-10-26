@@ -8,12 +8,12 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.14.0)
+python_find_package(PACKAGE dantro VERSION 0.15.0a0)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
     python_install_package_remote(
-        URL https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro.git@release/v0.x
+        URL https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro.git@release/v0.15
         TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
 endif()
 
