@@ -463,10 +463,12 @@ p_run_plt.add_argument('--plot-only',
          "plots that are disabled in the specified plot configuration.")
 
 # misc
-p_run.add_argument('--no-tree-cache',
+p_run.add_argument('--use-data-tree-cache',
     action='store_true',
-    help="If set, the tree is always loaded from files instead of restored "
-         "from a potentially existing tree cache file.")
+    help="If set, uses tree file caching: If no cache file exists, creates "
+         "one after loading all data; if a tree file already exists, uses "
+         "that to restore the data tree. This may bring a speed-up if the "
+         "creation of the data tree takes a long time.")
 p_run.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -531,10 +533,12 @@ p_eval.add_argument('--set-cfg',
          "parameter can be set at once by separating them with a space; if a "
          "space needs to be in the argument value, put the strings into '...' "
          "or \"...\".")
-p_eval.add_argument('--no-tree-cache',
+p_eval.add_argument('--use-data-tree-cache',
     action='store_true',
-    help="If set, the tree is always loaded from files instead of restored "
-         "from a potentially existing tree cache file.")
+    help="If set, uses tree file caching: If no cache file exists, creates "
+         "one after loading all data; if a tree file already exists, uses "
+         "that to restore the data tree. This may bring a speed-up if the "
+         "creation of the data tree takes a long time.")
 p_eval.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -701,7 +705,7 @@ if __name__ == '__main__':
 
     # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     # Either always load the tree directly from files, not creating a
-    if args.no_tree_cache:
+    if not args.use_data_tree_cache:
         mv.dm.load_from_cfg()
 
     else:
