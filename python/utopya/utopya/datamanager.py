@@ -48,7 +48,8 @@ class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
     It is based on the dantro.DataManager class and adds the functionality for
     specific loader functions that are needed in Utopia: Hdf5 and Yaml.
 
-    Furthermore, to enable file caching via the DAG framework, the 
+    Furthermore, to enable file caching via the DAG framework, all available
+    data loaders are included here.
     """
 
     # Register known group types
@@ -78,3 +79,6 @@ class DataManager(dtr.data_loaders.AllAvailableLoadersMixin,
 
     # Condensed tree representation: threshold parameter
     _COND_TREE_CONDENSE_THRESH = lambda _, **kws: _condense_thresh_func(**kws)
+
+    # Where the tree cache file is to be stored; overwritten by config entry
+    _DEFAULT_TREE_CACHE_PATH = "data/.tree_cache.d3"

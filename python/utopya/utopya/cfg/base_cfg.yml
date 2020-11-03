@@ -301,6 +301,11 @@ data_manager:
     - path: multiverse
       Cls: MultiverseGroup
 
+  # Where the default tree cache file is located relative to the data
+  # directory. This is used when calling DataManager.dump and .restore without
+  # any arguments, as done e.g. in the Utopia CLI.
+  default_tree_cache_path: data/.tree_cache.d3
+
   # Supply a default load configuration for the DataManager
   # This can then be invoked using the dm.load_from_cfg() method.
   load_cfg:

@@ -11,7 +11,7 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.5.4',
-    'dantro>=0.15.0a0',
+    'dantro>=0.15.0a2',
     # NOTE Version need also be set in python/CMakeLists.txt
 
     # Required for testing:

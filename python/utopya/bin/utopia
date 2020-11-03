@@ -463,6 +463,10 @@ p_run_plt.add_argument('--plot-only',
          "plots that are disabled in the specified plot configuration.")
 
 # misc
+p_run.add_argument('--no-tree-cache',
+    action='store_true',
+    help="If set, the tree is always loaded from files instead of restored "
+         "from a potentially existing tree cache file.")
 p_run.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -527,6 +531,10 @@ p_eval.add_argument('--set-cfg',
          "parameter can be set at once by separating them with a space; if a "
          "space needs to be in the argument value, put the strings into '...' "
          "or \"...\".")
+p_eval.add_argument('--no-tree-cache',
+    action='store_true',
+    help="If set, the tree is always loaded from files instead of restored "
+         "from a potentially existing tree cache file.")
 p_eval.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -692,17 +700,25 @@ if __name__ == '__main__':
         raise ValueError("Unexpected CLI mode: {}".format(args.mode))
 
     # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    if bool(args.suppress_data_tree):
-        print_tree = False
-
-    elif bool(args.full_data_tree):
-        print_tree = True
+    # Either always load the tree directly from files, not creating a
+    if args.no_tree_cache:
+        mv.dm.load_from_cfg()
 
     else:
-        print_tree = "condensed"
+        if not mv.dm.tree_cache_exists:
+            mv.dm.load_from_cfg()
+            mv.dm.dump()
 
-    mv.dm.load_from_cfg(print_tree=print_tree)
+        else:
+            log.hilight("Restoring tree from cache file ...")
+            mv.dm.restore()
 
+    # Show the tree now
+    if not bool(args.suppress_data_tree):
+        if bool(args.full_data_tree):
+            print(mv.dm.tree)
+        else:
+            print(mv.dm.tree_condensed)
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     if not getattr(args, 'interactive', False):
