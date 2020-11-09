@@ -56,6 +56,7 @@ BOOST_AUTO_TEST_CASE(hdfattribute_write_test)
     std::string attributename7 = "stringvectorattribute";
     std::string attributename8 = "rvalueattribute";
     std::string attributename9 = "constsize_array_attribute";
+
     // making struct data for attribute0
     std::vector< Datastruct > structdata(100);
     std::generate(structdata.begin(), structdata.end(), [&]() {
@@ -98,6 +99,8 @@ BOOST_AUTO_TEST_CASE(hdfattribute_write_test)
                                           attributename4, attributename5,
                                           attributename6, attributename7 };
 
+
+
     // make attributes
     HDFAttribute attribute0(low_group, attributename0);
 
@@ -118,6 +121,7 @@ BOOST_AUTO_TEST_CASE(hdfattribute_write_test)
     HDFAttribute attribute8(low_group, attributename8);
 
     HDFAttribute attribute9(low_group, attributename9);
+
 
     // write to each attribute
 
@@ -159,6 +163,8 @@ BOOST_AUTO_TEST_CASE(hdfattribute_write_test)
         return std::array< double, 2 >{ static_cast< double >(compound.a),
                                         compound.b };
     });
+
+
 
     // check tha the hdf5 array type is correctly build.
     hid_t   attr9   = attribute9.get_C_id();
@@ -290,6 +296,7 @@ BOOST_AUTO_TEST_CASE(hdfattribute_test_read)
     HDFAttribute attribute7(low_group, attributename7);
     HDFAttribute attribute8(low_group, attributename8);
     HDFAttribute attribute9(low_group, attributename9);
+
     ////////////////////////////////////////////////////////////////////////////
     // trying to read, using c++17 structured bindings
     ////////////////////////////////////////////////////////////////////////////
@@ -442,8 +449,11 @@ BOOST_AUTO_TEST_CASE(hdfattribute_test_read)
     // taken from
     // https://support.hdfgroup.org/ftp/HDF5/examples/misc-examples/h5_readdyn.c
 
+    // this reads a 2d array into a buffer, and this is difficult to achieve using 
+    // smart pointers, hence not used here
     int** read_multidimdata_ptr = new int*[20];
-    // int read_multidimdata_ptr[20][50]; // this is equivalent
+
+    // int read_multidimdata_ptr[20][50]; // this is equivalent to the thing below in terms of indexing
     read_multidimdata_ptr[0] = new int[20 * 50];
 
     for (std::size_t i = 1; i < 20; i++)
@@ -460,6 +470,8 @@ BOOST_AUTO_TEST_CASE(hdfattribute_test_read)
             BOOST_TEST(read_multidimdata_ptr[i][j] == expected_multidimdata[i][j]);
         }
     }
+
+    delete[] read_multidimdata_ptr[0];
 
     delete[] read_multidimdata_ptr;
 
@@ -494,6 +506,7 @@ BOOST_AUTO_TEST_CASE(hdfattribute_test_read)
         BOOST_TEST(std::abs(expected_rv_data[i][0] - read_arr_data[i][0]) < 1e-16);
         BOOST_TEST(std::abs(expected_rv_data[i][1] - read_arr_data[i][1]) < 1e-16);
     }
+
     H5Fclose(file);
 }
 

@@ -31,11 +31,8 @@ struct Fix
 using Dataset = HDFObject< HDFCategory::dataset >;
 
 BOOST_AUTO_TEST_SUITE(Suite, *boost::unit_test::fixture< Fix >())
-
 BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
 {
-    Utopia::setup_loggers();
-
     hid_t file = H5Fcreate(
         "typefactory_testfile.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -45,68 +42,61 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
     hid_t fixedsize_str_type = H5Tcopy(H5T_C_S1);
     H5Tset_size(fixedsize_str_type, 5);
 
-    hsize_t dim[1]     = { 4 };
-    hid_t   array_type = H5Tarray_create(H5T_NATIVE_DOUBLE, 1, dim);
+    hsize_t dim[1] = {4};
+    hid_t array_type = H5Tarray_create(H5T_NATIVE_DOUBLE, 1, dim);
 
     hid_t varlen_vec_type = H5Tvlen_create(H5T_NATIVE_DOUBLE);
 
-    hsize_t size[] = { 2 };
-    hid_t   space  = H5Screate_simple(1, size, NULL);
+    hsize_t size[] = {2};
+    hid_t space = H5Screate_simple(1, size, NULL);
 
-    Dataset fixed_str_dataset(H5Dcreate(file,
+    Dataset fixed_str_dataset = Dataset(H5Dcreate(file,
                                         "/fixed_stringdataset",
                                         fixedsize_str_type,
                                         space,
                                         H5P_DEFAULT,
                                         H5P_DEFAULT,
-                                        H5P_DEFAULT),
-                              &H5Dclose);
+                                        H5P_DEFAULT), 
+                                        &H5Dclose);
 
-    Dataset varlen_str_dataset(H5Dcreate(file,
-                                         "/varlen_stringdataset",
-                                         varlen_str_type,
-                                         space,
-                                         H5P_DEFAULT,
-                                         H5P_DEFAULT,
-                                         H5P_DEFAULT),
-                               &H5Dclose);
+    Dataset varlen_str_dataset = Dataset(H5Dcreate(file,
+                                       "/varlen_stringdataset",
+                                       varlen_str_type,
+                                       space,
+                                       H5P_DEFAULT,
+                                       H5P_DEFAULT,
+                                       H5P_DEFAULT),
+                                       &H5Dclose);
 
-    Dataset vector_dataset(H5Dcreate(file,
-                                     "/vectordataset",
-                                     H5T_NATIVE_INT,
-                                     space,
-                                     H5P_DEFAULT,
-                                     H5P_DEFAULT,
-                                     H5P_DEFAULT),
-                           &H5Dclose);
-    Dataset scalar_dataset(H5Dcreate(file,
+
+    Dataset scalar_dataset = Dataset(H5Dcreate(file,
                                      "/scalardataset",
                                      H5T_NATIVE_INT,
                                      space,
                                      H5P_DEFAULT,
                                      H5P_DEFAULT,
                                      H5P_DEFAULT),
-                           &H5Dclose);
+                                     &H5Dclose);
 
-    Dataset array_dataset(H5Dcreate(file,
+    Dataset array_dataset = Dataset(H5Dcreate(file,
                                     "/arraydataset",
                                     array_type,
                                     space,
                                     H5P_DEFAULT,
                                     H5P_DEFAULT,
-                                    H5P_DEFAULT),
-                          &H5Dclose);
+                                    H5P_DEFAULT), 
+                                    &H5Dclose);
 
-    Dataset varlen_vector_dataset(H5Dcreate(file,
-                                            "/varlen_vectordataset",
-                                            varlen_vec_type,
-                                            space,
-                                            H5P_DEFAULT,
-                                            H5P_DEFAULT,
-                                            H5P_DEFAULT),
-                                  &H5Dclose);
+    Dataset varlen_vector_dataset = Dataset(H5Dcreate(file,
+                                             "/varlen_vectordataset",
+                                             varlen_vec_type,
+                                             space,
+                                             H5P_DEFAULT,
+                                             H5P_DEFAULT,
+                                             H5P_DEFAULT), 
+                                             &H5Dclose);
 
-    int x = 42;
+    int x[2] = {42,21};
     H5Dwrite(scalar_dataset.get_C_id(),
              H5T_NATIVE_INT,
              H5S_ALL,
@@ -114,16 +104,7 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
              H5P_DEFAULT,
              &x);
 
-    std::vector< int > v{ 1, 2, 3, 4, 5, 6, 7 };
-    H5Dwrite(vector_dataset.get_C_id(),
-             H5T_NATIVE_INT,
-             H5S_ALL,
-             space,
-             H5P_DEFAULT,
-             v.data());
-
-    std::vector< std::string > vs{ "hello", "ya" };
-    std::vector< const char* > vsd{ vs[0].c_str(), vs[1].c_str() };
+    std::vector<const char *> vsd{"hello", "ya"};
     H5Dwrite(varlen_str_dataset.get_C_id(),
              varlen_str_type,
              H5S_ALL,
@@ -131,16 +112,16 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
              H5P_DEFAULT,
              vsd.data());
 
-    std::string str = "hello";
+    const char* str[2] = {"hiall", "12345"};
     H5Dwrite(fixed_str_dataset.get_C_id(),
              fixedsize_str_type,
              H5S_ALL,
              space,
              H5P_DEFAULT,
-             str.c_str());
+             str);
 
-    std::vector< std::array< double, 4 > > va{ { 1, 2, 3, 4 },
-                                               { -1, -2, -3, -4 } };
+    std::vector<std::array<double, 4>> va{{1, 2, 3, 4},
+                                          {-1, -2, -3, -4}};
     H5Dwrite(array_dataset.get_C_id(),
              array_type,
              H5S_ALL,
@@ -148,9 +129,9 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
              H5P_DEFAULT,
              va.data());
 
-    std::vector< std::vector< double > > vvl{ { 3., 1., 2. },
-                                              { 1., 2., 3., 4., 6. } };
-    std::vector< hvl_t >                 vvl_t(2);
+    std::vector<std::vector<double>> vvl{{3., 1., 2.},
+                                         {1., 2., 3., 4., 6.}};
+    std::vector<hvl_t> vvl_t(2);
 
     vvl_t[0].len = vvl[0].size();
     vvl_t[1].len = vvl[1].size();
@@ -174,18 +155,13 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
 
     hid_t vlentype = H5Tvlen_create(H5T_NATIVE_DOUBLE);
 
-    hsize_t dim2[1]   = { 4 };
-    hid_t   arraytype = H5Tarray_create(Detail::get_type< double >(), 1, dim2);
+    hsize_t dim2[1] = {4};
+    hid_t arraytype = H5Tarray_create(Detail::get_type<double>(), 1, dim2);
 
     HDFType scl_type(scalar_dataset);
     BOOST_TEST(H5Tequal(scl_type.get_C_id(), H5T_NATIVE_INT) > 0);
     BOOST_TEST(scl_type.type_category() == H5T_INTEGER);
     BOOST_TEST(scl_type.is_mutable() == true);
-
-    HDFType vec_type(vector_dataset);
-    BOOST_TEST(H5Tequal(vec_type.get_C_id(), H5T_NATIVE_INT) > 0);
-    BOOST_TEST(vec_type.type_category() == H5T_INTEGER);
-    BOOST_TEST(vec_type.is_mutable() == true);
 
     HDFType str_type(varlen_str_dataset);
     BOOST_TEST(H5Tequal(str_type.get_C_id(), varlenstr) > 0);
@@ -215,9 +191,6 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
     equal = (scltype == scl_type);
     BOOST_TEST(equal);
 
-    equal = (scltype == vec_type);
-    BOOST_TEST(equal);
-
     HDFType strtype;
     strtype.open< std::string >("testtype_string", 0);
     equal = (strtype == str_type);
@@ -245,13 +218,14 @@ BOOST_AUTO_TEST_CASE(constructor_and_equality_tests)
     bool notequal = arrtype != scltype;
     BOOST_TEST(notequal);
 
+
     H5Tclose(varlenstr);
     H5Tclose(fixedsizestr);
     H5Tclose(vlentype);
-    H5Tclose(arraytype);
+    H5Tclose(array_type);
     H5Tclose(varlen_str_type);
     H5Tclose(fixedsize_str_type);
-
+    H5Tclose(arraytype);
     H5Sclose(space);
     H5Fclose(file);
 }

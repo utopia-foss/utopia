@@ -1571,8 +1571,6 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             "Received a zombie node for the setup of DataManager objects!");
     }
 
-    std::cout << (cfg["data_manager2"] ? "active" : "zombie") << std::endl;
-    std::cout << cfg["data_manager2"].IsMap() << std::endl;
 
     try
     {

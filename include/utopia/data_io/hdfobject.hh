@@ -214,25 +214,23 @@ class HDFObject
             // attribute has to be treated separately
             if constexpr (category == HDFCategory::attribute)
             {
-                _path.resize(H5Aget_name(get_C_id(), 0, _path.data()) + 1);
+                _path.resize(H5Aget_name(id, 0, NULL) + 1);
 
-                H5Aget_name(get_C_id(), _path.size(), _path.data());
+                H5Aget_name(id, _path.size(), _path.data());
             }
             else
             {
 
                 // a preliminary call to H5Iget_name will give the needed size.
                 // cumbersome, but works. The +1 is for the null terminator
-
-                _path.resize(H5Iget_name(get_C_id(), _path.data(), 0) + 1);
+                _path.resize(H5Iget_name(id, NULL, 0)+1);
 
                 // then, a second call will give the full name
-                H5Iget_name(get_C_id(), _path.data(), _path.size());
+                H5Iget_name(id, _path.data(), _path.size());
+
             }
 
-            // set proper null char. Perhaps needs to be done because of string,
-            // which takes care of ending char itself, while H5Xget_name also
-            // does?
+            // remove the final 0 character, as std::string does not require it
             _path.pop_back();
         }
         else
