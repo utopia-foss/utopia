@@ -322,7 +322,7 @@ pm_cp.add_argument('--non-interactive',
     action='store_true',
     help="If given, will not use any prompts. This requires for all arguments "
          "to be specified directly.")
-pm_cp.add_argument('-d', '--dry-run',
+pm_cp.add_argument('--dry-run',
     action='store_true',
     help="If given, performs a dry run: No copy or write operations will be "
          "carried out.")
@@ -384,7 +384,7 @@ p_run_upd.add_argument('--note',
     default=None, nargs='?',
     help="Overwrites the `paths->model_note` entry which is used in creation "
          "of the run directory path.")
-p_run_upd.add_argument('--debug',
+p_run_upd.add_argument('-d', '--debug',
     action='store_true',
     help="If given, sets a number of configuration parameters which make "
          "debugging of the model and the associated plotting scripts easier, "
@@ -401,7 +401,7 @@ p_run_upd.add_argument('--skip-validation',
     help="If given, no parameter validation will be performed. Useful to set "
          "if the parameter space volume is very large (>10k).")
 
-p_run_upd.add_argument('--num-steps',
+p_run_upd.add_argument('-N', '--num-steps',
     default=None, nargs='?', type=int,
     help="Sets the number of simulation steps.")
 p_run_upd.add_argument('--write-every',
@@ -461,7 +461,7 @@ p_run_plt.add_argument('--plot-only',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
          "plots that are disabled in the specified plot configuration.")
-p_run_plt.add_argument('--reveal-output',
+p_run_plt.add_argument('-R', '--reveal-output',
     action='store_true',
     help="If set, opens the output directory after plotting finished.")
 
@@ -513,14 +513,14 @@ p_eval_plt.add_argument('--plot-only',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
          "plots that are disabled in the specified plot configuration.")
-p_eval_plt.add_argument('--interactive',
+p_eval_plt.add_argument('-i', '--interactive',
     action='store_true',
     help="If given, the CLI will load the data and then wait for user input "
          "to specify the plotting-related arguments. ")
-p_eval_plt.add_argument('--reveal-output',
+p_eval_plt.add_argument('-R', '--reveal-output',
     action='store_true',
     help="If set, opens the output directory after plotting finished.")
-p_eval_plt.add_argument('--debug',
+p_eval_plt.add_argument('-d', '--debug',
     action='store_true',
     help="If given, configures the PlotManager such that it raises exceptions "
          "instead of warning (and proceeding to plot). If given while in "
