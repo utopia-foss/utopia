@@ -557,8 +557,8 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration)
     auto cfg = YAML::LoadFile("datamanager_test_factory.yml");
 
     using DMT = DataManagerTraits< Default::DefaultWriteTask< Model >,
-                                   Default::DefaultDecider< Model >,
-                                   Default::DefaultTrigger< Model >,
+                                   Default::Decider< Model >,
+                                   Default::Trigger< Model >,
                                    Default::DefaultExecutionProcess >;
 
     Utopia::DataIO::DataManager< DMT > dm(
@@ -566,8 +566,8 @@ BOOST_AUTO_TEST_CASE(writetaskfactory_datamanager_integration)
         // tasks
         taskmap,
         // rest
-        Default::default_decidertypes< Model >,
-        Default::default_triggertypes< Model >,
+        Default::default_deciders< Model >,
+        Default::default_triggers< Model >,
         Default::DefaultExecutionProcess());
 
     // execute the datamanager execution process

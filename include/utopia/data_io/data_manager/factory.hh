@@ -672,7 +672,12 @@ class DataManagerFactory
      */
     template < typename... Args >
     auto
-    operator()(const Config& conf, const std::tuple< Args... >& args)
+    operator()(const Config& conf, 
+        const std::tuple< Args... >& args,
+        const Default::DefaultDecidermap< Model >& deciderfactories =
+            Default::default_deciders<Model>,
+        const Default::DefaultTriggermap< Model >& triggerfactories =
+            Default::default_triggers<Model>)
     {
         // Get the global data manager logger
         const auto _log = spdlog::get("data_mngr");
@@ -813,8 +818,8 @@ class DataManagerFactory
             return Default::DefaultDataManager< Model >(
                 conf,
                 tasks,
-                Default::default_decidertypes< Model >,
-                Default::default_triggertypes< Model >,
+                deciderfactories,
+                triggerfactories,
                 Default::DefaultExecutionProcess());
         }
     }

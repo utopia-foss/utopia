@@ -1,0 +1,85 @@
+# Configuration for DataManager integration into Model base class
+---
+seed: 42
+output_path: model_test_datamanager.h5
+num_steps: 100
+write_every: 5
+write_start: 20
+monitor_emit_interval: 0.5
+
+log_levels:
+  core: debug
+  model: debug
+  data_io: debug
+  data_mngr: debug
+
+# The 'test'-model
+test:
+  foo: bar
+
+  data_manager: 
+    # this builds the deciders
+    deciders:
+      write_interval_step:
+        type: interval
+        args:
+          intervals:
+            - [0, 100, 10]
+
+      write_interval:
+        type: interval
+        args: 
+          intervals:
+            - [50, 75]
+
+      write_mean: 
+        type: average
+        args: # not needed here, because the decider does not need them
+
+    # this builds the triggers, here deciders are used
+    triggers:
+      build_interval_step:
+        type: interval
+        args:
+          intervals:
+            - [0, 100, 10]
+
+        path: state$time
+        # these can be set, but need not
+        capacity: 1000
+        # these are not set here
+        # chunksize: default
+        # compression: 0
+
+      build_once:
+        type: once
+        args: 
+          time: 0
+
+    tasks:
+      state_writer:
+        active: true
+        decider: write_interval_step
+        trigger: build_interval_step
+        basegroup_path: state_group
+        # typetag can be given or not, if not, is plain
+        typetag: plain
+        # the dollar here marks string interpolation with the current timestep
+        # separated by underscore. so the datasetpath will be state_144 or so
+        dataset_path: state$time
+        # uncomment to set, else default
+        # capacity: 
+        # chunksize: 
+        compression: 1
+
+      state_writer_x2: 
+        active: true
+        decider: write_mean
+        trigger: build_once
+        # typetag: plain
+        basegroup_path: state_group
+        dataset_path: state_x2$time
+        # this sets everything to auto
+        # capacity: 
+        # chunksize: 
+        # compression: 0
