@@ -747,7 +747,7 @@ if __name__ == '__main__':
     argv = [arg for arg in sys.argv[2:]]
 
     # While in interactive mode, the following loop is carried out repeatedly.
-    # A counter variable is used to
+    # A counter variable is used to label successive output directories.
     iap_session = 0
 
     while args.interactive:
@@ -755,19 +755,22 @@ if __name__ == '__main__':
         log.hilight("--- Interactive plotting session %d ---", iap_session)
         log.note("Use Control+C to exit.")
 
-        try:
-            argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args,
-                                                  parser=p_eval)
+        # Unless this is the very first session, need to prompt for new args.
+        if iap_session > 0:
+            try:
+                argv, args = prompt_for_new_plot_args(old_argv=argv,
+                                                      old_args=args,
+                                                      parser=p_eval)
 
-        except (KeyboardInterrupt, EOFError):
-            # Quit interactive plotting
-            # NOTE EOFError is invoked by builtins.input when the input is read
-            #      from a stream that is not the standard input stream.
-            break
+            except (KeyboardInterrupt, EOFError):
+                # Quit interactive plotting
+                # NOTE EOFError is invoked by builtins.input when the input is
+                #      read from a stream that is not the standard input stream
+                break
 
-        except (ValueError, SystemExit):
-            # ... just prompt again. Error message was shown in prompt function
-            continue
+            except (ValueError, SystemExit):
+                # ... just prompt again; error message was already shown
+                continue
 
         # Generate update dicts
         _, update_plots_cfg = parse_update_args(args, mode='eval')
