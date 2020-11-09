@@ -144,7 +144,13 @@ BOOST_AUTO_TEST_CASE(access_test)
         file, "/access_testobject", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     H5O_info_t info;
-    H5Oget_info(grp, &info);
+
+    // version bigger than 1.12.0 -> H5Oget_info3 is used, else H5Oget_info1
+    #if H5_VERSION_GE(1, 12, 0)
+        H5Oget_info(grp, &info, H5O_INFO_ALL);
+    #else
+        H5Oget_info(grp, &info);
+    #endif
 
     BOOST_TEST(info.rc == 1);
     BOOST_TEST(H5Iget_ref(grp) == 1);

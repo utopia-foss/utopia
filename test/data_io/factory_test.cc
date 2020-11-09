@@ -659,8 +659,6 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test)
                 return model.get_agentmanager().agents();
             },
             [](auto&& agent) -> decltype(auto) {
-                std::cout << "adaption: " << agent->state()._adaption
-                          << std::endl;
                 return agent->state()._adaption;
             },
             std::make_tuple("Content", "This contains agent highres data"),
@@ -671,8 +669,6 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test)
                 return model.get_agentmanager().agents();
             },
             [](auto& agent) -> decltype(auto) {
-                std::cout << "age: " << agent->state()._age << std::endl;
-
                 return agent->state()._age;
             },
             Nothing{},
@@ -738,36 +734,6 @@ BOOST_AUTO_TEST_CASE(datamanager_factory_test)
 
     auto dm =
         DataManagerFactory< Model >()(model.get_cfg()["data_manager"], args);
-
-    for (auto&& [name, decider] : dm.get_deciders())
-    {
-        std::cout << name << ", " << decider << std::endl;
-    }
-    std::cout << std::endl;
-
-    for (auto&& [name, trigger] : dm.get_triggers())
-    {
-        std::cout << name << ", " << trigger << std::endl;
-    }
-    std::cout << std::endl;
-
-    for (auto&& [name, task] : dm.get_tasks())
-    {
-        std::cout << name << ", " << task << std::endl;
-    }
-    std::cout << std::endl;
-
-    for (auto&& [decidername, tasknames] : dm.get_decider_task_map())
-    {
-        std::cout << decidername << ", " << tasknames << std::endl;
-    }
-    std::cout << std::endl;
-
-    for (auto&& [triggername, tasknames] : dm.get_trigger_task_map())
-    {
-        std::cout << triggername << ", " << tasknames << std::endl;
-    }
-    std::cout << std::endl;
 
     for (model.time = 0; model.time < 200; ++model.time)
     {

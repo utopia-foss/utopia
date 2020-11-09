@@ -6,6 +6,7 @@
 #include <utopia/data_io/hdffile.hh>
 #include <utopia/data_io/hdfgroup.hh>
 
+#include <utopia/core/ostream.hh>
 #include <boost/test/included/unit_test.hpp> // for unit tests
 
 // shorthands
@@ -93,7 +94,7 @@ BOOST_AUTO_TEST_CASE(dataset_write_test)
     std::array< int, 4 > arr{ { 0, 1, 2, 3 } };
     std::array< int, 4 > arr2{ { 4, 5, 6, 7 } };
 
-    std::shared_ptr< double > ptr(new double[5]);
+    std::shared_ptr<double> ptr(new double[5], std::default_delete<double[]>());
     for (std::size_t i = 0; i < 5; ++i)
     {
         ptr.get()[i] = 3.14;
@@ -352,6 +353,7 @@ BOOST_AUTO_TEST_CASE(dataset_write_test)
             std::string message(
                 "Dataset /latestarter2: Cannot set chunksize after "
                 "dataset has been created");
+
             return e.what() == message;
         });
 
@@ -363,10 +365,16 @@ BOOST_AUTO_TEST_CASE(dataset_write_test)
         [](const std::runtime_error& e) {
             std::string message("Dataset /pointerdataset: shape has to be "
                                 "given explicitly when writing pointer types");
+
             return e.what() == message;
         });
 
-    std::shared_ptr< double > ptrdata(new double[200]);
+    std::shared_ptr<double> ptrdata(new double[200], std::default_delete<double[]>());
+    for(std::size_t i = 0; i< 200; ++i)
+    {
+        ptrdata.get()[i] = i;
+    }
+
     BOOST_CHECK_EXCEPTION(
         ptrset->write(ptrdata.get(), { 200 }),
         std::runtime_error,
@@ -383,6 +391,7 @@ BOOST_AUTO_TEST_CASE(dataset_write_test)
                           std::runtime_error,
                           [](const std::runtime_error& e) {
                               std::string message("Rank > 2 not supported");
+
                               return e.what() == message;
                           });
 
@@ -680,6 +689,7 @@ BOOST_AUTO_TEST_CASE(dataset_read_test)
     auto [ptrshape, read_ptrdata] = ptrset->read< double* >({}, {}, {});
     BOOST_TEST(ptrshape.size() == 1);
     BOOST_TEST(ptrshape[0] = 15);
+
     for (std::size_t i = 0; i < ptrshape[0]; ++i)
     {
         BOOST_TEST(std::abs(ptrdata[i] - read_ptrdata.get()[i]) < 1e-16);
@@ -771,6 +781,7 @@ BOOST_AUTO_TEST_CASE(dataset_read_test)
         [](const std::invalid_argument& err) {
             std::string m("Dataset /fireandforget: start, end, stride have "
                           "to be same size as dataset rank, which is 1");
+
             BOOST_TEST(m == err.what());
             return true;
         });

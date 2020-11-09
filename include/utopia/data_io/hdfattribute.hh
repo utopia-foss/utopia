@@ -315,6 +315,22 @@ class HDFAttribute final : public HDFObject< HDFCategory::attribute >
                     }
                 }
 
+                #if H5_VERSION_GE(1, 12 , 0)
+                    herr_t status = H5Treclaim(_type.get_C_id(), 
+                                                _dataspace.get_C_id(), 
+                                                H5P_DEFAULT, 
+                                                temp_buffer.data());
+                #else
+                    herr_t status = H5Dvlen_reclaim (_type.get_C_id(), 
+                                                    _dataspace.get_C_id(), 
+                                                    H5P_DEFAULT, 
+                                                    temp_buffer.data());
+                #endif
+
+                if (status < 0)
+                {
+                    throw std::runtime_error("Error, something went wrong while reading in " + _path + " while reclaiming vlen memory");
+                }
                 // return shape and buffer. Expect to use structured bindings
                 // to extract that later
                 return err;
@@ -346,7 +362,14 @@ class HDFAttribute final : public HDFObject< HDFCategory::attribute >
                     {
                         buffer[i] = temp_buffer[i];
                     }
-                    // return
+
+                    // reclaim memory from the temp_buffer, because 
+                    // the char* therein are allocated by hdf5, but not freed
+                    for (auto&& c: temp_buffer)
+                    {
+                        free(c);
+                    }
+
                     return err;
                 }
                 else // others are straight forward
@@ -634,7 +657,9 @@ class HDFAttribute final : public HDFObject< HDFCategory::attribute >
         else if constexpr (std::is_pointer_v< Type > &&
                            !Utils::is_string_v< Type >)
         {
-            auto   buffer = std::make_shared< Type >(size);
+            std::shared_ptr< Utils::remove_qualifier_t<Type> > buffer(
+                new Utils::remove_qualifier_t<Type>[size], std::default_delete<Utils::remove_qualifier_t<Type>[]>());
+                
             herr_t err    = __read_pointertype__(buffer.get());
             if (err < 0)
             {
