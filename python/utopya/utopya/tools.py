@@ -33,15 +33,15 @@ log.debug("Determined TTY_COLS: %s,  IS_A_TTY: %s", TTY_COLS, IS_A_TTY)
 
 def recursive_update(d: dict, u: dict) -> dict:
     """Update dict `d` with values from dict `u`.
-    
+
     NOTE: This method does _not_ copy mutable entries! If you want to assure
     that the contents of `u` cannot be changed by changing its counterparts in
     the updated `d`, you need to supply a deep copy of `u` to this method.
-    
+
     Args:
         d (dict): The dict to be updated
         u (dict): The dict used to update
-    
+
     Returns:
         dict: updated version of d
     """
@@ -65,11 +65,11 @@ def recursive_update(d: dict, u: dict) -> dict:
 
 
 def load_selected_keys(src: dict, *, add_to: dict,
-                       keys: Sequence[Tuple[str, type, bool]], 
+                       keys: Sequence[Tuple[str, type, bool]],
                        err_msg_prefix: str=None,
                        prohibit_unexpected: bool=True) -> None:
         """Loads (only) selected keys from dict ``src`` into dict ``add_to``.
-        
+
         Args:
             src (dict): The dict to load values from
             add_to (dict): The dict to load values into
@@ -78,7 +78,7 @@ def load_selected_keys(src: dict, *, add_to: dict,
             description (str): A description string, used in error message
             prohibit_unexpected (bool, optional): Whether to raise on keys
                 that were unexpected, i.e. not given in ``keys`` argument.
-        
+
         Raises:
             KeyError: On missing key in ``src``
             TypeError: On bad type of value in ``src``
@@ -121,13 +121,12 @@ def load_selected_keys(src: dict, *, add_to: dict,
                                        ", ".join(unexpected_keys),
                                        ", ".join([s[0] for s in keys])))
 
-
 def add_item(value, *, add_to: dict, key_path: Sequence[str],
              value_func: Callable=None, is_valid: Callable=None,
              ErrorMsg: Callable=None) -> None:
     """Adds the given value to the ``add_to`` dict, traversing the given key
     path. This operation happens in-place.
-    
+
     Args:
         value: The value of what is to be stored. If this is a callable, the
             result of the call is stored.
@@ -139,7 +138,7 @@ def add_item(value, *, add_to: dict, key_path: Sequence[str],
             valid or not; should take single positional argument, return bool
         ErrorMsg (Callable, optional): A raisable object that prints an error
             message; gets passed `value` as positional argument.
-    
+
     Raises:
         ErrorMsg: (depends on specified exception callable)
     """
@@ -167,21 +166,22 @@ def add_item(value, *, add_to: dict, key_path: Sequence[str],
     # If applicable
     if value_func is not None:
         value = value_func(value)
-    
+
     # Store in dict, mutable. Done.
     d[last_key] = value
+
 
 # string formatting -----------------------------------------------------------
 
 def format_time(duration: Union[float, timedelta], *,
                 ms_precision: int=0, max_num_parts: int=None) -> str:
     """Given a duration (in seconds), formats it into a string.
-    
+
     The formatting divisors are: days, hours, minutes, seconds
-    
+
     If `ms_precision` > 0 and `duration` < 60, decimal places will be shown
     for the seconds.
-    
+
     Args:
         duration (Union[float, timedelta]): The duration in seconds to format
             into a duration string; it can also be a timedelta object.
@@ -191,7 +191,7 @@ def format_time(duration: Union[float, timedelta], *,
             the parts seconds, minutes, and hours, and the argument is ``2``,
             only the hours and minutes parts will be shown.
             If None, all parts are included.
-    
+
     Returns:
         str: The formatted duration string
     """
@@ -260,7 +260,7 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ",
               align: str="left") -> str:
     """Extends the given string such that it fills a whole line of `num_cols`
     columns.
-    
+
     Args:
         s (str): The string to extend to a whole line
         num_cols (int, optional): The number of colums of the line; defaults to
@@ -268,10 +268,10 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ",
         fill_char (str, optional): The fill character
         align (str, optional): The alignment. Can be: 'left', 'right', 'center'
             or the one-letter equivalents.
-    
+
     Returns:
         str: The string of length `num_cols`
-    
+
     Raises:
         ValueError: For invalid `align` or `fill_char` argument
     """
@@ -295,13 +295,13 @@ def fill_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str=" ",
 def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·",
                    spacing: int=1) -> str:
     """Shortcut for a common fill_line use case.
-    
+
     Args:
         s (str): The string to center in the line
         num_cols (int, optional): The number of columns in the line
         fill_char (str, optional): The fill character
         spacing (int, optional): The spacing around the string `s`
-    
+
     Returns:
         str: The string centered in the line
     """
@@ -311,7 +311,7 @@ def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·",
 
 def pprint(obj, **kwargs):
     """Prints a "pretty" string representation of the given object.
-    
+
     Args:
         obj (TYPE): The object to print
         **kwargs: Passed to print
@@ -327,3 +327,38 @@ def pformat(obj) -> str:
     yaml.dump(obj, stream=sstream)
     sstream.seek(0)
     return sstream.read()
+
+
+# filesystem tools ------------------------------------------------------------
+
+def open_folder(path: str):
+    """Opens the folder at the specified path.
+
+    .. note::
+
+        This refuses to open a *file*.
+
+    Args:
+        path (str): The absolute path to the folder that is to be opened. The
+            home directory ``~`` is expanded.
+    """
+    path = os.path.expanduser(path)
+
+    if not os.path.isabs(path):
+        raise ValueError(f"Need an absolute path, but got '{path}'!")
+
+    if not os.path.isdir(path):
+        raise ValueError(f"No folder found at '{path}'!")
+
+    # Depending on platform, define the opening function
+    if sys.platform == "windows":
+        open_now = lambda p: os.startfile(p)
+
+    elif sys.platform == "darwin":
+        open_now = lambda p: subprocess.Popen(["open", p])
+
+    else:
+        open_now = lambda p: subprocess.Popen(["xdg-open", p])
+
+    # ... and call it
+    open_now(path)

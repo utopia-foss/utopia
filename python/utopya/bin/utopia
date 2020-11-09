@@ -461,6 +461,9 @@ p_run_plt.add_argument('--plot-only',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
          "plots that are disabled in the specified plot configuration.")
+p_run_plt.add_argument('--reveal-output',
+    action='store_true',
+    help="If set, opens the output directory after plotting finished.")
 
 # misc
 p_run.add_argument('--use-data-tree-cache',
@@ -514,6 +517,9 @@ p_eval_plt.add_argument('--interactive',
     action='store_true',
     help="If given, the CLI will load the data and then wait for user input "
          "to specify the plotting-related arguments. ")
+p_eval_plt.add_argument('--reveal-output',
+    action='store_true',
+    help="If set, opens the output directory after plotting finished.")
 p_eval_plt.add_argument('--debug',
     action='store_true',
     help="If given, configures the PlotManager such that it raises exceptions "
@@ -568,7 +574,7 @@ log = getLogger(__name__)  # TODO Make this controllable!
 from paramspace import ParamDim
 
 import utopya
-from utopya.tools import pformat, load_yml, add_item
+from utopya.tools import pformat, load_yml, add_item, open_folder
 from utopya.cltools import (deploy_user_cfg, register_models, copy_model_files,
                             add_from_kv_pairs, prompt_for_new_plot_args)
 from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
@@ -730,6 +736,9 @@ if __name__ == '__main__':
                             plot_only=args.plot_only,
                             **update_plots_cfg)
 
+        if args.reveal_output and mv.pm.common_out_dir:
+            open_folder(mv.pm.common_out_dir)
+
         log.success("All done.\n")
         sys.exit()
 
@@ -800,6 +809,10 @@ if __name__ == '__main__':
             log.warning("Remaining in interactive plotting mode ...")
 
             continue
+
+        # Done plotting, allow to show the output
+        if args.reveal_output and mv.pm.common_out_dir:
+            open_folder(mv.pm.common_out_dir)
 
         # End of while loop
 
