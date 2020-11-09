@@ -36,6 +36,8 @@ public:
     /// Space type of the base model class
     using Space = typename Base::Space;
 
+    using Self = TestModel<data_write_mode>;
+
 private:
     // Declare members
     Data _state;
@@ -55,11 +57,13 @@ public:
         const ParentModel &parent_model,
         const Data& initial_state,
         const DataIO::Config& custom_cfg = {},
-        std::tuple<WriterArgs...> writer_args = {}
+        std::tuple<WriterArgs...> writer_args = {}, 
+        Utopia::DataIO::Default::DefaultDecidermap<Self> deciders = Utopia::DataIO::Default::default_deciders<Self>,
+        Utopia::DataIO::Default::DefaultTriggermap<Self> triggers = Utopia::DataIO::Default::default_triggers<Self>
     )
     :
         // Pass arguments to the base class constructor
-        Base(name, parent_model, custom_cfg, writer_args),
+        Base(name, parent_model, custom_cfg, writer_args, deciders, triggers),
         // Initialize state and boundary condition members
         _state(initial_state),
         _bc(_state.size(), 1.0),
@@ -77,6 +81,10 @@ public:
         BOOST_TEST(this->_space->extent[1] == 1.);
     }
 
+    // having these makes things a bit easier where no explicit, workable 
+    // object is needed
+    TestModel() = default;
+    ~TestModel() = default;
 
 
 
