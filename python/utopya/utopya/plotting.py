@@ -214,6 +214,16 @@ class PlotManager(dtr.plot_mngr.PlotManager):
 
         self._model_info_bundle = _model_info_bundle
 
+    @property
+    def common_out_dir(self) -> str:
+        """The common output directory of all plots that were created with
+        this plot manager instance. This uses the plot output paths stored in
+        the plot information dict, specifically the ``target_dir`` entry.
+
+        If there was no plot information yet, the return value will be empty.
+        """
+        return os.path.commonprefix([d['target_dir'] for d in self.plot_info])
+
     def _get_plot_creator(self, *args, **kwargs):
         """Before actually retrieving the plot creator, pre-loads the
         model-specific plot function module. This allows to register custom
