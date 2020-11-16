@@ -60,11 +60,8 @@ def parse_update_args(args: argparse.Namespace, *,
         # Number of simulation steps
         if args.num_steps is not None:
             add_item(args.num_steps, add_to=update_dict,
-                     key_path=['parameter_space', 'num_steps'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --num-steps "
-                                                    "needs to be positive, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'num_steps'])
+            # NOTE Error parsing happens in Multiverse
 
         # The root-level write_every parameter
         if args.write_every is not None:
@@ -119,8 +116,10 @@ def parse_update_args(args: argparse.Namespace, *,
             if not update_dict['parameter_space'].get(args.model_name):
                 update_dict['parameter_space'][args.model_name] = dict()
 
-            add_from_kv_pairs(*args.set_model_params,
-                              add_to=update_dict['parameter_space'][args.model_name])
+            add_from_kv_pairs(
+                *args.set_model_params,
+                add_to=update_dict['parameter_space'][args.model_name]
+            )
 
         if args.set_params:
             # Make sure the parameter space entry is available
@@ -402,8 +401,10 @@ p_run_upd.add_argument('--skip-validation',
          "if the parameter space volume is very large (>10k).")
 
 p_run_upd.add_argument('-N', '--num-steps',
-    default=None, nargs='?', type=int,
-    help="Sets the number of simulation steps.")
+    default=None, nargs='?', type=str,
+    help="Sets the number of simulation steps. Needs to be an integer. Metric "
+         "suffixes k, M, G can be used to denote large numbers, e.g `1.23M`"
+         "translates to `1230000`.")
 p_run_upd.add_argument('--write-every',
     default=None, nargs='?', type=int,
     help="Sets the root-level `write_every` parameter, controlling how "

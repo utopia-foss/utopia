@@ -201,3 +201,51 @@ def test_fill_line():
     # The center_in_line method has a fill_char given and adds a spacing
     assert t.center_in_line("foob", num_cols=10) == "·· foob ··"  # cdot!
     assert t.center_in_line("foob", num_cols=10, spacing=2) == "·  foob  ·"
+
+def test_parse_si_multiplier():
+    """Tests the parse_si_multiplier function"""
+    parse_si = t.parse_si_multiplier
+
+    assert parse_si("0") == 0
+    assert parse_si("1") == 1
+    assert parse_si("123") == 123
+    assert parse_si("123k") == 123 * 1000
+    assert parse_si("123 k") == 123 * 1000
+    assert parse_si("    123 k  ") == 123 * 1000
+
+    assert parse_si("1.23M") == 1230000
+    assert parse_si("1.23G") == 1230000000
+    assert parse_si("1.23T") == 1230000000000
+
+    # negative values
+    assert parse_si("-0") == 0
+    assert parse_si("-1") == -1
+    assert parse_si("-1k") == -1000
+    assert parse_si("- 1k") == -1000
+    assert parse_si("- 1 k") == -1000
+    assert parse_si("-1.23k") == -1230
+    assert parse_si("-1.23456k") == int(-1234.56) == -1234
+
+    # integer rounding
+    assert parse_si("0.000001k") == 0
+    assert parse_si("1.234567k") == int(1234.567)
+
+    # errors
+    for s in ("1a", "1.23b", "--123k", "-1.23kk", "3M5"):
+        with pytest.raises(ValueError, match="Cannot parse"):
+            parse_si(s)
+
+def test_parse_num_steps():
+    """Tests the parse_num_steps function"""
+    parse_N = t.parse_num_steps
+
+    assert parse_N(1) == 1
+    assert parse_N(100) == 100
+    assert parse_N("100") == 100
+    assert parse_N("100k") == 100000
+    assert parse_N("1.23k") == 1230
+
+    # errors
+    for arg in (-1, "-1", "-123k"):
+        with pytest.raises(ValueError, match="needs to be non-negative"):
+            parse_N(arg)
