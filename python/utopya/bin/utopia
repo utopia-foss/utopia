@@ -58,28 +58,20 @@ def parse_update_args(args: argparse.Namespace, *,
                      key_path=['perform_validation'])
 
         # Number of simulation steps
+        # NOTE Error checking happens in Multiverse (also for write_* args)
         if args.num_steps is not None:
             add_item(args.num_steps, add_to=update_dict,
                      key_path=['parameter_space', 'num_steps'])
-            # NOTE Error parsing happens in Multiverse
 
         # The root-level write_every parameter
         if args.write_every is not None:
             add_item(args.write_every, add_to=update_dict,
-                     key_path=['parameter_space', 'write_every'],
-                     is_valid= lambda v: v >= 1,
-                     ErrorMsg= lambda v: ValueError("Argument --write-every "
-                                                    "needs to be >= 1, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'write_every'])
 
         # The root-level write_start parameter
         if args.write_start is not None:
             add_item(args.write_start, add_to=update_dict,
-                     key_path=['parameter_space', 'write_start'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --write-start "
-                                                    "needs to be >= 0, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'write_start'])
 
         # Set seeds to a parameter dimension object
         if args.num_seeds is not None:
@@ -403,17 +395,20 @@ p_run_upd.add_argument('--skip-validation',
 p_run_upd.add_argument('-N', '--num-steps',
     default=None, nargs='?', type=str,
     help="Sets the number of simulation steps. Needs to be an integer. Metric "
-         "suffixes k, M, G can be used to denote large numbers, e.g `1.23M`"
-         "translates to `1230000`.")
+         "suffixes (k, M, G, T) can be used to denote large numbers, e.g "
+         "`1.23M` translating to `1230000`, and scientific notation is also "
+         "supported (applying integer rounding).")
 p_run_upd.add_argument('--write-every',
-    default=None, nargs='?', type=int,
+    default=None, nargs='?', type=str,
     help="Sets the root-level `write_every` parameter, controlling how "
-         "frequently model data is written.")
+         "frequently model data is written. Can be given in the same formats "
+         "as `num_steps`.")
 p_run_upd.add_argument('--write-start',
-    default=None, nargs='?', type=int,
+    default=None, nargs='?', type=str,
     help="Sets the root-level `write_start` parameter, specifying the first "
          "time step at which data is written. After that time, data is "
-         "written every `write_every`th step.")
+         "written every `write_every`th step. Can be given in the same "
+         "formats as `num_steps`.")
 p_run_upd.add_argument('--num-seeds',
     default=None, nargs='?', type=int,
     help="Creates a parameter dimension for the seeds with the given number "

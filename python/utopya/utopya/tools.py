@@ -410,29 +410,42 @@ def parse_si_multiplier(s: str) -> int:
 
     return int(val * mul)
 
-def parse_num_steps(N: Union[str, int]) -> int:
+def parse_num_steps(N: Union[str, int], *,
+                    raise_if_negative: bool=True) -> int:
     """Given a string like ``1.23M`` or an integer, prepares the num_steps
     argument for a single universe simulation.
 
     For string arguments, uses :py:func:`~utopya.tools.parse_si_multiplier` for
-    string parsing.
+    string parsing. If that fails, attempts to read it in float notation by
+    calling ``int(float(N))``.
+
+    .. note:: This function always applies integer rounding.
 
     Args:
-        N (Union[str, int]): The `num_steps` argument as a string or integer.
+        N (Union[str, int]): The ``num_steps`` argument as a string or integer.
+        raise_if_negative (bool, optional): Whether to raise an error if the
+            value is negative.
 
     Returns:
         int: The parsed value for ``num_steps``
 
     Raises:
-        ValueError: Result invalid, i.e. not parseable or of negative value
+        ValueError: Result invalid, i.e. not parseable or of negative value.
     """
     if isinstance(N, str):
         try:
             N = parse_si_multiplier(N)
-        except ValueError as err:
-            raise ValueError(f"Failed parsing `num_steps`: {err}") from err
 
-    if N < 0:
+        except ValueError as err:
+            # Don't give up just yet, could still be in scientific notation ...
+            try:
+                N = int(float(N))
+
+            except:
+                # Ok, that also failed. Giving up now.
+                raise ValueError(f"Failed parsing `num_steps`: {err}") from err
+
+    if raise_if_negative and N < 0:
         raise ValueError(
             f"Argument `num_steps` needs to be non-negative, but was {N}!"
         )

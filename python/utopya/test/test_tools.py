@@ -245,7 +245,14 @@ def test_parse_num_steps():
     assert parse_N("100k") == 100000
     assert parse_N("1.23k") == 1230
 
+    # can _additionally_ be in scientific notation
+    assert parse_N("1.23e3") == 1230
+    assert parse_N("1.23e+5") == 123000
+
     # errors
-    for arg in (-1, "-1", "-123k"):
+    for arg in (-1, "-1", "-123k", "-1.23e+5"):
         with pytest.raises(ValueError, match="needs to be non-negative"):
             parse_N(arg)
+
+        # ... unless the error is suppressed
+        parse_N(arg, raise_if_negative=False)
