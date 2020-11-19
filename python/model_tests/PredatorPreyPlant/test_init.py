@@ -19,7 +19,7 @@ mtc = ModelTest("PredatorPreyPlant", test_file=__file__)
 def tmp_h5data_fpath(tmpdir) -> str:
     """Creates temporary hdf5 file with data for test_cell_states_from_file"""
     fpath = str(tmpdir.join("init_data.h5"))
-    f = h5.File(fpath)
+    f = h5.File(fpath, "w")
 
     f.create_dataset("predator", data=np.ones((21, 21)))
     f.create_dataset("prey", data=np.zeros((21, 21)))

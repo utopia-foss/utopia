@@ -23,7 +23,7 @@ from .parameter import ValidationError
 from .plotting import PlotManager
 from .reporter import WorkerManagerReporter
 from .yaml import load_yml, write_yml
-from .tools import recursive_update, pformat
+from .tools import recursive_update, pformat, parse_num_steps
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -892,6 +892,12 @@ class Multiverse:
             # Generate a path to the output hdf5 file and add it to the dict
             output_path = os.path.join(uni_dir, "data.h5")
             uni_cfg['output_path'] = output_path
+
+            # Parse the potentially string-valued number of steps values, and
+            # other step-like arguments. Raises an error if they are negative.
+            uni_cfg['num_steps'] = parse_num_steps(uni_cfg['num_steps'])
+            uni_cfg['write_every'] = parse_num_steps(uni_cfg['write_every'])
+            uni_cfg['write_start'] = parse_num_steps(uni_cfg['write_start'])
 
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
