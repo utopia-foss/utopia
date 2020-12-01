@@ -555,43 +555,15 @@ class WorkerManager:
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
-        except WorkerManagerError as err:
-            # Some error not related to the non-zero exit code occurred.
-            # Gracefully terminate remaining tasks before re-raising the
-            # exception
+        except (KeyboardInterrupt, WorkerManagerTotalTimeout) as exc:
+            # Got interrupted or a total timeout.
+            # Interrupt the workers, giving them some time to shut down ...
 
             # Suppress reporter to use CR; then inform via log messages
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            log.critical("Did not finish working! See above for error log.")
-
-            # Now terminate the remaining active tasks
-            log.hilight("Terminating active tasks ...")
-            self._signal_workers(self.active_tasks, signal='SIGTERM')
-
-            # Store end time and invoke a report
-            self.times['end_working'] = dt.now()
-            self._invoke_report('after_abort', force=True)
-
-            # For some specific error types, do not raise but exit with status
-            if isinstance(err, WorkerTaskNonZeroExit):
-                log.critical("Exiting now ...")
-                sys.exit(err.task.worker_status)
-
-            # Some other error occurred; just raise
-            log.critical("Re-raising error ...")
-            raise
-
-        except KeyboardInterrupt:
-            # Got interrupted. Also interrupt the workers, giving them some
-            # time to shut down ...
-
-            # Suppress reporter to use CR; then inform via log messages
-            if self.reporter:
-                self.reporter.suppress_cr = True
-
-            log.warning("Received KeyboardInterrupt.")
+            log.warning("Received %s.", type(exc).__name__)
 
             # Extract parameters from config
             # Which signal to send to workers
@@ -601,8 +573,8 @@ class WorkerManager:
             grace_period = self.interrupt_params.get('grace_period', 5.)
 
             # Send the signal
-            log.warning("Sending signal %s to %d active task(s) ...",
-                        signal, len(self.active_tasks))
+            log.info("Sending signal %s to %d active task(s) ...",
+                     signal, len(self.active_tasks))
             self._signal_workers(self.active_tasks, signal=signal)
 
             # Continuously poll them for a certain grace period in order to
@@ -640,13 +612,45 @@ class WorkerManager:
             self.times['end_working'] = dt.now()
             self._invoke_report('after_abort', force=True)
 
-            if self.interrupt_params.get('exit', True):
+            log.hilight("Work session ended.")
+
+            if (
+                type(exc) is KeyboardInterrupt
+                and self.interrupt_params.get('exit', True)
+            ):
                 # Exit with appropriate exit code (128 + abs(signum))
                 log.warning("Exiting after KeyboardInterrupt ...")
                 sys.exit(128 + abs(SIGMAP[signal]))
 
-            log.warning("Continuing after KeyboardInterrupt ...")
-            return
+            # Otherwise, just return control to the calling scope
+
+        except WorkerManagerError as err:
+            # Some error not related to the non-zero exit code occurred.
+            # Gracefully terminate remaining tasks before re-raising the
+            # exception
+
+            # Suppress reporter to use CR; then inform via log messages
+            if self.reporter:
+                self.reporter.suppress_cr = True
+
+            log.critical("Did not finish working! See above for error log.")
+
+            # Now terminate the remaining active tasks
+            log.hilight("Terminating active tasks ...")
+            self._signal_workers(self.active_tasks, signal='SIGTERM')
+
+            # Store end time and invoke a report
+            self.times['end_working'] = dt.now()
+            self._invoke_report('after_abort', force=True)
+
+            # For some specific error types, do not raise but exit with status
+            if isinstance(err, WorkerTaskNonZeroExit):
+                log.critical("Exiting now ...")
+                sys.exit(err.task.worker_status)
+
+            # Some other error occurred; just raise
+            log.critical("Re-raising error ...")
+            raise
 
         # Register end time and invoke final report
         self.times['end_working'] = dt.now()

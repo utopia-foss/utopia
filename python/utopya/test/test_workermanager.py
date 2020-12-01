@@ -310,7 +310,7 @@ def test_empty_task_queue(wm):
     with pytest.raises(queue.Empty):
         wm._grab_task()
 
-def test_timeout(wm, sleep_task):
+def test_timeout(wm, sleep_task, longer_sleep_task):
     """Tests whether the timeout succeeds"""
     # Add some sleep tasks
     for _ in range(3):
@@ -323,14 +323,17 @@ def test_timeout(wm, sleep_task):
 
     # Check if no WorkerManagerTotalTimeout is raised for a high timeout value
     wm.start_working(timeout=23.4)
+    assert wm.num_finished_tasks == 3
 
     # Add more asks
-    for _ in range(3):
-        wm.add_task(**sleep_task)
+    for _ in range(17):
+        wm.add_task(**longer_sleep_task)  # 1s each
+    assert wm.task_count == 20
 
-    # Test if one is raised for a smaller timeout value
-    with pytest.raises(WorkerManagerTotalTimeout):
-        wm.start_working(timeout=0.7)
+    # For a brief timeout duration, not all of the queued tasks should be run.
+    # With 2 workers, there will be two finished tasks and two interrupted ones
+    wm.start_working(timeout=1.4)
+    assert wm.num_finished_tasks == 3 + 2 + 2
 
 def test_stopconds(wm, wm_with_tasks, longer_sleep_task, sc_run_kws):
     """Tests the stop conditions"""
