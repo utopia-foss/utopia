@@ -438,6 +438,35 @@ def test_parallel_init(mv_kwargs):
     assert any(("Parallel execution enabled" in line for line in log))
 
 
+def test_prolog_and_epilog_is_run(mv_kwargs):
+    """Test that the prolog and epilog are always run"""
+    # NOTE Ensure that information on parallel execution is logged
+    mv_kwargs['parameter_space'] = dict(log_levels=dict(model='debug'))
+
+    # Run with default settings and check log message
+    mv = Multiverse(**mv_kwargs)
+    mv.run()
+    log = mv.wm.tasks[0].streams['out']['log']
+    assert any(("Prolog finished." in line for line in log))
+    assert any(("Epilog finished." in line for line in log))
+
+    # The "Invoking epilog ..." message should _not_ be there in *this* case,
+    # because it denotes that the simulation stopped after receiving a signal
+    assert not any(("Invoking epilog ..." in line for line in log))
+
+    # Now perform a longer simulation with a timeout
+    mv_kwargs['parameter_space']['num_steps'] = int(1e9)
+    mv_kwargs['parameter_space']['write_every'] = int(1e6)
+    mv_kwargs['run_kwargs'] = dict(timeout=1.)
+    mv_kwargs['paths']['model_note'] = "with_timeout"
+    mv = Multiverse(**mv_kwargs)
+    mv.run()
+    log = mv.wm.tasks[0].streams['out']['log']
+    assert any(("Prolog finished." in line for line in log))
+    assert any(("Invoking epilog ..." in line for line in log))
+    assert any(("Epilog finished." in line for line in log))
+
+
 def test_shared_worker_manager(mv_kwargs):
     """Tests using a shared WorkerManager between multiple Multiverses, an
     experimental feature that allows to use the WorkerManager for running

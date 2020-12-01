@@ -224,7 +224,7 @@ public:
    *                      the DataManager will still be constructed. Take
    *                      care to also set the WriteMode accordingly.
    * \param w_deciders    Map which associates names with factory functions for
-   *                      deciders of signature factory()::shared_ptr<Decider<Derived>> 
+   *                      deciders of signature factory()::shared_ptr<Decider<Derived>>
    * \param w_triggers    Map which associates names with factory functions for
    *                      deciders of signature factory()::shared_ptr<Trigger<Derived>>
    */
@@ -236,7 +236,7 @@ public:
         const DataIO::Default::DefaultDecidermap< Derived >&
             w_deciders = DataIO::Default::default_deciders< Derived >,
         const DataIO::Default::DefaultTriggermap< Derived >&
-            w_triggers = DataIO::Default::default_triggers< Derived > 
+            w_triggers = DataIO::Default::default_triggers< Derived >
         ):
         // First thing: setup name, configuration, and level in hierarchy
         _name(name),
@@ -541,6 +541,10 @@ public:
                 else {
                     _log->warn("Was told to stop. Not iterating further ...");
                 }
+
+                _log->info("Invoking epilog ...");
+                epilog();
+
                 throw GotSignal(received_signum.load());
             }
         }
