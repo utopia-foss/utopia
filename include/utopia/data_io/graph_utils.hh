@@ -305,6 +305,12 @@ create_graph_group(const Graph&                       g,
     //      If this is not the case, the attribute must be overwritten.
     grp->add_attribute("edge_container_is_transposed", true);
 
+    // Prevent the vertex and edge dimension from being squeezed when selecting
+    // graph data via the GraphGroup.
+    grp->add_attribute(
+        "keep_dim", std::vector<std::string>{"vertex_idx", "edge_idx"}
+    );
+
     spdlog::get("data_io")->info("Opened graph group '{}'.", name);
 
     return grp;
