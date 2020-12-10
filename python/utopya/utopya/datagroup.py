@@ -74,6 +74,7 @@ class GraphGroup(dtr.groups.GraphGroup):
     _GG_attr_directed = "is_directed"
     _GG_attr_parallel = "allows_parallel"
     _GG_attr_edge_container_is_transposed = "edge_container_is_transposed"
+    _GG_attr_keep_dim = "keep_dim"
 
     # Whether warning is raised upon bad alignment of property data
     _GG_WARN_UPON_BAD_ALIGN = True
