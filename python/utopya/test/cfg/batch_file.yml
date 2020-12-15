@@ -1,0 +1,59 @@
+# A _file_ used for testing the BatchManager
+---
+# BatchTaskManager Settings ...................................................
+# Debug Mode
+debug: true
+
+# Options for path creation, overwriting etc.
+# TODO
+
+# WorkerManager, Reporter, etc.
+worker_manager: {}
+
+# Cluster mode
+cluster_mode: false
+
+
+# Defaults ....................................................................
+task_defaults:
+  run: {}
+  eval:
+    out_dir: ~/all_my_output/{task_name:}
+
+
+# Task definitions ............................................................
+# Running simulations
+run_tasks: {}
+  # NOTE Not implemented! But this could be the possible syntax.
+  # my_run_task:  # task name is used for paths.model_note
+  #   model_name: dummy
+
+  #   # A few special keys
+  #   run_only: true
+  #   plot_only: []
+  #   update_plots_cfg: {}
+
+  #   # ... all further kwargs: passed to `Model.create_mv` and thus directly
+  #   # adjust the meta configuration
+  #   parameter_space:
+  #     dummy:
+  #       num_steps: 123M
+
+
+# Evaluating simulations
+eval_tasks:
+  task1:  # prepended to eval-out-dir
+    # enabled: true   # default
+
+    # Values below update those from defaults.eval.dummy
+
+    # Model name and run directory to load data from
+    model_name: dummy
+    run_dir: timestamp
+
+    # Arguments to PlotManager.plot_from_cfg
+    # out_dir: ~  # allow format string here
+    plot_only: []
+    update_plots_cfg: {}
+
+    # All other arguments are passed to `Model.create_frozen_mv`

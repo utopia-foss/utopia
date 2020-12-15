@@ -1,0 +1,5 @@
+# Individual configurations for test cases of the BatchManager
+#
+# Each case corresponds to an individual invocation of the BatchManager
+---
+

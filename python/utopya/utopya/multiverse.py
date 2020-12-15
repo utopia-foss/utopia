@@ -702,7 +702,7 @@ class Multiverse:
 
         self._model_binpath = binpath
 
-    def _resolve_cluster_params(self) -> dict:
+    def _resolve_cluster_params(self) -> dict:  # TODO Outsource!
         """This resolves the cluster parameters, e.g. by setting parameters
         depending on certain environment variables. This function is called by
         the resolved_cluster_params property.

@@ -1,0 +1,96 @@
+# The default configuration for the BatchTaskManager
+#
+# Mainly takes care to set up the WorkerManager in a reasonable shape.
+---
+# .. BatchTaskManager Options .................................................
+# Debug mode
+debug: false
+
+# Paths configuration
+paths:
+  # Where to store batch run configurations and metadata
+  out_dir: ~/utopia_output/_batch
+
+  # A note to append to the batch output directory
+  note: ~
+
+
+# .. WorkerManager and Reporter ...............................................
+worker_manager:
+  # Specify how many processes work in parallel
+  num_workers: auto
+  # can be: an int, 'auto' (== #CPUs). For values <= 0: #CPUs - num_workers
+
+  # Delay between polls [seconds]
+  poll_delay: 0.05
+  # NOTE: If this value is too low, the main thread becomes very busy.
+  #       If this value is too high, the log output from simulations is not
+  #       read from the line buffer frequently enough.
+
+  # How to react upon a simulation exiting with non-zero exit code
+  nonzero_exit_handling: warn_all
+  # can be: ignore, warn, warn_all, raise
+  # warn_all will also warn if the simulation was terminated by the frontend
+  # raise will lead to a SystemExit with the error code of the simulation
+
+  # How to handle keyboard interrupts
+  interrupt_params:
+    # Which signal to send to the workers
+    send_signal: SIGINT  # can be any valid signal name
+    # NOTE that only SIGINT and SIGTERM lead to a graceful shutdown on C++ side
+
+    # How long to wait for workers to shut down before calling SIGKILL on them
+    grace_period: 5.
+    # WARNING Choosing a grace period that is shorter than the duration of one
+    #         iteration step of your model might lead to corrupted HDF5 data!
+
+    # Whether to exit after working; exit code will be 128 + abs(signum)
+    exit: false
+
+  # Report format specifications at different points of the WM's operation
+  # These report formats were defined in the reporter and can be referred to
+  # by name here. They can also be lists, if multiple report formats should
+  # be invoked.
+  rf_spec:
+    before_working: []
+    while_working: [while_working]
+    task_spawned: [while_working]
+    monitor_updated: [monitor_updated]  # FIXME
+    task_finished: [while_working] # , report_file] # FIXME
+    after_work: [after_work] # , report_file]
+    after_abort: [after_work] # , report_file]
+
+reporter:
+  # Define report formats, which are accessible, e.g. from the WorkerManager
+  report_formats:
+    while_working: &while_working     # Name of the report format specification
+      parser: progress_bar            # The parser to use
+      write_to: stdout_noreturn       # The writer to use
+      min_report_intv: 0.9            # Required time (in s) between writes
+      # All further kwargs on this level are passed to the parser
+      show_times: true
+
+    monitor_updated:
+      <<: *while_working
+
+    after_work:
+      <<: *while_working
+
+    # Creates a report file containing runtime statistics
+    report_file:
+      parser: batch_report  # TODO
+      write_to:
+        file:
+          path: _report.txt
+      min_report_intv: 10             # don't update this one too often
+      min_num: 4                      # min. number of batch tasks for stats
+      show_individual_runtimes: true
+
+
+run_kwargs: {}
+
+
+# .. Cluster Support ..........................................................
+# NOTE Not implemented!
+
+cluster_mode: false

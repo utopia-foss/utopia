@@ -177,6 +177,9 @@ p_run   = subparsers.add_parser('run',
 p_eval  = subparsers.add_parser('eval',
                                 help="load a finished Utopia run and perform "
                                      "only the evaluation")
+p_batch = subparsers.add_parser('batch',
+                                help="run and evaluate multiple simulations "
+                                     "from a batch configuration")
 
 
 # subcommand: models ..........................................................
@@ -328,7 +331,13 @@ pm_cp.add_argument('--skip-exts',
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths', 'plot_module_paths', 'projects'],
+    choices=[
+        'user',
+        'batch',
+        'external_module_paths',
+        'plot_module_paths',
+        'projects',
+    ],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',
@@ -553,6 +562,15 @@ p_eval.add_argument('--cluster-mode',
     help="Enables cluster mode. Note that for plotting, this information is "
          "not yet taken into account!")
 
+
+# subcommand: batch ...........................................................
+p_batch.add_argument('batch_cfg_path',
+    help="Path to batch configuration file")
+p_batch.add_argument('-d', '--debug',
+    action='store_true',
+    help="If true, errors will be raised and batch execution stopped.")
+
+
 # CLI defined now.
 # -----------------------------------------------------------------------------
 
@@ -578,6 +596,23 @@ from utopya.parameter import ValidationError
 
 
 if __name__ == '__main__':
+    # Batch subcommand ........................................................
+    if args.mode == 'batch':
+        import os
+        from utopya.batch import BatchTaskManager
+
+        log.progress("Setting up batch task manager ...")
+        btm = BatchTaskManager(utopia_cli=os.path.realpath(__file__),
+                               batch_cfg_path=args.batch_cfg_path,
+                               debug=args.debug)
+
+        log.hilight("Now starting work on batch tasks ...")
+        btm.start_working()
+
+        log.success("Batch work finished.\n")
+        sys.exit()
+
+
     # Config subcommand .......................................................
     if args.mode == 'config':
         if args.cfg_name == 'user' and args.deploy:

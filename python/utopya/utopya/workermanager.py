@@ -324,7 +324,7 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, **task_kwargs) -> WorkerTask:
+    def add_task(self, TaskCls: type=WorkerTask, **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
 
         Args:
@@ -403,9 +403,9 @@ class WorkerManager:
                          finished=task_finished,
                          parsed_object_in_stream=monitor_updated)
 
-        # Generate the WorkerTask object from the given parameters
-        task = WorkerTask(callbacks=callbacks, progress_func=calc_progress,
-                          **task_kwargs)
+        # Generate the WorkerTask-like object from the given parameters
+        task = TaskCls(callbacks=callbacks, progress_func=calc_progress,
+                       **task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)
