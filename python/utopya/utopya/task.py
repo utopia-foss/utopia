@@ -325,7 +325,8 @@ class WorkerTask(Task):
         self.streams = dict()
         self.profiling = dict()
 
-        log.debug("Finished setting up task '%s' as a WorkerTask.", self.name)
+        log.debug("Finished setting up task '%s' as a %s.",
+                  self.name, self.__class__.__name__)
         log.debug("  With setup function?  %s", bool(setup_func))
 
     # Properties ..............................................................
@@ -424,130 +425,34 @@ class WorkerTask(Task):
             RuntimeError: If a worker was already spawned for this task.
             TypeError: For invalid `args` argument
         """
-
         if self.worker:
             raise RuntimeError("Can only spawn one worker per task!")
 
         # If a setup function is available, call it with the given kwargs
         if self.setup_func:
             log.debug("Calling a setup function ...")
-            worker_kwargs = self.setup_func(worker_kwargs=self.worker_kwargs,
-                                            **self.setup_kwargs)
+            worker_kwargs = self.setup_func(
+                worker_kwargs=self.worker_kwargs, **self.setup_kwargs
+            )
         else:
-            log.debug("No setup function given; using the `worker_kwargs` "
-                      "directly.")
+            log.debug("No setup function given; using given `worker_kwargs`")
             worker_kwargs = self.worker_kwargs
 
-        # Extract information from the worker_kwargs
-        args = worker_kwargs['args']
-        popen_kwargs = worker_kwargs.get('popen_kwargs', {})
+        # Start the subprocess and associate it with this WorkerTask
+        self.worker = self._spawn_worker(**worker_kwargs)
 
-        read_stdout = worker_kwargs.get('read_stdout', True)
-        stdout_parser = worker_kwargs.get('stdout_parser', 'default')
+        # ... and take care of stdout stream reading.
+        # NOTE Could also attach other pipes here...
+        if worker_kwargs.get('read_stdout', True):
+            self._setup_stream_reader(
+                'out',
+                stream=self.worker.stdout,
+                parser=worker_kwargs.pop('stdout_parser', 'default'),
+                **worker_kwargs,
+            )
 
-        save_streams = worker_kwargs.get('save_streams', False)
-        save_streams_to = worker_kwargs.get('save_streams_to')
-
-        forward_streams = worker_kwargs.get('forward_streams', False)
-        forward_raw = worker_kwargs.get('forward_raw', True)
-        streams_log_lvl = worker_kwargs.get('streams_log_lvl', None)
-
-        # Set encoding such that stream reading is in text mode; provides
-        # backwards-compatibilibty to cases where popen_kwargs is empty.
-        popen_kwargs['encoding'] = popen_kwargs.get('encoding', 'utf8')
-
-        # Perform some checks
-        if not isinstance(args, tuple):
-            raise TypeError("Need argument `args` to be of type tuple, "
-                            "got {} with value {}. Refusing to even try to "
-                            "spawn a worker process.".format(type(args), args))
-
-        if read_stdout:
-            # Resolve and assemble the enqueue function, passing the parser
-            # function to it ... (parse_func=None is a valid argument)
-            log.debug("Using stream parse function: %s", stdout_parser)
-
-            _parse_func = self.STREAM_PARSE_FUNCS[stdout_parser]
-            enqueue_func = partial(enqueue_lines, parse_func=_parse_func)
-
-            # Establish queue for stream reading, creating a new pipe for
-            # STDOUT and _forwarding_ STDERR into that same pipe. For the
-            # specification of that syntax, see the subprocess.Popen docs:
-            #   docs.python.org/3/library/subprocess.html#subprocess.Popen
-            q = queue.Queue()
-            stdout = subprocess.PIPE
-            stderr = subprocess.STDOUT
-
-        else:
-            # No stream-reading is taking place; forward all streams to devnull
-            stdout = stderr = subprocess.DEVNULL
-
-        # Done with the checks now.
-        # Spawn the child process with the given arguments
-        log.debug("Spawning worker process with args:\n  %s", args)
-        try:
-            proc = subprocess.Popen(args,
-                                    bufsize=1,  # line buffered
-                                    stdout=stdout, stderr=stderr,
-                                    **popen_kwargs)
-            # NOTE bufsize = 1 is important here, as we don't _ever_ want lines
-            #      to be interrupted. As this only works in text mode, the
-            #      encoding specified via popen_kwargs is crucial here.
-
-        except FileNotFoundError as err:
-            raise FileNotFoundError("No executable found for task '{}'! "
-                                    "Process arguments:  {}"
-                                    "".format(self.name, repr(args))) from err
-
-        # Save the approximate creation time (as soon as possible)
-        self.profiling['create_time'] = time.time()
-        log.debug("Spawned worker process with PID %s.", proc.pid)
-        # ... it is running now.
-
-        # Associate the process with the task
-        self.worker = proc
-
-        # If enabled, prepare for reading the output
-        if read_stdout:
-            # Generate the thread that reads the stream and populates the queue
-            t = threading.Thread(target=enqueue_func,
-                                 kwargs=dict(queue=q, stream=proc.stdout))
-            # Set to be a daemon thread => will die with the parent thread
-            t.daemon = True
-
-            # Start the thread; this will lead to enqueue_func being called
-            t.start()
-
-            # Save the stream information in the WorkerTask object
-            # This includes two counters for the number of lines saved and
-            # forwarded, which are used by the save_/forward_streams methods
-            self.streams['out'] = dict(queue=q, thread=t,
-                                       log=[], log_raw=[], log_parsed=[],
-                                       save=save_streams, save_path=None,
-                                       forward=forward_streams,
-                                       forward_raw=forward_raw,
-                                       log_level=streams_log_lvl,
-                                       lines_saved=0, lines_forwarded=0)
-            # NOTE could have more streams here, but focus on stdout right now
-
-            log.debug("Added thread to read worker %s's combined STDOUT and "
-                      "STDERR.", self.name)
-
-            # If configured to save, save the
-            if save_streams:
-                if not save_streams_to:
-                    raise ValueError("Was told to `save_streams` but did not "
-                                     "find a `save_streams_to` argument in "
-                                     "`worker_kwargs`: {}."
-                                     "".format(worker_kwargs))
-
-                # Perform a format operation to generate the path
-                save_path = save_streams_to.format(name='out')
-                self.streams['out']['save_path'] = save_path
-
-        # If given, call the callback function
+        # Done with spawning.
         self._invoke_callback('spawn')
-
         return self.worker
 
     def read_streams(self, stream_names: list='all', *,
@@ -871,6 +776,114 @@ class WorkerTask(Task):
 
     # Private API .............................................................
 
+    def _spawn_worker(self, *, args: tuple, popen_kwargs: dict = None,
+                      read_stdout: bool = True, **_) -> subprocess.Popen:
+        """Helper function to spawn the worker subprocess"""
+        if not isinstance(args, tuple):
+            raise TypeError(
+                f"Need argument `args` to be of type tuple, got {type(args)} "
+                f"with value {args}. Refusing to even try to spawn a worker "
+                "process."
+            )
+
+        # Set encoding such that stream reading is in text mode; provides
+        # backwards-compatibilibty to cases where popen_kwargs is empty.
+        popen_kwargs = popen_kwargs if popen_kwargs else {}
+        popen_kwargs['encoding'] = popen_kwargs.get('encoding', 'utf8')
+
+        # Depending on whether stdout should be read, set up the pipes
+        if read_stdout:
+            # Create new pipes for STDOUT and _forwarding_ STDERR into that
+            # same pipe. For the specification of that syntax, see the
+            # subprocess.Popen docs:
+            #   docs.python.org/3/library/subprocess.html#subprocess.Popen
+            stdout = subprocess.PIPE
+            stderr = subprocess.STDOUT
+
+        else:
+            # No stream-reading is taking place; forward all streams to devnull
+            stdout = stderr = subprocess.DEVNULL
+
+        # Spawn the child process with the given arguments
+        log.debug("Spawning worker process with args:\n  %s", args)
+        try:
+            proc = subprocess.Popen(args,
+                                    bufsize=1,  # line buffered
+                                    stdout=stdout, stderr=stderr,
+                                    **popen_kwargs)
+            # NOTE bufsize = 1 is important here, as we don't _ever_ want lines
+            #      to be interrupted. As this only works in text mode, the
+            #      encoding specified via popen_kwargs is crucial here.
+
+        except FileNotFoundError as err:
+            raise FileNotFoundError(
+                f"No executable found for task '{self.name}'! "
+                f"Process arguments:  {repr(args)}"
+            ) from err
+
+        # ... it is running now.
+        # Save the approximate creation time (as soon as possible)
+        self.profiling['create_time'] = time.time()
+        log.debug("Spawned worker process with PID %s.", proc.pid)
+
+        return proc
+
+    def _setup_stream_reader(self, stream_name: str, *,
+                             stream,
+                             parser: str = 'default',
+                             save_streams: bool = False,
+                             save_streams_to: str = None,
+                             forward_streams: bool = False,
+                             forward_raw: bool = True,
+                             streams_log_lvl: int = None,
+                             **_):
+        """Sets up the stream reader thread"""
+        # Create the queue that will contain the stream
+        q = queue.Queue()
+
+        # Resolve and assemble the enqueue function, passing the parser
+        # function to it ... (parse_func=None is a valid argument)
+        log.debug("Using stream parse function: %s", parser)
+        parse_func = self.STREAM_PARSE_FUNCS[parser]
+        enqueue_func = partial(enqueue_lines, parse_func=parse_func)
+
+        # Generate the thread that reads the stream and populates the queue
+        t = threading.Thread(target=enqueue_func,
+                             kwargs=dict(queue=q, stream=stream))
+        # Set to be a daemon thread => will die with the parent thread
+        t.daemon = True
+
+        # Start the thread; this will lead to enqueue_func being called
+        t.start()
+
+        # Save the stream information in the WorkerTask object
+        # This includes two counters for the number of lines saved and
+        # forwarded, which are used by the save_/forward_streams methods
+        self.streams[stream_name] = dict(
+            queue=q, thread=t,
+            log=[], log_raw=[], log_parsed=[],
+            save=save_streams, save_path=None,
+            forward=forward_streams, forward_raw=forward_raw,
+            log_level=streams_log_lvl,
+            lines_saved=0, lines_forwarded=0
+        )
+
+        log.debug("Added thread to read worker %s's %s stream",
+                  self.name, stream_name)
+
+        # If configured to save, save the
+        if save_streams:
+            if not save_streams_to:
+                raise ValueError(
+                    "Was told to `save_streams` but did not find a "
+                    "`save_streams_to` argument in `worker_kwargs`: "
+                    f"{worker_kwargs}."
+                )
+
+            # Perform a format operation to generate the path
+            save_path = save_streams_to.format(name=stream_name)
+            self.streams[stream_name]['save_path'] = save_path
+
     def _finished(self) -> None:
         """Is called once the worker has finished working on this task.
 
@@ -893,6 +906,18 @@ class WorkerTask(Task):
 
         log.debug("Task %s: worker finished with status %s.",
                   self.name, self.worker_status)
+
+
+# -----------------------------------------------------------------------------
+
+class ProcessTask(WorkerTask):
+    """A WorkerTask specialization that uses multiprocessing.Process instead
+    of subprocess.Popen.
+    """
+
+
+
+
 
 
 # -----------------------------------------------------------------------------
