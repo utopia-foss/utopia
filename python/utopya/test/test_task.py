@@ -1,7 +1,9 @@
 """Test the Task class implementation"""
 
+import os
 import queue
 import io
+import logging
 from time import sleep
 from functools import partial
 
@@ -9,7 +11,11 @@ import numpy as np
 import pytest
 
 from utopya.task import (Task, WorkerTask, TaskList,
-                         enqueue_lines, parse_yaml_dict)
+                         PopenMPProcess, MPProcessTask,
+                         enqueue_lines, parse_yaml_dict, SIGMAP)
+
+# Set logger level to debug to see what's going on
+logging.getLogger("utopya.task").setLevel(1)  # show everything
 
 
 # Fixtures ----------------------------------------------------------------
@@ -159,11 +165,13 @@ def test_workertask_streams(tmpdir):
 
     # Read a single line
     t.read_streams(max_num_reads=1)
+    print(t.streams['out']['log'])
     assert len(t.streams['out']['log']) == 1
 
     # Read all the remaining stream content
     t.read_streams(max_num_reads=-1)
-    assert len(t.streams['out']['log']) == 3
+    print(t.streams['out']['log'])
+    assert len(t.streams['out']['log']) == 4
 
     # Save it
     t.save_streams()
@@ -173,9 +181,9 @@ def test_workertask_streams(tmpdir):
     with open(save_path) as f:
         lines = [line.strip() for line in f]
 
-    assert len(lines) == 5
+    assert len(lines) == 6
     assert lines[0].startswith("Log of 'out' stream of WorkerTask")
-    assert lines[2:] == ["foo", "bar", "baz"]
+    assert lines[2:] == ["foo", "bar", "baz", "[end of stream]"]
 
     # Trying to save the streams again, there should be no more lines available
     t.save_streams()
@@ -217,11 +225,12 @@ def test_workertask_streams_stderr(tmpdir):
     print(out_log)
 
     # Check that the content is as expected
-    assert len(out_log) == 4
+    assert len(out_log) == 5
     assert "err1" in out_log
     assert "err2" in out_log
     assert "start" in out_log
     assert "end" in out_log
+    assert "[end of stream]" in out_log
 
 # TaskList tests --------------------------------------------------------------
 
@@ -259,6 +268,7 @@ def test_enqueue_lines():
     enqueue_lines(queue=q,
                   stream=io.StringIO("hello"))
     assert q.get_nowait() == ("hello", None)
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Test passing a custom parse function
@@ -266,12 +276,14 @@ def test_enqueue_lines():
                   stream=io.StringIO("hello yourself"),
                   parse_func=lambda s: s + "!")
     assert q.get_nowait() == ("hello yourself", "hello yourself!")
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # integer parsable should remain strings
     enqueue_lines(queue=q,
                   stream=io.StringIO("1"))
     assert q.get_nowait() == ("1", None)
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # how about multiple lines?
@@ -280,6 +292,7 @@ def test_enqueue_lines():
     assert q.get_nowait() == ("hello", None)
     assert q.get_nowait() == ("world", None)
     assert q.get_nowait() == ("!", None)
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
 def test_enqueue_lines_parse_yaml():
@@ -293,23 +306,252 @@ def test_enqueue_lines_parse_yaml():
     enqueue_yaml(queue=q,
                  stream=io.StringIO("!!map {\"foo\": 123}"))
     assert q.get_nowait()[1] == dict(foo=123)
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Something not matching the start string should yield no parsed object
     enqueue_yaml(queue=q,
                  stream=io.StringIO("1"))
-    assert q.get_nowait()[1] == None
+    assert q.get_nowait()[1] is None
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Invalid syntax should also return None instead of a parsed object
     enqueue_yaml(queue=q,
                  stream=io.StringIO("!!map {\"foo\": 123, !!invalid}"))
-    assert q.get_nowait()[1] == None
+    assert q.get_nowait()[1] is None
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Line break within the YAML string will lead to parsing failure
     enqueue_yaml(queue=q,
                  stream=io.StringIO("!!map {\"foo\": \n 123}"))
-    assert q.get_nowait()[1] == None
-    assert q.get_nowait()[1] == None
+    assert q.get_nowait()[1] is None
+    assert q.get_nowait()[1] is None
+    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
+
+
+# -----------------------------------------------------------------------------
+# -- multiprocessing support --------------------------------------------------
+
+# Some test callables
+# These need to be module-level objects in order to allow them to be pickled.
+def pmp_test_target(N: int = 5, *args):
+    import sys
+    from time import sleep
+
+    print("Got args:", args)
+    print(f"Now sleeping {N} times ...")
+    for i in range(N):
+        print(f"#{i}")
+        sleep(.1)
+
+    # Some YAML-parsable line
+    print("!!map {\"foo\": 123}")
+
+    # Some error output
+    sys.stderr.write("not really an error, but written to stderr\n")
+
+    print("All done! :)")
+
+
+def test_MPProcessTask():
+    """Tests the MPProcessTask specialization"""
+    t = MPProcessTask(name=0, worker_kwargs=dict(args=(pmp_test_target,),
+                                                 read_stdout=True))
+
+    # String representation is updated accordingly
+    assert "MPProcessTask" in str(t)
+
+    # Let it spawn a worker
+    t.spawn_worker()
+
+    # ... and check that the interface works as expected
+    assert t.worker_status is None  # == still running
+    assert isinstance(t.worker, PopenMPProcess)
+    assert t.worker_pid > 0
+    assert t.worker_pid == t.worker.pid
+
+    # Can read streams ... which will be empty at this point
+    t.read_streams()
+    assert "\n".join(t.streams['out']['log_raw']) == ""
+
+    # Wait until the process finished
+    while t.worker_status is None:
+        sleep(.1)
+    assert t.worker_status == 0
+
+    # Manually get the output from the streams and the queue
+    s = t.worker.stdout
+    print("stdout object", s)
+    print("from stream object:\n" + "".join(s.readlines()))
+    print("\nfrom file:\n" + "".join(open(s.name).readlines()))
+
+    q = t.streams['out']['queue']
+    assert q.empty()
+
+    # Now should have streams available and don't need to call read_streams,
+    # because the worker has already finished
+    print("out stream metadata:", t.streams['out'])
+    captured_stdout = "\n".join(t.streams['out']['log_raw'])
+    assert "Now sleeping 5 times ..." in captured_stdout
+    assert "All done! :)" in captured_stdout
+
+    # stderr was forwarded
+    assert "not really an error, but written to stderr" in captured_stdout
+
+    # By default, won't have any outstream objects
+    assert not t.outstream_objs
+    assert "!!map" in captured_stdout
+
+    # But if reading with a different parser, will have:
+    t = MPProcessTask(name=1, worker_kwargs=dict(args=(pmp_test_target,),
+                                                 read_stdout=True,
+                                                 stdout_parser="yaml_dict"))
+    t.spawn_worker()
+    while t.worker_status is None:
+        sleep(.1)
+    assert t.worker_status == 0
+    print("out stream metadata:", t.streams)
+    assert t.outstream_objs == [dict(foo=123)]
+
+
+# .. PopenMPProcess wrapper ...................................................
+
+PMP = PopenMPProcess
+
+def test_PopenMPProcess_basics():
+    """Tests the PopenMPProcess wrapper around multiprocessing.Process"""
+    # Basic initialization, which directly starts the process ...
+    proc = PMP((pmp_test_target, 5, ("foo", "bar"),))
+
+    # The underlying multiprocess.Process is alive now
+    assert proc._proc.is_alive()
+
+    # Test the subprocess.Popen interface of the wrapper
+    assert proc.poll() is None
+    assert proc.returncode is None
+    assert proc.pid > 0
+    assert proc.stdin is None
+    assert proc.stdout is None
+    assert proc.stderr is None
+    assert proc.args == (pmp_test_target, 5, ("foo", "bar"),)
+
+    # Parts of the interface are NOT implemented
+    with pytest.raises(NotImplementedError):
+        proc.wait()
+
+    with pytest.raises(NotImplementedError):
+        proc.communicate()
+
+    # It should still be running now
+    assert proc.poll() is None
+
+    # Manually wait for it to finish
+    while proc.poll() != 0:
+        sleep(.1)
+
+    assert proc.poll() == 0 == proc.returncode
+
+def test_PopenMPProcess_signal():
+    """Test signalling for the PopenMPProcess"""
+
+    args = (pmp_test_target, 50, ("foo", "bar"),)
+    proc = PMP(args)
+    assert proc.poll() is None
+
+    # Can't send a custom signal
+    with pytest.raises(NotImplementedError):
+        proc.send_signal(123)
+
+    # Give it some time to start up, otherwise SIGTERM might fail
+    sleep(1.)
+
+    # But can terminate it
+    proc.send_signal(SIGMAP['SIGTERM'])
+    sleep(.1)
+    assert proc.poll() == -SIGMAP['SIGTERM'] == proc.returncode
+
+    # Can attempt to kill it now, but has no effect
+    proc.send_signal(SIGMAP['SIGKILL'])
+    assert proc.returncode == -SIGMAP['SIGTERM']
+
+    # Another one, now with SIGKILL
+    proc = PMP(args)
+    assert proc.poll() is None
+    sleep(1.)
+
+    proc.kill()
+    sleep(.1)
+    assert proc.poll() == -SIGMAP['SIGKILL'] == proc.returncode
+
+
+def test_PopenMPProcess_streams():
+    """Test stream handling of the PopenMPProcess"""
+    import subprocess
+    PMP = PopenMPProcess
+
+    # Start process with separate streams for stdout and stderr
+    args = (pmp_test_target, 3, ("foo", "bar"))
+    proc = PMP(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert proc.poll() is None
+
+    # Have stream objects associated now ... still empty though
+    assert proc.stdout is not None
+    assert proc.stdout.read() == ""
+
+    assert proc.stderr is not None
+    assert proc.stderr.read() == ""
+
+    # Wait for it to finish
+    while proc.poll() != 0:
+        sleep(.1)
+    captured_stdout = proc.stdout.read()
+    captured_stderr = proc.stderr.read()
+    assert captured_stdout != ""
+    assert captured_stderr != ""
+    assert captured_stderr != captured_stdout
+
+    assert "Now sleeping 3 times ..." in captured_stdout
+    assert "All done! :)" in captured_stdout
+
+    assert "written to stderr" in captured_stderr
+
+
+    # Try out all other combinations
+    test_combinations = (
+        # (stdout, stderr),
+        (None, None),
+        (subprocess.STDOUT, subprocess.PIPE),  # two separate files
+        (subprocess.PIPE, subprocess.PIPE),    # two separate files
+        (subprocess.DEVNULL, subprocess.PIPE), # stdout to /dev/null, one file
+        (subprocess.PIPE, subprocess.DEVNULL), # stderr to /dev/null, one file
+        (subprocess.DEVNULL, subprocess.DEVNULL), # all to /dev/null
+    )
+
+    for stdout, stderr in test_combinations:
+        print(f"Testing with stdout={stdout} and stderr={stderr} ...")
+
+        proc = PMP(args, stdout=stdout, stderr=stderr)
+        assert proc.poll() is None
+        while proc.poll() != 0:
+            sleep(.1)
+
+        if stdout is None:
+            assert proc.stdout is None
+        elif stdout is subprocess.DEVNULL:
+            assert proc.stdout.name == os.devnull
+        else:
+            captured_stdout = proc.stdout.read()
+
+        if stderr is None:
+            assert proc.stderr is None
+        elif stderr is subprocess.DEVNULL:
+            assert proc.stderr.name == os.devnull
+        else:
+            captured_stderr = proc.stderr.read()
+
+    # stdin is not supported
+    with pytest.raises(NotImplementedError):
+        PMP(args, stdin="foo")

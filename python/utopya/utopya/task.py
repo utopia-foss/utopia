@@ -1,17 +1,23 @@
 """The Task class supplies a container for all information needed for a task.
 
-The WorkerTask specialises on tasks for the WorkerManager."""
+The WorkerTask and ProcessTask classes specialize on tasks for the
+WorkerManager that work on subprocesses or multiprocessing processes.
+"""
 
+import os
+import copy
 import uuid
 import time
 import queue
-import threading
+import io
 import subprocess
+import threading
+import multiprocessing
 import signal
 import warnings
 import logging
 from functools import partial
-from typing import Callable, Union, Dict, List, Sequence, Set
+from typing import Callable, Union, Dict, List, Sequence, Set, Tuple, Generator
 from typing.io import TextIO
 
 import numpy as np
@@ -27,9 +33,27 @@ SIGMAP = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 
 # -----------------------------------------------------------------------------
 # Helper methods
-# These solely relate to the WorkerTask class, thus not in the tools module
+# These solely relate to the WorkerTask and similar classes, and thus are not
+# implemented in the tools module.
 
-def enqueue_lines(*, queue: queue.Queue, stream: TextIO,
+def _follow(f: io.TextIOWrapper, delay: float = 0.05
+            ) -> Generator[Union[str, None], None, None]:
+    """Generator that follows the output written to the given stream object
+    and yields each new line written to it. If no output is retrieved, there
+    will be a delay to reduce processor load.
+    """
+    while True:
+        try:
+            line = f.readline()
+        except:  # e.g. if the stream is closed
+            return
+
+        if not line:
+            time.sleep(delay)
+            continue
+        yield line
+
+def enqueue_lines(*, queue: queue.Queue, stream: TextIO, follow: bool=False,
                   parse_func: Callable=None) -> None:
     """From the given text stream, read line-buffered lines and add them to the
     provided queue as 2-tuples, (line, parsed object).
@@ -43,6 +67,10 @@ def enqueue_lines(*, queue: queue.Queue, stream: TextIO,
             objects into.
         stream (TextIO): The stream identifier. If this is not a text stream,
             be aware that the elements added to the queue might need decoding.
+        follow (bool, optional): If instead of ``iter(stream.readline)``, the
+            :py:func:`~utopya.task._follow` function should be used instead.
+            This should be selected if the stream is file-like instead of
+            ``sys.stdout``-like.
         parse_func (Callable, optional): A parse function that the read line
             is passed through. This should be a unary function that either
             returns a successfully parsed line or None.
@@ -50,18 +78,29 @@ def enqueue_lines(*, queue: queue.Queue, stream: TextIO,
     # Define a pass-through parse function, if none was given
     parse_func = parse_func if parse_func else lambda _: None
 
+    # If this is a buffered stream (like subprocess.Popen.stdout), we can use a
+    # simple iterator that will not hang up. If it is a file-based stream (e.g.
+    # when reading from a file), we need to follow the file similar to how
+    # `tail -f` does it ...
+    if follow:
+        it = _follow(stream)
+    else:
+        it = iter(stream.readline, '')
+
     # Read the lines and put them into the queue
-    for line in iter(stream.readline, ''): # <-- thread waits here for new
-                                           #     lines, without idle looping
-        # Got a line; strip the whitespace on the right (new-line character)
+    for line in it: # <-- thread waits here for a new line, w/o idle looping
+        # Got a new line
+        # Strip the whitespace on the right (e.g. the new-line character)
         line = line.rstrip()
 
-        # Add it to the queue as a tuple: (string, parsed object), where the
+        # Add it to the queue as tuples: (string, parsed object), where the
         # parsed object can also be None
         queue.put_nowait((line, parse_func(line)))
 
+    queue.put_nowait(("[end of stream]", None))
+
     # Everything read. Close the stream
-    stream.close()
+    # stream.close()
     # Thread dies here.
 
 # Custom parse methods ........................................................
@@ -137,7 +176,7 @@ class Task:
                 task object as argument
         """
         # Carry over arguments attributes
-        self._name = str(name) if name else None
+        self._name = str(name) if name is not None else None
         self._priority = priority if priority is not None else np.inf
 
         # Create a unique ID
@@ -245,6 +284,7 @@ class Task:
 
 
 # -----------------------------------------------------------------------------
+# ... working with subprocess
 
 class WorkerTask(Task):
     """A specialisation of the Task class that is aimed at use in the
@@ -315,8 +355,8 @@ class WorkerTask(Task):
 
         # Save the arguments
         self.setup_func = setup_func
-        self.setup_kwargs = setup_kwargs
-        self.worker_kwargs = worker_kwargs
+        self.setup_kwargs = copy.deepcopy(setup_kwargs)
+        self.worker_kwargs = copy.deepcopy(worker_kwargs)
 
         # Create empty attributes to be filled with worker information
         self._worker = None
@@ -402,8 +442,9 @@ class WorkerTask(Task):
 
     def __str__(self) -> str:
         """Return basic WorkerTask information."""
-        return ("WorkerTask<uid: {}, priority: {}, worker_status: {}>"
-                "".format(self.uid, self.priority, self.worker_status))
+        return ("{}<uid: {}, priority: {}, worker_status: {}>"
+                "".format(self.__class__.__name__, self.uid,
+                          self.priority, self.worker_status))
 
 
     # Public API ..............................................................
@@ -442,7 +483,6 @@ class WorkerTask(Task):
         self.worker = self._spawn_worker(**worker_kwargs)
 
         # ... and take care of stdout stream reading.
-        # NOTE Could also attach other pipes here...
         if worker_kwargs.get('read_stdout', True):
             self._setup_stream_reader(
                 'out',
@@ -481,6 +521,8 @@ class WorkerTask(Task):
 
             Returns true, if a parsed object was among the read stream entries
             """
+            log.debug("Reading stream '%s' ...", stream_name)
+
             q = stream['queue']
 
             # The flag that is set if there was a parsed object in the queue
@@ -776,9 +818,59 @@ class WorkerTask(Task):
 
     # Private API .............................................................
 
+    def _prepare_process_args(self, *, args: tuple, read_stdout: bool,
+                              **kwargs) -> Tuple[tuple, dict]:
+        """Prepares the arguments that will be passed to subprocess.Popen"""
+        # Set encoding such that stream reading is in text mode; provides
+        # backwards-compatibilibty to cases where popen_kwargs is empty.
+        kwargs['encoding'] = kwargs.get('encoding', 'utf8')
+
+        # Set the buffer size
+        kwargs['bufsize'] = kwargs.get('bufsize', 1)
+        # NOTE bufsize = 1 is important here as default, as we usually want
+        #      lines to not be interrupted. As this only works in text mode,
+        #      the encoding specified via popen_kwargs is crucial here.
+
+        # Depending on whether stdout should be read, set up the pipe objects
+        if read_stdout:
+            # Create new pipes for STDOUT and _forwarding_ STDERR into that
+            # same pipe. For the specification of that syntax, see the
+            # subprocess.Popen docs:
+            #   docs.python.org/3/library/subprocess.html#subprocess.Popen
+            kwargs['stdout'] = subprocess.PIPE
+            kwargs['stderr'] = subprocess.STDOUT
+
+        else:
+            # No stream-reading is taking place; forward all streams to devnull
+            kwargs['stdout'] = kwargs['stderr'] = subprocess.DEVNULL
+
+        return args, kwargs
+
+    def _spawn_process(self, args, **popen_kwargs):
+        """This helper takes care *only* of spawning the actual process and
+        potential error handling.
+
+        It can be subclassed to spawn a different kind of process
+        """
+        try:
+            return subprocess.Popen(args, **popen_kwargs)
+
+        except FileNotFoundError as err:
+            raise FileNotFoundError(
+                f"No executable found for task '{self.name}'! "
+                f"Process arguments:  {repr(args)}"
+            ) from err
+
     def _spawn_worker(self, *, args: tuple, popen_kwargs: dict = None,
                       read_stdout: bool = True, **_) -> subprocess.Popen:
         """Helper function to spawn the worker subprocess"""
+        # Prepare arguments
+        args, popen_kwargs = self._prepare_process_args(
+            args=args,
+            read_stdout=read_stdout,
+            **(popen_kwargs if popen_kwargs else {})
+        )
+
         if not isinstance(args, tuple):
             raise TypeError(
                 f"Need argument `args` to be of type tuple, got {type(args)} "
@@ -786,40 +878,9 @@ class WorkerTask(Task):
                 "process."
             )
 
-        # Set encoding such that stream reading is in text mode; provides
-        # backwards-compatibilibty to cases where popen_kwargs is empty.
-        popen_kwargs = popen_kwargs if popen_kwargs else {}
-        popen_kwargs['encoding'] = popen_kwargs.get('encoding', 'utf8')
-
-        # Depending on whether stdout should be read, set up the pipes
-        if read_stdout:
-            # Create new pipes for STDOUT and _forwarding_ STDERR into that
-            # same pipe. For the specification of that syntax, see the
-            # subprocess.Popen docs:
-            #   docs.python.org/3/library/subprocess.html#subprocess.Popen
-            stdout = subprocess.PIPE
-            stderr = subprocess.STDOUT
-
-        else:
-            # No stream-reading is taking place; forward all streams to devnull
-            stdout = stderr = subprocess.DEVNULL
-
         # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:\n  %s", args)
-        try:
-            proc = subprocess.Popen(args,
-                                    bufsize=1,  # line buffered
-                                    stdout=stdout, stderr=stderr,
-                                    **popen_kwargs)
-            # NOTE bufsize = 1 is important here, as we don't _ever_ want lines
-            #      to be interrupted. As this only works in text mode, the
-            #      encoding specified via popen_kwargs is crucial here.
-
-        except FileNotFoundError as err:
-            raise FileNotFoundError(
-                f"No executable found for task '{self.name}'! "
-                f"Process arguments:  {repr(args)}"
-            ) from err
+        proc = self._spawn_process(args, **popen_kwargs)
 
         # ... it is running now.
         # Save the approximate creation time (as soon as possible)
@@ -831,6 +892,7 @@ class WorkerTask(Task):
     def _setup_stream_reader(self, stream_name: str, *,
                              stream,
                              parser: str = 'default',
+                             follow: bool = False,
                              save_streams: bool = False,
                              save_streams_to: str = None,
                              forward_streams: bool = False,
@@ -845,7 +907,8 @@ class WorkerTask(Task):
         # function to it ... (parse_func=None is a valid argument)
         log.debug("Using stream parse function: %s", parser)
         parse_func = self.STREAM_PARSE_FUNCS[parser]
-        enqueue_func = partial(enqueue_lines, parse_func=parse_func)
+        enqueue_func = partial(enqueue_lines, parse_func=parse_func,
+                               follow=follow)
 
         # Generate the thread that reads the stream and populates the queue
         t = threading.Thread(target=enqueue_func,
@@ -876,8 +939,7 @@ class WorkerTask(Task):
             if not save_streams_to:
                 raise ValueError(
                     "Was told to `save_streams` but did not find a "
-                    "`save_streams_to` argument in `worker_kwargs`: "
-                    f"{worker_kwargs}."
+                    "`save_streams_to` argument in `worker_kwargs`!"
                 )
 
             # Perform a format operation to generate the path
@@ -909,15 +971,287 @@ class WorkerTask(Task):
 
 
 # -----------------------------------------------------------------------------
+# ... working with the multiprocessing module
 
-class ProcessTask(WorkerTask):
+
+def _target_wrapper(target, streams: dict, *args):
+    """A wrapper around the multiprocessing.Process target function which
+    takes care of stream handling.
+    """
+    import os
+    import sys
+    import logging
+    log = logging.getLogger(__name__)
+
+    # Stream handling . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    # For stdout, there are the following options:
+    #   - Leave as it is, which may lead to forwarding to the parent process
+    #   - Redirect to file (which may be os.devnull)
+    if streams['stdout'] is not None:
+        sys.stdout = open(streams['stdout'], mode="w+")
+        log.debug("Using file-based custom stdout:  %s", sys.stdout.name)
+
+    # For stderr, there is one additional option: redirecting to stdout
+    if streams['stderr'] is not None:
+        if streams['stderr'] == streams['stdout']:
+            sys.stderr = sys.stdout
+            log.debug("Redirecting stderr to stdout now.")
+
+        else:
+            sys.stderr = open(streams['stderr'], mode="w+")
+            log.debug("Using file-based custom stderr:  %s", sys.stderr.name)
+
+    # Target invocation . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+    log.debug("Now invoking target ...")
+
+    try:
+        target(*args)
+        log.debug("Target returned successfully.")
+
+    # TODO Error handling
+    finally:
+        log.debug("Flushing and closing streams ...")
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        sys.stdout.close()
+        sys.stderr.close()
+
+        # For good measure, reset the streams
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+
+class PopenMPProcess:
+    """A wrapper around multiprocessing.Process that replicates (wide parts of)
+    the interface of subprocess.Popen.
+    """
+
+    def __init__(self, args: tuple,
+                 stdin=None, stdout=None, stderr=None,
+                 bufsize: int = -1, encoding: str = 'utf8'):
+        """Creates a ``multiprocessing.Process`` and starts it.
+
+        The interface here is a subset of ``subprocess.Popen`` that makes those
+        features available that make sense for a ``multiprocessing.Process``,
+        mainly: stream reading.
+
+        Subsequently, the interface is quite a bit different to that of the
+        ``multiprocessing.Process``. The most important arguments of that
+        interface are ``target``, ``args``, and ``kwargs``, which can be set
+        as follows:
+
+            - ``target`` will be ``args[0]``
+            - ``args`` will be ``args[1:]``
+            - ``kwargs`` is *not* available. Instead, bind keyword arguments to
+                the ``target`` prior to invoking ``PopenMPProcess``.
+
+        Regarding the stream arguments, the following steps are done to attach
+        custom pipes: If any argument is a ``subprocess.PIPE`` or another
+        stream specifier that is *not* ``subprocess.DEVNULL``, a new
+        ``multiprocessing.Pipe`` and a reader thread will be established.
+
+        Args:
+            args (tuple): The ``target`` callable (``args[0]``) and subsequent
+                positional arguments.
+            stdin (None, optional): The stdin stream
+            stdout (None, optional): The stdout stream
+            stderr (None, optional): The stderr stream
+            bufsize (int, optional): The buffersize to use.
+            encoding (str, optional): The encoding to use for the streams;
+                should typically remain ``utf8``, using other values is not
+                encouraged!
+        """
+        self._args = args
+        self._bufsize = bufsize
+        self._encoding = encoding
+        self._stdin = None
+        self._stdout = None
+        self._stderr = None
+
+        # Prepare arguments
+        target, args = self._prepare_target_args(
+            args, stdin=stdin, stdout=stdout, stderr=stderr,
+        )
+
+        # Spawn the process
+        _ctx = multiprocessing.get_context('spawn')
+        self._proc = _ctx.Process(
+            target=_target_wrapper, args=args, daemon=True
+        )
+
+        log.debug("Starting multiprocessing.Process for target %s ...", target)
+        self._proc.start()
+
+    def _prepare_target_args(self, args: tuple, *,
+                             stdin, stdout, stderr,
+                             ) -> Tuple[Callable, tuple]:
+        """Prepares the target callable and stream objects"""
+        # Extract target and the actual positional arguments
+        target, args = args[0], args[1:]
+
+        if not callable(target):
+            raise TypeError(f"Given target {target} is not callable!")
+
+        # Prepare the streams . . . . . . . . . . . . . . . . . . . . . . . . .
+        if stdin is not None:
+            raise NotImplementedError("stdin is not supported!")
+
+        # Create lambdas that create file descriptors for the streams
+        import tempfile
+        File = tempfile.NamedTemporaryFile
+        get_tempfile = lambda: File(mode='x+',  # exclusive creation
+                                    buffering=self._bufsize,
+                                    encoding=self._encoding,
+                                    delete=False)
+
+        # Need to map certain subprocess module flags to the stream creators
+        get_stream = {
+            None:               lambda: None,
+            subprocess.DEVNULL: lambda: open(os.devnull, mode='w'),
+            True:               get_tempfile,
+            subprocess.PIPE:    get_tempfile,
+            subprocess.STDOUT:  get_tempfile,
+        }
+
+        # Depending on the setting for stdout, let it create a file descriptor,
+        # which is saved here in the parent process. For the child process, we
+        # can only pass None or a string, which denotes the path to the file
+        # (i.e. `File.name`) that should be used for this stream ...
+        self._stdout = get_stream[stdout]()
+        stdout = getattr(self._stdout, "name", self._stdout)
+
+        # Same for stderr, but need to allow a shared pipe with stdout
+        if stderr is subprocess.STDOUT and stdout is not None:
+            self._stderr = self._stdout
+            stderr = stdout
+        else:
+            self._stderr = get_stream[stderr]()
+            stderr = getattr(self._stderr, "name", self._stderr)
+
+        # Prepare arguments . . . . . . . . . . . . . . . . . . . . . . . . . .
+        # Add those positional arguments that are used up by the wrapper
+        wrapper_args = (
+            target,
+            dict(stdin=stdin, stdout=stdout, stderr=stderr),
+        )
+        return target, (wrapper_args + args)
+
+    def __del__(self):
+        """Custom destructor that closes the process and file descriptors"""
+        try: self._proc.close()
+        except: pass
+
+        try: self._stdout.close()
+        except: pass
+
+        try: self._stderr.close()
+        except: pass
+
+    def __str__(self) -> str:
+        return f"<PopenMPProcess for process: {self._proc}>"
+
+    # .. subprocess.Popen interface ...........................................
+
+    def poll(self) -> Union[int, None]:
+        """Check if child process has terminated. Set and return ``returncode``
+        attribute. Otherwise, returns None.
+
+        With the underlying process being a multiprocessing.Process, this
+        method is equivalent to the ``returncode`` property.
+        """
+        return self.returncode
+
+    def wait(self, timeout=None):
+        """Wait for the process to finish; blocking call.
+
+        This method is not yet implemented, but will be!
+        """
+        raise NotImplementedError("PopenMPProcess.wait")
+
+    def communicate(self, input=None, timeout=None):
+        """Communicate with the process.
+
+        This method is not yet implemented! Not sure if it will be ...
+        """
+        raise NotImplementedError("PopenMPProcess.communicate")
+
+    def send_signal(self, signal: int):
+        """Send a signal to the process. Only works for SIGKILL and SIGTERM."""
+        if signal == SIGMAP['SIGTERM']:
+            return self.terminate()
+
+        elif signal == SIGMAP['SIGKILL']:
+            return self.kill()
+
+        raise NotImplementedError(
+            f"Cannot send signal {signal} to multiprocessing.Process! "
+            "The only supported signals are SIGTERM and SIGKILL."
+        )
+
+    def terminate(self):
+        """Sends ``SIGTERM`` to the process"""
+        self._proc.terminate()
+
+    def kill(self):
+        """Sends ``SIGKILL`` to the process"""
+        self._proc.kill()
+
+    @property
+    def args(self) -> tuple:
+        """The ``args`` argument to this process. Note that the returned tuple
+        *includes* the target callable as its first entry.
+        """
+        return self._args
+
+    @property
+    def stdin(self):
+        """The attached ``stdin`` stream"""
+        return self._stdin
+
+    @property
+    def stdout(self):
+        """The attached ``stdout`` stream"""
+        return self._stdout
+
+    @property
+    def stderr(self):
+        """The attached ``stderr`` stream"""
+        return self._stderr
+
+    @property
+    def pid(self):
+        """Process ID of the child process"""
+        return self._proc.pid
+
+    @property
+    def returncode(self) -> Union[int, None]:
+        """The child return code, set by ``poll()`` and ``wait()`` (and
+        indirectly by ``communicate()``). A None value indicates that the
+        process hasn’t terminated yet.
+
+        A negative value ``-N`` indicates that the child was terminated by
+        signal ``N`` (POSIX only).
+        """
+        return self._proc.exitcode
+
+
+# .............................................................................
+
+class MPProcessTask(WorkerTask):
     """A WorkerTask specialization that uses multiprocessing.Process instead
     of subprocess.Popen.
     """
 
+    def _spawn_process(self, args, **popen_kwargs) -> PopenMPProcess:
+        """This helper takes care *only* of spawning the actual process and
+        potential error handling. It returns an PopenMPProcess instance, which
+        has the same interface as subprocess.Popen.
+        """
+        return PopenMPProcess(args, **popen_kwargs)
 
-
-
+    def _setup_stream_reader(self, *args, **kwargs):
+        return super()._setup_stream_reader(*args, follow=True, **kwargs)
 
 
 # -----------------------------------------------------------------------------
