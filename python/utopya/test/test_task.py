@@ -401,9 +401,10 @@ def test_MPProcessTask():
     assert "!!map" in captured_stdout
 
     # But if reading with a different parser, will have:
-    t = MPProcessTask(name=1, worker_kwargs=dict(args=(pmp_test_target,),
-                                                 read_stdout=True,
-                                                 stdout_parser="yaml_dict"))
+    t = MPProcessTask(name=1,
+                      worker_kwargs=dict(args=(pmp_test_target,),
+                                         read_stdout=True,
+                                         stdout_parser="yaml_dict"))
     t.spawn_worker()
     while t.worker_status is None:
         sleep(.1)

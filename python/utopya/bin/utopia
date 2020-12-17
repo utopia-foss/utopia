@@ -566,9 +566,11 @@ p_eval.add_argument('--cluster-mode',
 # subcommand: batch ...........................................................
 p_batch.add_argument('batch_cfg_path',
     help="Path to batch configuration file")
-p_batch.add_argument('-d', '--debug',
+p_batch.add_argument('-d', '--debug',   # TODO Should be the inverse
     action='store_true',
     help="If true, errors will be raised and batch execution stopped.")
+
+# TODO Expand with: --run-only, --eval-only, --note
 
 
 # CLI defined now.
@@ -602,14 +604,12 @@ if __name__ == '__main__':
         from utopya.batch import BatchTaskManager
 
         log.progress("Setting up batch task manager ...")
-        btm = BatchTaskManager(utopia_cli=os.path.realpath(__file__),
-                               batch_cfg_path=args.batch_cfg_path,
+        btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path,
                                debug=args.debug)
 
-        log.hilight("Now starting work on batch tasks ...")
-        btm.start_working()
+        btm.perform_all_tasks()
 
-        log.success("Batch work finished.\n")
+        log.success("Batch work all finished now, yay! :)\n")
         sys.exit()
 
 

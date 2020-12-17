@@ -990,7 +990,7 @@ class WorkerTask(Task):
 # ... working with the multiprocessing module
 
 
-def _target_wrapper(target, streams: dict, *args):
+def _target_wrapper(target, streams: dict, *args, **kwargs):
     """A wrapper around the multiprocessing.Process target function which
     takes care of stream handling.
     """
@@ -1021,7 +1021,7 @@ def _target_wrapper(target, streams: dict, *args):
     log.debug("Now invoking target ...")
 
     try:
-        target(*args)
+        target(*args, **kwargs)
         log.debug("Target returned successfully.")
 
     # TODO Error handling
@@ -1043,7 +1043,7 @@ class PopenMPProcess:
     the interface of subprocess.Popen.
     """
 
-    def __init__(self, args: tuple,
+    def __init__(self, args: tuple, kwargs: dict={},
                  stdin=None, stdout=None, stderr=None,
                  bufsize: int=-1, encoding: str='utf8'):
         """Creates a ``multiprocessing.Process`` and starts it.
@@ -1059,8 +1059,8 @@ class PopenMPProcess:
 
             - ``target`` will be ``args[0]``
             - ``args`` will be ``args[1:]``
-            - ``kwargs`` is *not* available. Instead, bind keyword arguments to
-                the ``target`` prior to invoking ``PopenMPProcess``.
+            - ``kwargs`` is an additional keyword argument that is not part of
+                the ``subprocess.Popen`` interface typically.
 
         Regarding the stream arguments, the following steps are done to attach
         custom pipes: If any argument is a ``subprocess.PIPE`` or another
@@ -1070,6 +1070,7 @@ class PopenMPProcess:
         Args:
             args (tuple): The ``target`` callable (``args[0]``) and subsequent
                 positional arguments.
+            kwargs (dict, optional): Keyword arguments for the ``target``.
             stdin (None, optional): The stdin stream
             stdout (None, optional): The stdout stream
             stderr (None, optional): The stderr stream
@@ -1079,21 +1080,21 @@ class PopenMPProcess:
                 encouraged!
         """
         self._args = args
+        self._kwargs = copy.deepcopy(kwargs)
         self._bufsize = bufsize
         self._encoding = encoding
         self._stdin = None
         self._stdout = None
         self._stderr = None
 
-        # Prepare arguments
+        # Prepare target and positional arguments, then spawn the process in a
+        # custom context that always uses `spawn` (instead of `fork` on Linux).
         target, args = self._prepare_target_args(
             args, stdin=stdin, stdout=stdout, stderr=stderr,
         )
-
-        # Spawn the process
         _ctx = multiprocessing.get_context('spawn')
         self._proc = _ctx.Process(
-            target=_target_wrapper, args=args, daemon=True
+            target=_target_wrapper, args=args, kwargs=self.kwargs, daemon=True
         )
 
         log.debug("Starting multiprocessing.Process for target %s ...", target)
@@ -1217,8 +1218,20 @@ class PopenMPProcess:
     def args(self) -> tuple:
         """The ``args`` argument to this process. Note that the returned tuple
         *includes* the target callable as its first entry.
+
+        Note that these have already been passed to the process; changing them
+        has no effect.
         """
         return self._args
+
+    @property
+    def kwargs(self):
+        """Keyword arguments passed to the target callable.
+
+        Note that these have already been passed to the process; changing them
+        has no effect.
+        """
+        return self._kwargs
 
     @property
     def stdin(self):

@@ -1087,6 +1087,13 @@ class WorkerManagerReporter(Reporter):
         return fstr.format(num_tasks=len(self.wm.tasks),
                            sweep_info=pspace.get_info_str())
 
+    # .. For BatchTaskManager . . . . . . . . . . . . . . . . . . . . . . . . .
+
+    def _parse_batch_report(self, *, fstr: str="  {k:<13s} {v:}",
+                            min_num: int=4, report_no: int=None,
+                            show_individual_runtimes: bool=True) -> str:
+        return "" # FIXME
+
 
     # Writer methods ..........................................................
 

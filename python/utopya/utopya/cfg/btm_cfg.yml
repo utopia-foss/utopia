@@ -14,6 +14,23 @@ paths:
   # A note to append to the batch output directory
   note: ~
 
+# .. Task defaults ............................................................
+task_defaults:
+  run: {}
+  eval:
+    # The data output directory.
+    # May be a format string, allowed keys: model_name, task_name, timestamp.
+    # Relative paths are evaluated relative to the batch output directory.
+    out_dir: "{model_name:}/{task_name:}"
+
+    # Whether to symlink to the batch output directory, allowing to figure out
+    # which file this belongs to.
+    create_symlink: false  # TODO
+
+    # Any further arguments: used within task to set up the FrozenMultiverse
+    plot_manager:
+      raise_exc: true
+
 
 # .. WorkerManager and Reporter ...............................................
 worker_manager:
@@ -36,13 +53,12 @@ worker_manager:
   # How to handle keyboard interrupts
   interrupt_params:
     # Which signal to send to the workers
-    send_signal: SIGINT  # can be any valid signal name
-    # NOTE that only SIGINT and SIGTERM lead to a graceful shutdown on C++ side
+    send_signal: SIGTERM  # should be SIGTERM for graceful shutdown
 
     # How long to wait for workers to shut down before calling SIGKILL on them
     grace_period: 5.
-    # WARNING Choosing a grace period that is shorter than the duration of one
-    #         iteration step of your model might lead to corrupted HDF5 data!
+    # WARNING Choosing the grace period too short may corrupt the output that
+    #         is written at the time of the signal.
 
     # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: false
@@ -55,11 +71,34 @@ worker_manager:
     before_working: []
     while_working: [while_working]
     task_spawned: [while_working]
-    monitor_updated: [monitor_updated]  # FIXME
+    monitor_updated: []  # FIXME
     task_finished: [while_working] # , report_file] # FIXME
     after_work: [after_work] # , report_file]
     after_abort: [after_work] # , report_file]
 
+# The defaults for the worker_kwargs
+# These are passed to the setup function of each MPProcessTask before spawning
+worker_kwargs:
+  # Whether to save the streams of each individual batch process to a log file
+  save_streams: true
+  # The log file is saved only after the MPProcessTask has finished in order to
+  # reduce I/O operations on files
+
+  # Whether to forward the streams to stdout. Output may be garbled!
+  forward_streams: false
+
+  # Whether to forward the raw stream output or only those lines that were not
+  # parsable to yaml, i.e.: only the lines that came _not_ from the monitor
+  forward_raw: true
+
+  # The log level at which the streams should be forwarded to stdout
+  streams_log_lvl: ~  # if None, uses print instead of the logging module
+
+  # Arguments to utopya.task.PopenMPProcess
+  popen_kwargs: {}
+
+
+# Reporter configuration
 reporter:
   # Define report formats, which are accessible, e.g. from the WorkerManager
   report_formats:
@@ -87,7 +126,9 @@ reporter:
       show_individual_runtimes: true
 
 
-run_kwargs: {}
+run_kwargs:
+  # Total timeout (in s) of a batch run; to ignore, set to ~
+  timeout: ~
 
 
 # .. Cluster Support ..........................................................
