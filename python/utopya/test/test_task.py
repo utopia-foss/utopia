@@ -171,7 +171,7 @@ def test_workertask_streams(tmpdir):
     # Read all the remaining stream content
     t.read_streams(max_num_reads=-1)
     print(t.streams['out']['log'])
-    assert len(t.streams['out']['log']) == 4
+    assert len(t.streams['out']['log']) == 3
 
     # Save it
     t.save_streams()
@@ -181,9 +181,9 @@ def test_workertask_streams(tmpdir):
     with open(save_path) as f:
         lines = [line.strip() for line in f]
 
-    assert len(lines) == 6
+    assert len(lines) == 5
     assert lines[0].startswith("Log of 'out' stream of WorkerTask")
-    assert lines[2:] == ["foo", "bar", "baz", "[end of stream]"]
+    assert lines[2:] == ["foo", "bar", "baz"]
 
     # Trying to save the streams again, there should be no more lines available
     t.save_streams()
@@ -225,12 +225,11 @@ def test_workertask_streams_stderr(tmpdir):
     print(out_log)
 
     # Check that the content is as expected
-    assert len(out_log) == 5
+    assert len(out_log) == 4
     assert "err1" in out_log
     assert "err2" in out_log
     assert "start" in out_log
     assert "end" in out_log
-    assert "[end of stream]" in out_log
 
 # TaskList tests --------------------------------------------------------------
 
@@ -268,7 +267,6 @@ def test_enqueue_lines():
     enqueue_lines(queue=q,
                   stream=io.StringIO("hello"))
     assert q.get_nowait() == ("hello", None)
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Test passing a custom parse function
@@ -276,14 +274,12 @@ def test_enqueue_lines():
                   stream=io.StringIO("hello yourself"),
                   parse_func=lambda s: s + "!")
     assert q.get_nowait() == ("hello yourself", "hello yourself!")
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # integer parsable should remain strings
     enqueue_lines(queue=q,
                   stream=io.StringIO("1"))
     assert q.get_nowait() == ("1", None)
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # how about multiple lines?
@@ -292,7 +288,6 @@ def test_enqueue_lines():
     assert q.get_nowait() == ("hello", None)
     assert q.get_nowait() == ("world", None)
     assert q.get_nowait() == ("!", None)
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
 def test_enqueue_lines_parse_yaml():
@@ -306,21 +301,18 @@ def test_enqueue_lines_parse_yaml():
     enqueue_yaml(queue=q,
                  stream=io.StringIO("!!map {\"foo\": 123}"))
     assert q.get_nowait()[1] == dict(foo=123)
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Something not matching the start string should yield no parsed object
     enqueue_yaml(queue=q,
                  stream=io.StringIO("1"))
     assert q.get_nowait()[1] is None
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Invalid syntax should also return None instead of a parsed object
     enqueue_yaml(queue=q,
                  stream=io.StringIO("!!map {\"foo\": 123, !!invalid}"))
     assert q.get_nowait()[1] is None
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
     # Line break within the YAML string will lead to parsing failure
@@ -328,7 +320,6 @@ def test_enqueue_lines_parse_yaml():
                  stream=io.StringIO("!!map {\"foo\": \n 123}"))
     assert q.get_nowait()[1] is None
     assert q.get_nowait()[1] is None
-    assert q.get_nowait() == ("[end of stream]", None)
     assert q.empty()
 
 
@@ -381,6 +372,10 @@ def test_MPProcessTask():
     while t.worker_status is None:
         sleep(.1)
     assert t.worker_status == 0
+
+    # Stream reader threads also have shut down (might need some time)
+    sleep(.1)
+    assert not t.streams['out']['thread'].is_alive()
 
     # Manually get the output from the streams and the queue
     s = t.worker.stdout

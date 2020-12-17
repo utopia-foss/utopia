@@ -36,16 +36,24 @@ SIGMAP = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
 # These solely relate to the WorkerTask and similar classes, and thus are not
 # implemented in the tools module.
 
-def _follow(f: io.TextIOWrapper, delay: float = 0.05
-            ) -> Generator[Union[str, None], None, None]:
+def _follow(f: io.TextIOWrapper,
+            delay: float=0.05,
+            should_stop: Callable=lambda: False,
+            ) -> Generator[str, None, None]:
     """Generator that follows the output written to the given stream object
     and yields each new line written to it. If no output is retrieved, there
     will be a delay to reduce processor load.
+
+    The ``should_stop`` argument may be a callable that will lead to breaking
+    out of the waiting loop. If it is not given, the loop will only break if
+    reading from the stream ``f`` is no longer possible, e.g. because it was
+    closed.
     """
-    while True:
+    while not should_stop():
         try:
             line = f.readline()
-        except:  # e.g. if the stream is closed
+        except:
+            # Stream was closed or is otherwise not readable, end generator
             return
 
         if not line:
@@ -83,7 +91,11 @@ def enqueue_lines(*, queue: queue.Queue, stream: TextIO, follow: bool=False,
     # when reading from a file), we need to follow the file similar to how
     # `tail -f` does it ...
     if follow:
-        it = _follow(stream)
+        # Get the current thread to allow stopping to follow
+        ct = threading.currentThread()
+        should_stop = lambda: getattr(ct, "stop_follow", False)
+
+        it = _follow(stream, should_stop=should_stop)
     else:
         it = iter(stream.readline, '')
 
@@ -97,10 +109,6 @@ def enqueue_lines(*, queue: queue.Queue, stream: TextIO, follow: bool=False,
         # parsed object can also be None
         queue.put_nowait((line, parse_func(line)))
 
-    queue.put_nowait(("[end of stream]", None))
-
-    # Everything read. Close the stream
-    # stream.close()
     # Thread dies here.
 
 # Custom parse methods ........................................................
@@ -946,6 +954,10 @@ class WorkerTask(Task):
             save_path = save_streams_to.format(name=stream_name)
             self.streams[stream_name]['save_path'] = save_path
 
+    def _stop_stream_reader(self, name: str):
+        """Stops the stream reader with the given name."""
+        pass
+
     def _finished(self) -> None:
         """Is called once the worker has finished working on this task.
 
@@ -962,6 +974,10 @@ class WorkerTask(Task):
         # Read all remaining stream lines, then forward remaining and save all
         self.read_streams(max_num_reads=-1, forward_directly=True)
         self.save_streams(final=True)
+
+        # Stop the stream-reading threads
+        for stream_name in self.streams:
+            self._stop_stream_reader(stream_name)
 
         # If given, call the callback function
         self._invoke_callback('finished')
@@ -1029,7 +1045,7 @@ class PopenMPProcess:
 
     def __init__(self, args: tuple,
                  stdin=None, stdout=None, stderr=None,
-                 bufsize: int = -1, encoding: str = 'utf8'):
+                 bufsize: int=-1, encoding: str='utf8'):
         """Creates a ``multiprocessing.Process`` and starts it.
 
         The interface here is a subset of ``subprocess.Popen`` that makes those
@@ -1241,6 +1257,11 @@ class PopenMPProcess:
 class MPProcessTask(WorkerTask):
     """A WorkerTask specialization that uses multiprocessing.Process instead
     of subprocess.Popen.
+
+    It is mostly equivalent to :py:class:`~utopya.task.WorkerTask` but adjusts
+    the private methods that take care of spawning the actual process and
+    setting up the stream readers, such that the particularities of the
+    :py:class:`~utopya.task.PopenMPProcess` wrapper are accounted for.
     """
 
     def _spawn_process(self, args, **popen_kwargs) -> PopenMPProcess:
@@ -1251,7 +1272,14 @@ class MPProcessTask(WorkerTask):
         return PopenMPProcess(args, **popen_kwargs)
 
     def _setup_stream_reader(self, *args, **kwargs):
+        """Sets up the stream reader with ``follow=True``, such that the file-
+        like streams that PopenMPProcess uses can be read properly."""
         return super()._setup_stream_reader(*args, follow=True, **kwargs)
+
+    def _stop_stream_reader(self, name: str):
+        """Stops the stream reader thread with the given name by telling its
+        follow function to stop, thus ending iteration."""
+        self.streams[name].get('thread').stop_follow = True
 
 
 # -----------------------------------------------------------------------------
