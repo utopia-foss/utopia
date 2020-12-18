@@ -61,5 +61,5 @@ tasks:
       # All other arguments are passed to `Model.create_frozen_mv`
 
     task2:
-      model_name: Allhoff2015
+      model_name: dummy
       run_dir: ~

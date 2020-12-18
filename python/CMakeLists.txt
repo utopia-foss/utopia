@@ -8,7 +8,7 @@ message(STATUS "Installing required Python packages ...")
 # NOTE Take care that the versions used here match those in the README.md
 #      and those in the utopya setup.py file.
 # -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.15.0a2)
+python_find_package(PACKAGE dantro VERSION 0.15.2)
 
 if(NOT PYTHON_PACKAGE_dantro_FOUND)
     # install from current _master_ branch
@@ -54,18 +54,17 @@ message(STATUS "Adding python test targets ...")
 
 # Add test for utopya, accessible via `make test_utopya`
 add_custom_target(test_utopya
-                  COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
-                          python -m pytest
-                          ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test/ -v
-                          --cov=${CMAKE_CURRENT_SOURCE_DIR}/utopya/utopya/
-                          --cov-report=term-missing
+                  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test &&
+                    ${CMAKE_BINARY_DIR}/run-in-utopia-env
+                    python ../run_test.py ./ -vv
+                    --cov=utopya --cov-report=term-missing
 )
 
 # Add tests for models, accessible via `make test_models_python`
 add_custom_target(test_models_python
-                  COMMAND ${CMAKE_BINARY_DIR}/run-in-utopia-env
-                          python -m pytest -v
-                          ${CMAKE_CURRENT_SOURCE_DIR}/model_tests/
+                  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} &&
+                    ${CMAKE_BINARY_DIR}/run-in-utopia-env
+                    python -m pytest -vv model_tests/
 )
 
 # For running all python model tests, it is required that all models are built

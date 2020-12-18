@@ -7,9 +7,13 @@ import logging
 from time import sleep
 from functools import partial
 
+import multiprocessing
+# NOTE Need this import, otherwise tests that use multiprocessing hang forever
+
 import numpy as np
 import pytest
 
+import utopya
 from utopya.task import (Task, WorkerTask, TaskList,
                          PopenMPProcess, MPProcessTask,
                          enqueue_lines, parse_yaml_dict, SIGMAP)

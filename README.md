@@ -487,6 +487,7 @@ _Note:_
 * The `build_tests_` targets give you more control in scenarios where you want
   to test _only_ building.
 
+
 #### Running Individual Test Executables
 Each _individual_ test also has an individual build target, the names of which
 you see in the output of the `make build_tests_*` command.
@@ -495,19 +496,25 @@ corresponding build directory, e.g. `build/tests/core/`, and run the executable
 from that directory, as some of the tests rely on auxilary files which are
 located relative to the executable.
 
-For invoking individual Python tests, there are no targets specified.
+For invoking individual *Python* tests, there are no targets specified.
 However, [pytest][pytest-usage] gives you control over which tests are invoked:
 
 ```bash
 cd python
-python -m pytest -v model_tests/<model_name>             # all tests
-python -m pytest -v model_tests/<model_name>/my_test.py  # specific test file
-python -m pytest -v utopya/test/<some_glob>              # selected via glob
+python -m pytest -v model_tests/{model_name}             # all tests
+python -m pytest -v model_tests/{model_name}/my_test.py  # specific test file
 ```
 
-_Note:_ Make sure you entered the virtual environment and the required
-executables are built. See `pytest --help` for more information regarding the
-CLI.
+Tests for individual `utopya` modules need to be run through the `python/utopya/run_test.py` executable rather than through `pytest` directly:
+
+```bash
+cd python/utopya
+python run_test.py -v test/{some_glob}                   # selected via glob
+```
+
+_Note:_ For all of the above, make sure you entered the virtual environment and the required executables are all built; call `make all` to make sure.
+See `pytest --help` for more information regarding the CLI.
+
 
 #### Evaluating Test Code Coverage
 Code coverage is useful information when writing and evaluating tests.
@@ -530,7 +537,8 @@ adjust the test command accordingly to show the coverage report only for one
 module, for example `utopya.multiverse`:
 
 ```bash
-python -m pytest -v utopya/test/test_multiverse.py --cov=utopya.multiverse --cov-report=term-missing
+(utopia-env) $ cd python/utopya
+(utopia-env) $ python run_test.py -v test/test_multiverse.py --cov=utopya.multiverse --cov-report=term-missing
 ```
 
 
