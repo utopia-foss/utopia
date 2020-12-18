@@ -49,16 +49,19 @@ def _eval_task(
     import os
     from .model import Model
 
-    log.progress("Setting up evaluation task '%s' for model '%s' ...",
-                 task_name, model_name)
+    log.hilight("Setting up evaluation task '%s' for model '%s' ...",
+                task_name, model_name)
 
     model = Model(name=model_name, **model_kwargs)
     mv = model.create_frozen_mv(**frozen_mv_kwargs)
 
-    # Create the symlink back to the task configuration file
+    # Create the symlink back to the task configuration file, removing any
+    # potentially existing symlinks.
     if _create_symlink_to_task_cfg:
-        os.symlink(_task_cfg_path,
-                   os.path.join(mv.dm.dirs['out'], "_task_cfg.yml"))
+        dst = os.path.join(mv.dm.dirs['out'], "_task_cfg.yml")
+        if os.path.islink(dst):
+            os.remove(dst)
+        os.symlink(_task_cfg_path, dst)
         log.note("Created symlink to batch task configuration:\n  %s",
                  _task_cfg_path)
 
@@ -198,6 +201,7 @@ class BatchTaskManager:
 
         if plevel == "task":
             batch_cfg["worker_manager"]["num_workers"] = 1
+            batch_cfg["worker_kwargs"]["forward_streams"] = True
 
         elif plevel == "batch":
             task_defaults = batch_cfg["task_defaults"]
@@ -245,7 +249,7 @@ class BatchTaskManager:
         os.makedirs(batch_run_dir)
 
         # Subdirectories
-        subdirs = ("config", "config/tasks", "eval", "run", "logs",)
+        subdirs = ("config", "config/tasks", "eval", "logs",)
         for subdir in subdirs:
             dirs[subdir] = os.path.join(batch_run_dir, subdir)
             os.makedirs(dirs[subdir])

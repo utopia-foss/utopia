@@ -1,14 +1,8 @@
-# A _file_ used for testing the BatchManager
+# A _file_ used for testing the BatchTaskManager
 ---
 # BatchTaskManager Settings ...................................................
-# In debug mode, a failing batch task will lead to the
+# In debug mode, a failing batch task will lead to all tasks being stopped
 debug: true
-
-# WorkerManager, Reporter, etc.
-worker_manager: {}
-
-# Cluster mode
-cluster_mode: false
 
 
 # Defaults ....................................................................

@@ -5,7 +5,7 @@
 # .. BatchTaskManager Options .................................................
 # In debug mode, a failing batch task will lead to all other tasks being
 # stopped and the main process exiting with a non-zero exit status.
-debug: true
+debug: false
 
 # Paths configuration
 paths:
@@ -27,9 +27,10 @@ parallelization_level: batch
 
 # .. Task defaults ............................................................
 task_defaults:
-  run: {}
+  run: {}       # Not implemented yet!
+
   eval:
-    # The data output directory.
+    # The data output directory for evaluation tasks.
     # May be a format string, allowed keys: model_name, task_name, timestamp.
     # Relative paths are evaluated relative to the batch output directory.
     out_dir: "{model_name:}/{task_name:}"
@@ -47,7 +48,7 @@ task_defaults:
 
 
 tasks:
-  run: {}
+  run: {}       # Not implemented yet. Adding a task here will raise an error.
   eval: {}
 
 

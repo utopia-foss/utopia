@@ -47,7 +47,7 @@ disabled_task:
     eval:
       i_will_not_run:
         enabled: false
-        # other arguments not evalauted
+        # other arguments not evaluated
         model_name: some_model
 
 bad_model_name:
@@ -56,3 +56,54 @@ bad_model_name:
     eval:
       some_task:
         model_name: bad_model_name
+
+
+# .. Documentation Examples ...................................................
+
+doc_example_basic:
+  # START --- example_basic
+  task_defaults:
+    # Default values that are used in all `eval` tasks and may be overwritten
+    # in the individual task definitions.
+    eval:
+      model_name: SEIRD
+
+  tasks:
+    # Evaluation tasks are defined here:
+    eval:
+      # A task to create density and phase diagrams from the SEIRD model
+      densities:
+        # Define the run directory from which to load the data
+#       run_dir: YYMMDD-HHMMSS  # <timestamp>_<note> of the simulation output to load
+
+        # Arguments to PlotManager.plot_from_cfg
+        plot_only: [densities, phase_diagram/*]
+        update_plots_cfg:
+          # Change title of densities plot
+          densities:
+            helpers:
+              set_title:
+                title: SEIRD Model Densities
+
+        # All other arguments are passed to `Model.create_frozen_mv` and can
+        # for instance be used to further configure the PlotManager.
+
+      # A task to create spatial plots from the SEIRD model
+      spatial:
+#       run_dir: YYMMDD-HHMMSS
+        plot_only: [CA]
+
+        # ...
+
+      # A task that defines a custom plot, right here in the task configuration
+      my_phase_diagram:
+#       run_dir: YYMMDD-HHMMSS
+
+        # Instead of using default plots (`plots_cfg: ~`), define a new one:
+        plots_cfg:
+          my_phase_diagram:
+            based_on: phase_diagram
+
+            # ...
+  # END ----- example_basic
+            enabled: false    # Important for the test to run

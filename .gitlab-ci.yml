@@ -448,6 +448,9 @@ test:cli:
     - utopia run dummy --set-params num_steps=3 write_every=2
     - utopia run dummy --set-cfg parameter_space.seed=23
 
+    # Test batch evaluation
+    - utopia batch python/utopya/test/cfg/batch_file.yml --single-worker --debug --note batch-CLI-test
+
     # Test the model copying, first as a dry run, then for real
     - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run
     - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive

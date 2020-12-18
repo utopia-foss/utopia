@@ -36,7 +36,7 @@ def test_BatchTaskManager_basics():
 def test_BatchTaskManager(tmpdir):
     """Tests BatchTaskManager"""
     # Make sure the required models have some output generated
-    for model_name in ("dummy",):
+    for model_name in ("dummy", "SEIRD"):
         Model(
             name=model_name
         ).create_mv(
@@ -49,7 +49,11 @@ def test_BatchTaskManager(tmpdir):
 
         # Use temporary directory for batch output
         test_cfg = recursive_update(
-            test_cfg, dict(paths=dict(out_dir=str(tmpdir.join(test_case))))
+            test_cfg,
+            dict(paths=dict(
+                out_dir=str(tmpdir.join(test_case)),
+                note=test_case,
+            ))
         )
 
         # Error handling

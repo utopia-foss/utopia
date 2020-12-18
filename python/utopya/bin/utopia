@@ -566,11 +566,19 @@ p_eval.add_argument('--cluster-mode',
 # subcommand: batch ...........................................................
 p_batch.add_argument('batch_cfg_path',
     help="Path to batch configuration file")
-p_batch.add_argument('-d', '--debug',   # TODO Should be the inverse
+p_batch.add_argument('-d', '--debug',
     action='store_true',
-    help="If true, errors will be raised and batch execution stopped.")
-
-# TODO Expand with: --run-only, --eval-only, --note
+    help="If set, an error in an individual task will stop all other tasks.")
+p_batch.add_argument('-s', '--single-worker',
+    action='store_true',
+    help="If set, will use 'task' parallelization level instead of 'batch'. "
+         "Effectively, the batch tasks will be worked on sequentially. "
+         "This option can also be useful for debugging or when encountering "
+         "memory issues.")
+p_batch.add_argument('--note',
+    default=None, nargs='?',
+    help="Overwrites the `paths->model_note` entry which is used in creation "
+         "of the batch run directory path.")
 
 
 # CLI defined now.
@@ -603,9 +611,20 @@ if __name__ == '__main__':
         import os
         from utopya.batch import BatchTaskManager
 
-        btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path,
-                               debug=args.debug)
+        # Assemble update arguments
+        kws = dict()
+        if args.debug:
+            kws["debug"] = args.debug
 
+        if args.single_worker:
+            kws["parallelization_level"] = "task"
+
+        if args.note:
+            kws["paths"] = dict(note=args.note)
+
+
+        # Here we go ...
+        btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path, **kws)
         btm.perform_tasks()
 
         log.success("Batch work all finished now, yay! :)\n")
