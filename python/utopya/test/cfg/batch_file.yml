@@ -44,10 +44,10 @@ tasks:
 
   # Evaluating simulations
   eval:
-    task1:  # prepended to eval-out-dir
+    defaults:  # prepended to eval-out-dir
       # enabled: true   # default
 
-      # Values below update those from defaults.eval.dummy
+      # Values below update those from task_defaults.eval
 
       # Model name and run directory to load data from
       model_name: dummy
@@ -55,11 +55,14 @@ tasks:
 
       # Arguments to PlotManager.plot_from_cfg
       # plot_out_dir: ~  # allow format string here
-      plot_only: []
+      # plot_only: [ ... ]
       update_plots_cfg: {}
 
       # All other arguments are passed to `Model.create_frozen_mv`
+      # ...
 
-    task2:
+    no_plots:
       model_name: dummy
       run_dir: ~
+
+      plot_only: []

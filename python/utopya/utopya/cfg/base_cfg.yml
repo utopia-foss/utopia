@@ -123,6 +123,9 @@ worker_manager:
   #       If this value is too high, the log output from simulations is not
   #       read from the line buffer frequently enough.
 
+  # Periodic task callback (in units of poll events). Set None to deactivate.
+  periodic_task_callback: ~
+
   # How to react upon a simulation exiting with non-zero exit code
   nonzero_exit_handling: raise
   # can be: ignore, warn, warn_all, raise
@@ -143,8 +146,9 @@ worker_manager:
     # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: false
 
-  # Whether to save streams upon monitor updates
-  save_streams_on_monitor_update: true
+  # In which events to save streams *during* the work session
+  # May be: `monitor_updated`, `periodic_callback`
+  save_streams_on: [monitor_updated]
 
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to
