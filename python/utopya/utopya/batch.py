@@ -6,7 +6,7 @@ import time
 from shutil import copy2 as _copy2
 from copy import deepcopy as _deepcopy
 from pkg_resources import resource_filename as _resource_filename
-from typing import Dict, Tuple, Union, Sequence
+from typing import Dict, Tuple, Union, Sequence, Callable
 
 from .yaml import load_yml as _load_yml, write_yml as _write_yml
 from .tools import recursive_update as _recursive_update
@@ -19,6 +19,9 @@ _BTM_BASE_CFG = _load_yml(_resource_filename("utopya", "cfg/btm_cfg.yml"))
 _BTM_USER_DEFAULTS = _load_from_cfg_dir("batch")
 _BTM_DEFAULTS = _recursive_update(_deepcopy(_BTM_BASE_CFG),
                                   _deepcopy(_BTM_USER_DEFAULTS))
+
+# Substrings that may not appear in task names
+INVALID_TASK_NAME_CHARS = ("/", ":", ".", "?", "*",)
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +99,8 @@ class BatchTaskManager:
             NotImplementedError: If ``run_tasks`` or ``cluster_mode`` were set
                 in the batch configuration.
         """
+        log.progress("Initializing BatchTaskManager ...")
+
         # Parse and store all configuration options
         self._cfg = self._setup_batch_cfg(batch_cfg_path, **update_batch_cfg)
 
@@ -134,6 +139,10 @@ class BatchTaskManager:
         return self._cfg["debug"]
 
     @property
+    def parallelization_level(self) -> str:
+        return self._cfg["parallelization_level"]
+
+    @property
     def run_defaults(self) -> dict:
         """A deepcopy of the run task defaults"""
         return _deepcopy(self._cfg["task_defaults"]["run"])
@@ -151,25 +160,19 @@ class BatchTaskManager:
 
     # .........................................................................
 
-    def perform_all_tasks(self):
+    def perform_tasks(self):
         """Perform all run and eval tasks."""
-        num_run_tasks = self._add_run_tasks()
-        num_eval_tasks = self._add_eval_tasks()
-        self._wm.start_working()
-        log.success(f"Finished {num_run_tasks} run tasks and "
-                    f"{num_eval_tasks} evaluation tasks.")
+        n_run = self._add_tasks(tasks=self._cfg["tasks"]["run"],
+                                defaults=self.run_defaults,
+                                add_task=self._add_run_task)
+        n_eval = self._add_tasks(tasks=self._cfg["tasks"]["eval"],
+                                 defaults=self.eval_defaults,
+                                 add_task=self._add_eval_task)
 
-    def perform_run_tasks(self):
-        """Performs the configured run tasks"""
-        self._add_run_tasks()
         self._wm.start_working()
-        log.success("Batch simulation runs finished.")
-
-    def perform_eval_tasks(self):
-        """Performs the configured evaluation tasks"""
-        self._add_eval_tasks()
-        self._wm.start_working()
-        log.success("Batch evaluation finished.")
+        log.success(
+            "Finished %d run tasks and %d evaluation tasks.", n_run, n_eval
+        )
 
 
     # .........................................................................
@@ -177,21 +180,47 @@ class BatchTaskManager:
     @staticmethod
     def _setup_batch_cfg(batch_cfg_path: str, **update_batch_cfg) -> dict:
         """Sets up the BatchTaskManager configuration"""
-        # Update defaults with configuration from file
-        batch_cfg = _load_yml(batch_cfg_path)
+        # Update defaults with configuration from file, if given
+        batch_cfg = _load_yml(batch_cfg_path) if batch_cfg_path else {}
         batch_cfg = _recursive_update(_deepcopy(_BTM_DEFAULTS), batch_cfg)
 
         # Update again
         batch_cfg = _recursive_update(batch_cfg, _deepcopy(update_batch_cfg))
-        log.info("Loaded batch configuration.")
 
         # For debug mode, let the WorkerManager raise directly rather than only
         # issuing warnings (default).
+        log.note("  Debug mode?                %s", batch_cfg["debug"])
         if batch_cfg["debug"]:
-            log.note("Using debug mode.")
-
             batch_cfg["worker_manager"]["nonzero_exit_handling"] = "raise"
 
+        # Evaluate parallelization level
+        plevel = batch_cfg["parallelization_level"]
+
+        if plevel == "task":
+            batch_cfg["worker_manager"]["num_workers"] = 1
+
+        elif plevel == "batch":
+            task_defaults = batch_cfg["task_defaults"]
+
+            task_defaults["run"] = _recursive_update(
+                task_defaults["run"],
+                dict(
+                    worker_manager=dict(num_workers=1),
+                    parameter_space=dict(
+                        parallel_execution=dict(enabled=False)
+                    )
+                )
+            )
+
+        else:
+            raise ValueError(
+                f"Invalid parallelization_level '{plevel}'! "
+                "Valid options are:  batch, task"
+            )
+
+        log.note("  Parallelization level:     %s", plevel)
+
+        log.info("Loaded batch configuration.")
         return batch_cfg
 
     def _setup_dirs(self, out_dir: str, note: str = None) -> Dict[str, str]:
@@ -238,6 +267,9 @@ class BatchTaskManager:
                 log.debug("Copying %s config ...", part_name)
                 _copy2(val, _path)
 
+            elif not val:
+                log.debug("'%s' was empty, nothing to back up.", part_name)
+
             else:
                 log.debug("Dumping %s config dict ...", part_name)
                 _write_yml(val, path=_path)
@@ -246,30 +278,23 @@ class BatchTaskManager:
 
     # .........................................................................
 
-    def _add_run_tasks(self) -> int:
+    def _add_tasks(self, tasks: dict, defaults: dict,
+                   add_task: Callable) -> int:
         """Adds all configured run tasks to the WorkerManager's task queue"""
-        run_tasks = _deepcopy(self._cfg["tasks"]["run"])
+        tasks = _deepcopy(tasks)
 
-        log.progress("Adding %d simulation run tasks ...", len(run_tasks))
+        for task_name, task_cfg in tasks.items():
+            if any(s in task_name for s in INVALID_TASK_NAME_CHARS):
+                raise ValueError(
+                    f"Invalid task name '{task_name}'! May not contain any of "
+                    "the following characters or substrings:  "
+                    + " ".join(INVALID_TASK_NAME_CHARS)
+                )
 
-        for task_name, task_cfg in run_tasks.items():
-            task_cfg = _recursive_update(self.run_defaults, task_cfg)
-            self._add_run_task(task_name, **task_cfg)
+            task_cfg = _recursive_update(_deepcopy(defaults), task_cfg)
+            add_task(task_name, **task_cfg)
 
-        return len(run_tasks)
-
-    def _add_eval_tasks(self) -> int:
-        """Adds all configured evaluation tasks to the WorkerManager's task
-        queue"""
-        eval_tasks = _deepcopy(self._cfg["tasks"]["eval"])
-
-        log.progress("Adding %d evaluation tasks ...", len(eval_tasks))
-
-        for task_name, task_cfg in eval_tasks.items():
-            task_cfg = _recursive_update(self.eval_defaults, task_cfg)
-            self._add_eval_task(task_name, **task_cfg)
-
-        return len(eval_tasks)
+        return len(tasks)
 
     def _add_run_task(self, name: str, **_):
         """Adds a single run task to the WorkerManager"""
@@ -321,18 +346,12 @@ class BatchTaskManager:
             if not os.path.isabs(out_dir):
                 out_dir = os.path.join(self.dirs['eval'], out_dir)
 
-            # Prepare the file path for a backup of the individual task config
-            task_cfg_path = os.path.join(self.dirs["config/tasks"],
-                                         f"eval_{name}.yml")
-
             # Update the task arguments accordingly, setting the DataManager's
             # output directory and adding metadata
             eval_task_kwargs = _recursive_update(
                 eval_task_kwargs,
                 dict(
                     task_name=name,
-                    _task_cfg_path=task_cfg_path,
-                    _create_symlink_to_task_cfg=create_symlink,
                     model_name=model_name,
                     data_manager=dict(out_dir=out_dir)
                 )
@@ -342,7 +361,11 @@ class BatchTaskManager:
             # back to it. This needs to be done by the task, because the
             # DataManager will create the output directory and will fail if it
             # already exists (which is good).
+            task_cfg_path = os.path.join(self.dirs["config/tasks"],
+                                         f"eval_{name}.yml")
             _write_yml(eval_task_kwargs, path=task_cfg_path)
+            eval_task_kwargs["_task_cfg_path"] = task_cfg_path
+            eval_task_kwargs["_create_symlink_to_task_cfg"] = create_symlink
 
             # Generate a new worker_kwargs dict, carrying over the given ones
             worker_kwargs = dict(

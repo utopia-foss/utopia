@@ -1018,7 +1018,9 @@ def _target_wrapper(target, streams: dict, *args, **kwargs):
     """
     import os
     import sys
+    import traceback
     import logging
+
     log = logging.getLogger(__name__)
 
     # Stream handling . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -1040,24 +1042,17 @@ def _target_wrapper(target, streams: dict, *args, **kwargs):
             log.debug("Using file-based custom stderr:  %s", sys.stderr.name)
 
     # Target invocation . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    log.debug("Now invoking target ...")
+    log.progress("Now invoking process target ...")
 
     try:
         target(*args, **kwargs)
-        log.debug("Target returned successfully.")
 
-    # TODO Error handling
-    finally:
-        log.debug("Flushing and closing streams ...")
-        sys.stdout.flush()
-        sys.stderr.flush()
+    except Exception as exc:
+        log.error("Process target invocation failed!")
+        raise
 
-        sys.stdout.close()
-        sys.stderr.close()
-
-        # For good measure, reset the streams
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+    else:
+        log.success("Process target returned successfully.")
 
 
 class PopenMPProcess:

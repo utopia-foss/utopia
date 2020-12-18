@@ -3,8 +3,9 @@
 # Mainly takes care to set up the WorkerManager in a reasonable shape.
 ---
 # .. BatchTaskManager Options .................................................
-# Debug mode
-debug: false
+# In debug mode, a failing batch task will lead to all other tasks being
+# stopped and the main process exiting with a non-zero exit status.
+debug: true
 
 # Paths configuration
 paths:
@@ -13,6 +14,16 @@ paths:
 
   # A note to append to the batch output directory
   note: ~
+
+# At which level to perform parallelization
+parallelization_level: batch
+# Two options:
+#   batch:      parallelization is done on the level of the batch tasks, i.e.
+#               multiple tasks are worked on in parallel according to the
+#               configuration in `worker_manager.num_workers`.
+#   task:       each individual task may work in parallel, thus requiring
+#               more than one CPU core. Subsequently, num_workers is set to 1.
+
 
 # .. Task defaults ............................................................
 task_defaults:
@@ -35,11 +46,19 @@ task_defaults:
       raise_exc: true
 
 
+tasks:
+  run: {}
+  eval: {}
+
+
 # .. WorkerManager and Reporter ...............................................
 worker_manager:
   # Specify how many processes work in parallel
   num_workers: auto
   # can be: an int, 'auto' (== #CPUs). For values <= 0: #CPUs - num_workers
+  # NOTE: This value will be set to 1 if `parallelization_level = 'task'`,
+  #       because in those cases the parallelization should not occur in this
+  #       WorkerManager but within the individual tasks.
 
   # Delay between polls [seconds]
   poll_delay: 0.05
@@ -81,10 +100,10 @@ worker_manager:
     before_working: []
     while_working: [while_working]
     task_spawned: [while_working]
-    monitor_updated: []  # FIXME
-    task_finished: [while_working] # , report_file] # FIXME
-    after_work: [after_work] # , report_file]
-    after_abort: [after_work] # , report_file]
+    monitor_updated: []
+    task_finished: [while_working, report_file]
+    after_work: [after_work, report_file]
+    after_abort: [after_work, report_file]
 
 # The defaults for the worker_kwargs
 # These are passed to the setup function of each MPProcessTask before spawning
@@ -134,7 +153,7 @@ reporter:
 
     # Creates a report file containing runtime statistics
     report_file:
-      parser: batch_report  # TODO
+      parser: report
       write_to:
         file:
           path: _report.txt

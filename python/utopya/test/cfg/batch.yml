@@ -2,4 +2,57 @@
 #
 # Each case corresponds to an individual invocation of the BatchManager
 ---
+minimal: {}
 
+not_implemented_run_tasks:
+  _raises: NotImplementedError
+  _match: Run tasks are not supported yet
+
+  tasks:
+    run:
+      foo: {}
+
+not_implemented_cluster_mode:
+  _raises: NotImplementedError
+  _match: Cluster mode is not supported yet
+
+  cluster_mode: true
+
+
+# .............................................................................
+# Options on the level of the BatchTaskManager
+
+with_note:
+  paths:
+    note: foobar
+
+plevel_task:
+  parallelization_level: task
+
+plevel_bad:
+  parallelization_level: some invalid level
+  _raises: ValueError
+  _match: Invalid parallelization_level 'some invalid level'
+
+bad_task_name:
+  tasks:
+    eval:
+      not/a/good/name: {}
+
+  _raises: ValueError
+  _match: Invalid task name
+
+disabled_task:
+  tasks:
+    eval:
+      i_will_not_run:
+        enabled: false
+        # other arguments not evalauted
+        model_name: some_model
+
+bad_model_name:
+  _raises: SystemExit
+  tasks:
+    eval:
+      some_task:
+        model_name: bad_model_name

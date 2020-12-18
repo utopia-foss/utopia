@@ -1,11 +1,8 @@
 # A _file_ used for testing the BatchManager
 ---
 # BatchTaskManager Settings ...................................................
-# Debug Mode
+# In debug mode, a failing batch task will lead to the
 debug: true
-
-# Options for path creation, overwriting etc.
-# TODO
 
 # WorkerManager, Reporter, etc.
 worker_manager: {}
@@ -17,8 +14,12 @@ cluster_mode: false
 # Defaults ....................................................................
 task_defaults:
   run: {}
-  eval: {}
-    # plot_out_dir: ~/all_my_output/{timestamp:}/{task_name:}
+  eval:
+    enabled: true  # also the default
+
+    # Can customize the output directory here.
+    # Format strings are supported. Keys: timestamp, model_name, task_name
+    # out_dir: ~/all_my_output/{timestamp:}/{model_name:}/{task_name:}
 
 
 
@@ -44,9 +45,8 @@ tasks:
 
   # Evaluating simulations
   eval:
-    defaults:  # prepended to eval-out-dir
-      # enabled: true   # default
-
+    defaults:
+      # enabled: true
       # Values below update those from task_defaults.eval
 
       # Model name and run directory to load data from
@@ -54,15 +54,14 @@ tasks:
       # run_dir: ~
 
       # Arguments to PlotManager.plot_from_cfg
-      # plot_out_dir: ~  # allow format string here
-      # plot_only: [ ... ]
+      plot_only: [state_mean]
       update_plots_cfg: {}
 
-      # All other arguments are passed to `Model.create_frozen_mv`
+      # All other arguments are passed to `Model.create_frozen_mv` and can for
+      # instance be used to configure the PlotManager.
       # ...
 
     no_plots:
       model_name: dummy
-      run_dir: ~
-
+      print_tree: True
       plot_only: []

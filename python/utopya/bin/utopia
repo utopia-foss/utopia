@@ -603,11 +603,10 @@ if __name__ == '__main__':
         import os
         from utopya.batch import BatchTaskManager
 
-        log.progress("Setting up batch task manager ...")
         btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path,
                                debug=args.debug)
 
-        btm.perform_all_tasks()
+        btm.perform_tasks()
 
         log.success("Batch work all finished now, yay! :)\n")
         sys.exit()
