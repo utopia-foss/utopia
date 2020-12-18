@@ -51,6 +51,7 @@ class WorkerManager:
                  QueueCls=queue.Queue,
                  reporter: WorkerManagerReporter=None,
                  rf_spec: Dict[str, Union[str, List[str]]]=None,
+                 save_streams_on_monitor_update: bool=False,
                  nonzero_exit_handling: str='ignore',
                  interrupt_params: dict=None,
                  cluster_mode: bool=False,
@@ -80,6 +81,11 @@ class WorkerManager:
                 strings, where the strings always refer to report formats
                 registered with the WorkerManagerReporter. This argument
                 updates the default report format specifications.
+            save_streams_on_monitor_update (bool, optional): Whether to save
+                streams on monitor update. This is the default value and may
+                be overwritten for each task in
+                :py:meth:`~utopya.workermanager.WorkerManager.add_task` or via
+                the individual stream-saving arguments.
             nonzero_exit_handling (str, optional): How to react if a WorkerTask
                 exits with a non-zero exit code. For 'ignore', nothing happens.
                 For 'warn', a warning is printed and the last 5 lines of the
@@ -128,6 +134,7 @@ class WorkerManager:
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
+        self.save_streams_on_monitor_update = save_streams_on_monitor_update
         self._suppress_rf_specs = []
         self.pending_exceptions = queue.Queue()
 
@@ -324,13 +331,28 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, TaskCls: type=WorkerTask, **task_kwargs) -> WorkerTask:
+    def add_task(self, *,
+                 TaskCls: type=WorkerTask,
+                 save_streams_on_monitor_update: bool=None,
+                 **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
 
         Args:
+            TaskCls (type, optional): The WorkerTask-like type to use
+            save_streams_on_monitor_update (bool, optional): If True, will call
+                :py:meth:`utopya.task.WorkerTask.save_streams` every time the
+                ``monitor_updated`` callback is invoked. If None, will use the
+                value given during initialization.
             **task_kwargs: All arguments needed for WorkerTask initialization.
-                See utopya.task.WorkerTask.__init__ for all valid arguments.
+                See :py:class:`utopya.task.WorkerTask` for all valid arguments.
+
+        Returns:
+            WorkerTask: The created WorkerTask object
         """
+        # Evaluate defaults
+        if save_streams_on_monitor_update is None:
+            save_streams_on_monitor_update = self.save_streams_on_monitor_update
+
         # Define the function needed to calculate the task's progress
         def calc_progress(task) -> float:
             """Uses the task's stream objects to calculate the progress.
@@ -395,6 +417,8 @@ class WorkerManager:
             """Performs actions when there was a parsed object in the task's
             stream, i.e. when the monitor got an update.
             """
+            if save_streams_on_monitor_update:
+                task.save_streams(final=False)
             self._invoke_report('monitor_updated')
 
         # Prepare the arguments for the WorkerTask . . . . . . . . . . . . . .
@@ -404,7 +428,8 @@ class WorkerManager:
                          parsed_object_in_stream=monitor_updated)
 
         # Generate the WorkerTask-like object from the given parameters
-        task = TaskCls(callbacks=callbacks, progress_func=calc_progress,
+        task = TaskCls(callbacks=callbacks,
+                       progress_func=calc_progress,
                        **task_kwargs)
 
         # Append it to the task list and put it into the task queue

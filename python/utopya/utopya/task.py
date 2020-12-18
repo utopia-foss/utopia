@@ -14,6 +14,7 @@ import subprocess
 import threading
 import multiprocessing
 import signal
+import re
 import warnings
 import logging
 from functools import partial
@@ -29,6 +30,10 @@ log = logging.getLogger(__name__)
 
 # A map from signal names to corresponding integer exit codes
 SIGMAP = {a: int(getattr(signal, a)) for a in dir(signal) if a[:3] == "SIG"}
+
+# A regex pattern to remove ANSI escape characters, needed for stream saving
+# From: https://stackoverflow.com/a/14693789/1827608
+_ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 # -----------------------------------------------------------------------------
@@ -608,8 +613,7 @@ class WorkerTask(Task):
 
         return
 
-    def save_streams(self, stream_names: list='all', *,
-                     save_raw: bool=True, final: bool=False) -> None:
+    def save_streams(self, stream_names: list='all', *, final: bool=False):
         """For each stream, checks if it is to be saved, and if yes: saves it.
 
         The saving location is stored in the streams dict. The relevant keys
@@ -630,11 +634,13 @@ class WorkerTask(Task):
             final (bool, optional): If True, this is regarded as the final
                 save operation for the stream, which will lead to additional
                 information being saved to the end of the log.
+            remove_ansi (bool, optional): If True, will remove ANSI escape
+                characters (e.g. from colored logging) from the log before
+                saving to file.
 
         Returns:
             None
         """
-
         if not self.streams:
             # There are no streams to save
             log.debug("No streams to save for WorkerTask '%s' (uid: %s).",
@@ -657,6 +663,7 @@ class WorkerTask(Task):
             # else: this stream is to be saved
 
             # Determine the lines to save
+            save_raw = stream['save_raw']
             stream_log = stream['log_raw'] if save_raw else stream['log']
             lines_to_save = stream_log[slice(stream['lines_saved'], None)]
 
@@ -674,18 +681,28 @@ class WorkerTask(Task):
             with open(stream['save_path'], 'a') as f:
                 # Write header, if not already done
                 if stream['lines_saved'] == 0:
-                    f.write("Log of '{}' stream of WorkerTask '{}'"
-                            "\n\n".format(stream_name, self.name))
+                    f.write(
+                        "Log of '{}' stream of {} '{}'\n---\n\n"
+                        "".format(stream_name, type(self).__name__, self.name)
+                    )
 
-                # Write the lines to save
-                f.write("\n".join(lines_to_save))
+                # Prepare the string that is to be saved, potentially removing
+                # ANSI escape characters (e.g. from regex logging) ...
+                s = "\n".join(lines_to_save)
+                if stream['remove_ansi']:
+                    s = _ANSI_ESCAPE.sub('', s)
+
+                # ... and write it.
+                f.write(s)
 
                 # If this is the final save call, add information on the exit
                 # status to the end
                 if final:
-                    f.write("\n"
-                            "\n---"
-                            f"\nend of log. exit code: {self.worker_status}\n")
+                    f.write(
+                        "\n"
+                        "\n---"
+                        f"\nend of log. exit code: {self.worker_status}\n"
+                    )
 
                     if self.fulfilled_stop_conditions:
                         _fsc = "\n  - ".join([str(sc) for sc in
@@ -701,6 +718,8 @@ class WorkerTask(Task):
 
             log.debug("Saved %d lines of stream '%s'.",
                       len(lines_to_save), stream_name)
+
+        # All done.
 
     def forward_streams(self, stream_names: list='all',
                         forward_raw: bool=False) -> bool:
@@ -903,6 +922,8 @@ class WorkerTask(Task):
                              follow: bool = False,
                              save_streams: bool = False,
                              save_streams_to: str = None,
+                             save_raw: bool = True,
+                             remove_ansi: bool = False,
                              forward_streams: bool = False,
                              forward_raw: bool = True,
                              streams_log_lvl: int = None,
@@ -934,6 +955,7 @@ class WorkerTask(Task):
             queue=q, thread=t,
             log=[], log_raw=[], log_parsed=[],
             save=save_streams, save_path=None,
+            save_raw=save_raw, remove_ansi=remove_ansi,
             forward=forward_streams, forward_raw=forward_raw,
             log_level=streams_log_lvl,
             lines_saved=0, lines_forwarded=0

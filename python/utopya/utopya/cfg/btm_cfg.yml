@@ -23,9 +23,12 @@ task_defaults:
     # Relative paths are evaluated relative to the batch output directory.
     out_dir: "{model_name:}/{task_name:}"
 
-    # Whether to symlink to the batch output directory, allowing to figure out
-    # which file this belongs to.
-    create_symlink: false  # TODO
+    # Whether to symlink to the batch output directory, allowing to link back
+    # from the output to the batch configuration.
+    create_symlink: true
+
+    # Task priority; tasks with a lower value are worked on first.
+    priority: ~
 
     # Any further arguments: used within task to set up the FrozenMultiverse
     plot_manager:
@@ -83,6 +86,13 @@ worker_kwargs:
   save_streams: true
   # The log file is saved only after the MPProcessTask has finished in order to
   # reduce I/O operations on files
+
+  # Whether to save streams in raw format
+  save_raw: true
+
+  # Whether to remove ANSI escape characters (e.g. from color logging) when
+  # saving the stream
+  remove_ansi: true
 
   # Whether to forward the streams to stdout. Output may be garbled!
   forward_streams: false

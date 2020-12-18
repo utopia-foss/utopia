@@ -29,6 +29,9 @@ log = logging.getLogger(__name__)
 
 def _eval_task(
     *,
+    task_name: str,
+    _task_cfg_path: str,
+    _create_symlink_to_task_cfg: bool,
     model_name: str,
     model_kwargs: dict = {},
     print_tree: Union[bool, str] = 'condensed',
@@ -40,10 +43,21 @@ def _eval_task(
     """The evaluation task target for the multiprocessing.Process. It sets up
     a :py:class:`utopya.model.Model`, loads the data, and performs plots.
     """
+    import os
     from .model import Model
+
+    log.progress("Setting up evaluation task '%s' for model '%s' ...",
+                 task_name, model_name)
 
     model = Model(name=model_name, **model_kwargs)
     mv = model.create_frozen_mv(**frozen_mv_kwargs)
+
+    # Create the symlink back to the task configuration file
+    if _create_symlink_to_task_cfg:
+        os.symlink(_task_cfg_path,
+                   os.path.join(mv.dm.dirs['out'], "_task_cfg.yml"))
+        log.note("Created symlink to batch task configuration:\n  %s",
+                 _task_cfg_path)
 
     # Load the data tree
     mv.dm.load_from_cfg()
@@ -169,15 +183,14 @@ class BatchTaskManager:
 
         # Update again
         batch_cfg = _recursive_update(batch_cfg, _deepcopy(update_batch_cfg))
+        log.info("Loaded batch configuration.")
 
-        # For debug mode, adjust some parameters
+        # For debug mode, let the WorkerManager raise directly rather than only
+        # issuing warnings (default).
         if batch_cfg["debug"]:
-            log.note("  Using debug mode.")
+            log.note("Using debug mode.")
 
             batch_cfg["worker_manager"]["nonzero_exit_handling"] = "raise"
-
-            eval_defaults = batch_cfg["task_defaults"]["eval"]
-            eval_defaults["plot_manager"]["raise_exc"] = True
 
         return batch_cfg
 
@@ -203,7 +216,7 @@ class BatchTaskManager:
         os.makedirs(batch_run_dir)
 
         # Subdirectories
-        subdirs = ("config", "eval", "run", "logs")
+        subdirs = ("config", "config/tasks", "eval", "run", "logs",)
         for subdir in subdirs:
             dirs[subdir] = os.path.join(batch_run_dir, subdir)
             os.makedirs(dirs[subdir])
@@ -271,12 +284,12 @@ class BatchTaskManager:
         *,
         model_name: str,
         out_dir: str,
-        create_symlink: bool = False,  # TODO
         enabled: bool = True,
         priority: int = None,
+        create_symlink: bool = False,
         **eval_task_kwargs
     ):
-        """Adds a single evaluation task to the WorkerManager
+        """Adds a single evaluation task to the WorkerManager.
 
         Args:
             name (str): Name of this task
@@ -288,6 +301,8 @@ class BatchTaskManager:
                 keys: ``task_name``, ``model_name``, ``timestamp``.
                 Relative paths are evaluated relative to the ``eval`` batch
                 run directory.
+            create_symlink (bool, optional): Whether to create a symlink from
+                the output directory to the batch run directory.
             enabled (bool, optional): If False, will *not* add this task.
             priority (int, optional): Task priority
             **eval_task_kwargs: All further eval task arguments.
@@ -306,17 +321,28 @@ class BatchTaskManager:
             if not os.path.isabs(out_dir):
                 out_dir = os.path.join(self.dirs['eval'], out_dir)
 
+            # Prepare the file path for a backup of the individual task config
+            task_cfg_path = os.path.join(self.dirs["config/tasks"],
+                                         f"eval_{name}.yml")
 
-            # Configure the data manager accordingly
+            # Update the task arguments accordingly, setting the DataManager's
+            # output directory and adding metadata
             eval_task_kwargs = _recursive_update(
                 eval_task_kwargs,
-                dict(model_name=model_name, data_manager=dict(out_dir=out_dir))
+                dict(
+                    task_name=name,
+                    _task_cfg_path=task_cfg_path,
+                    _create_symlink_to_task_cfg=create_symlink,
+                    model_name=model_name,
+                    data_manager=dict(out_dir=out_dir)
+                )
             )
 
-            # TODO Should also store full eval_task_kwargs to out_dir!!
-            # TODO Symlink. Either here or in the process ...
-            # FIXME The above probably both conflict with DataManager failing
-            #       if the directory already exists.
+            # Backup the configuration, such that the task can create a symlink
+            # back to it. This needs to be done by the task, because the
+            # DataManager will create the output directory and will fail if it
+            # already exists (which is good).
+            _write_yml(eval_task_kwargs, path=task_cfg_path)
 
             # Generate a new worker_kwargs dict, carrying over the given ones
             worker_kwargs = dict(

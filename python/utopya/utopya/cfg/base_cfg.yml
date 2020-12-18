@@ -143,6 +143,9 @@ worker_manager:
     # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: false
 
+  # Whether to save streams upon monitor updates
+  save_streams_on_monitor_update: true
+
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to
   # by name here. They can also be lists, if multiple report formats should

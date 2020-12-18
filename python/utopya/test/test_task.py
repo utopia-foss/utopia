@@ -7,13 +7,9 @@ import logging
 from time import sleep
 from functools import partial
 
-import multiprocessing
-# NOTE Need this import, otherwise tests that use multiprocessing hang forever
-
 import numpy as np
 import pytest
 
-import utopya
 from utopya.task import (Task, WorkerTask, TaskList,
                          PopenMPProcess, MPProcessTask,
                          enqueue_lines, parse_yaml_dict, SIGMAP)
@@ -185,9 +181,11 @@ def test_workertask_streams(tmpdir):
     with open(save_path) as f:
         lines = [line.strip() for line in f]
 
-    assert len(lines) == 5
-    assert lines[0].startswith("Log of 'out' stream of WorkerTask")
-    assert lines[2:] == ["foo", "bar", "baz"]
+    assert len(lines) == 6
+    assert lines[0].startswith(
+        "Log of 'out' stream of WorkerTask 'stream_test'"
+    )
+    assert lines[3:] == ["foo", "bar", "baz"]
 
     # Trying to save the streams again, there should be no more lines available
     t.save_streams()
