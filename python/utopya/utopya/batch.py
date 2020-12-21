@@ -9,13 +9,17 @@ from pkg_resources import resource_filename as _resource_filename
 from typing import Dict, Tuple, Union, Sequence, Callable
 
 from .yaml import load_yml as _load_yml, write_yml as _write_yml
-from .tools import recursive_update as _recursive_update
-from .cfg import load_from_cfg_dir as _load_from_cfg_dir
+from .tools import (recursive_update as _recursive_update)
+from .cfg import (
+    load_from_cfg_dir as _load_from_cfg_dir,
+    UTOPIA_CFG_FILE_PATHS as _UTOPIA_CFG_FILE_PATHS
+)
 from .workermanager import WorkerManager
 from .reporter import WorkerManagerReporter
 from .task import MPProcessTask
 
-_BTM_BASE_CFG = _load_yml(_resource_filename("utopya", "cfg/btm_cfg.yml"))
+_BTM_BASE_CFG_PATH = _resource_filename("utopya", "cfg/btm_cfg.yml")
+_BTM_BASE_CFG = _load_yml(_BTM_BASE_CFG_PATH)
 _BTM_USER_DEFAULTS = _load_from_cfg_dir("batch")
 _BTM_DEFAULTS = _recursive_update(_deepcopy(_BTM_BASE_CFG),
                                   _deepcopy(_BTM_USER_DEFAULTS))
@@ -33,8 +37,10 @@ log = logging.getLogger(__name__)
 def _eval_task(
     *,
     task_name: str,
+    _batch_name: str,
+    _batch_dirs: dict,
     _task_cfg_path: str,
-    _create_symlink_to_task_cfg: bool,
+    _create_symlinks: bool,
     model_name: str,
     model_kwargs: dict = {},
     print_tree: Union[bool, str] = 'condensed',
@@ -55,15 +61,49 @@ def _eval_task(
     model = Model(name=model_name, **model_kwargs)
     mv = model.create_frozen_mv(**frozen_mv_kwargs)
 
-    # Create the symlink back to the task configuration file, removing any
-    # potentially existing symlinks.
-    if _create_symlink_to_task_cfg:
-        dst = os.path.join(mv.dm.dirs['out'], "_task_cfg.yml")
-        if os.path.islink(dst):
-            os.remove(dst)
-        os.symlink(_task_cfg_path, dst)
-        log.note("Created symlink to batch task configuration:\n  %s",
-                 _task_cfg_path)
+    # Create symlinks to improve crosslinking between related files/directories
+    if _create_symlinks:
+        log.progress("Creating symlinks ...")
+
+        # ... back to the run directory, removing an existing one.
+        _dst = os.path.join(mv.dm.dirs['out'], "_run")
+        if os.path.islink(_dst):
+            os.remove(_dst)
+        os.symlink(mv.dm.dirs['data'], _dst)
+        log.note("...to original run directory.")
+
+        # ... from the evaluation output directory of the original run to the
+        # evaluation data directory of this batch eval task.
+        _dst = os.path.join(mv.dm.dirs['data'], "eval",
+                            f"{_batch_name}_eval_{task_name}")
+        os.symlink(mv.dm.dirs['out'], _dst)
+        log.note("...from original run directory back to this evaluation "
+                 "output directory.")
+
+        # ... back to the task configuration file, removing an existing one.
+        _dst = os.path.join(mv.dm.dirs['out'], "_task_cfg.yml")
+        if os.path.islink(_dst):
+            os.remove(_dst)
+        os.symlink(_task_cfg_path, _dst)
+        log.note("...to batch task configuration.")
+
+        # With output directories that are *outside* of the batch run
+        # directory, add links back and forth between them:
+        if not mv.dm.dirs['out'].startswith(_batch_dirs['eval']):
+            # ... back to the batch run directory
+            _dst = os.path.join(mv.dm.dirs['out'], "_batch_run")
+            if os.path.islink(_dst):
+                os.remove(_dst)
+            os.symlink(_batch_dirs['batch_run'], _dst)
+            log.note("...to batch run directory.")
+
+            # ... from default eval directory to custom one
+            _dst = os.path.join(_batch_dirs['eval'], task_name)
+            os.symlink(mv.dm.dirs['out'], _dst)
+            log.note("...from batch evaluation output directory to custom "
+                     "output directory.")
+
+    print("")
 
     # Load the data tree
     mv.dm.load_from_cfg()
@@ -104,21 +144,21 @@ class BatchTaskManager:
         """
         log.progress("Initializing BatchTaskManager ...")
 
-        # Parse and store all configuration options
         self._cfg = self._setup_batch_cfg(batch_cfg_path, **update_batch_cfg)
-
-        # Associate a fixed timestamp string with this batch run
         self._timestamp_str = time.strftime(self.RUN_DIR_TIME_FSTR)
 
-        # Setup directories and perform backup
-        self._dirs = self._setup_dirs(**self._cfg["paths"])
+        self._dirs, self._name = self._setup_dirs(**self._cfg["paths"])
         log.note("Batch run directory:\n  %s", self.dirs["batch_run"])
 
-        self._perform_backup(batch_file=batch_cfg_path,
-                             update_cfg=update_batch_cfg,
-                             batch_cfg=self._cfg)
+        self._perform_backup(
+            base_cfg=_BTM_BASE_CFG_PATH,
+            user_cfg=_UTOPIA_CFG_FILE_PATHS.get('batch'),
+            batch_file=batch_cfg_path,
+            update_cfg=update_batch_cfg,
+            batch_cfg=self._cfg,
+        )
 
-        # Some features are not yet implemented
+        # Some features are not yet implemented ...
         if self._cfg["cluster_mode"]:
             raise NotImplementedError("Cluster mode is not supported yet!")
 
@@ -130,9 +170,12 @@ class BatchTaskManager:
             **self._cfg['reporter'],
         )
 
-        # All done.
-        log.progress("Initialized BatchTaskManager.\n")
+        log.progress("Initialized BatchTaskManager.")
+        log.note("  Parallelization level:     %s", self.parallelization_level)
+        log.note("  Debug mode?                %s", self.debug)
 
+    def __str__(self) -> str:
+        return f"<BatchTaskManager '{self._name}'>"
 
     # .........................................................................
 
@@ -192,7 +235,6 @@ class BatchTaskManager:
 
         # For debug mode, let the WorkerManager raise directly rather than only
         # issuing warnings (default).
-        log.note("  Debug mode?                %s", batch_cfg["debug"])
         if batch_cfg["debug"]:
             batch_cfg["worker_manager"]["nonzero_exit_handling"] = "raise"
 
@@ -222,12 +264,11 @@ class BatchTaskManager:
                 "Valid options are:  batch, task"
             )
 
-        log.note("  Parallelization level:     %s", plevel)
-
         log.info("Loaded batch configuration.")
         return batch_cfg
 
-    def _setup_dirs(self, out_dir: str, note: str = None) -> Dict[str, str]:
+    def _setup_dirs(self, out_dir: str, note: str = None
+                    ) -> Tuple[Dict[str, str], str]:
         """Sets up directories"""
         out_dir = os.path.expanduser(out_dir)
 
@@ -254,7 +295,7 @@ class BatchTaskManager:
             dirs[subdir] = os.path.join(batch_run_dir, subdir)
             os.makedirs(dirs[subdir])
 
-        return dirs
+        return dirs, batch_run_dir_name
 
     def _perform_backup(self, **parts):
         """Stores the given configuration parts in the config directory"""
@@ -268,6 +309,8 @@ class BatchTaskManager:
             # preserves the comments and structure etc. Otherwise store the
             # (most probably dict-like) data as a YAML dump.
             if isinstance(val, str):
+                if not os.path.exists(val):
+                    continue
                 log.debug("Copying %s config ...", part_name)
                 _copy2(val, _path)
 
@@ -315,7 +358,7 @@ class BatchTaskManager:
         out_dir: str,
         enabled: bool = True,
         priority: int = None,
-        create_symlink: bool = False,
+        create_symlinks: bool = False,
         **eval_task_kwargs
     ):
         """Adds a single evaluation task to the WorkerManager.
@@ -327,24 +370,33 @@ class BatchTaskManager:
             out_dir (str): The path to the data output directory, i.e. the
                 directory where all plots will ned up in.
                 This may be a format string containing any of the following
-                keys: ``task_name``, ``model_name``, ``timestamp``.
+                keys: ``task_name``, ``model_name``, ``timestamp``,
+                ``batch_name`` (combination of ``timestamp`` and the note).
                 Relative paths are evaluated relative to the ``eval`` batch
                 run directory.
-            create_symlink (bool, optional): Whether to create a symlink from
-                the output directory to the batch run directory.
             enabled (bool, optional): If False, will *not* add this task.
-            priority (int, optional): Task priority
-            **eval_task_kwargs: All further eval task arguments.
+            priority (int, optional): Task priority; tasks with smaller value
+                will be picked first.
+            create_symlinks (bool, optional): Whether to create symlinks that
+                add crosslinks between related directories, e.g.: from the
+                output directory, link back to the task configuration; from the
+                evaluation output directory alongside the simulation data, link
+                to the batch output directory
+            **eval_task_kwargs: All further evaluation task arguments.
         """
         def setup_eval_task(worker_kwargs: dict,
                             model_name: str,
                             out_dir: str,
-                            create_symlink: bool,
+                            create_symlinks: bool,
                             eval_task_kwargs: dict) -> dict:
             """Run before the task starts; sets up all arguments for it ..."""
             # Prepare the DataManager's output directory path
-            out_dir = out_dir.format(task_name=name, model_name=model_name,
-                                     timestamp=self._timestamp_str)
+            out_dir = out_dir.format(
+                task_name=name,
+                model_name=model_name,
+                timestamp=self._timestamp_str,
+                batch_name=self._name,
+            )
             out_dir = os.path.expanduser(out_dir)
 
             if not os.path.isabs(out_dir):
@@ -355,6 +407,7 @@ class BatchTaskManager:
             eval_task_kwargs = _recursive_update(
                 eval_task_kwargs,
                 dict(
+                    _batch_name=self._name,
                     task_name=name,
                     model_name=model_name,
                     data_manager=dict(out_dir=out_dir)
@@ -368,8 +421,9 @@ class BatchTaskManager:
             task_cfg_path = os.path.join(self.dirs["config/tasks"],
                                          f"eval_{name}.yml")
             _write_yml(eval_task_kwargs, path=task_cfg_path)
+            eval_task_kwargs["_batch_dirs"] = self.dirs
             eval_task_kwargs["_task_cfg_path"] = task_cfg_path
-            eval_task_kwargs["_create_symlink_to_task_cfg"] = create_symlink
+            eval_task_kwargs["_create_symlinks"] = create_symlinks
 
             # Generate a new worker_kwargs dict, carrying over the given ones
             worker_kwargs = dict(
@@ -398,7 +452,7 @@ class BatchTaskManager:
         setup_kwargs = dict(model_name=model_name,
                             out_dir=out_dir,
                             eval_task_kwargs=eval_task_kwargs,
-                            create_symlink=create_symlink)
+                            create_symlinks=create_symlinks)
 
         # Add the task
         self._wm.add_task(

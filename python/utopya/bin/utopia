@@ -625,6 +625,8 @@ if __name__ == '__main__':
 
         # Here we go ...
         btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path, **kws)
+
+        print("")
         btm.perform_tasks()
 
         log.success("Batch work all finished now, yay! :)\n")
@@ -802,10 +804,11 @@ if __name__ == '__main__':
     while args.interactive:
         print("")
         log.hilight("--- Interactive plotting session %d ---", iap_session)
-        log.note("Use Control+C to exit.")
 
         # Unless this is the very first session, need to prompt for new args.
         if iap_session > 0:
+            log.note("Use Control+C to exit.")
+
             try:
                 argv, args = prompt_for_new_plot_args(old_argv=argv,
                                                       old_args=args,
@@ -834,6 +837,7 @@ if __name__ == '__main__':
         mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
                               raise_exc=args.debug)
         iap_session += 1
+        print("")
 
         # Now, try to plot:
         try:

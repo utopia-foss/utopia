@@ -743,7 +743,7 @@ Batch-run and batch-evaluate simulations
 
     * Configuration options can be easily shared within the batch file, e.g. to define a common aesthetic for plots.
     * Creating output from multiple simulations becomes easier to replicate.
-    * The batch file is self-documenting and can in principle be used like a lab book.
+    * The batch file is self-documenting and can, in principle, be used as a lab book.
     * This feature can be especially helpful if performing data evaluation for a talk or thesis: one can set a specific output directory (e.g. ``my_thesis/figures``) and easily re-create plot output.
 
 * The batch feature is available via the CLI by calling ``utopia batch``

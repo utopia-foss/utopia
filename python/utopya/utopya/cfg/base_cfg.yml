@@ -93,8 +93,8 @@ reporter:
       min_report_intv: 10             # don't update this one too often
       min_num: 4                      # min. number of universes for statistics
       show_individual_runtimes: true  # for large number of universes, disable
-      task_label_sg: universe
-      task_label_pl: universes
+      task_label_singular: universe
+      task_label_plural: universes
 
     # Creates a parameter sweep information file
     sweep_info:

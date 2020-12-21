@@ -964,7 +964,8 @@ class WorkerManagerReporter(Reporter):
     def _parse_report(self, *, fstr: str="  {k:<{w:}s}  {v:}",
                       min_num: int=4, report_no: int=None,
                       show_individual_runtimes: bool=True,
-                      task_label_sg: str="task", task_label_pl: str="tasks",
+                      task_label_singular: str="task",
+                      task_label_plural: str="tasks",
                       ) -> str:
         """Parses a report for all tasks that were being worked on into a
         multiline string. The headings can be adjusted by keyword arguments.
@@ -981,10 +982,10 @@ class WorkerManagerReporter(Reporter):
             show_individual_runtimes (bool, optional): Whether to report
                 individual universe runtimes; default: True. This should be
                 disabled if there are a huge number of universes.
-            task_label_sg (str, optional): The label to use in the text when
-                referring to a single task.
-            task_label_pl (str, optional): The label to use in the text when
-                referring to multiple tasks.
+            task_label_singular (str, optional): The label to use in the report
+                when referring to a single task.
+            task_label_plural (str, optional): The label to use in the report
+                when referring to multiple tasks.
 
         Returns:
             str: The multi-line simulation report string
@@ -1000,9 +1001,9 @@ class WorkerManagerReporter(Reporter):
             parts += ["------------------"]
             parts += [""]
             parts += ["The statistics below are calculated from all "
-                      f"individual {task_label_sg} run times."]
+                      f"individual {task_label_singular} run times."]
             parts += [""]
-            parts += ["  # {}:  {} / {}".format(task_label_pl,
+            parts += ["  # {}:  {} / {}".format(task_label_plural,
                                                 len(self.runtimes),
                                                 len(self.wm.tasks))]
             parts += [""]
@@ -1037,8 +1038,8 @@ class WorkerManagerReporter(Reporter):
             parts += ["---------------"]
             parts += [""]
             parts += [f"  {len(self.runtimes)} / {len(self.wm.tasks)} "
-                      f"{task_label_pl} were stopped due to at least one of "
-                      "the following stop conditions:"]
+                      f"{task_label_plural} were stopped due to at least one "
+                      "of the following stop conditions:"]
             parts += [""]
             parts += [f"  {sc}\n"
                       f"      {task_names(sc)}\n"
@@ -1049,7 +1050,7 @@ class WorkerManagerReporter(Reporter):
 
         # Add individual universe run times
         if show_individual_runtimes:
-            parts += [f"{task_label_sg.capitalize()} Runtimes"]
+            parts += [f"{task_label_singular.capitalize()} Runtimes"]
             parts += ["-" * len(parts[-1])]
             parts += [""]
 

@@ -84,6 +84,7 @@ def test_batch_file():
     btm = BatchTaskManager(batch_cfg_path=BATCH_FILE_PATH, debug=True)
 
     # Check some default values
+    assert "BatchTaskManager" in str(btm)
     assert btm.debug
     assert btm.parallelization_level == "batch"
 

@@ -31,20 +31,41 @@ task_defaults:
 
   eval:
     # The data output directory for evaluation tasks.
-    # May be a format string, allowed keys: model_name, task_name, timestamp.
+    # May be a format string, allowed keys:
+    #   model_name, task_name, timestamp, batch_name (== {timestamp}_{note})
     # Relative paths are evaluated relative to the batch output directory.
-    out_dir: "{model_name:}/{task_name:}"
+    out_dir: "{task_name:}"
 
-    # Whether to symlink to the batch output directory, allowing to link back
-    # from the output to the batch configuration.
-    create_symlink: true
+    # Whether to create symlinks that connect the batch run directory with
+    # related directories and files elsewhere:
+    #   - Adds a symlink from the task configuration to the batch run directory
+    #   - Adds a symlink from the *simulation output directory* (where the
+    #     simulation data resides) to this evaluation output directory.
+    create_symlinks: true
 
     # Task priority; tasks with a lower value are worked on first.
     priority: ~
 
-    # Any further arguments: used within task to set up the FrozenMultiverse
+    # Any further arguments here are used within the task to set up the
+    # meta-configuration of the FrozenMultiverse.
+    data_manager:
+      out_dir_kwargs:
+        # By default, make sure that the data directory does *not* yet exist
+        exist_ok: false
+
     plot_manager:
+      # Raise exceptions, such that plots do not fail silently within a task
       raise_exc: true
+
+      # The following options may be useful if desiring to allow that new plots
+      # overwrite existing plots ...
+      # cfg_exists_action: overwrite_nowarn
+      # creator_init_kwargs:
+      #   universe:
+      #     exist_ok: true
+      #   multiverse:
+      #     exist_ok: true
+
 
 
 tasks:
