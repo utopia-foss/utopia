@@ -43,7 +43,7 @@ You can then work your way through the other :ref:`guides <index_guides>`.
    If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_ of them. Thank you! :)
 
 
-Contents of This Documentation
+Contents of this Documentation
 ------------------------------
 
 .. toctree::
@@ -74,7 +74,9 @@ Contents of This Documentation
    frontend/inc/utopya_base_cfg
    frontend/data
    frontend/plotting
+   frontend/batch
    frontend/inc/base_plots_cfg
+   frontend/inc/batch_cfg
    utopya API Reference <api_utopya/utopya>
    frontend/interactive
    frontend/*
@@ -93,7 +95,7 @@ Contents of This Documentation
    :caption: Frequently Asked Questions (FAQ)
    :maxdepth: 2
    :glob:
-      
+
    faq/*
 
 .. toctree::

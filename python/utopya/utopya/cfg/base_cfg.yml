@@ -86,13 +86,15 @@ reporter:
 
     # Creates a report file containing runtime statistics
     report_file:
-      parser: sim_report
+      parser: report
       write_to:
         file:
           path: _report.txt
       min_report_intv: 10             # don't update this one too often
       min_num: 4                      # min. number of universes for statistics
       show_individual_runtimes: true  # for large number of universes, disable
+      task_label_singular: universe
+      task_label_plural: universes
 
     # Creates a parameter sweep information file
     sweep_info:
@@ -123,6 +125,9 @@ worker_manager:
   #       If this value is too high, the log output from simulations is not
   #       read from the line buffer frequently enough.
 
+  # Periodic task callback (in units of poll events). Set None to deactivate.
+  periodic_task_callback: ~
+
   # How to react upon a simulation exiting with non-zero exit code
   nonzero_exit_handling: raise
   # can be: ignore, warn, warn_all, raise
@@ -142,6 +147,10 @@ worker_manager:
 
     # Whether to exit after working; exit code will be 128 + abs(signum)
     exit: false
+
+  # In which events to save streams *during* the work session
+  # May be: `monitor_updated`, `periodic_callback`
+  save_streams_on: [monitor_updated]
 
   # Report format specifications at different points of the WM's operation
   # These report formats were defined in the reporter and can be referred to

@@ -177,6 +177,9 @@ p_run   = subparsers.add_parser('run',
 p_eval  = subparsers.add_parser('eval',
                                 help="load a finished Utopia run and perform "
                                      "only the evaluation")
+p_batch = subparsers.add_parser('batch',
+                                help="run and evaluate multiple simulations "
+                                     "from a batch configuration")
 
 
 # subcommand: models ..........................................................
@@ -328,7 +331,13 @@ pm_cp.add_argument('--skip-exts',
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths', 'plot_module_paths', 'projects'],
+    choices=[
+        'user',
+        'batch',
+        'external_module_paths',
+        'plot_module_paths',
+        'projects',
+    ],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',
@@ -553,6 +562,25 @@ p_eval.add_argument('--cluster-mode',
     help="Enables cluster mode. Note that for plotting, this information is "
          "not yet taken into account!")
 
+
+# subcommand: batch ...........................................................
+p_batch.add_argument('batch_cfg_path',
+    help="Path to batch configuration file")
+p_batch.add_argument('-d', '--debug',
+    action='store_true',
+    help="If set, an error in an individual task will stop all other tasks.")
+p_batch.add_argument('-s', '--single-worker',
+    action='store_true',
+    help="If set, will use 'task' parallelization level instead of 'batch'. "
+         "Effectively, the batch tasks will be worked on sequentially. "
+         "This option can also be useful for debugging or when encountering "
+         "memory issues.")
+p_batch.add_argument('--note',
+    default=None, nargs='?',
+    help="Overwrites the `paths->model_note` entry which is used in creation "
+         "of the batch run directory path.")
+
+
 # CLI defined now.
 # -----------------------------------------------------------------------------
 
@@ -578,6 +606,33 @@ from utopya.parameter import ValidationError
 
 
 if __name__ == '__main__':
+    # Batch subcommand ........................................................
+    if args.mode == 'batch':
+        import os
+        from utopya.batch import BatchTaskManager
+
+        # Assemble update arguments
+        kws = dict()
+        if args.debug:
+            kws["debug"] = args.debug
+
+        if args.single_worker:
+            kws["parallelization_level"] = "task"
+
+        if args.note:
+            kws["paths"] = dict(note=args.note)
+
+
+        # Here we go ...
+        btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path, **kws)
+
+        print("")
+        btm.perform_tasks()
+
+        log.success("Batch work all finished now, yay! :)\n")
+        sys.exit()
+
+
     # Config subcommand .......................................................
     if args.mode == 'config':
         if args.cfg_name == 'user' and args.deploy:
@@ -749,10 +804,11 @@ if __name__ == '__main__':
     while args.interactive:
         print("")
         log.hilight("--- Interactive plotting session %d ---", iap_session)
-        log.note("Use Control+C to exit.")
 
         # Unless this is the very first session, need to prompt for new args.
         if iap_session > 0:
+            log.note("Use Control+C to exit.")
+
             try:
                 argv, args = prompt_for_new_plot_args(old_argv=argv,
                                                       old_args=args,
@@ -781,6 +837,7 @@ if __name__ == '__main__':
         mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
                               raise_exc=args.debug)
         iap_session += 1
+        print("")
 
         # Now, try to plot:
         try:

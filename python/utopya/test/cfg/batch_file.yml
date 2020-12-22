@@ -1,0 +1,61 @@
+# A _file_ used for testing the BatchTaskManager
+---
+# BatchTaskManager Settings ...................................................
+# In debug mode, a failing batch task will lead to all tasks being stopped
+debug: true
+
+
+# Defaults ....................................................................
+task_defaults:
+  run: {}
+  eval:
+    enabled: true  # also the default
+
+    # Can customize the output directory here.
+    # Format strings are supported. Keys: timestamp, model_name, task_name
+    # out_dir: ~/all_my_output/{timestamp:}/{model_name:}/{task_name:}
+
+
+
+# Task definitions ............................................................
+# Running simulations
+tasks:
+  run: {}
+    # NOTE Not implemented! But this could be the possible syntax.
+    # my_run_task:  # task name is used for paths.model_note
+    #   model_name: dummy
+
+    #   # A few special keys
+    #   run_only: true
+    #   plot_only: []
+    #   update_plots_cfg: {}
+
+    #   # ... all further kwargs: passed to `Model.create_mv` and thus directly
+    #   # adjust the meta configuration
+    #   parameter_space:
+    #     dummy:
+    #       num_steps: 123M
+
+
+  # Evaluating simulations
+  eval:
+    defaults:
+      # enabled: true
+      # Values below update those from task_defaults.eval
+
+      # Model name and run directory to load data from
+      model_name: dummy
+      # run_dir: ~
+
+      # Arguments to PlotManager.plot_from_cfg
+      plot_only: [state_mean]
+      update_plots_cfg: {}
+
+      # All other arguments are passed to `Model.create_frozen_mv` and can for
+      # instance be used to configure the PlotManager.
+      # ...
+
+    no_plots:
+      model_name: dummy
+      print_tree: True
+      plot_only: []

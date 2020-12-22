@@ -11,12 +11,12 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.5.4',
-    'dantro>=0.15.0a2',
+    'dantro>=0.15.2',
     # NOTE Version need also be set in python/CMakeLists.txt
 
     # Required for testing:
-    'pytest>=3.4.0',
-    'pytest-cov>=2.5.1',
+    'pytest>=6.2.1',
+    'pytest-cov>=2.10.1',
     'psutil>=5.6.7'
 ]
 
@@ -70,7 +70,6 @@ setup(
     packages=find_packages(exclude=["*.test", "*.test.*", "test.*", "test"]),
     package_data=dict(utopya=["cfg/*.yml"]),
     install_requires=INSTALL_DEPS,
-    test_suite='py.test',
     #
     # Command line scripts, installed into the virtual environment
     scripts=['bin/utopia']

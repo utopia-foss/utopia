@@ -19,6 +19,7 @@ from ._exceptions import BundleExistsError
 
 # Local constants
 log = logging.getLogger(__name__)
+log.setLevel(logging.WARNING)
 
 # -----------------------------------------------------------------------------
 
@@ -40,7 +41,7 @@ class ModelRegistry:
     registered and information can be added to it.
 
     Additionally, there are some functions that provide an overview over the
-    registered models and with which information they 
+    registered models and with which information they
 
     # TODO Consider making this class a singleton?
     """
@@ -48,7 +49,7 @@ class ModelRegistry:
     def __init__(self, utopia_cfg_dir_path: str=UTOPIA_CFG_DIR):
         """Loads the utopia model registry from the configuration at the given
         path.
-        
+
         Args:
             utopia_cfg_dir_path (str, optional): The path to store the model
                 registry folder in.
@@ -72,7 +73,7 @@ class ModelRegistry:
 
         log.info("Ready. Have %d model%s registered.",
                  len(self), "s" if len(self) != 1 else "")
-    
+
     @property
     def registry_dir(self) -> str:
         """The model registry directory path"""
@@ -115,10 +116,10 @@ class ModelRegistry:
 
     def keys(self):
         return self._registry.keys()
-    
+
     def values(self):
         return self._registry.values()
-    
+
     def items(self):
         return self._registry.items()
 
@@ -145,10 +146,10 @@ class ModelRegistry:
                             **bundle_kwargs) -> ModelRegistryEntry:
         """Register information for a single model. This method also allows to
         create a new entry if a model does not exist.
-        
+
         However, it will raise an error if the model was already registered and
         neither the skip nor the remove options were explicitly specified.
-        
+
         Args:
             model_name (str): The name of the model to register
             exists_action (str, optional): The action to take when a model of
@@ -165,10 +166,10 @@ class ModelRegistry:
                         from the given kwargs is part of the registry entry.
 
             **bundle_kwargs: Passed on to ModelRegistryEntry.add_bundle
-        
+
         Returns:
             ModelRegistryEntry: The registry entry for this model.
-        
+
         Raises:
             ValueError: On ``exists_action == 'raise'`` and model already
                 existing.
@@ -222,7 +223,7 @@ class ModelRegistry:
         """Removes a registry entry and deletes the associated registry file"""
         try:
             entry = self._registry.pop(model_name)
-        
+
         except KeyError as err:
             raise KeyError("Could not remove entry for model '{}', because "
                            "no such model is registered. Available models: "
@@ -231,7 +232,7 @@ class ModelRegistry:
         else:
             log.info("Removed entry for model '%s' from model registry.",
                      model_name)
-        
+
         os.remove(entry.registry_file_path)
         log.debug("Removed associated registry file:  %s",
                   entry.registry_file_path)
@@ -245,14 +246,14 @@ class ModelRegistry:
         """Create a ModelRegistryEntry for the given model, which loads the
         associated data from the registry directory, and store it in the
         registry.
-        
+
         Args:
             model_name (str): Model name for which to add an ModelRegistryEntry
                 object.
-        
+
         Raises:
-            ValueError: If the model already exists.        
-        
+            ValueError: If the model already exists.
+
         Returns:
             ModelRegistryEntry: The newly created entry
         """
@@ -281,7 +282,7 @@ class ModelRegistry:
         for fname in os.listdir(self.registry_dir):
             # Get the model name from the file name
             model_name, ext = os.path.splitext(fname)
-            
+
             # Continue only if it is a YAML file
             if not ext.lower() == '.yml' or model_name in self:
                 continue

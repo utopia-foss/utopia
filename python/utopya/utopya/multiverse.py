@@ -169,6 +169,7 @@ class Multiverse:
                                name=self.model_name + "_data",
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
+        log.progress("Initialized DataManager.")
 
         # Either create a WorkerManager instance and its associated reporter
         # or use an already existing WorkerManager that is also used elsewhere
@@ -307,7 +308,6 @@ class Multiverse:
         Args:
             **update_kwargs: Passed on to PlotManager.__init__
         """
-        log.debug("Creating new PlotManager ...")
         try:
             pm = self._setup_pm(**update_kwargs)
 
@@ -317,7 +317,6 @@ class Multiverse:
                              "") from exc
 
         self._pm = pm
-        log.progress("Renewed PlotManager.\n")
 
     # Helpers .................................................................
 
@@ -578,11 +577,16 @@ class Multiverse:
         if update_kwargs:
             pm_kwargs = recursive_update(pm_kwargs, update_kwargs)
 
+        log.info("Initializing PlotManager ...")
         pm = PlotManager(dm=self.dm, _model_info_bundle=self.info_bundle,
                          base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
                          update_base_cfg=paths.get('base_plots'),
                          plots_cfg=paths.get('default_plots'),
                          **pm_kwargs)
+
+        log.progress("Initialized PlotManager.")
+        log.note("Output directory:  %s",
+                 pm._out_dir if pm._out_dir else "\n  " + self.dm.dirs['out'])
 
         return pm
 
@@ -702,7 +706,7 @@ class Multiverse:
 
         self._model_binpath = binpath
 
-    def _resolve_cluster_params(self) -> dict:
+    def _resolve_cluster_params(self) -> dict:  # TODO Outsource!
         """This resolves the cluster parameters, e.g. by setting parameters
         depending on certain environment variables. This function is called by
         the resolved_cluster_params property.
@@ -1228,6 +1232,7 @@ class FrozenMultiverse(Multiverse):
                                name=self.model_name + "_data",
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
+        log.progress("Initialized DataManager.")
 
         # Instantiate the PlotManager via the helper method
         self._pm = self._setup_pm()

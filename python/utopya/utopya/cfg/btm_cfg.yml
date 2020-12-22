@@ -1,0 +1,195 @@
+# The default configuration for the BatchTaskManager
+#
+# Mainly takes care to set up the WorkerManager in a reasonable shape.
+---
+# .. BatchTaskManager Options .................................................
+# In debug mode, a failing batch task will lead to all other tasks being
+# stopped and the main process exiting with a non-zero exit status.
+debug: false
+
+# Paths configuration
+paths:
+  # Where to store batch run configurations and metadata
+  out_dir: ~/utopia_output/_batch
+
+  # A note to append to the batch output directory
+  note: ~
+
+# At which level to perform parallelization
+parallelization_level: batch
+# Two options:
+#   batch:      parallelization is done on the level of the batch tasks, i.e.
+#               multiple tasks are worked on in parallel according to the
+#               configuration in `worker_manager.num_workers`.
+#   task:       each individual task may work in parallel, thus requiring
+#               more than one CPU core. Subsequently, num_workers is set to 1.
+
+
+# .. Task defaults ............................................................
+task_defaults:
+  run: {}       # Not implemented yet!
+
+  eval:
+    # The data output directory for evaluation tasks.
+    # May be a format string, allowed keys:
+    #   model_name, task_name, timestamp, batch_name (== {timestamp}_{note})
+    # Relative paths are evaluated relative to the batch output directory.
+    out_dir: "{task_name:}"
+
+    # Whether to create symlinks that connect the batch run directory with
+    # related directories and files elsewhere:
+    #   - Adds a symlink from the task configuration to the batch run directory
+    #   - Adds a symlink from the *simulation output directory* (where the
+    #     simulation data resides) to this evaluation output directory.
+    create_symlinks: true
+
+    # Task priority; tasks with a lower value are worked on first.
+    priority: ~
+
+    # Any further arguments here are used within the task to set up the
+    # meta-configuration of the FrozenMultiverse.
+    data_manager:
+      out_dir_kwargs:
+        # By default, make sure that the data directory does *not* yet exist
+        exist_ok: false
+
+    plot_manager:
+      # Raise exceptions, such that plots do not fail silently within a task
+      raise_exc: true
+
+      # The following options may be useful if desiring to allow that new plots
+      # overwrite existing plots ...
+      # cfg_exists_action: overwrite_nowarn
+      # creator_init_kwargs:
+      #   universe:
+      #     exist_ok: true
+      #   multiverse:
+      #     exist_ok: true
+
+
+
+tasks:
+  run: {}       # Not implemented yet. Adding a task here will raise an error.
+  eval: {}
+
+
+# .. WorkerManager and Reporter ...............................................
+worker_manager:
+  # Specify how many processes work in parallel
+  num_workers: auto
+  # can be: an int, 'auto' (== #CPUs). For values <= 0: #CPUs - num_workers
+  # NOTE: This value will be set to 1 if `parallelization_level = 'task'`,
+  #       because in those cases the parallelization should not occur in this
+  #       WorkerManager but within the individual tasks.
+
+  # Delay between polls [seconds]
+  poll_delay: 0.05
+  # NOTE: If this value is too low, the main thread becomes very busy.
+  #       If this value is too high, the log output from simulations is not
+  #       read from the line buffer frequently enough.
+
+  # Periodic task callback (in units of poll events). Set None to deactivate.
+  periodic_task_callback: 20
+
+  # How to react upon a simulation exiting with non-zero exit code
+  nonzero_exit_handling: warn_all
+  # can be: ignore, warn, warn_all, raise
+  # warn_all will also warn if the simulation was terminated by the frontend
+  # raise will lead to a SystemExit with the error code of the simulation
+
+  # How to handle keyboard interrupts
+  interrupt_params:
+    # Which signal to send to the workers
+    send_signal: SIGTERM  # should be SIGTERM for graceful shutdown
+
+    # How long to wait for workers to shut down before calling SIGKILL on them
+    grace_period: 5.
+    # WARNING Choosing the grace period too short may corrupt the output that
+    #         is written at the time of the signal.
+
+    # Whether to exit after working; exit code will be 128 + abs(signum)
+    exit: false
+
+  # In which events to save streams *during* the work session
+  # May be: `monitor_updated`, `periodic_callback`
+  save_streams_on: [periodic_callback]
+
+  # Report format specifications at different points of the WM's operation
+  # These report formats were defined in the reporter and can be referred to
+  # by name here. They can also be lists, if multiple report formats should
+  # be invoked.
+  rf_spec:
+    before_working: []
+    while_working: [while_working]
+    task_spawned: [while_working]
+    monitor_updated: []
+    task_finished: [while_working, report_file]
+    after_work: [after_work, report_file]
+    after_abort: [after_work, report_file]
+
+# The defaults for the worker_kwargs
+# These are passed to the setup function of each MPProcessTask before spawning
+worker_kwargs:
+  # Whether to save the streams of each individual batch process to a log file
+  save_streams: true
+  # The log file is saved only after the MPProcessTask has finished in order to
+  # reduce I/O operations on files
+
+  # Whether to save streams in raw format
+  save_raw: true
+
+  # Whether to remove ANSI escape characters (e.g. from color logging) when
+  # saving the stream
+  remove_ansi: true
+
+  # Whether to forward the streams to stdout. Output may be garbled!
+  forward_streams: false
+
+  # Whether to forward the raw stream output or only those lines that were not
+  # parsable to yaml, i.e.: only the lines that came _not_ from the monitor
+  forward_raw: true
+
+  # The log level at which the streams should be forwarded to stdout
+  streams_log_lvl: ~  # if None, uses print instead of the logging module
+
+  # Arguments to utopya.task.PopenMPProcess
+  popen_kwargs: {}
+
+
+# Reporter configuration
+reporter:
+  # Define report formats, which are accessible, e.g. from the WorkerManager
+  report_formats:
+    while_working: &while_working     # Name of the report format specification
+      parser: progress_bar            # The parser to use
+      write_to: stdout_noreturn       # The writer to use
+      min_report_intv: 0.9            # Required time (in s) between writes
+      # All further kwargs on this level are passed to the parser
+      show_times: true
+
+    monitor_updated:
+      <<: *while_working
+
+    after_work:
+      <<: *while_working
+
+    # Creates a report file containing runtime statistics
+    report_file:
+      parser: report
+      write_to:
+        file:
+          path: _report.txt
+      min_report_intv: 10             # don't update this one too often
+      min_num: 4                      # min. number of batch tasks for stats
+      show_individual_runtimes: true
+
+
+run_kwargs:
+  # Total timeout (in s) of a batch run; to ignore, set to ~
+  timeout: ~
+
+
+# .. Cluster Support ..........................................................
+# NOTE Not implemented!
+
+cluster_mode: false
