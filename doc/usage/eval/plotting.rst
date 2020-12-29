@@ -1,3 +1,5 @@
+.. _eval_plotting:
+
 Plotting
 ========
 
@@ -117,7 +119,7 @@ For example, the following lines suffice to generate a simple line plot based on
 What happens there is that first the configuration for ``.basic_uni.lineplot`` is loaded and then recursively updated with those keys that are specified below the ``based_on``.
 When providing a sequence, e.g. ``based_on: [foo, bar, baz]``, the first configuration is used as the base and is subsequently recursively updated with those that follow.
 
-For a list of all base plot configurations provided by utopya, see :doc:`here <base_cfgs/base_plots_cfg>`.
+For a list of all base plot configurations provided by utopya, see :ref:`utopya_base_cfg`.
 
 
 .. _external_plot_creator:

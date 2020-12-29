@@ -1,3 +1,5 @@
+.. _impl_unit_tests:
+
 Writing Unit Tests
 ******************
 
@@ -331,7 +333,7 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
 * **Write small tests** and organize them into logical units, so-called *test suites*:
 
     * Test suites help to provide information on where an error occurred and which test suites belong together. You can regard it as another way of modularization.
-    * Use ``BOOST_AUTO_TEST_SUITE``, as explained `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/test_tree/test_suite.html#boost_test.tests_organization.test_tree.test_suite.automated_registration>`_.
+    * Use ``BOOST_AUTO_TEST_SUITE``, as explained `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/test_tree/test_suite.html#boost_test.tests_organization.test_tree.test_suite.automated_registration>`__.
 
 * **Avoid copy-paste** code by ...
 
@@ -350,13 +352,13 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
 
         * The context message can inform about the set of parameters that are used for the assertions or that were used to set up the object that is tested in that context.
         * Contexts can also be nested.
-        * Read more about contexts `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/contexts.html>`_.
+        * Read more about contexts `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/contexts.html>`__.
 
     * ``BOOST_TEST_CHECKPOINT`` and ``BOOST_TEST_PASSPOINT`` help to better locate failure location.
 
         * This can be useful when a failure occurs not within or near a ``BOOST_*`` statement, but elsewhere.
         * Note that every ``BOOST_*`` statement automatically acts as a passpoint.
-        * Read more about failure location `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/checkpoints.html>`_.
+        * Read more about failure location `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/checkpoints.html>`__.
 
 
 

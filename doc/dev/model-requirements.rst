@@ -1,3 +1,4 @@
+.. _dev_model_requirements:
 
 Model Requirements
 ==================
@@ -17,9 +18,9 @@ So: Have you added tests to check whether the different parts of your model real
 Everyone wants to really understand what you built, including yourself!
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* The code is commented. Here, three aspects are important: 
+* The code is commented. Here, three aspects are important:
 
-  #. Write the comments for a stranger (could be you in a year), who needs to understand what the code does, and 
+  #. Write the comments for a stranger (could be you in a year), who needs to understand what the code does, and
   #. Don't comment obvious actions that one can extract by just reading the code itself, but rather explain the underlying ideas
   #. Check whether you have overwritten, deleted or adapted the comments referring to the ``CopyMeGrid``, ``CopyMeGraph``, or ``CopyMeBare`` model respectively
 

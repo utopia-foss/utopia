@@ -46,7 +46,7 @@ Save and close the file. From now on, all your simulation output will be stored 
 Can I work interactively with the Utopia frontend?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:doc:`Yes. </frontend/interactive>`
+:ref:`Yes. <utopya_interactive>`
 
 
 Can I work with Utopia output data *without* using the Utopia frontend?

@@ -3,8 +3,8 @@
 Step-by-step Guide
 ==================
 
-After having been through the :doc:`README <../README>`, the
-:ref:`tutorial <tutorial>`, and the :ref:`workflow <workflow>`, this guide is for creating a new model in *Utopia*.
+After having been through the :doc:`README <../../README>`, the
+:ref:`tutorial <tutorial>`, and the :ref:`workflow <dev_workflow>`, this guide is for creating a new model in *Utopia*.
 
 .. note::
 
@@ -190,13 +190,12 @@ the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
 
 Custom Model Plots
 ^^^^^^^^^^^^^^^^^^
-As you saw in the :doc:`tutorial <tutorial>`, it is possible to have custom
-model plots which are tailored to the data your model is producing.
+As you saw in the :ref:`tutorial`, it is possible to have custom model plots which are tailored to the data your model is producing.
 You can set them up in the following way:
 
 16. Move to the ``python/model_plots`` directory
-17. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
-    that there is a file named ``__init__.py`` inside the directory.
+17. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``.
+    Make sure that there is a file named ``__init__.py`` inside the directory.
 
 The ``*_plots.yml`` files you copied alongside the model configuration control
 the behavior of the plotting framework. In the ``MyFancyModel_plots.yml`` file,
@@ -209,7 +208,7 @@ be used in combination with Utopia's :ref:`data transformation and selection
 framework <external_plot_creator_DAG_support>`.
 
 When starting to implement more plots, you should definitely have a look at
-the :doc:`detailed plotting documentation <../frontend/plotting>`!
+the :ref:`detailed plotting documentation <eval_plotting>`!
 
 .. note::
 
@@ -236,23 +235,21 @@ Some Final Remarks and Advice
 
 Inspiration from other models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you want to learn more about the capabilities of Utopia and how models can
-look like, we recommend that you have a look at the already implemented models
-in the ``src/utopia/models`` directory.
+If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at the already implemented models in the ``src/utopia/models`` directory.
 
 
 ``log->debug`` instead of ``std::cout``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you are used to writing ``C++`` code you probably often use ``std::cout``
-to print information or to debug your code. We advice you to use the
-functionality of ``spdlog`` if you work with *Utopia*. This has at least two
-advantages:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you are used to writing C++ code you probably often use ``std::cout`` to print information or to debug your code.
 
-* If you run your model, your information is stored in a ``out.log`` for each
-  universe, so you can have a look at the logger information later.
-* If you do big parameter sweeps, your terminal will not be flooded with
-  information.
+We advice to use the functionality of the ``spdlog`` package instead when working with *Utopia*.
+To that end, the ``Model`` base class already provides the ``_log`` member.
+Advantages of using a logger instead of directly writing to ``std::cout`` are:
 
+* The output verbosity can be easily controlled via the so-called "log level", without touching any code.
+* For a debugging session, the verbosity can be increased, making bug hunting easier.
+
+Which log level should be chosen, though?
 As a rough guideline:
 
 * Use ``log->info("Some info")`` for information that is not repetitive, e.g.
@@ -261,36 +258,36 @@ As a rough guideline:
 * Use the python-like formatting syntax:
   ``log->debug("Some parameter: {:.3f}", param)`` to output parameters.
 
-More information about how to use ``spdlog``, what functionality is provided,
-and formatting schemes can be found
-`in their documentation <https://github.com/gabime/spdlog>`_.
+More information about how to use ``spdlog``, what functionality is provided, and formatting schemes can be found `in their documentation <https://github.com/gabime/spdlog>`_.
 
 Monitoring
 ^^^^^^^^^^
-Utopia models have the ability to communicate the model's current state to the
-frontend, e.g. the number of cells with a certain state, or the density of
-agents or the like.
-This is done only after a certain ``monitor_emit_interval``\ , to save
-computing resources. As this data is communicated to the frontend via
-``std::cout``, try to keep it to the bare minimum.
+Utopia models have the ability to communicate the model's current state to the frontend, e.g. the number of cells with a certain state, or the density of agents.
+This is done only after a certain ``monitor_emit_interval``\ , to save computing resources.
+As this data is communicated to the frontend via ``std::cout``, try to keep it to the bare minimum.
 
-For examples, check out the ``monitor`` function of the ``CopyMe`` model.
+For an example, check out the ``monitor`` function of the ``CopyMe`` model.
+
+
 
 Finished!
 ---------
 Congratulations, you have build a new model! :)
 
-Your next guide will be the :doc:`model requirements <model-requirements>`.
-It contains information what requirements your code must fulfill such that it
-can be accepted as a model within *Utopia*, e.g. that it can be merged into
-*Utopia*'s ``master`` branch.
+Your next guide will be the :ref:`model requirements <dev_model_requirements>`.
+It contains information what requirements your code must fulfill such that it can be accepted as a model within *Utopia*, e.g. that it can be merged into *Utopia*'s ``master`` branch.
 
 Have fun implementing your own *Utopia* model! :)
 
-Coupling of models - the post model era
+
+
+.. _model_coupling:
+
+Coupling of Models - the Post-Model Era
 ---------------------------------------
 
 .. note::
+
     This is an advanced feature.
     Only go forward to couple models if each of them is tested individually.
 
@@ -301,8 +298,8 @@ Hence, the child model is a member of the parent model and the configuration is 
 
 Operating coupled models usually requires a couple of additional thoughts:
 
-* The parent model has to `iterate` or `run` the child model as per your design; this can be at any time, in parallel, faster or slower.
-* For every model, the `run()` command includes the iteration until maximum time and three additional operations:
+* The parent model has to ``iterate`` or ``run`` the child model as per your design; this can be at any time, in parallel, faster or slower.
+* For every model, the ``run()`` command includes the iteration until maximum time and three additional operations:
 
   #.
     The ``prolog``.
@@ -327,4 +324,4 @@ Operating coupled models usually requires a couple of additional thoughts:
   Note, that the maximum time is equal for all models.
   However, per iteration a model can surpass the maximum time.
 
-For further information, see the :doc:`Environment model <../models/Environment>`, that is intended to be used as a child-model and includes a guide how to use it.
+For further information, see the :ref:`Environment model <model_Environment>`, that is intended to be used as a child-model and includes a guide how to use it.

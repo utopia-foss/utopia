@@ -69,7 +69,7 @@ templates_path = ['_templates']
 #
 source_suffix = {
     '.rst': 'restructuredtext',
-    '.md': 'markdown'
+    '.md': 'markdown',
 }
 
 # The master toctree document.

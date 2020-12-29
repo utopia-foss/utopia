@@ -1,3 +1,5 @@
+.. _welcome:
+
 Welcome to Utopia!
 ==================
 

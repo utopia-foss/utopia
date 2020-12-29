@@ -8,7 +8,8 @@ Tutorial
   If you notice any errors in this tutorial, other parts of the documentation, or the code — even minor ones — please open an `issue <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_ on the GitLab project page.
 
   In general, if you have *any* kind of question or remark regarding Utopia, you should **open an issue.**
-  This applies even to small or very specific questions; other people might have the same small or very specific question. This approach preserves the question as well as the answer to it.
+  This applies even to small or very specific questions; other people might have the same small or very specific question.
+  This approach preserves the question as well as the answer to it.
 
   If you happen not to have access to the GitLab, write directly to `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_.
 
@@ -18,12 +19,13 @@ In this tutorial, you will learn how to configure, run, and evaluate the models 
 After having worked through it, you can apply the learned concepts and methods to all available models; the content and available parameters may change but the structure remains the same.
 You can also use this tutorial as a reference guide, in which you can look up how to run a model simulation or configure plots.
 
-This requires that you already installed *Utopia* as described in the :doc:`README <../README>`. If you have not done so already, please do so now.
+This requires that you already installed *Utopia* as described in the :doc:`README <../README>`.
+If you have not done so already, please do so now.
 Alternatively, you can use the **Utopia docker image**, which does not require an installation. For usage instructions, see `ccees/utopia <https://hub.docker.com/r/ccees/utopia>`_ on docker hub.
 Note that some parts of the tutorial are not relevant when using Utopia from within the docker container.
 
-Also note, that this guide does not go into how building your own model in *Utopia* works; for that, please refer to :doc:`how-to-build-a-model`.
-Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia* and the work flow of Git projects, as covered by this tutorial and the :doc:`Greenhorn Guide <greenhorn-guide>`, respectively.
+Also note, that this guide does not go into how building your own model in *Utopia* works; for that, please refer to :ref:`impl_step_by_step`.
+Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia* and the work flow of Git projects, as covered by this tutorial and the :ref:`dev_workflow` page, respectively.
 
 So far for an introduction. Let's dive in! 🤓
 
@@ -65,7 +67,8 @@ To do so, go to the ``utopia`` directory and run the following commands (Do not 
   $ cd build             # ... to go to the utopia build directory
   $ source ./activate    # ... to enter the virtual environment
 
-*Utopia* operates inside a so-called virtual environment. With the ``source ./activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell.
+*Utopia* operates inside a so-called virtual environment.
+With the ``source ./activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell.
 When working with *Utopia*, make sure to always be in this virtual environment.
 
 .. note::
@@ -797,7 +800,7 @@ Let's fill that in with the code that calculates the standard deviation for the 
 
   Furthermore, there is a :ref:`data transformation framework <external_plot_creator_DAG_support>` that follows a similar approach: making it possible to select specific data and apply transformations to it before passing it to a generic plotting function.
 
-  To read up on both, check out the :doc:`plotting documentation <../frontend/plotting>`.
+  To read up on both, check out the :ref:`plotting documentation <eval_plotting>`.
 
 
 Parameter Sweeps and the ``Multiverse``
@@ -805,13 +808,15 @@ Parameter Sweeps and the ``Multiverse``
 Alright. With the above, you already came in touch with a lot of the features of *Utopia*.
 In this section, you will learn how to perform multiple simulations for different sets of parameters, and how you can handle them in plotting.
 
-Furthermore, this section will use a different model for the examples. This is to show that what you learned above can be applied to other models in *Utopia*, not only the ``SandPile`` model.
+Furthermore, this section will use a different model for the examples.
+This is to show that what you learned above can be applied to other models in *Utopia*, not only the ``SandPile`` model.
 
 
 The ``ForestFire`` Model
 ^^^^^^^^^^^^^^^^^^^^^^^^
 The ``ForestFire`` model uses a cellular automaton to represent a forest, where each CA cell can either be ``empty`` or a ``tree``.
-Each tree can ignite with a certain probability, which will lead to whole cluster of trees (i.e., all connected trees) burning down. You can find out more in the :doc:`model documentation <../models/ForestFire>`.
+Each tree can ignite with a certain probability, which will lead to whole cluster of trees (i.e., all connected trees) burning down.
+You can find out more in the :ref:`model documentation <model_ForestFire>`.
 
 Let's dive right in and have a short test run of this model:
 
@@ -823,7 +828,7 @@ Just as for the ``SandPile`` model, it will create and run a simulation with 4 t
 
 .. note::
 
-  Make sure you have built the ``ForestFire`` binary before trying to run it. Follow the steps in the `getting started section <#getting-started>`_, if you are stuck here.
+  Make sure you have built the ``ForestFire`` binary before trying to run it.
 
 
 Parameters
@@ -1070,9 +1075,10 @@ Of course, if you want to do a new simulation run that creates new data you can 
 
   $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
 
-Now, go check the resulting plot. How does it look like?
+Now, go check the resulting plot.
+What does it look like?
 
-To learn more about parameter sweeps, look at the :doc:`multidimensional data generation and plotting in Utopia  <../guides/parameter-sweeps>` guide.
+To learn more about parameter sweeps, have a look at :ref:`run_parameter_sweeps`.
 
 .. note::
 
@@ -1113,15 +1119,15 @@ Of course, you will need to adjust some parameters.
 So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
 
 And, perhaps you even want to write your own *Utopia* model. To that end you should work with the features given by GitLab.
-If you have never heard of GitLab or worked with it and you don't know what a master nor a branch is and even less what is meant by committing or merging, continue with the :doc:`Greenhorn Guide <greenhorn-guide>`.
+If you have never heard of GitLab or worked with it and you don't know what a ``master`` nor a *branch* is and even less what is meant by *committing* or *merging*, continue with the :ref:`dev_workflow` guide.
 
-After mastering that guide, a good starting point for the actual implementation of your own model is the :doc:`How-to-build-a-model Guide <how-to-build-a-model>` ...
+After mastering that guide, a good starting point for the actual implementation of your own model is the :ref:`impl_step_by_step` ...
 
 
 What if I have more questions?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Look if you can find some useful
+Look if you can find some useful ...
 
-- :doc:`documentation or guide <../index>`,
-- questions and answers in the :doc:`FAQ <../faq/frontend>`, or
-- information in the `C++ documentation <../../doxygen/html/index.html>`_.
+- ... elsewhere in :ref:`this documentation <welcome>` (try the search function),
+- ... questions and answers in the :ref:`backend FAQ <faq_core>` or :ref:`frontend FAQ <faq_frontend>`, or
+- ... information in the :ref:`cpp_docs`.

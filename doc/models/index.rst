@@ -4,11 +4,17 @@ Models
 ======
 
 .. toctree::
-   :maxdepth: 1
-   :glob:
+    :maxdepth: 1
 
-   *
+    Geomorphology
+    PredatorPreyPlant
+    Vegetation
 
-.. TODO consider showing only those *not* already included ... or showing those separately, such that they don't end up twice in the sidebar
+.. toctree::
+    :caption: Supporting Models
+    :maxdepth: 1
+
+    Environment
+    HdfBench
 
 .. TODO include CopyMe models here

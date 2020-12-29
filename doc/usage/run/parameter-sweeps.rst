@@ -8,6 +8,7 @@ You want to sweep over multiple parameters? *Utopia* has just the right tools fo
 In Utopia, we distinguish universes and multiverses: A multiverse is a collection of multiple universes where all universes are independent of each other.
 So, for example if you want to sweep over ``N`` different seeds of the random number generator you create ``N`` different universes within the run of the multiverse.
 
+
 1. Create a run configuration file
 ----------------------------------
 
@@ -55,7 +56,8 @@ It can look something like this:
        # Below, you can make updates to these values
        some_parameter: 42
 
-You can also use this ``!sweep`` tag on more than one parameter. It will create a multidimensional hypercube with all possible value combinations.
+You can also use this ``!sweep`` tag on more than one parameter.
+It will create a multidimensional hypercube with all possible value combinations.
 
 You can pass the run configuration file to the CLI like this:
 
@@ -65,6 +67,7 @@ You can pass the run configuration file to the CLI like this:
 
 See ``utopia run --help`` for a detailed description.
 
+
 2. Create a plot configuration and corresponding plots
 ------------------------------------------------------
 
@@ -72,11 +75,13 @@ See ``utopia run --help`` for a detailed description.
 
     There are a bunch of new capabilities in the plotting framework that are not reflected in the examples below!
 
-    Make sure to check out the :doc:`documentation of the plotting framework <../frontend/plotting>`.
+    Make sure to check out the :ref:`documentation of the plotting framework <eval_plotting>`.
 
 Plotting multidimensional data can be achieved through different means depending on what you want to plot.
 
-For the following, create a new plot configuration file and specify the desired plots you want to perform. You can pass the plot configuration file to the CLI by adding ``--plot-cfg path/to/plot_cfg.yml``. See ``utopia run --help`` for a detailed description.
+For the following, create a new plot configuration file and specify the desired plots you want to perform.
+You can pass the plot configuration file to the CLI by adding ``--plot-cfg path/to/plot_cfg.yml``.
+See ``utopia run --help`` for a detailed description.
 
 a. Plot a single-universe-plot for all the universes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -163,13 +168,16 @@ In this case, you need to write a new plot function ``state_mean``. It looks som
        # Save and close the figure
        save_and_close(out_path, save_kwargs=save_kwargs)
 
+
 Perform a Multiverse Run
 ------------------------
 
-The terminal command to run a multiverse i.e. to do a parameter sweep is:
+The terminal command to "run a multiverse" i.e. to do a parameter sweep is:
 
 .. code-block:: shell
 
    $ utopia run MyFancyModel <path_to_run_config> --sweep --plots-cfg <path_to_plot_config>
 
-If you leave out ``--sweep``\ , utopia will just do a single universe run using the default values you have provided in the run configuration. Alternatively, you can add ``perform_sweep: true`` to the top level of your run configuration. Again, see ``utopia run --help`` for more information.
+If you leave out ``--sweep``\ , utopia will just do a single universe run using the default values you have provided in the run configuration.
+Alternatively, you can add ``perform_sweep: true`` to the top level of your run configuration.
+Again, see ``utopia run --help`` for more information.

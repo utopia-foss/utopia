@@ -117,7 +117,9 @@ In the `How-to-build-a-model Guide <how-to-build-a-model>` you learn how to use 
 Remove *WIP*\ : The "this should be merged into the master!" phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You feel confident that your project (or some completed intermediate version) is ready to be integrated into the master? If you implemented a new model first make sure that you have met all :doc:`model requirements <model-requirements>`. If everything is fine just remove the *WIP* in the title of the merge request and perhaps mention someone in the comments to have a look at the things that are added. You should know that nothing will be merged into the Utopia master that has not been reviewed by at least one other developer.
+You feel confident that your project (or some completed intermediate version) is ready to be integrated into the master? If you implemented a new model first make sure that you have met all :ref:`dev_model_requirements`.
+If everything is fine just remove the *WIP* in the title of the merge request and perhaps mention someone in the comments to have a look at the things that are added; you can also use the right sidebar to assign a reviewer for the merge request.
+You should know that nothing will be merged into the Utopia master that has not been reviewed by at least one other developer.
 
 This is a great opportunity to enhance your code and with it: your coding abilities.
 Importantly, note that all annotations are there to *help* you and to guarantee a high quality in the Utopia master branch. Their purpose is not at all to criticize you or your work. Everyone knows that starting to code is really hard, so be assured that we work *together* with you and never against you.
@@ -138,7 +140,8 @@ Where do the tests come from? You write them. You can write tests in C++ and/or 
 * C++: Look at the files in the ``test`` directory inside of each model within
   the ``src/utopia/models`` directory.
 
-For setting up the testing system for your model, look at the description in :doc:`how-to-build-a-model`. For running your tests, see the :doc:`README <../readme>`.
+For setting up the testing system for your model, look at the description in :ref:`impl_step_by_step`.
+For running your tests, see the :doc:`README <../README>`.
 
 Note that if you have set up the testing infrastructure for your model, your tests will automatically be built and executed if you push something to the GitLab. If your test fails, you will receive a mail notification and you will see in your merge request that the test failed. But don't worry if this happens! :)
 Just fix the error, commit it, and push it again. Only when you want your merge request to get integrated into the Utopia master branch, all tests need to work without problems.

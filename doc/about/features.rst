@@ -18,10 +18,13 @@ Lines starting with the 📚 symbol also denote further reading material.
     :depth: 3
 
 |
+
 |
+
 |
 
 ----
+
 
 Model Building
 --------------
@@ -43,9 +46,9 @@ The ``Model`` Base Class
 
 * Model traits can be used to specify the default types used by the model, e.g. the random number generator.
 * 📚
-  `Doxygen <../doxygen/html/class_utopia_1_1_model.html>`_,
-  `Model Traits <../doxygen/html/struct_utopia_1_1_model_types.html>`_,
-  :doc:`How-To Guide <step_by_step>`
+  `Doxygen <../../doxygen/html/class_utopia_1_1_model.html>`__,
+  `Model Traits <../../doxygen/html/struct_utopia_1_1_model_types.html>`_,
+  :ref:`impl_step_by_step`
 
 
 
@@ -54,7 +57,7 @@ Basic data writing
 * By default, the ``write_data`` method is invoked each time step. The ``write_every`` and ``write_start`` configuration arguments can be used to further control the time at which the data should be written.
 * The ``Model`` base class provides two convenience methods to create datasets which already have the correct dimension names and coordinate labels associated: ``create_dset`` and ``create_cm_dset``.
 * 📚
-  `Doxygen <../doxygen/html/classUtopia_1_1Model.html>`_,
+  `Doxygen <../../doxygen/html/classUtopia_1_1Model.html>`__,
   :ref:`feature_hdf5_library`
 
 
@@ -67,7 +70,7 @@ Random Numbers
 * By controlling the ``seed`` of this shared RNG, the generated random numbers allow replication.
 * The default generator is the `Mersenne Twister <http://www.cplusplus.com/reference/random/mt19937/>`_ specified in the Utopia core type ``Utopia::DefaultRNG``.
 * 📚
-  `Doxygen <../doxygen/html/struct_utopia_1_1_model_types.html>`_,
+  `Doxygen <../../doxygen/html/struct_utopia_1_1_model_types.html>`__,
   `Random Number Distributions <https://en.cppreference.com/w/cpp/header/random>`_
 
 
@@ -88,7 +91,7 @@ Logging
 
 * **Verbosity** can be controlled for each ``Model`` using the ``log_level`` config entry. Default log levels are specified via the meta configuration, see :ref:`the base configuration <utopya_base_cfg>` for examples.
 * 📚
-  `Doxygen <../doxygen/html/group___logging.html>`_
+  `Doxygen <../../doxygen/html/group___logging.html>`__
 
 
 .. _feature_monitor:
@@ -99,7 +102,7 @@ Monitoring the state of the model
 * The ``monitor()`` method is the place to provide that information
 * It can be used for information purposes, but also to dynamically stop a simulation depending on the provided monitoring information (so-called :ref:`stop conditions <feature_stop_conditions>`).
 * 📚
-  `Doxygen <../doxygen/html/group___monitor.html>`_
+  `Doxygen <../../doxygen/html/group___monitor.html>`__
 
 
 
@@ -133,7 +136,7 @@ Reading Config Entries
 * Supported types for ``get_as<T>`` are defined by yaml-cpp library and include basic types as well as some container types (``std::vector``, ``std::array``, also in nested form)
 * There exist specializations to conveniently load entries as Armadillo types (vectors, matrices, …)
 * 📚
-  `Doxygen <../doxygen/html/group___config_utilities.html>`_,
+  `Doxygen <../../doxygen/html/group___config_utilities.html>`__,
   `yamlcpp library <https://github.com/jbeder/yaml-cpp>`_
 
 
@@ -146,7 +149,7 @@ The Physical ``Space`` a Model is embedded in
 * Each ``Model`` has, by default, a 2D space attached; periodicity and extent is set by the base ``Model`` using the :ref:`model configuration <feature_model_config>`.
 * Is used by managers to map a :ref:`grid <feature_cell_manager>` to or control :ref:`agent <feature_agent_manager>` movement.
 * 📚
-  `Doxygen <../doxygen/html/struct_utopia_1_1_space.html>`_
+  `Doxygen <../../doxygen/html/struct_utopia_1_1_space.html>`__
 
 
 .. _feature_cell_manager:
@@ -156,7 +159,7 @@ The ``CellManager``
 * Creates a grid discretization of the :ref:`physical space <feature_space>` and aims for being controllable from the configuration while providing a good performance.
 * For example usage, see implemented models.
 * 📚
-  `Doxygen <../doxygen/html/group___cell_manager.html>`_,
+  `Doxygen <../../doxygen/html/group___cell_manager.html>`__,
   :ref:`FAQ on Managers <managers>`
 
 
@@ -168,7 +171,7 @@ The ``AgentManager``
 * Makes sure that the agent does not leave the bounds specified by the :ref:`associated physical space <feature_space>` the model is embedded in.
 * Note: Currently no efficient algorithm present to detect nearby agents.
 * 📚
-  `Doxygen <../doxygen/html/group___agent_manager.html>`_,
+  `Doxygen <../../doxygen/html/group___agent_manager.html>`__,
   :ref:`FAQ on Managers <managers>`
 
 
@@ -210,22 +213,24 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
 
 * With a rule that accepts more than one argument, additional container-like arguments can be passed to ``apply_rule``, leading to a ``zip``-iteration. For each entity, the arguments from the containers are then unpacked into the respective call to the rule function.
 * ``apply_rule`` for manual state updates offers overloads with parallel execution policies.
-  The rule will then be applied according to the selected policy, similar to a :ref:`parallel STL algorithm <feature_parallel_stl>` (it actually uses them internally).
-  Even with a sequential policy (or none), internals of the ``apply_rule`` algorithms may parallelize if the feature is enabled.
-  Enabling parallel features happens through the :ref:`parameter space configuration <feature_meta_config>`, or explicitly, see :ref:`feature_parallel_stl`.
+    The rule will then be applied according to the selected policy, similar to a :ref:`parallel STL algorithm <feature_parallel_stl>` (it actually uses them internally).
+    Even with a sequential policy (or none), internals of the ``apply_rule`` algorithms may parallelize if the feature is enabled.
+    Enabling parallel features happens through the :ref:`parameter space configuration <feature_meta_config>`, or explicitly, see :ref:`feature_parallel_stl`.
 
-  .. code-block:: c++
+    .. code-block:: c++
 
-      // Apply a rule with multithreading
-      apply_rule<Update::sync>(ExecPolicy::par,
-                              // NOTE: Rule must avoid data races!
-                              [](const auto& cell){
-                                  return cell->state + 1;
-                              },
-                              _cm.cells());
+        // Apply a rule with multithreading
+        apply_rule<Update::sync>(
+            ExecPolicy::par,
+            // NOTE: Rule must avoid data races!
+            [](const auto& cell){
+                return cell->state + 1;
+            },
+            _cm.cells()
+        );
 
 * 📚
-  `Doxygen <../doxygen/html/group___rules.html>`_,
+  `Doxygen <../../doxygen/html/group___rules.html>`__,
   :ref:`apply_rule on graph entities <apply_rule_graph>`,
   :ref:`parallel STL algorithm overloads <feature_parallel_stl>`
 
@@ -237,7 +242,7 @@ The shared Utopia ``Entity`` type
 * A shared type that holds a ``state``; the ``Agent`` and ``Cell`` types are derived from this base class.
 * Makes the :ref:`apply_rule interface <feature_apply_rule>` possible.
 * 📚
-  `Doxygen <../doxygen/html/group___entity.html>`_
+  `Doxygen <../../doxygen/html/group___entity.html>`__
 
 
 
@@ -249,7 +254,7 @@ The ``select`` Interface – Selecting entities using some condition
 * For the ``CellManager``: supports a clustering algorithm, selection of boundary cells, and creation of lanes in the grid to create different compartments.
 * Fully controllable from the configuration.
 * 📚
-  `Doxygen <../doxygen/html/group___entity_selection.html>`_,
+  `Doxygen <../../doxygen/html/group___entity_selection.html>`__,
   :ref:`FAQ on Entity Selection <entity_selection>`
 
 
@@ -261,7 +266,7 @@ Graph Creation
 * Create a graph with the ``create_graph`` function using a selection of generating algorithms and a configuration-based interface
 * Available algorithms for k-regular, random (Erdös-Renyi), small-world (Watts-Strogatz), scale-free (Barabási-Albert), directed scale-free (Bollobas-Riordan) graphs
 * 📚
-  `Doxygen <../doxygen/html/namespace_utopia_1_1_graph.html>`_,
+  `Doxygen <../../doxygen/html/namespace_utopia_1_1_graph.html>`__,
   :ref:`FAQ on Create Graph <create_graphs>`,
   :ref:`Graph Creation requirements for the  apply_rule on Graphs <apply_rule_graph>`
 
@@ -322,7 +327,7 @@ Parallel STL Algorithms
   The ``PseudoParent`` enables or disables them depending on the ``parallel_execution`` node in the parameter space.
 * Depending on the execution policies, programmers will have to avoid `data races <https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races>`_.
 * 📚
-  `Doxygen <../doxygen/html/group___parallel.html>`_,
+  `Doxygen <../../doxygen/html/group___parallel.html>`__,
   :ref:`Parallel apply_rule <feature_apply_rule>`
 
 |
@@ -343,8 +348,8 @@ The Utopia HDF5 Library
 * This library makes the HDF5 C library accessible in a convenient way.
 * Beside the interface to the C library, it provides an intelligent chunking algorithm.
 * 📚
-  `Doxygen <../doxygen/html/group___h_d_f5.html>`_,
-  `Chunking <../doxygen/html/group___chunking_utilities.html>`_,
+  `Doxygen <../../doxygen/html/group___h_d_f5.html>`__,
+  `Chunking <../../doxygen/html/group___chunking_utilities.html>`_,
 
 
 .. _feature_backend_DataManager:
@@ -354,7 +359,7 @@ The ``DataManager``
 * While writing simple data structures can easily be done directly with the :ref:`Utopia HDF5 library <feature_hdf5_library>`, this becomes rather difficult in more complex scenarios, e.g. when the number of agents in a system change.
 * The Utopia ``DataManager`` allows to define the possible write operations and then control their execution mostly via the configuration file.
 * 📚
-  `Doxygen <../doxygen/html/group___data_manager.html>`_
+  `Doxygen <../../doxygen/html/group___data_manager.html>`__
 
 
 .. _feature_saving_graphs:
@@ -363,21 +368,24 @@ Saving Static Graphs
 ^^^^^^^^^^^^^^^^^^^^
 * Use the ``create_graph_group`` function to create a graph group in which to save the graph using the ``save_graph`` functions to flawlessly recreate the graph in your plotting function.
 * 📚
-  `Doxygen <../doxygen/html/group___graph_utilities.html>`_
+  `Doxygen <../../doxygen/html/group___graph_utilities.html>`__
 
 Saving Dynamic Graphs
 ^^^^^^^^^^^^^^^^^^^^^
 * Save a dynamic graph and its properties in a Utopia frontend compatible way with a single function.
 * 📚
-  `Doxygen <../doxygen/html/group___graph_utilities.html>`_,
+  `Doxygen <../../doxygen/html/group___graph_utilities.html>`__,
   :ref:`FAQ on saving node and edge properties <save_graph_properties>`
 
 
 
 
 |
+
 |
+
 |
+
 ----
 
 .. _feature_simulation_control:
@@ -385,7 +393,7 @@ Saving Dynamic Graphs
 Simulation Control & Configuration
 ----------------------------------
 To generate simulation data from a model, a model needs to be executed.
-This is controlled via the command line interface integrated into the Python frontend of Utopia, the :doc:`utopya package </api_utopya/utopya>`.
+This is controlled via the command line interface integrated into the Python frontend of Utopia, the :py:mod:`utopya` package.
 
 
 
@@ -562,7 +570,7 @@ Defining Parameter Sweeps
   :py:class:`~paramspace.paramspace.ParamSpace`,
   :py:class:`~paramspace.paramdim.ParamDim`,
   :py:class:`~paramspace.paramdim.CoupledParamDim`,
-  :doc:`Guide <guides/parameter-sweeps>`
+  :ref:`run_parameter_sweeps`
 
 
 
@@ -618,6 +626,7 @@ Stop Conditions – Dynamically stop simulations
         :start-after: # Below, an EXAMPLE for two OR-connected stop conditions
         :end-before: # End of StopCondition example
         :dedent: 6
+
 * 📚
   :ref:`stop_conds`
 
@@ -627,7 +636,7 @@ Stop Conditions – Dynamically stop simulations
 The ``utopia-env``
 ^^^^^^^^^^^^^^^^^^
 * A python virtual environment where all Utopia-related installation takes place; this insulates the installation of frontend dependencies from the rest of your system.
-* Contains the ``utopya`` frontend package.
+* Contains the :py:mod:`utopya` frontend package.
 * Is created as part of the build process; checks dependencies and installs them if required.
 * In order to be able to run the ``utopia`` CLI command, make sure to have activated the virtual environment:
 
@@ -642,27 +651,34 @@ The ``utopia-env``
 
 
 |
+
 |
+
 |
+
 ----
 
 Data Analysis & Plotting
 ------------------------
 
-Data analysis and plotting is implemented in the Python frontend of Utopia, the :doc:`utopya package </api_utopya/utopya>`.
+Data analysis and plotting is implemented in the Python frontend of Utopia, the :py:mod:`utopya` package.
+It interfaces with the `dantro package <https://pypi.org/project/dantro/>`__ to supply a data evaluation pipeline, directly connected to the running of simulations.
+
 
 .. _feature_frontend_DataManager:
 
 Data handling with the :py:class:`~utopya.DataManager`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Is used to load all generated simulation data and represent it in a *hierachical* fashion (the "data tree") with a **uniform interface**
-* Is implemented in dantro and specialized for Utopia via the :py:class:`~utopya.DataManager` class and the ``data_manager`` key of the meta configuration.
+* Is implemented in dantro and specialized for Utopia via the :py:class:`~utopya.datamanager.DataManager` class and the ``data_manager`` key of the meta configuration.
 * Makes use of `xarray <http://xarray.pydata.org/>`_ to provide **labelled dimensions and coordinates**. This information is extracted from the HDF5 attributes.
 * Supports **lazy loading**  of data using so-called :ref:`proxies <data_handling_proxy>`; these are only resolved when the data is actually needed (saves you a lot of RAM!).
   When the data is too large for the machine's memory, the :ref:`dask framework <data_handling_dask>` makes it possible to still work with the data.
+* ⚠️ This should not be confused with the *backend* ``DataManager`` used for *writing data*, see :ref:`above <feature_backend_DataManager>`.
 * 📚
-  `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/data_io/data_mngr.html>`_,
+  `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/data_mngr.html>`__,
   :ref:`data_handling`,
+  :py:class:`~utopya.DataManager`,
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
 
 
@@ -670,12 +686,12 @@ Data handling with the :py:class:`~utopya.DataManager`
 
 Automatic Model Plots
 ^^^^^^^^^^^^^^^^^^^^^
-Utopia couples tightly with the dantro plotting framework and makes it easy to define plots alongside the model implementation.
+Utopia couples tightly with the `dantro framework <https://pypi.org/project/dantro/>`_ and makes it easy to define plots alongside the model implementation.
 
 * It is possible to configure a set of default plots which are automatically created after a model is run. For more control, plot configuration files specify the plots that are to be created.
 * 📚
-  `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/>`_,
-  :doc:`plotting`
+  `dantro documentation <https://dantro.readthedocs.io/>`__,
+  :ref:`eval_plotting`
 
 
 .. _feature_plots_config:
@@ -694,7 +710,7 @@ Custom Plot functions
 * Plot functions can also be implemented in separate files.
 * 📚
   :ref:`external_plot_creator`,
-  :doc:`getting_started/tutorial`
+  :ref:`tutorial`
 
 
 .. _feature_dag:
@@ -706,7 +722,7 @@ The Data Transformation Framework – Generic Data Processing
 * This allows **generalized plot functions** which can focus on visualizing the data they are provided with (instead of doing both: data analysis *and* visualization).
 * The DAG framework provides a **file cache** that can store intermediate results such that they need not be re-computed every time the plots are generated. This makes sense for data transformations that take a long time to compute but only very little time to store to a file and load back in from there.
 * 📚
-  `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/data_io/transform.html>`_,
+  `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/transform.html>`__,
   :ref:`Usage for plotting <external_plot_creator_DAG_support>`
 
 
@@ -730,7 +746,7 @@ Work interactively with utopya and dantro
         # ... do something with the loaded data or the PlotManager (mv.pm)
 
 * 📚
-  :doc:`frontend/interactive`,
+  :ref:`utopya_interactive`,
   :py:class:`~utopya.model.Model` class,
   :py:meth:`~utopya.model.Model.create_mv`,
   :py:meth:`~utopya.model.Model.create_run_load`,
@@ -753,16 +769,19 @@ Batch-run and batch-evaluate simulations
 
 * The batch feature is available via the CLI by calling ``utopia batch``
 * 📚
-  :doc:`frontend/batch`,
+  :ref:`batch`,
   ``utopia batch --help``,
   :py:class:`~utopya.batch.BatchTaskManager` class,
-  :doc:`frontend/inc/batch_cfg`
+  :ref:`utopya_default_batch_cfg`
 
 
 
 |
+
 |
+
 |
+
 ----
 
 .. _feature_testing_framework:
@@ -781,7 +800,7 @@ C++: Boost-based Model Tests
 * To build and run only model-specific tests, use ``make test_model_<name>``. Consult the :doc:`README <../README>` for more information on available test targets.
 * Model code coverage can also be evaluated; again, see :doc:`../README`.
 * 📚
-  :doc:`for_developers/unit-tests`,
+  :ref:`impl_unit_tests`,
   `Boost.Test documentation <https://www.boost.org/doc/libs/1_71_0/libs/test/doc/html/index.html>`_
 
 
@@ -805,14 +824,18 @@ Python-based Model Tests
 
   Consult the :doc:`../README` and the pytest documentation for more information on test invocation.
 * 📚
+  :ref:`impl_unit_tests` (for general remarks),
   :py:class:`~utopya.model.Model`,
   :py:class:`~utopya.testtools.ModelTest`,
   `pytest <https://pytest.org/>`_
 
 
 |
+
 |
+
 |
+
 ----
 
 Miscellaneous

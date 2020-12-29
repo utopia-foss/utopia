@@ -1,3 +1,5 @@
+.. _utopya_interactive:
+
 Working Interactively with Utopia
 =================================
 

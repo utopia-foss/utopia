@@ -19,8 +19,9 @@ utopia_install_doc_utils()
 # Register subdirectories
 add_subdirectory("doxygen")
 
-# Copy README.md and COPYING.md to respective directories
-
+# Copy some files into the doc directory such that they can be included into
+# the built documentation
+# NOTE These need to be manually added to .gitignore!
 file(COPY ${PROJECT_SOURCE_DIR}/README.md
           ${PROJECT_SOURCE_DIR}/COPYING.md
           ${PROJECT_SOURCE_DIR}/CONTRIBUTING.md

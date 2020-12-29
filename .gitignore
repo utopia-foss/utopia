@@ -55,7 +55,8 @@ doc/api/utopya
 *.pytest_cache
 __pycache__
 
-# Ignore _copied_ version of root-level readme & copyright files
+# Ignore _copied_ version of root-level readme & copyright files.
+# See doc/CMakeLists.txt for definition of copied files.
 doc/README.md
 doc/COPYING.md
 doc/CONTRIBUTING.md
