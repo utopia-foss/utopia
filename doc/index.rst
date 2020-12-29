@@ -60,7 +60,14 @@ To explore other parts of the documentation, use the navigation sidebar.
    :glob:
    :hidden:
 
-   models/*
+   models/ContDisease
+   models/ForestFire
+   models/GameOfLife
+   models/PredatorPrey
+   models/SandPile
+   models/SEIRD
+   models/SimpleEG
+   ... and more <models/index>
 
 
 .. toctree::
