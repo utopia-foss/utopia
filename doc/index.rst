@@ -77,12 +77,14 @@ To explore other parts of the documentation, use the navigation sidebar.
    :maxdepth: 1
    :hidden:
 
+   C++ Documentation <../../doxygen/html/index.html#http://>
    ref/cpp_doc
    api/utopya/utopya
    dantro package <https://dantro.readthedocs.io/en/stable/>
    api/paramspace/paramspace
    ref/utopya_base_cfg
    ref/base_plots_cfg
+   ref/batch_cfg
 
 
 .. toctree::
