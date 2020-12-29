@@ -150,53 +150,45 @@ struct DefaultExecutionProcess
     }
 };
 
+
 // =============================================================================
 // ================================ Decider ====================================
 // =============================================================================
 
-/// The base class for deciders
-template < typename Model >
-struct DefaultDecider
-{
+/**
+ * @brief Common interface for all deciders (and triggers, for that matter). 
+ *        Every decider/Trigger must inherit from this, and implement its virtual 
+ *        functions 'bool operator()(Model&)' and 'void set_from_cfg(const Config&)'. 
+ * 
+ * @tparam Model 
+ */
+template<typename Model> 
+struct Decider {
 
-    /// Invokes the boolean functor this decider is specialized with
-    virtual bool
-    operator()(Model&)
-    {
-        return false;
-    }
+    virtual bool operator()(Model&) = 0; 
+    virtual void set_from_cfg(const Config&) = 0;
 
-    /**
-     * @brief Set the decider up from a given config node
-     *
-     * @param cfg config node containing arguments for this decider
-     */
-    virtual void
-    set_from_cfg(const Config&)
-    {
-    }
-
-    DefaultDecider()                      = default;
-    DefaultDecider(const DefaultDecider&) = default;
-    DefaultDecider(DefaultDecider&&)      = default;
-    DefaultDecider&
-    operator=(const DefaultDecider&) = default;
-    DefaultDecider&
-    operator=(DefaultDecider&&) = default;
-
-    virtual ~DefaultDecider() = default;
+    Decider()                      = default;
+    Decider(const Decider&) = default;
+    Decider(Decider&&)      = default;
+    Decider&
+    operator=(const Decider&) = default;
+    Decider&
+    operator=(Decider&&) = default; 
+    virtual ~Decider() = default;
 };
+
 
 /// A decider that returns true when within certain time intervals
 /** Every interval is of shape `[start, stop), stride` where the third argument
  *  is optional and defines a stepping size.
  */
 template < typename Model >
-struct IntervalDecider : DefaultDecider< Model >
+struct IntervalDecider : Decider< Model >
 {
 
     /// The base class
-    using Base = DefaultDecider< Model >;
+    using Base = Decider< Model >;
 
     /// The sequence of intervals within to return true
     std::list< std::array< std::size_t, 3 > > intervals;
@@ -268,10 +260,10 @@ struct IntervalDecider : DefaultDecider< Model >
  * @brief Decider which only returns true at a certain time
  */
 template < typename Model >
-struct OnceDecider : DefaultDecider< Model >
+struct OnceDecider : Decider< Model >
 {
     /// The type of the base decider class
-    using Base = DefaultDecider< Model >;
+    using Base = Decider< Model >;
     std::size_t time;
 
     virtual bool
@@ -307,16 +299,20 @@ struct OnceDecider : DefaultDecider< Model >
  * @brief Decider which always returns true
  */
 template < typename Model >
-struct AlwaysDecider : DefaultDecider< Model >
+struct AlwaysDecider : Decider< Model >
 {
     /// The type of the base decider class
-    using Base = DefaultDecider< Model >;
+    using Base = Decider< Model >;
 
     virtual bool
     operator()(Model&) override
     {
         return true;
     }
+
+    // dummy implementation of 
+    virtual void
+    set_from_cfg(const Config&) override {}
 
     AlwaysDecider() = default;
 
@@ -336,10 +332,10 @@ struct AlwaysDecider : DefaultDecider< Model >
  * @tparam Deciders  The decider types to combine as composite
  */
 template < typename Model, typename... Deciders >
-struct CompositeDecider : DefaultDecider< Model >
+struct CompositeDecider : Decider< Model >
 {
     /// The type of the base decider class
-    using Base = DefaultDecider< Model >;
+    using Base = Decider< Model >;
 
     /// Tuple of associated decider objects
     std::tuple< Deciders... > held_deciders;
@@ -402,31 +398,31 @@ struct CompositeDecider : DefaultDecider< Model >
 // =========================== Default type maps  ==============================
 // =============================================================================
 
+template < typename Model >
+using DefaultDecidermap = std::unordered_map<
+    std::string,
+    std::function< std::shared_ptr< Decider< Model > >() > >;
+
 /**
- * @brief Map that names the deciders supplied by default such that they can be 
- *        addressed in a config file. 
+ * @brief Map that names the deciders supplied by default such that they can be
+ *        addressed in a config file.
  * @details This map does not provide decider objects
- *          or pointers to them in itself, but functions which create 
- *          shared_pointers to a particular decider function. This is made such 
- *          that we can use dynamic polymorphism and do not have to resort to 
+ *          or pointers to them in itself, but functions which create
+ *          shared_pointers to a particular decider function. This is made such
+ *          that we can use dynamic polymorphism and do not have to resort to
  *          tuples.
- * 
+ *
  * @tparam Model A model type for which the deciders shall be employed.
  */
 template < typename Model >
-static std::unordered_map<
-    std::string,
-    std::function< std::shared_ptr< DefaultDecider< Model > >() > >
-    default_decidertypes{
-        { std::string("default"),
-          []() { return std::make_shared< DefaultDecider< Model > >(); } },
-        { std::string("always"),
-          []() { return std::make_shared< AlwaysDecider< Model > >(); } },
-        { std::string("once"),
-          []() { return std::make_shared< OnceDecider< Model > >(); } },
-        { std::string("interval"),
-          []() { return std::make_shared< IntervalDecider< Model > >(); } }
-    };
+static DefaultDecidermap<Model> default_deciders{
+    { std::string("always"),
+      []() { return std::make_shared< AlwaysDecider< Model > >(); } },
+    { std::string("once"),
+      []() { return std::make_shared< OnceDecider< Model > >(); } },
+    { std::string("interval"),
+      []() { return std::make_shared< IntervalDecider< Model > >(); } }
+};
 
 // =============================================================================
 // ================================ Triggers
@@ -438,7 +434,7 @@ static std::unordered_map<
 /// These are only aliases for the deciders to avoid copy pasta.
 /// Keep this in mind if messing with types!
 template < typename Model >
-using DefaultTrigger = DefaultDecider< Model >;
+using Trigger = Decider< Model >;
 
 template < typename Model >
 using IntervalTrigger = IntervalDecider< Model >;
@@ -452,13 +448,15 @@ using BuildAlwaysTrigger = AlwaysDecider< Model >;
 template < typename Model, typename... Deciders >
 using CompositeTrigger = CompositeDecider< Model, Deciders... >;
 
+template < typename Model >
+using DefaultTriggermap = DefaultDecidermap< Model >;
 /**
- * @brief Default trigger factories. Equal to deciders because while the 
+ * @brief Default trigger factories. Equal to deciders because while the
  *        task they fullfill is different, their functionality is not.
  * @tparam Model Modeltype the triggers shall be used with
  */
 template < typename Model >
-auto default_triggertypes = default_decidertypes< Model >;
+static DefaultTriggermap<Model> default_triggers = default_deciders< Model >;
 
 /**
  *  \}  // endgroup DataManager::Defaults

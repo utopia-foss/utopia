@@ -207,31 +207,37 @@ public:
     // -- Constructor ---------------------------------------------------------
 
     /// Constructs a Model instance
-    /** Uses information from a parent model to create an instance of this
-     *  model.
-     *
-     *  \tparam ParentModel The parent model's type
-     *
-     *  \param name         The name of this model instance, ideally used only
-     *                      once on the current hierarchical level
-     *  \param parent_model The parent model object from which the
-     *                      corresponding config node, the group, the RNG,
-     *                      and the parent log level are extracted.
-     *  \param custom_cfg   If given, will use this configuration node instead
-     *                      of trying to extract one from the parent model's
-     *                      configuration.
-     *  \param w_args       Passed on to DataManager constructor. If not given,
-     *                      the DataManager will still be constructed. Take
-     *                      care to also set the WriteMode accordingly.
-     */
-    template<class ParentModel, class... WriterArgs>
-    Model (
-        const std::string& name,
-        const ParentModel& parent_model,
-        const Config& custom_cfg = {},
-        [[maybe_unused]] std::tuple<WriterArgs...> w_args = {}
-    )
-    :
+  /** Uses information from a parent model to create an instance of this
+   *  model.
+   *
+   *  \tparam ParentModel The parent model's type
+   *
+   *  \param name         The name of this model instance, ideally used only
+   *                      once on the current hierarchical level
+   *  \param parent_model The parent model object from which the
+   *                      corresponding config node, the group, the RNG,
+   *                      and the parent log level are extracted.
+   *  \param custom_cfg   If given, will use this configuration node instead
+   *                      of trying to extract one from the parent model's
+   *                      configuration.
+   *  \param w_args       Passed on to DataManager constructor. If not given,
+   *                      the DataManager will still be constructed. Take
+   *                      care to also set the WriteMode accordingly.
+   * \param w_deciders    Map which associates names with factory functions for
+   *                      deciders of signature factory()::shared_ptr<Decider<Derived>>
+   * \param w_triggers    Map which associates names with factory functions for
+   *                      deciders of signature factory()::shared_ptr<Trigger<Derived>>
+   */
+  template < class ParentModel, class... WriterArgs >
+  Model(const std::string&                           name,
+        const ParentModel&                           parent_model,
+        const Config&                                custom_cfg = {},
+        std::tuple< WriterArgs... > w_args     = {},
+        const DataIO::Default::DefaultDecidermap< Derived >&
+            w_deciders = DataIO::Default::default_deciders< Derived >,
+        const DataIO::Default::DefaultTriggermap< Derived >&
+            w_triggers = DataIO::Default::default_triggers< Derived >
+        ):
         // First thing: setup name, configuration, and level in hierarchy
         _name(name),
         _cfg(custom_cfg.size() ? custom_cfg
@@ -325,7 +331,7 @@ public:
             _log->info("Invoking DataManager task factory ...");
 
             _datamanager = DataIO::DataManagerFactory<Derived>()(
-                dm_cfg, w_args
+                dm_cfg, w_args, w_deciders, w_triggers
             );
 
             _log->info("DataManager set up with {} task(s), {} decider(s), "
@@ -334,6 +340,7 @@ public:
                        _datamanager.get_triggers().size());
         }
     }
+
 
 
     // -- Getters -------------------------------------------------------------
@@ -534,6 +541,10 @@ public:
                 else {
                     _log->warn("Was told to stop. Not iterating further ...");
                 }
+
+                _log->info("Invoking epilog ...");
+                epilog();
+
                 throw GotSignal(received_signum.load());
             }
         }

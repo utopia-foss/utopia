@@ -33,6 +33,7 @@
 !*.tex
 !LICENSE
 !LICENSE.LESSER
+!CITATION.cff
 
 # Python and configuration
 !*.py

@@ -58,31 +58,20 @@ def parse_update_args(args: argparse.Namespace, *,
                      key_path=['perform_validation'])
 
         # Number of simulation steps
+        # NOTE Error checking happens in Multiverse (also for write_* args)
         if args.num_steps is not None:
             add_item(args.num_steps, add_to=update_dict,
-                     key_path=['parameter_space', 'num_steps'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --num-steps "
-                                                    "needs to be positive, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'num_steps'])
 
         # The root-level write_every parameter
         if args.write_every is not None:
             add_item(args.write_every, add_to=update_dict,
-                     key_path=['parameter_space', 'write_every'],
-                     is_valid= lambda v: v >= 1,
-                     ErrorMsg= lambda v: ValueError("Argument --write-every "
-                                                    "needs to be >= 1, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'write_every'])
 
         # The root-level write_start parameter
         if args.write_start is not None:
             add_item(args.write_start, add_to=update_dict,
-                     key_path=['parameter_space', 'write_start'],
-                     is_valid= lambda v: v >= 0,
-                     ErrorMsg= lambda v: ValueError("Argument --write-start "
-                                                    "needs to be >= 0, "
-                                                    "was {}.".format(v)))
+                     key_path=['parameter_space', 'write_start'])
 
         # Set seeds to a parameter dimension object
         if args.num_seeds is not None:
@@ -119,8 +108,10 @@ def parse_update_args(args: argparse.Namespace, *,
             if not update_dict['parameter_space'].get(args.model_name):
                 update_dict['parameter_space'][args.model_name] = dict()
 
-            add_from_kv_pairs(*args.set_model_params,
-                              add_to=update_dict['parameter_space'][args.model_name])
+            add_from_kv_pairs(
+                *args.set_model_params,
+                add_to=update_dict['parameter_space'][args.model_name]
+            )
 
         if args.set_params:
             # Make sure the parameter space entry is available
@@ -186,6 +177,9 @@ p_run   = subparsers.add_parser('run',
 p_eval  = subparsers.add_parser('eval',
                                 help="load a finished Utopia run and perform "
                                      "only the evaluation")
+p_batch = subparsers.add_parser('batch',
+                                help="run and evaluate multiple simulations "
+                                     "from a batch configuration")
 
 
 # subcommand: models ..........................................................
@@ -322,7 +316,7 @@ pm_cp.add_argument('--non-interactive',
     action='store_true',
     help="If given, will not use any prompts. This requires for all arguments "
          "to be specified directly.")
-pm_cp.add_argument('-d', '--dry-run',
+pm_cp.add_argument('--dry-run',
     action='store_true',
     help="If given, performs a dry run: No copy or write operations will be "
          "carried out.")
@@ -337,7 +331,13 @@ pm_cp.add_argument('--skip-exts',
 # subcommand: config ..........................................................
 # the name of the config to manipulate
 p_cfg.add_argument('cfg_name',
-    choices=['user', 'external_module_paths', 'plot_module_paths', 'projects'],
+    choices=[
+        'user',
+        'batch',
+        'external_module_paths',
+        'plot_module_paths',
+        'projects',
+    ],
     help="The name of the configuration entry that is to be manipulated.")
 
 p_cfg.add_argument('--set',
@@ -384,7 +384,7 @@ p_run_upd.add_argument('--note',
     default=None, nargs='?',
     help="Overwrites the `paths->model_note` entry which is used in creation "
          "of the run directory path.")
-p_run_upd.add_argument('--debug',
+p_run_upd.add_argument('-d', '--debug',
     action='store_true',
     help="If given, sets a number of configuration parameters which make "
          "debugging of the model and the associated plotting scripts easier, "
@@ -401,18 +401,23 @@ p_run_upd.add_argument('--skip-validation',
     help="If given, no parameter validation will be performed. Useful to set "
          "if the parameter space volume is very large (>10k).")
 
-p_run_upd.add_argument('--num-steps',
-    default=None, nargs='?', type=int,
-    help="Sets the number of simulation steps.")
+p_run_upd.add_argument('-N', '--num-steps',
+    default=None, nargs='?', type=str,
+    help="Sets the number of simulation steps. Needs to be an integer. Metric "
+         "suffixes (k, M, G, T) can be used to denote large numbers, e.g "
+         "`1.23M` translating to `1230000`, and scientific notation is also "
+         "supported (applying integer rounding).")
 p_run_upd.add_argument('--write-every',
-    default=None, nargs='?', type=int,
+    default=None, nargs='?', type=str,
     help="Sets the root-level `write_every` parameter, controlling how "
-         "frequently model data is written.")
+         "frequently model data is written. Can be given in the same formats "
+         "as `num_steps`.")
 p_run_upd.add_argument('--write-start',
-    default=None, nargs='?', type=int,
+    default=None, nargs='?', type=str,
     help="Sets the root-level `write_start` parameter, specifying the first "
          "time step at which data is written. After that time, data is "
-         "written every `write_every`th step.")
+         "written every `write_every`th step. Can be given in the same "
+         "formats as `num_steps`.")
 p_run_upd.add_argument('--num-seeds',
     default=None, nargs='?', type=int,
     help="Creates a parameter dimension for the seeds with the given number "
@@ -461,8 +466,17 @@ p_run_plt.add_argument('--plot-only',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
          "plots that are disabled in the specified plot configuration.")
+p_run_plt.add_argument('-R', '--reveal-output',
+    action='store_true',
+    help="If set, opens the output directory after plotting finished.")
 
 # misc
+p_run.add_argument('--use-data-tree-cache',
+    action='store_true',
+    help="If set, uses tree file caching: If no cache file exists, creates "
+         "one after loading all data; if a tree file already exists, uses "
+         "that to restore the data tree. This may bring a speed-up if the "
+         "creation of the data tree takes a long time.")
 p_run.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -504,11 +518,14 @@ p_eval_plt.add_argument('--plot-only',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
          "plots that are disabled in the specified plot configuration.")
-p_eval_plt.add_argument('--interactive',
+p_eval_plt.add_argument('-i', '--interactive',
     action='store_true',
     help="If given, the CLI will load the data and then wait for user input "
          "to specify the plotting-related arguments. ")
-p_eval_plt.add_argument('--debug',
+p_eval_plt.add_argument('-R', '--reveal-output',
+    action='store_true',
+    help="If set, opens the output directory after plotting finished.")
+p_eval_plt.add_argument('-d', '--debug',
     action='store_true',
     help="If given, configures the PlotManager such that it raises exceptions "
          "instead of warning (and proceeding to plot). If given while in "
@@ -527,6 +544,12 @@ p_eval.add_argument('--set-cfg',
          "parameter can be set at once by separating them with a space; if a "
          "space needs to be in the argument value, put the strings into '...' "
          "or \"...\".")
+p_eval.add_argument('--use-data-tree-cache',
+    action='store_true',
+    help="If set, uses tree file caching: If no cache file exists, creates "
+         "one after loading all data; if a tree file already exists, uses "
+         "that to restore the data tree. This may bring a speed-up if the "
+         "creation of the data tree takes a long time.")
 p_eval.add_argument('--suppress-data-tree',
     action='store_true',
     help="If set, loading of data will not print out the data tree.")
@@ -538,6 +561,25 @@ p_eval.add_argument('--cluster-mode',
     action='store_true',
     help="Enables cluster mode. Note that for plotting, this information is "
          "not yet taken into account!")
+
+
+# subcommand: batch ...........................................................
+p_batch.add_argument('batch_cfg_path',
+    help="Path to batch configuration file")
+p_batch.add_argument('-d', '--debug',
+    action='store_true',
+    help="If set, an error in an individual task will stop all other tasks.")
+p_batch.add_argument('-s', '--single-worker',
+    action='store_true',
+    help="If set, will use 'task' parallelization level instead of 'batch'. "
+         "Effectively, the batch tasks will be worked on sequentially. "
+         "This option can also be useful for debugging or when encountering "
+         "memory issues.")
+p_batch.add_argument('--note',
+    default=None, nargs='?',
+    help="Overwrites the `paths->model_note` entry which is used in creation "
+         "of the batch run directory path.")
+
 
 # CLI defined now.
 # -----------------------------------------------------------------------------
@@ -556,7 +598,7 @@ log = getLogger(__name__)  # TODO Make this controllable!
 from paramspace import ParamDim
 
 import utopya
-from utopya.tools import pformat, load_yml, add_item
+from utopya.tools import pformat, load_yml, add_item, open_folder
 from utopya.cltools import (deploy_user_cfg, register_models, copy_model_files,
                             add_from_kv_pairs, prompt_for_new_plot_args)
 from utopya.cfg import load_from_cfg_dir, write_to_cfg_dir, get_cfg_path
@@ -564,6 +606,33 @@ from utopya.parameter import ValidationError
 
 
 if __name__ == '__main__':
+    # Batch subcommand ........................................................
+    if args.mode == 'batch':
+        import os
+        from utopya.batch import BatchTaskManager
+
+        # Assemble update arguments
+        kws = dict()
+        if args.debug:
+            kws["debug"] = args.debug
+
+        if args.single_worker:
+            kws["parallelization_level"] = "task"
+
+        if args.note:
+            kws["paths"] = dict(note=args.note)
+
+
+        # Here we go ...
+        btm = BatchTaskManager(batch_cfg_path=args.batch_cfg_path, **kws)
+
+        print("")
+        btm.perform_tasks()
+
+        log.success("Batch work all finished now, yay! :)\n")
+        sys.exit()
+
+
     # Config subcommand .......................................................
     if args.mode == 'config':
         if args.cfg_name == 'user' and args.deploy:
@@ -692,23 +761,34 @@ if __name__ == '__main__':
         raise ValueError("Unexpected CLI mode: {}".format(args.mode))
 
     # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    if bool(args.suppress_data_tree):
-        print_tree = False
-
-    elif bool(args.full_data_tree):
-        print_tree = True
+    # Either always load the tree directly from files, not creating a
+    if not args.use_data_tree_cache:
+        mv.dm.load_from_cfg()
 
     else:
-        print_tree = "condensed"
+        if not mv.dm.tree_cache_exists:
+            mv.dm.load_from_cfg()
+            mv.dm.dump()
 
-    mv.dm.load_from_cfg(print_tree=print_tree)
+        else:
+            log.hilight("Restoring tree from cache file ...")
+            mv.dm.restore()
 
+    # Show the tree now
+    if not bool(args.suppress_data_tree):
+        if bool(args.full_data_tree):
+            print(mv.dm.tree)
+        else:
+            print(mv.dm.tree_condensed)
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     if not getattr(args, 'interactive', False):
         mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
                             plot_only=args.plot_only,
                             **update_plots_cfg)
+
+        if args.reveal_output and mv.pm.common_out_dir:
+            open_folder(mv.pm.common_out_dir)
 
         log.success("All done.\n")
         sys.exit()
@@ -718,27 +798,31 @@ if __name__ == '__main__':
     argv = [arg for arg in sys.argv[2:]]
 
     # While in interactive mode, the following loop is carried out repeatedly.
-    # A counter variable is used to
+    # A counter variable is used to label successive output directories.
     iap_session = 0
 
     while args.interactive:
         print("")
         log.hilight("--- Interactive plotting session %d ---", iap_session)
-        log.note("Use Control+C to exit.")
 
-        try:
-            argv, args = prompt_for_new_plot_args(old_argv=argv, old_args=args,
-                                                  parser=p_eval)
+        # Unless this is the very first session, need to prompt for new args.
+        if iap_session > 0:
+            log.note("Use Control+C to exit.")
 
-        except (KeyboardInterrupt, EOFError):
-            # Quit interactive plotting
-            # NOTE EOFError is invoked by builtins.input when the input is read
-            #      from a stream that is not the standard input stream.
-            break
+            try:
+                argv, args = prompt_for_new_plot_args(old_argv=argv,
+                                                      old_args=args,
+                                                      parser=p_eval)
 
-        except (ValueError, SystemExit):
-            # ... just prompt again. Error message was shown in prompt function
-            continue
+            except (KeyboardInterrupt, EOFError):
+                # Quit interactive plotting
+                # NOTE EOFError is invoked by builtins.input when the input is
+                #      read from a stream that is not the standard input stream
+                break
+
+            except (ValueError, SystemExit):
+                # ... just prompt again; error message was already shown
+                continue
 
         # Generate update dicts
         _, update_plots_cfg = parse_update_args(args, mode='eval')
@@ -753,6 +837,7 @@ if __name__ == '__main__':
         mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
                               raise_exc=args.debug)
         iap_session += 1
+        print("")
 
         # Now, try to plot:
         try:
@@ -780,6 +865,10 @@ if __name__ == '__main__':
             log.warning("Remaining in interactive plotting mode ...")
 
             continue
+
+        # Done plotting, allow to show the output
+        if args.reveal_output and mv.pm.common_out_dir:
+            open_folder(mv.pm.common_out_dir)
 
         # End of while loop
 

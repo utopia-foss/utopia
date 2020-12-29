@@ -730,13 +730,33 @@ Work interactively with utopya and dantro
         # ... do something with the loaded data or the PlotManager (mv.pm)
 
 * 📚
-  :doc:`interactive`,
-  :py:class:`~utopya.Model` class,
-  :py:meth:`~utopya.Model.create_mv`,
-  :py:meth:`~utopya.Model.create_run_load`,
-  :py:meth:`~utopya.Model.create_frozen_mv` (when *loading* data from an existing run)
+  :doc:`frontend/interactive`,
+  :py:class:`~utopya.model.Model` class,
+  :py:meth:`~utopya.model.Model.create_mv`,
+  :py:meth:`~utopya.model.Model.create_run_load`,
+  :py:meth:`~utopya.model.Model.create_frozen_mv` (when *loading* data from an existing run)
 
 
+
+.. _feature_batch:
+
+Batch-run and batch-evaluate simulations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* The :py:class:`~utopya.batch.BatchTaskManager` allows to configure multiple run and eval configurations, all from a *single* so-called "batch file".
+  That way, all configuration options are in one place.
+  This has several **benefits:**
+
+    * Configuration options can be easily shared within the batch file, e.g. to define a common aesthetic for plots.
+    * Creating output from multiple simulations becomes easier to replicate.
+    * The batch file is self-documenting and can, in principle, be used as a lab book.
+    * This feature can be especially helpful if performing data evaluation for a talk or thesis: one can set a specific output directory (e.g. ``my_thesis/figures``) and easily re-create plot output.
+
+* The batch feature is available via the CLI by calling ``utopia batch``
+* 📚
+  :doc:`frontend/batch`,
+  ``utopia batch --help``,
+  :py:class:`~utopya.batch.BatchTaskManager` class,
+  :doc:`frontend/inc/batch_cfg`
 
 
 

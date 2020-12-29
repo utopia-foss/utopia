@@ -16,6 +16,7 @@ file(COPY
         "space_test.yml"
         "testtools_test.yml"
         "model_datamanager_test.yml"
+        "model_datamanager_test_custom.yml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 # collect CORE tests

@@ -23,7 +23,7 @@ from .parameter import ValidationError
 from .plotting import PlotManager
 from .reporter import WorkerManagerReporter
 from .yaml import load_yml, write_yml
-from .tools import recursive_update, pformat
+from .tools import recursive_update, pformat, parse_num_steps
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -67,6 +67,7 @@ class Multiverse:
     def __init__(self, *,
                  model_name: str=None, info_bundle: ModelInfoBundle=None,
                  run_cfg_path: str=None, user_cfg_path: str=None,
+                 _shared_worker_manager: WorkerManager=None,
                  **update_meta_cfg):
         """Initialize the Multiverse.
 
@@ -79,6 +80,16 @@ class Multiverse:
             user_cfg_path (str, optional): If given, this is used to update the
                 base configuration. If None, will look for it in the default
                 path, see Multiverse.USER_CFG_SEARCH_PATH.
+            _shared_worker_manager (WorkerManager, optional): If given, this
+                already existing WorkerManager instance (and its reporter)
+                will be used instead of initializing new instances.
+
+                .. warning::
+
+                    This argument is only exposed for internal purposes.
+                    It should not be used for production code and behavior of
+                    this argument may change at any time.
+
             **update_meta_cfg: Can be used to update the meta configuration
                 generated from the previous configuration levels
         """
@@ -158,13 +169,20 @@ class Multiverse:
                                name=self.model_name + "_data",
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
+        log.progress("Initialized DataManager.")
 
-        # Create a WorkerManager instance and its associated reporter
-        self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
-                                 **wm_cluster_kwargs)
-        self._reporter = WorkerManagerReporter(self.wm, mv=self,
-                                               report_dir=self.dirs['run'],
-                                               **self.meta_cfg['reporter'])
+        # Either create a WorkerManager instance and its associated reporter
+        # or use an already existing WorkerManager that is also used elsewhere
+        if not _shared_worker_manager:
+            self._wm = WorkerManager(**self.meta_cfg['worker_manager'],
+                                     **wm_cluster_kwargs)
+            self._reporter = WorkerManagerReporter(self.wm, mv=self,
+                                                   report_dir=self.dirs['run'],
+                                                   **self.meta_cfg['reporter'])
+        else:
+            self._wm = _shared_worker_manager
+            self._reporter = self.wm.reporter
+            log.info("Using a shared WorkerManager instance and reporter.")
 
         # And instantiate the PlotManager with the model-specific plot config
         self._pm = self._setup_pm()
@@ -235,117 +253,53 @@ class Multiverse:
 
     # Public methods ..........................................................
 
-    def run(self):
-        """Starts a Utopia run. Whether this will be a single simulation or
-        a parameter sweep is decided by the contents of the meta config.
+    def run(self, *, sweep: bool=None):
+        """Starts a Utopia simulation run.
 
-        Note that (currently) each Multiverse instance can _not_ perform
-        multiple runs!
+        Specifically, this method adds simulation tasks to the associated
+        WorkerManager, locks its task list, and then invokes the
+        :py:meth:`~utopya.workermanager.WorkerManager.start_working` method
+        which performs all the simulation tasks.
+
+        If cluster mode is enabled, this will split up the parameter space into
+        (ideally) equally sized parts and only run one of these parts,
+        depending on the cluster node this Multiverse is being invoked on.
+
+        .. note::
+
+            As this method locks the task list of the
+            :py:class:`~utopya.workermanager.WorkerManager`, no further tasks
+            can be added henceforth. This means, that each Multiverse instance
+            can only perform a single simulation run.
+
+        Args:
+            sweep (bool, optional): Whether to perform a sweep or not. If None,
+                the value will be read from the ``perform_sweep`` key of the
+                meta-configuration.
         """
-        # Depending on the configuration, call the corresponding run method
-        if self.meta_cfg.get('perform_sweep'):
-            self.run_sweep()
-        else:
-            self.run_single()
-
-    def run_single(self):
-        """Runs a single simulation.
-
-        Note that (currently) each Multiverse instance can _not_ perform
-        multiple runs!
-        """
-        # Get the parameter space from the config
-        pspace = self.meta_cfg['parameter_space']
-
-        # Get the default state of the parameter space
-        uni_cfg = pspace.default
-
-        # Add the task to the worker manager.
-        log.progress("Adding task for simulation of a single universe ...")
-        self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
-
-        # Prevent adding further tasks to disallow further runs
+        # Add tasks, then prevent adding further tasks to disallow further runs
+        self._add_sim_tasks(sweep=sweep)
         self.wm.tasks.lock()
 
         # Tell the WorkerManager to start working (is a blocking call)
         self.wm.start_working(**self.meta_cfg['run_kwargs'])
 
-        log.success("Finished single universe run. Yay. :)")
+        # Done! :)
+        log.success("Finished run. Wohoo. :)")
+
+    def run_single(self):
+        """Runs a single simulation using the parameter space's default value.
+
+        See :py:meth:`~utopya.multiverse.Multiverse.run` for more information.
+        """
+        return self.run(sweep=False)
 
     def run_sweep(self):
         """Runs a parameter sweep.
 
-        If cluster mode is enabled, this will split up the parameter space into
-        (ideally) equally sized parts and only run one of these parts,
-        depending on the node this Multiverse runs on.
-
-        Note that (currently) each Multiverse instance can _not_ perform
-        multiple runs!
+        See :py:meth:`~utopya.multiverse.Multiverse.run` for more information.
         """
-
-        # Get the parameter space from the config
-        pspace = self.meta_cfg['parameter_space']
-
-        if pspace.volume < 1:
-            raise ValueError("The parameter space has no sweeps configured! "
-                             "Refusing to run a sweep. You can either call "
-                             "the run_single method or add sweeps to your "
-                             "run configuration using the !sweep YAML tags.")
-
-        # Get the parameter space iterator
-        psp_iter = pspace.iterator(with_info='state_no_str')
-
-        # Distinguish whether to do a regular sweep or we are in cluster mode
-        if not self.cluster_mode:
-            # Do a sweep over the whole activated parameter space
-            log.progress("Adding tasks for simulation of %d universes ...",
-                         pspace.volume)
-
-            for uni_cfg, uni_id_str in psp_iter:
-                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
-                                   is_sweep=True)
-
-        else:
-            # Prepare a cluster mode sweep
-            log.info("Preparing cluster mode sweep ...")
-
-            # Get the resolved cluster parameters
-            # These include the following values:
-            #    num_nodes:   The total number of nodes to simulate on. This
-            #                 is what determines the modulo value.
-            #    node_index:  Equivalent to the modulo offset, which depends
-            #                 on the position of this Multiverse's node in the
-            #                 sequence of all nodes.
-            rcps = self.resolved_cluster_params
-            num_nodes = rcps['num_nodes']
-            node_index = rcps['node_index']
-
-            # Inform about the number of universes to be simulated
-            log.progress("Adding tasks for cluster-mode simulation of "
-                         "%d universes on this node (%d of %d) ...",
-                         (   pspace.volume//num_nodes
-                          + (pspace.volume%num_nodes > node_index)),
-                         node_index + 1, num_nodes)
-
-            for i, (uni_cfg, uni_id_str) in enumerate(psp_iter):
-                # Skip if this node is not responsible
-                if (i - node_index) % num_nodes != 0:
-                    log.debug("Skipping:  %s", uni_id_str)
-                    continue
-
-                # Is valid for this node, add the simulation task
-                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
-                                   is_sweep=True)
-
-        log.info("Added %d tasks.", len(self.wm.tasks))
-
-        # Prevent adding further tasks to disallow further runs
-        self.wm.tasks.lock()
-
-        # Tell the WorkerManager to start working (is a blocking call)
-        self.wm.start_working(**self.meta_cfg['run_kwargs'])
-
-        log.success("Finished parameter sweep. Wohoo. :)")
+        return self.run(sweep=True)
 
     def renew_plot_manager(self, **update_kwargs):
         """Tries to set up a new PlotManager. If this succeeds, the old one is
@@ -354,7 +308,6 @@ class Multiverse:
         Args:
             **update_kwargs: Passed on to PlotManager.__init__
         """
-        log.debug("Creating new PlotManager ...")
         try:
             pm = self._setup_pm(**update_kwargs)
 
@@ -364,7 +317,6 @@ class Multiverse:
                              "") from exc
 
         self._pm = pm
-        log.progress("Renewed PlotManager.\n")
 
     # Helpers .................................................................
 
@@ -625,11 +577,16 @@ class Multiverse:
         if update_kwargs:
             pm_kwargs = recursive_update(pm_kwargs, update_kwargs)
 
+        log.info("Initializing PlotManager ...")
         pm = PlotManager(dm=self.dm, _model_info_bundle=self.info_bundle,
                          base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
                          update_base_cfg=paths.get('base_plots'),
                          plots_cfg=paths.get('default_plots'),
                          **pm_kwargs)
+
+        log.progress("Initialized PlotManager.")
+        log.note("Output directory:  %s",
+                 pm._out_dir if pm._out_dir else "\n  " + self.dm.dirs['out'])
 
         return pm
 
@@ -643,6 +600,13 @@ class Multiverse:
         of the run directory. All other relevant information is stored in an
         additionally created ``backup`` subdirectory.
 
+        .. warning::
+
+            These backups are created prior to the start of the actual
+            simulation run and contains information known at that point.
+            Any changes to the meta configuration made *after* initialization
+            of the Multiverse will not be reflected in these backups.
+
         Args:
             cfg_parts (dict): A dict of either paths to configuration files or
                 dict-like data that is to be dumped into a configuration file.
@@ -653,16 +617,21 @@ class Multiverse:
                 executable. Note that these files can sometimes be quite large.
         """
         log.info("Performing backups ...")
+        cfg_dir = self.dirs['config']
+
         # Write the meta config to the config directory.
         write_yml(self.meta_cfg,
-                  path=os.path.join(self.dirs['config'], "meta_cfg.yml"))
+                  path=os.path.join(cfg_dir, "meta_cfg.yml"))
         log.note("  Backed up meta configuration.")
 
-        # Separately, store the parameter space there.
-        write_yml(self.meta_cfg['parameter_space'],
-                  path=os.path.join(self.dirs['config'],
-                                    "parameter_space.yml"))
-        log.note("  Backed up parameter space representation.")
+        # Separately, store the parameter space and its metadata
+        pspace = self.meta_cfg['parameter_space']
+        write_yml(pspace,
+                  path=os.path.join(cfg_dir, "parameter_space.yml"))
+        write_yml(dict(**pspace.get_info_dict(),
+                       perform_sweep=self.meta_cfg.get('perform_sweep')),
+                  path=os.path.join(cfg_dir, "parameter_space_info.yml"))
+        log.note("  Backed up parameter space and metadata.")
 
         # If configured, backup the other cfg files one by one.
         if backup_cfg_files:
@@ -670,8 +639,8 @@ class Multiverse:
                       len(cfg_parts))
 
             for part_name, val in cfg_parts.items():
-                _path = os.path.join(self.dirs['config'],
-                                     part_name + "_cfg.yml")
+                _path = os.path.join(cfg_dir, part_name + "_cfg.yml")
+
                 # Distinguish two types of payload that will be saved:
                 if isinstance(val, str):
                     # Assumed to be path to a config file; copy it
@@ -737,7 +706,7 @@ class Multiverse:
 
         self._model_binpath = binpath
 
-    def _resolve_cluster_params(self) -> dict:
+    def _resolve_cluster_params(self) -> dict:  # TODO Outsource!
         """This resolves the cluster parameters, e.g. by setting parameters
         depending on certain environment variables. This function is called by
         the resolved_cluster_params property.
@@ -928,6 +897,12 @@ class Multiverse:
             output_path = os.path.join(uni_dir, "data.h5")
             uni_cfg['output_path'] = output_path
 
+            # Parse the potentially string-valued number of steps values, and
+            # other step-like arguments. Raises an error if they are negative.
+            uni_cfg['num_steps'] = parse_num_steps(uni_cfg['num_steps'])
+            uni_cfg['write_every'] = parse_num_steps(uni_cfg['write_every'])
+            uni_cfg['write_start'] = parse_num_steps(uni_cfg['write_start'])
+
             # write essential part of config to file:
             uni_cfg_path = os.path.join(uni_dir, "config.yml")
             write_yml(uni_cfg, path=uni_cfg_path)
@@ -984,6 +959,93 @@ class Multiverse:
                                "".format(uni_basename)) from err
 
         log.debug("Added simulation task: %s.", uni_basename)
+
+    def _add_sim_tasks(self, *, sweep: bool=None) -> int:
+        """Adds the simulation tasks needed for a single run or for a sweep.
+
+        Args:
+            sweep (bool, optional): Whether tasks for a parameter sweep should
+                be added or only for a single universe. If None, will read the
+                ``perform_sweep`` key from the meta-configuration.
+
+        Returns:
+            int: The number of added tasks.
+
+        Raises:
+            ValueError: On ``sweep == True`` and zero-volume parameter space.
+        """
+        if sweep is None:
+            sweep = self.meta_cfg.get('perform_sweep', False)
+
+        pspace = self.meta_cfg['parameter_space']
+
+        if not sweep:
+            # Only need the default state of the parameter space
+            uni_cfg = pspace.default
+
+            # Add the task to the worker manager.
+            log.progress("Adding task for simulation of a single universe ...")
+            self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
+
+            return 1
+        # -- else: tasks for parameter sweep needed
+
+        if pspace.volume < 1:
+            raise ValueError("The parameter space has no sweeps configured! "
+                             "Refusing to run a sweep. You can either call "
+                             "the run_single method or add sweeps to your "
+                             "run configuration using the !sweep YAML tags.")
+
+        # Get the parameter space iterator and the number of already-existing
+        # tasks (to later compute the number of _added_ tasks)
+        psp_iter = pspace.iterator(with_info='state_no_str')
+        _num_tasks = len(self.wm.tasks)
+
+        # Distinguish whether to do a regular sweep or we are in cluster mode
+        if not self.cluster_mode:
+            # Do a sweep over the whole activated parameter space
+            log.progress("Adding tasks for simulation of %d universes ...",
+                         pspace.volume)
+
+            for uni_cfg, uni_id_str in psp_iter:
+                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                                   is_sweep=True)
+
+        else:
+            # Prepare a cluster mode sweep
+            log.info("Preparing cluster mode sweep ...")
+
+            # Get the resolved cluster parameters
+            # These include the following values:
+            #    num_nodes:   The total number of nodes to simulate on. This
+            #                 is what determines the modulo value.
+            #    node_index:  Equivalent to the modulo offset, which depends
+            #                 on the position of this Multiverse's node in the
+            #                 sequence of all nodes.
+            rcps = self.resolved_cluster_params
+            num_nodes = rcps['num_nodes']
+            node_index = rcps['node_index']
+
+            # Inform about the number of universes to be simulated
+            log.progress("Adding tasks for cluster-mode simulation of "
+                         "%d universes on this node (%d of %d) ...",
+                         (   pspace.volume//num_nodes
+                          + (pspace.volume%num_nodes > node_index)),
+                         node_index + 1, num_nodes)
+
+            for i, (uni_cfg, uni_id_str) in enumerate(psp_iter):
+                # Skip if this node is not responsible
+                if (i - node_index) % num_nodes != 0:
+                    log.debug("Skipping:  %s", uni_id_str)
+                    continue
+
+                # Is valid for this node, add the simulation task
+                self._add_sim_task(uni_id_str=uni_id_str, uni_cfg=uni_cfg,
+                                   is_sweep=True)
+
+        num_new_tasks = len(self.wm.tasks) - _num_tasks
+        log.info("Added %d tasks.", num_new_tasks)
+        return num_new_tasks
 
     def _validate_meta_cfg(self) -> bool:
         """Goes through the parameters that require validation, validates them,
@@ -1170,6 +1232,7 @@ class FrozenMultiverse(Multiverse):
                                name=self.model_name + "_data",
                                **self.meta_cfg['data_manager'],
                                **dm_cluster_kwargs)
+        log.progress("Initialized DataManager.")
 
         # Instantiate the PlotManager via the helper method
         self._pm = self._setup_pm()

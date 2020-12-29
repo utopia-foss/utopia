@@ -26,8 +26,16 @@ Investigating these models by performing simulation runs with a few varying para
 
 For introductory guides, feature lists, FAQs, and API references refer to the online [user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/index.html).
 
+### How to cite Utopia
 
-#### Contents of this README
+Utopia was reviewed and published in the [Journal of Open Source Software (JOSS)](https://joss.theoj.org/).
+Please cite at least the following publication if you use Utopia (or a modified version thereof) for your own work:
+
+> Lukas Riedel, Benjamin Herdeanu, Harald Mack, Yunus Sevinchan, and Julian Weninger. 2020. **“Utopia: A Comprehensive and Collaborative Modeling Framework for Complex and Evolving Systems.”** *Journal of Open Source Software* 5 (53): 2165. DOI: [10.21105/joss.02165](https://doi.org/10.21105/joss.02165).
+
+The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation file format](https://citation-file-format.github.io/) and contains additional metadata to reference this software, its authors, and associated publications.
+
+### Contents of this README
 * [How to install](#how-to-install)
     * [On your machine](#step-by-step-instructions)
     * [Alternative: docker image](#utopia-via-docker)
@@ -476,6 +484,7 @@ _Note:_
 * The `build_tests_` targets give you more control in scenarios where you want
   to test _only_ building.
 
+
 #### Running Individual Test Executables
 Each _individual_ test also has an individual build target, the names of which
 you see in the output of the `make build_tests_*` command.
@@ -484,19 +493,25 @@ corresponding build directory, e.g. `build/tests/core/`, and run the executable
 from that directory, as some of the tests rely on auxiliary files which are
 located relative to the executable.
 
-For invoking individual Python tests, there are no targets specified.
+For invoking individual *Python* tests, there are no targets specified.
 However, [pytest][pytest-usage] gives you control over which tests are invoked:
 
 ```bash
 cd python
-python -m pytest -v model_tests/<model_name>             # all tests
-python -m pytest -v model_tests/<model_name>/my_test.py  # specific test file
-python -m pytest -v utopya/test/<some_glob>              # selected via glob
+python -m pytest -v model_tests/{model_name}             # all tests
+python -m pytest -v model_tests/{model_name}/my_test.py  # specific test file
 ```
 
-_Note:_ Make sure you entered the virtual environment and the required
-executables are built. See `pytest --help` for more information regarding the
-CLI.
+Tests for individual `utopya` modules need to be run through the `python/utopya/run_test.py` executable rather than through `pytest` directly:
+
+```bash
+cd python/utopya
+python run_test.py -v test/{some_glob}                   # selected via glob
+```
+
+_Note:_ For all of the above, make sure you entered the virtual environment and the required executables are all built; call `make all` to make sure.
+See `pytest --help` for more information regarding the CLI.
+
 
 #### Evaluating Test Code Coverage
 Code coverage is useful information when writing and evaluating tests.
@@ -519,7 +534,8 @@ adjust the test command accordingly to show the coverage report only for one
 module, for example `utopya.multiverse`:
 
 ```bash
-python -m pytest -v utopya/test/test_multiverse.py --cov=utopya.multiverse --cov-report=term-missing
+(utopia-env) $ cd python/utopya
+(utopia-env) $ python run_test.py -v test/test_multiverse.py --cov=utopya.multiverse --cov-report=term-missing
 ```
 
 
@@ -612,8 +628,8 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | Software                 | Version    | Comments                        |
 | ------------------------ | ---------- | ------------------------------- |
 | [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace][paramspace] | >= 2.4.1   | Makes parameter sweeps easy     |
-| [dantro][dantro]         | >= 0.14    | Handle, transform, and visualize hierarchically organized data |
+| [paramspace][paramspace] | >= 2.5.4   | Makes parameter sweeps easy     |
+| [dantro][dantro]         | >= 0.15    | Handle, transform, and visualize hierarchically organized data |
 
 
 #### Recommended

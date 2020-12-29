@@ -48,9 +48,11 @@ class WorkerManager:
     def __init__(self,
                  num_workers: Union[int, str]='auto',
                  poll_delay: float=0.05,
+                 periodic_task_callback: int=None,
                  QueueCls=queue.Queue,
                  reporter: WorkerManagerReporter=None,
                  rf_spec: Dict[str, Union[str, List[str]]]=None,
+                 save_streams_on: Sequence[str]=(),
                  nonzero_exit_handling: str='ignore',
                  interrupt_params: dict=None,
                  cluster_mode: bool=False,
@@ -65,6 +67,9 @@ class WorkerManager:
             poll_delay (float, optional): How long (in seconds) the delay
                 between worker polls should be. For too small delays (<0.01),
                 the CPU load will become significant.
+            periodic_task_callback (int, optional): If given, an additional
+                task callback will be invoked after every
+                ``periodic_task_callback`` poll events.
             QueueCls (Class, optional): Which class to use for the Queue.
                 Defaults to FiFo.
             reporter (WorkerManagerReporter, optional): The reporter associated
@@ -80,6 +85,11 @@ class WorkerManager:
                 strings, where the strings always refer to report formats
                 registered with the WorkerManagerReporter. This argument
                 updates the default report format specifications.
+            save_streams_on (Sequence[str], optional): On which events to
+                invoke :py:meth:`~utopya.task.WorkerTask.save_streams`
+                *during* work.
+                Should be a sequence containing one or both of the keys
+                ``on_monitor_update``, ``periodic_callback``.
             nonzero_exit_handling (str, optional): How to react if a WorkerTask
                 exits with a non-zero exit code. For 'ignore', nothing happens.
                 For 'warn', a warning is printed and the last 5 lines of the
@@ -120,6 +130,7 @@ class WorkerManager:
         # Initialize attributes, some of which are property-managed
         self._num_workers = None
         self._poll_delay = None
+        self._periodic_callback = periodic_task_callback
         self._tasks = TaskList()
         self._task_q = QueueCls()
         self._active_tasks = []
@@ -128,6 +139,7 @@ class WorkerManager:
         self._reporter = None
         self._num_finished_tasks = 0
         self._nonzero_exit_handling = None
+        self.save_streams_on = save_streams_on
         self._suppress_rf_specs = []
         self.pending_exceptions = queue.Queue()
 
@@ -324,13 +336,32 @@ class WorkerManager:
 
     # Public API ..............................................................
 
-    def add_task(self, **task_kwargs) -> WorkerTask:
+    def add_task(self, *,
+                 TaskCls: type=WorkerTask,
+                 **task_kwargs) -> WorkerTask:
         """Adds a task to the WorkerManager.
 
         Args:
+            TaskCls (type, optional): The WorkerTask-like type to use
             **task_kwargs: All arguments needed for WorkerTask initialization.
-                See utopya.task.WorkerTask.__init__ for all valid arguments.
+                See :py:class:`utopya.task.WorkerTask` for all valid arguments.
+
+        Returns:
+            WorkerTask: The created WorkerTask object
         """
+        # Evaluate save_stream callbacks
+        save_streams = lambda t: t.save_streams(final=False)
+
+        if 'monitor_updated' in self.save_streams_on:
+            save_streams_on_monitor_update = True
+
+        if 'periodic_callback' in self.save_streams_on:
+            periodic_callback = save_streams
+        else:
+            # Do nothing
+            periodic_callback = lambda _: None
+
+
         # Define the function needed to calculate the task's progress
         def calc_progress(task) -> float:
             """Uses the task's stream objects to calculate the progress.
@@ -395,17 +426,26 @@ class WorkerManager:
             """Performs actions when there was a parsed object in the task's
             stream, i.e. when the monitor got an update.
             """
+            if save_streams_on_monitor_update:
+                save_streams(task)
             self._invoke_report('monitor_updated')
 
         # Prepare the arguments for the WorkerTask . . . . . . . . . . . . . .
 
-        callbacks = dict(spawn=task_spawned,
-                         finished=task_finished,
-                         parsed_object_in_stream=monitor_updated)
+        callbacks = dict(
+            # Invoked by task itself
+            spawn=task_spawned,
+            finished=task_finished,
+            parsed_object_in_stream=monitor_updated,
+            #
+            # Invoked by WorkerManager
+            periodic=periodic_callback,
+        )
 
-        # Generate the WorkerTask object from the given parameters
-        task = WorkerTask(callbacks=callbacks, progress_func=calc_progress,
-                          **task_kwargs)
+        # Generate the WorkerTask-like object from the given parameters
+        task = TaskCls(callbacks=callbacks,
+                       progress_func=calc_progress,
+                       **task_kwargs)
 
         # Append it to the task list and put it into the task queue
         self.tasks.append(task)
@@ -543,6 +583,13 @@ class WorkerManager:
                               post_poll_func.__name__)
                     post_poll_func()
 
+                # Invoke periodic callback for all tasks
+                if (
+                    self._periodic_callback and
+                    poll_no % self._periodic_callback == 0
+                ):
+                    self._invoke_periodic_callbacks()
+
                 # Some information
                 poll_no += 1
                 log.debug("Poll # %6d:  %d active tasks",
@@ -555,43 +602,15 @@ class WorkerManager:
             # Handle any remaining pending exceptions
             self._handle_pending_exceptions()
 
-        except WorkerManagerError as err:
-            # Some error not related to the non-zero exit code occurred.
-            # Gracefully terminate remaining tasks before re-raising the
-            # exception
+        except (KeyboardInterrupt, WorkerManagerTotalTimeout) as exc:
+            # Got interrupted or a total timeout.
+            # Interrupt the workers, giving them some time to shut down ...
 
             # Suppress reporter to use CR; then inform via log messages
             if self.reporter:
                 self.reporter.suppress_cr = True
 
-            log.critical("Did not finish working! See above for error log.")
-
-            # Now terminate the remaining active tasks
-            log.hilight("Terminating active tasks ...")
-            self._signal_workers(self.active_tasks, signal='SIGTERM')
-
-            # Store end time and invoke a report
-            self.times['end_working'] = dt.now()
-            self._invoke_report('after_abort', force=True)
-
-            # For some specific error types, do not raise but exit with status
-            if isinstance(err, WorkerTaskNonZeroExit):
-                log.critical("Exiting now ...")
-                sys.exit(err.task.worker_status)
-
-            # Some other error occurred; just raise
-            log.critical("Re-raising error ...")
-            raise
-
-        except KeyboardInterrupt:
-            # Got interrupted. Also interrupt the workers, giving them some
-            # time to shut down ...
-
-            # Suppress reporter to use CR; then inform via log messages
-            if self.reporter:
-                self.reporter.suppress_cr = True
-
-            log.warning("Received KeyboardInterrupt.")
+            log.warning("Received %s.", type(exc).__name__)
 
             # Extract parameters from config
             # Which signal to send to workers
@@ -601,8 +620,8 @@ class WorkerManager:
             grace_period = self.interrupt_params.get('grace_period', 5.)
 
             # Send the signal
-            log.warning("Sending signal %s to %d active task(s) ...",
-                        signal, len(self.active_tasks))
+            log.info("Sending signal %s to %d active task(s) ...",
+                     signal, len(self.active_tasks))
             self._signal_workers(self.active_tasks, signal=signal)
 
             # Continuously poll them for a certain grace period in order to
@@ -640,13 +659,45 @@ class WorkerManager:
             self.times['end_working'] = dt.now()
             self._invoke_report('after_abort', force=True)
 
-            if self.interrupt_params.get('exit', True):
+            log.hilight("Work session ended.")
+
+            if (
+                type(exc) is KeyboardInterrupt
+                and self.interrupt_params.get('exit', True)
+            ):
                 # Exit with appropriate exit code (128 + abs(signum))
                 log.warning("Exiting after KeyboardInterrupt ...")
                 sys.exit(128 + abs(SIGMAP[signal]))
 
-            log.warning("Continuing after KeyboardInterrupt ...")
-            return
+            # Otherwise, just return control to the calling scope
+
+        except WorkerManagerError as err:
+            # Some error not related to the non-zero exit code occurred.
+            # Gracefully terminate remaining tasks before re-raising the
+            # exception
+
+            # Suppress reporter to use CR; then inform via log messages
+            if self.reporter:
+                self.reporter.suppress_cr = True
+
+            log.critical("Did not finish working! See above for error log.")
+
+            # Now terminate the remaining active tasks
+            log.hilight("Terminating active tasks ...")
+            self._signal_workers(self.active_tasks, signal='SIGTERM')
+
+            # Store end time and invoke a report
+            self.times['end_working'] = dt.now()
+            self._invoke_report('after_abort', force=True)
+
+            # For some specific error types, do not raise but exit with status
+            if isinstance(err, WorkerTaskNonZeroExit):
+                log.critical("Exiting now ...")
+                sys.exit(err.task.worker_status)
+
+            # Some other error occurred; just raise
+            log.critical("Re-raising error ...")
+            raise
 
         # Register end time and invoke final report
         self.times['end_working'] = dt.now()
@@ -765,6 +816,11 @@ class WorkerManager:
 
         # Return as set to be sure that they are unique
         return set(to_terminate)
+
+    def _invoke_periodic_callbacks(self):
+        """Invokes the ``periodic`` callback function of each active task."""
+        for task in self.active_tasks:
+            task._invoke_callback('periodic')
 
     def _signal_workers(self, tasks: Union[str, List[WorkerTask]],
                         *, signal: Union[str, int]) -> None:

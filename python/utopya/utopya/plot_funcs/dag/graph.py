@@ -249,6 +249,12 @@ def draw_graph(*, hlpr: PlotHelper,
                 Select the times by value.
             isel (list, optional):
                 Select the times by index.
+            update_positions (bool, optional):
+                Update the node positions for each frame by recalculating the
+                layout with the parameters specified in 
+                graph_drawing['positions']. If this parameter is not given or
+                false, the positions are calculated once initially and then 
+                fixed.
 
         register_property_maps (Sequence[str], optional): Names of properties
             to be registered in the graph group before the graph creation.
@@ -1018,6 +1024,11 @@ def draw_graph(*, hlpr: PlotHelper,
     # Prepare parameters and kwargs for the update routine
     suptitle_kwargs = suptitle_kwargs if suptitle_kwargs else {}
     positions = rv['pos']
+
+    # Determine whether to update the node positions with each time frame.
+    # If yes, store them in the positions parameter.
+    if graph_animation and graph_animation.get('update_positions'):
+        positions = None
 
     def update():
         """Animation generator for the draw_graph function.

@@ -44,15 +44,6 @@ To explore other parts of the documentation, use the navigation sidebar.
 
 
 .. toctree::
-   :caption: Models
-   :maxdepth: 1
-   :glob:
-   :hidden:
-
-   models/*
-
-
-.. toctree::
    :caption: Usage
    :maxdepth: 1
    :hidden:
@@ -61,6 +52,15 @@ To explore other parts of the documentation, use the navigation sidebar.
    usage/implement/index
    usage/run/index
    usage/eval/index
+
+
+.. toctree::
+   :caption: Models
+   :maxdepth: 1
+   :glob:
+   :hidden:
+
+   models/*
 
 
 .. toctree::
@@ -94,13 +94,14 @@ To explore other parts of the documentation, use the navigation sidebar.
    dev/model-requirements
    dev/writing-docs
 
-
 .. toctree::
    :caption: Miscellaneous
    :maxdepth: 1
    :hidden:
 
-   COPYING.md
-   CONTRIBUTING.md
-   CODE_OF_CONDUCT.md
+   Copyright Notice <COPYING>
+   cite
+   Contribution Guide <CONTRIBUTING>
+   Code of Conduct <CODE_OF_CONDUCT>
+   Documentation Examples <examples>
    index_pages

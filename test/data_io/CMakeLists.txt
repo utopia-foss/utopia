@@ -28,7 +28,7 @@ set(TESTS_DATAIO
     factory_test
     hdf_ndim_io_test
     hdfdataspace_test
-    hdfobject_test
+    # hdfobject_test
     hdfidentifier_test
 
     # this is a template for testing memory usage over time and intended for 

@@ -869,8 +869,8 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
     using Task = Default::DefaultWriteTask< Model >;
 
     using DMT = DataManagerTraits< Task,
-                                   Default::DefaultDecider< Model >,
-                                   Default::DefaultTrigger< Model >,
+                                   Default::Decider< Model >,
+                                   Default::Trigger< Model >,
                                    Default::DefaultExecutionProcess >;
 
     std::size_t file_postfix = 1;
@@ -982,9 +982,9 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
             // decidertypes
-            Default::default_decidertypes< Model >,
+            Default::default_deciders< Model >,
             // triggertypes
-            Default::default_triggertypes< Model >,
+            Default::default_triggers< Model >,
             // executionprocess
             Default::DefaultExecutionProcess());
 
@@ -1107,9 +1107,9 @@ BOOST_AUTO_TEST_CASE(datamanager_default_config_check)
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
             // decidertypes
-            Default::default_decidertypes< Model >,
+            Default::default_deciders< Model >,
             // triggertypes
-            Default::default_triggertypes< Model >,
+            Default::default_triggers< Model >,
             // executionprocess
             Default::DefaultExecutionProcess());
 
@@ -1158,8 +1158,8 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
     using Task = Default::DefaultWriteTask< Model >;
 
     using DMT = DataManagerTraits< Task,
-                                   Default::DefaultDecider< Model >,
-                                   Default::DefaultTrigger< Model >,
+                                   Default::Decider< Model >,
+                                   Default::Trigger< Model >,
                                    Default::DefaultExecutionProcess >;
 
     Task t1(
@@ -1253,8 +1253,8 @@ BOOST_AUTO_TEST_CASE(datamanager_test_execprocess_with_config)
         { { "write_x"s, std::make_shared< Task >(t1) },
           { "write_y"s, std::make_shared< Task >(t2) },
           { "write_z"s, std::make_shared< Task >(t3) } },
-        Default::default_decidertypes< Model >,
-        Default::default_triggertypes< Model >,
+        Default::default_deciders< Model >,
+        Default::default_triggers< Model >,
         Default::DefaultExecutionProcess());
 
     // call the data writer
@@ -1437,8 +1437,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
     using Task = Default::DefaultWriteTask< Model >;
 
     using DMT = DataManagerTraits< Task,
-                                   Default::DefaultDecider< Model >,
-                                   Default::DefaultTrigger< Model >,
+                                   Default::Decider< Model >,
+                                   Default::Trigger< Model >,
                                    Default::DefaultExecutionProcess >;
 
     Task t1(
@@ -1534,8 +1534,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             { { "write_x"s, std::make_shared< Task >(t1) },
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
-            Default::default_decidertypes< Model >,
-            Default::default_triggertypes< Model >,
+            Default::default_deciders< Model >,
+            Default::default_triggers< Model >,
             Default::DefaultExecutionProcess());
     }
     catch (std::exception& e)
@@ -1557,8 +1557,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             { { "write_x"s, std::make_shared< Task >(t1) },
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
-            Default::default_decidertypes< Model >,
-            Default::default_triggertypes< Model >,
+            Default::default_deciders< Model >,
+            Default::default_triggers< Model >,
             Default::DefaultExecutionProcess());
     }
     catch (std::exception& e)
@@ -1571,8 +1571,6 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             "Received a zombie node for the setup of DataManager objects!");
     }
 
-    std::cout << (cfg["data_manager2"] ? "active" : "zombie") << std::endl;
-    std::cout << cfg["data_manager2"].IsMap() << std::endl;
 
     try
     {
@@ -1582,8 +1580,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             { { "write_x"s, std::make_shared< Task >(t1) },
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
-            Default::default_decidertypes< Model >,
-            Default::default_triggertypes< Model >,
+            Default::default_deciders< Model >,
+            Default::default_triggers< Model >,
             Default::DefaultExecutionProcess());
     }
     catch (std::exception& e)
@@ -1604,8 +1602,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             { { "write_x"s, std::make_shared< Task >(t1) },
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
-            Default::default_decidertypes< Model >,
-            Default::default_triggertypes< Model >,
+            Default::default_deciders< Model >,
+            Default::default_triggers< Model >,
             Default::DefaultExecutionProcess());
     }
     catch (std::exception& e)
@@ -1625,8 +1623,8 @@ BOOST_AUTO_TEST_CASE(datamanager_exception_check)
             { { "write_x"s, std::make_shared< Task >(t1) },
               { "write_y"s, std::make_shared< Task >(t2) },
               { "write_z"s, std::make_shared< Task >(t3) } },
-            Default::default_decidertypes< Model >,
-            Default::default_triggertypes< Model >,
+            Default::default_deciders< Model >,
+            Default::default_triggers< Model >,
             Default::DefaultExecutionProcess());
     }
     catch (std::exception& e)

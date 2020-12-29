@@ -426,8 +426,8 @@ class HDFType final : public HDFObject< HDFCategory::datatype >
      */
     template < typename T >
     HDFType(T&& object_or_size,
-            std::enable_if_t< not std::is_same_v< HDFType, std::decay_t< T > >,
-                              int > = 0)
+            std::enable_if_t< not std::is_same_v< HDFType, std::decay_t< T > >, int > = 0):
+    HDFType()
     {
         open(object_or_size);
     }

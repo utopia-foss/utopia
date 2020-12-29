@@ -715,8 +715,8 @@ namespace Default
 template < typename Model >
 using DefaultDataManager =
     DataManager< DataManagerTraits< Default::DefaultWriteTask< Model >,
-                                    Default::DefaultDecider< Model >,
-                                    Default::DefaultTrigger< Model >,
+                                    Default::Decider< Model >,
+                                    Default::Trigger< Model >,
                                     Default::DefaultExecutionProcess > >;
 } // namespace Default
 

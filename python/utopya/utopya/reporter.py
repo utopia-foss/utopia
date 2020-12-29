@@ -961,22 +961,31 @@ class WorkerManagerReporter(Reporter):
 
         return join_char.join(parts)
 
-    def _parse_sim_report(self, *, fstr: str="  {k:<13s} {v:}",
-                          min_num: int=4, report_no: int=None,
-                          show_individual_runtimes: bool=True) -> str:
-        """Parses the report of the simulation into a multiline string
+    def _parse_report(self, *, fstr: str="  {k:<{w:}s}  {v:}",
+                      min_num: int=4, report_no: int=None,
+                      show_individual_runtimes: bool=True,
+                      task_label_singular: str="task",
+                      task_label_plural: str="tasks",
+                      ) -> str:
+        """Parses a report for all tasks that were being worked on into a
+        multiline string. The headings can be adjusted by keyword arguments.
 
         Args:
             fstr (str, optional): The format string to use. Gets passed the
                 keys ``k`` and ``v`` where ``k`` is the name of the entry and
                 ``v`` its value. Note that this format string is also used
-                with ``v`` being a non-numeric value.
+                with ``v`` being a non-numeric value. Also, ``w`` can be used
+                to have a key column of constant width.
             min_num (int, optional): The minimum number of universes needed to
                 calculate runtime statistics.
             report_no (int, optional): Passed by ReportFormat call
             show_individual_runtimes (bool, optional): Whether to report
                 individual universe runtimes; default: True. This should be
                 disabled if there are a huge number of universes.
+            task_label_singular (str, optional): The label to use in the report
+                when referring to a single task.
+            task_label_plural (str, optional): The label to use in the report
+                when referring to multiple tasks.
 
         Returns:
             str: The multi-line simulation report string
@@ -991,14 +1000,14 @@ class WorkerManagerReporter(Reporter):
             parts += ["Runtime Statistics"]
             parts += ["------------------"]
             parts += [""]
-            parts += ["These are the runtime statistics of a multiverse "
-                      "simulation run."]
-            parts += ["The statistics are calculated from universe run times."]
+            parts += ["The statistics below are calculated from all "
+                      f"individual {task_label_singular} run times."]
             parts += [""]
-            parts += ["  # universes:  {} / {}".format(len(self.runtimes),
-                                                       len(self.wm.tasks))]
+            parts += ["  # {}:  {} / {}".format(task_label_plural,
+                                                len(self.runtimes),
+                                                len(self.wm.tasks))]
             parts += [""]
-            parts += [fstr.format(k=k, v=format_time(v, ms_precision=1))
+            parts += [fstr.format(k=k, v=format_time(v, ms_precision=1), w=12)
                       for k, v in rtstats.items()]
             parts += [""]
             parts += [""]
@@ -1010,7 +1019,7 @@ class WorkerManagerReporter(Reporter):
             parts += ["Cluster Mode Information"]
             parts += ["------------------------"]
             parts += [""]
-            parts += [fstr.format(k=k, v=_rcps[k])
+            parts += [fstr.format(k=k, v=_rcps[k], w=12)
                       for k in ('node_name', 'node_index', 'num_nodes',
                                 'node_list', 'job_id', 'job_name',
                                 'job_account', 'cluster_name', 'num_procs')
@@ -1029,8 +1038,8 @@ class WorkerManagerReporter(Reporter):
             parts += ["---------------"]
             parts += [""]
             parts += [f"  {len(self.runtimes)} / {len(self.wm.tasks)} "
-                      "universes were stopped due to at least one of the "
-                      "following stop conditions:"]
+                      f"{task_label_plural} were stopped due to at least one "
+                      "of the following stop conditions:"]
             parts += [""]
             parts += [f"  {sc}\n"
                       f"      {task_names(sc)}\n"
@@ -1041,15 +1050,18 @@ class WorkerManagerReporter(Reporter):
 
         # Add individual universe run times
         if show_individual_runtimes:
-            parts += ["Universe Runtimes"]
-            parts += ["-----------------"]
+            parts += [f"{task_label_singular.capitalize()} Runtimes"]
+            parts += ["-" * len(parts[-1])]
             parts += [""]
+
+            max_name_len = max([12] + [len(t.name) for t in self.wm.tasks])
 
             for task in self.wm.tasks:
                 if 'run_time' in task.profiling:
                     rt = task.profiling['run_time']
                     parts += [fstr.format(k=task.name,
-                                          v=format_time(rt, ms_precision=1))]
+                                          v=format_time(rt, ms_precision=1),
+                                          w=max_name_len)]
 
         return " \n".join(parts)
 

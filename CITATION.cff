@@ -1,0 +1,120 @@
+---
+cff-version: 1.1.0
+message: If you use this software, please at least cite the JOSS publication referenced below.
+title: "Utopia: A Comprehensive Modelling Framework for Complex and Evolving Systems"
+date-released: 2020-09-02
+version: JOSS Publication
+doi: 10.5281/zenodo.4011978
+license: LGPL-3.0-or-later
+repository-code: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia
+authors:
+  - family-names: Riedel
+    given-names: Lukas
+    orcid: https://orcid.org/0000-0002-4667-3652
+  - family-names: Herdeanu
+    given-names: Benjamin
+    orcid: https://orcid.org/0000-0001-6343-3004
+  - family-names: Mack
+    given-names: Harald
+    orcid: https://orcid.org/0000-0001-7787-9496
+  - family-names: Sevinchan
+    given-names: Yunus
+    orcid: https://orcid.org/0000-0003-3858-0904
+  - family-names: Weninger
+    given-names: Julian
+
+references:
+  # Utopia JOSS Publication
+  - type: article
+    title: "Utopia: A Comprehensive Modelling Framework for Complex and Evolving Systems"
+    journal: Journal of Open Source Software
+    volume: 5
+    number: "53"
+    pages: 2165
+    doi: 10.21105/joss.02165
+    issn: 2475-9066
+    year: 2020
+    date-published: 2020-09-02
+    authors:
+      - family-names: Riedel
+        given-names: Lukas
+        orcid: https://orcid.org/0000-0002-4667-3652
+      - family-names: Herdeanu
+        given-names: Benjamin
+        orcid: https://orcid.org/0000-0001-6343-3004
+      - family-names: Mack
+        given-names: Harald
+        orcid: https://orcid.org/0000-0001-7787-9496
+      - family-names: Sevinchan
+        given-names: Yunus
+        orcid: https://orcid.org/0000-0003-3858-0904
+      - family-names: Weninger
+        given-names: Julian
+
+  # Utopia ICCS Publication
+  - type: conference-paper
+    title: "Boosting Group-Level Synergies by Using a Shared Modeling Framework"
+    collection-title: Lecture Notes in Computer Science
+    volume-title: Computational Science – ICCS 2020
+    volume: 12143
+    pages: 442–456
+    doi: 10.1007/978-3-030-50436-6_32
+    isbn: 978-3-030-50436-6
+    publisher:
+      name: Springer International Publishing
+      location: Cham, Switzerland
+    conference:
+      name: International Conference on Computational Science 2020
+      location: Amsterdam, The Netherlands
+    authors:
+      - family-names: Sevinchan
+        given-names: Yunus
+        orcid: https://orcid.org/0000-0003-3858-0904
+      - family-names: Herdeanu
+        given-names: Benjamin
+        orcid: https://orcid.org/0000-0001-6343-3004
+      - family-names: Mack
+        given-names: Harald
+        orcid: https://orcid.org/0000-0001-7787-9496
+      - family-names: Riedel
+        given-names: Lukas
+        orcid: https://orcid.org/0000-0002-4667-3652
+      - family-names: Kurt
+        given-names: Roth
+    editors:
+      - family-names: Krzhizhanovskaya
+        given-names: Valeria V.
+      - family-names: Závodszky
+        given-names: Gábor
+      - family-names: Lees
+        given-names: Michael H.
+      - family-names: Dongarra
+        given-names: Jack J.
+      - family-names: Sloot
+        given-names: Peter M. A.
+      - family-names: Brissos
+        given-names: Sérgio
+      - family-names: Teixeira
+        given-names: João
+
+  # dantro JOSS Publication
+  - type: article
+    title: "dantro: a Python package for handling, transforming, and visualizing hierarchically structured data"
+    journal: Journal of Open Source Software
+    volume: 5
+    number: "52"
+    pages: 2316
+    doi: 10.21105/joss.02316
+    issn: 2475-9066
+    year: 2020
+    date-published: 2020-08-23
+    authors:
+      - family-names: Sevinchan
+        given-names: Yunus
+        orcid: https://orcid.org/0000-0003-3858-0904
+      - family-names: Herdeanu
+        given-names: Benjamin
+        orcid: https://orcid.org/0000-0001-6343-3004
+      - family-names: Traub
+        given-names: Jeremias
+        orcid: https://orcid.org/0000-0001-8911-6365
