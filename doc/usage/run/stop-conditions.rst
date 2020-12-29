@@ -23,7 +23,7 @@ Configuring a simulation run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To configure such stop conditions, add an entry like the following to your :ref:`run configuration <feature_meta_config>`:
 
-.. literalinclude:: ../../python/utopya/test/cfg/stop_conds.yml
+.. literalinclude:: ../../../python/utopya/test/cfg/stop_conds.yml
     :language: yaml
     :start-after: ---
 
@@ -76,14 +76,14 @@ During the simulation run
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Let's say that we choose the following run configuration:
 
-.. literalinclude:: ../../python/utopya/test/cfg/stop_conds_integration.yml
+.. literalinclude:: ../../../python/utopya/test/cfg/stop_conds_integration.yml
     :language: yaml
     :start-after: ---
     :end-before: worker_manager
 
 The log output will then show that it detected both the timeout and the stop conditions:
 
-.. code-block:: plain-text
+::
 
     PROGRESS multiverse      Adding tasks for simulation of 13 universes ...
     INFO     multiverse      Added 13 tasks.
@@ -113,7 +113,7 @@ It will contain information on which stop conditions were fulfilled for which un
 
 In the example shown above (using the ``dummy`` model and a purely illustrational set of stop conditions) all simulations end up being stopped due to the ``high state`` stop condition rather than the wall timeout.
 
-.. code-block:: plain-text
+::
 
     Stop Conditions
     ---------------
@@ -138,9 +138,9 @@ Conveying information from your model to the frontend
 -----------------------------------------------------
 As mentioned above, the ``check_monitor_entry`` function can make use of the values of a monitor entry and use those to stop a simulation.
 
-For an implementation example, let's look at the :doc:`ForestFire`\ 's ``monitor`` method:
+For an implementation example, let's look at the :ref:`forest fire model's <model_ForestFire>` ``monitor`` method:
 
-.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire.hh
+.. literalinclude:: ../../../src/utopia/models/ForestFire/ForestFire.hh
     :language: c++
     :start-after: /// Provide monitoring information
     :end-before: /// Write data

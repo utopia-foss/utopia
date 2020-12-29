@@ -58,7 +58,7 @@ If that argument is given, the custom configuration node is used instead of the 
 Consult the ``CopyMe`` model implementations for how your model constructor should look like to support passing a custom configuration.
 For the ``CopyMeBare`` model, it looks like this:
 
-.. literalinclude:: ../../src/utopia/models/CopyMeBare/CopyMeBare.hh
+.. literalinclude:: ../../../src/utopia/models/CopyMeBare/CopyMeBare.hh
     :language: c++
     :start-after: // -- Model Setup
     :end-before: private:

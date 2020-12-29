@@ -106,5 +106,4 @@ To explore other parts of the documentation, use the navigation sidebar.
    cite
    Contribution Guide <CONTRIBUTING>
    Code of Conduct <CODE_OF_CONDUCT>
-   Documentation Examples <examples>
    index_pages

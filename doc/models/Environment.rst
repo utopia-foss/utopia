@@ -1,3 +1,4 @@
+.. _model_Environment:
 
 ``Environment`` — Generic Parameter Background Model
 ====================================================

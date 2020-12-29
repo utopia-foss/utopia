@@ -1,3 +1,5 @@
+.. _model_SandPile:
+
 ``SandPile`` — Sand Piles as Generic Complex System
 ===================================================
 
@@ -40,7 +42,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
+For the utopya base plots, see :ref:`utopya_base_cfg`.
 
 References
 ----------

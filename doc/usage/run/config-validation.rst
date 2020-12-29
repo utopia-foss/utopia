@@ -45,7 +45,7 @@ Refer to the documentation below and to the examples to learn more about possibl
 Examples
 ^^^^^^^^
 
-.. literalinclude:: ../../python/utopya/test/cfg/doc_examples/param_validation.yml
+.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/param_validation.yml
     :language: yaml
     :start-after: ### Start -- config_validation_simple_tags
     :end-before:  ### End ---- config_validation_simple_tags
@@ -63,7 +63,7 @@ Shorthands
 For frequently used parameter types, shorthand tags are available to spare you the trouble of having to specify limits or data types.
 Simply add the corresponding YAML tag and the default value directly:
 
-.. literalinclude:: ../../python/utopya/test/cfg/doc_examples/param_validation.yml
+.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/param_validation.yml
     :language: yaml
     :start-after: ### Start -- config_validation_shorthand_tags
     :end-before:  ### End ---- config_validation_shorthand_tags

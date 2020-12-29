@@ -1,8 +1,9 @@
+.. _model_GameOfLife:
 
 ``GameOfLife`` — Conway's Game of Life
 ======================================
 
-This model implements `Conway's Game of Life <https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life>`_ as well as all two-dimensional `life-like cellular automata <https://en.wikipedia.org/wiki/Life-like_cellular_automaton>`_. 
+This model implements `Conway's Game of Life <https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life>`_ as well as all two-dimensional `life-like cellular automata <https://en.wikipedia.org/wiki/Life-like_cellular_automaton>`_.
 For information on the model and its generalization to two-dimensional rules please have a look at the linked Wikipedia articles and, if needed, follow the references presented in the articles.
 
 Default Model Configuration
@@ -30,7 +31,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
+For the utopya base plots, see :ref:`utopya_base_cfg`.
 
 
 Possible Future Extensions

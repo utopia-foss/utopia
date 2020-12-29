@@ -1,3 +1,4 @@
+.. _model_SimpleEG:
 
 ``SimpleEG`` — Simple Evolutionary Games
 ========================================

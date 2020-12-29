@@ -1,3 +1,5 @@
+.. _model_PredatorPrey:
+
 ``PredatorPrey`` — Predator-Prey Dynamics
 =========================================
 
@@ -82,7 +84,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
+For the utopya base plots, see :ref:`utopya_base_cfg`.
 
 
 References

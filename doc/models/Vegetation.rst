@@ -1,3 +1,4 @@
+.. _model_Vegetation:
 
 ``Vegetation`` — Simple Vegetation Model
 ========================================

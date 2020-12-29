@@ -9,7 +9,7 @@ Same as with the meta-configuration, the batch configuration defaults are subseq
 
 ----
 
-.. literalinclude:: ../../../python/utopya/utopya/cfg/btm_cfg.yml
+.. literalinclude:: ../../python/utopya/utopya/cfg/btm_cfg.yml
    :language: yaml
 
 

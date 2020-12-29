@@ -166,7 +166,7 @@ a graph. The user just needs to define a lambda function that takes one
 graph entity descriptor as input and call the ``apply_rule`` function.
 This is best described through examples:
 
-.. literalinclude:: ../../test/core/graph_apply_doc_test.cc
+.. literalinclude:: ../../../test/core/graph_apply_doc_test.cc
     :language: c++
     :start-after: // DOC REFERENCE START: apply_rule on graph entities examples
     :end-before: // DOC REFERENCE END: apply_rule on graph entities examples
@@ -185,7 +185,7 @@ graph are derived from a   `Utopia::Entity <../doxygen/html/group___graph_entity
 Your definition of the graph needs to look like this:
 
 
-.. literalinclude:: ../../test/core/graph_apply_doc_test.cc
+.. literalinclude:: ../../../test/core/graph_apply_doc_test.cc
     :language: c++
     :start-after: // Below, an example of the required graph types - doc reference line
     :end-before: // End of the required graph types - doc reference line
@@ -208,14 +208,14 @@ In this graph definition the vertex and edge property access works as follows:
 
 Can I modify the graph structure while looping over a graph entity?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In general you can do it but you should be really careful because the iterators
-you use to loop over the graph can easily be invalidated. Have a look at the
-:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_37_0/libs/graph/doc/adjacency_list.html>`_
-for further information.
+In general you can do it but you should be really careful because the iterators you use to loop over the graph can easily be invalidated.
+Have a look at the
+:ref:`boost graph documentation <https://www.boost.org/doc/libs/1_74_0/libs/graph/doc/adjacency_list.html>`_ for further information.
 
-As a rule of thumb: If you want to change the graph structure
+As a rule of thumb: If you want to change the graph structure ...
+
 - use ``boost::listS`` as the appropriate list and edge containers and
-- do not use the ``apply_rule`` functions because they can easily result in buggy behavior.
+- do *not* use the ``apply_rule`` functions because they can easily result in buggy behavior.
 
 
 

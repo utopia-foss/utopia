@@ -19,3 +19,4 @@ Evaluating Simulations
    animations
    plot_funcs/index
    plotting_api
+   batch

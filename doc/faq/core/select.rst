@@ -21,9 +21,9 @@ When is ``select_entities`` accessible via the configuration?
 Whenever a model documentation states that it uses the ``select_entities`` interface, that means: a configuration node is passed down into that function.
 Thus, you can make changes to the configuration file and thereby change which entities are selected.
 
-For example, :doc:`../models/ForestFire` uses this interface to configure heterogeneities:
+For example, :doc:`../../models/ForestFire` uses this interface to configure heterogeneities:
 
-.. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
+.. literalinclude:: ../../../src/utopia/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
    :start-after: # --- Heterogeneities
    :end-before: # --- Output

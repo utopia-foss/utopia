@@ -1,6 +1,7 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
+.. _model_HdfBench:
 
 ``HdfBench`` — Benchmarks for Utopia Data Writing
 =================================================

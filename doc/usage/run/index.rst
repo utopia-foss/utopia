@@ -12,3 +12,4 @@ Performing Simulations
    interactive
    stop-conditions
    config-validation
+   ../eval/batch
