@@ -171,7 +171,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'Utopia', 'Utopia Documentation',
-     author, 'Utopia', 'One line description of project.',
+     author, 'Utopia',
+     'A comprehensive modelling framework for complex and evolving systems',
      'Miscellaneous'),
 ]
 

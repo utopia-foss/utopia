@@ -79,6 +79,7 @@ To explore other parts of the documentation, use the navigation sidebar.
 
    ref/cpp_doc
    api/utopya/utopya
+   dantro package <https://dantro.readthedocs.io/en/stable/>
    api/paramspace/paramspace
    ref/utopya_base_cfg
    ref/base_plots_cfg

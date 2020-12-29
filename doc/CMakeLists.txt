@@ -42,7 +42,7 @@ add_custom_target(sphinx_html
 add_custom_target(sphinx_apidoc_utopya
     COMMAND ${RUN_IN_UTOPIA_ENV}
             sphinx-apidoc -f
-                --module-first --private --separate --no-toc
+                --module-first --private --no-toc
                 --output-dir ${CMAKE_CURRENT_SOURCE_DIR}/api/utopya/
                 ${PROJECT_SOURCE_DIR}/python/utopya/utopya
 )
