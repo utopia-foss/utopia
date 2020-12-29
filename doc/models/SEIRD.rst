@@ -1,7 +1,7 @@
 .. _model_SEIRD:
 
-``SEIRD`` — An Extended Complex Contagion Model
-===============================================
+``SEIRD``: A Complex Contagion Model
+====================================
 
 This is a simple model combining concepts and ideas from the well known `SEIR (Susceptible-Exposed-Infected-Recovered) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SEIR_model>`_ and `SIRD (Susceptible-Infected-Recovered-Deceased) <https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIRD_model>`_ models adopting them to a spatial 2D grid model.
 

@@ -1,7 +1,7 @@
 .. _model_SimpleEG:
 
-``SimpleEG`` — Simple Evolutionary Games
-========================================
+``SimpleEG``: Evolutionary Games
+================================
 
 This is a model of simple evolutionary games (on regular grids). It is based on an extended and slightly modified version of Nowak & May (1992).
 
