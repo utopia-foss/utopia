@@ -419,7 +419,9 @@ class Multiverse:
         # Adjust parameter space to include model configuration
         log.debug("Updating parameter space with model configuration for "
                   "model '%s' ...", self.model_name)
-        pspace[self.model_name] = model_cfg
+        pspace[self.model_name] = recursive_update(
+            pspace.get(self.model_name, {}), model_cfg
+        )
         # NOTE this works because meta_tmp is a dict and thus mutable :)
 
         # On top of all of that: add the run configuration, if given
