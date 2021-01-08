@@ -270,8 +270,7 @@ def draw_graph(*, hlpr: PlotHelper,
             ``set_suptitle`` helper function. Only used if animations are
             enabled. The ``title`` entry can be a format string with the
             ``value`` key, which is updated for each frame of the animation.
-            Default: ``time = {value:d}`` if times given by value,
-            ``time idx = {value:d}`` if times given by index.
+            Default: ``time = {value:d}``.
 
     Raises:
         ValueError: On invalid or non-computed dag tags in
@@ -969,13 +968,16 @@ def draw_graph(*, hlpr: PlotHelper,
                                                          ax=hlpr.ax,
                                                          **edge_cbar_kwargs)
 
-        return {'pos': pos,
-                'nodes': nodes,
-                'edges': edges,
-                'node_labels': node_labels,
-                'edge_labels': edge_labels,
-                'cb_n': cb_n,
-                'cb_e': cb_e}
+        return {
+            'pos': pos,
+            'nodes': nodes,
+            'edges': edges,
+            'node_labels': node_labels,
+            'edge_labels': edge_labels,
+            'cb_n': cb_n,
+            'cb_e': cb_e,
+            'attrs': g.graph,
+        }
 
     # .. Actual plotting routine starts here ..................................
     # Get the GraphGroup
@@ -1107,10 +1109,7 @@ def draw_graph(*, hlpr: PlotHelper,
 
         # Prepare the suptitle format string
         if 'title' not in suptitle_kwargs:
-            if times:
-                suptitle_kwargs['title'] = "time = {value:d}"
-            else:
-                suptitle_kwargs['title'] = "time idx = {value:d}"
+            suptitle_kwargs['title'] = "time = {value:d}"
 
         # Iterate over the selected times (can be time value _or_ index)
         for time in time_iter:
@@ -1126,7 +1125,9 @@ def draw_graph(*, hlpr: PlotHelper,
 
             # Apply the suptitle format string, then invoke the helper
             st_kwargs = copy.deepcopy(suptitle_kwargs)
-            st_kwargs['title'] = st_kwargs['title'].format(value=(time))
+            st_kwargs['title'] = st_kwargs['title'].format(
+                value=(rv['attrs']['time'])
+            )
             hlpr.invoke_helper('set_suptitle', **st_kwargs)
 
             # Let the writer grab the current frame
