@@ -27,6 +27,7 @@
 # Documentation
 !*.md
 !*.rst
+!*.css
 !*.dox
 !*Doxylocal
 !*.bib

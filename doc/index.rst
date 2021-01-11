@@ -77,7 +77,7 @@ To explore other parts of the documentation, use the navigation sidebar.
    :maxdepth: 1
    :hidden:
 
-   faq/frontend
+   faq/frontend/index
    faq/core/index
 
 
