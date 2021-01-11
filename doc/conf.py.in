@@ -27,7 +27,7 @@ from recommonmark.transform import AutoStructify
 # -- Project information -----------------------------------------------------
 
 project = "Utopia"
-copyright = "2016 – 2020, Utopia Developers"
+copyright = "2016 – 2021, Utopia Developers"
 author = "Utopia Developers"
 
 # TODO
