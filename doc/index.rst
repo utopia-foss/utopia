@@ -11,9 +11,7 @@ Additionally, several readily implemented models are shipped with Utopia.
 Utopia is free software and licensed under the `GNU Lesser General Public License Version 3 <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_.
 For more information and a list of copyright holders, please refer to the :doc:`COPYING`.
 
-.. TODO Nice image (hosted outside of repo)
-.. image:: imgs/clusters.png
-   :alt: Nice image showing off Utopia capabilities
+.. TODO Nice image (hosted OUTSIDE of this repo)
 
 To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
 If you want to start using Utopia right away, head for the :ref:`tutorial`.
