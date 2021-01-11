@@ -57,7 +57,6 @@ To explore other parts of the documentation, use the navigation sidebar.
 .. toctree::
    :caption: Models
    :maxdepth: 1
-   :glob:
    :hidden:
 
    models/ContDisease
@@ -68,6 +67,8 @@ To explore other parts of the documentation, use the navigation sidebar.
    models/SEIRD
    models/SimpleEG
    ... and more <models/index>
+
+.. NOTE If adding models above, also adjust models/index
 
 
 .. toctree::
