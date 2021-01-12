@@ -13,9 +13,13 @@ For more information and a list of copyright holders, please refer to the :doc:`
 
 .. TODO Nice image (hosted OUTSIDE of this repo)
 
-To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
-If you want to start using Utopia right away, head for the :ref:`tutorial`.
-To explore other parts of the documentation, use the navigation sidebar.
+.. hint::
+
+    **Where to next?**
+
+    * To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
+    * If you want to start using Utopia right away, head for the :ref:`tutorial`.
+    * To explore other parts of the documentation, use the navigation sidebar.
 
 .. note::
 
