@@ -118,7 +118,7 @@ MultiGraph:
         over: white
         bad: red
       cmap_norm:
-        name: LogNorm   # Can be Normalize, NoNorm, LogNorm, PowerNorm, BoundaryNorm, 
+        name: LogNorm   # Can be Normalize, NoNorm, LogNorm, PowerNorm, BoundaryNorm,
                         # SymLogNorm, TwoSlopeNorm.
                         # Specify via `name` key in order to provide additional
                         # arguments if needed
@@ -200,6 +200,32 @@ ExternalProperties: &ext_prop
         from_property: some_state_transformed
       colorbar:
         enabled: True
+
+custom_node_positioning_model:
+  <<: *base
+  transform:
+    - lambda: "lambda g: {n: (i, i) for i, n in enumerate(g.nodes)}"
+      tag: node_positioning_model
+
+  graph_drawing:
+    <<: *graph_drawing
+    positions:
+      model: !dag_result node_positioning_model
+
+explicit_node_positions:
+  <<: *base
+  transform:
+    - call_lambda: "lambda num_nodes: {i: (i, i) for i in range(num_nodes)}"
+      kwargs:
+        num_nodes: 10  # got 10 edges configured in cfg/graphgroup_cfg.yml
+      tag: pos_from_dict
+
+  graph_drawing:
+    <<: *graph_drawing
+    positions:
+      from_dict: !dag_result pos_from_dict
+
+# NOTE If you add test cases here, also register them in test_plotting.py
 
 # -- Single plots that raise Errors or Warnings -------------------------------
 Graphviz:
@@ -324,13 +350,13 @@ Example_graph_plot:
 
   # `graph_drawing` contains all the layout configurations
   graph_drawing:
-    positions:                        
+    positions:
       model: spring     # Specify the node positioning model to be used. The
                         # spring model reduces overall edge lengths.
       k: 1              # The spring model can mainly be tweaked by changing
       iterations: 100   # the optimal edge length `k'` and the maximum number
                         # of iterations that are done.
-    
+
     # Only plot a subgraph induced by a set of nodes.
     select:
       center: 0        # Do radial node selection

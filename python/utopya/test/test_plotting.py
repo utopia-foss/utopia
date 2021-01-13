@@ -348,10 +348,19 @@ def test_graph_plots(tmpdir):
     mv.dm.load_from_cfg(print_tree=False)
 
     # Single graph plots
-    mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
-                        plot_only=["Graph", "DiGraph", "MultiGraph",
-                                   "MultiDiGraph", "ExternalProperties",
-                                   "Example_graph_plot"])
+    mv.pm.plot_from_cfg(
+        plots_cfg=GRAPH_PLOTS,
+        plot_only=(
+            "Graph",
+            "DiGraph",
+            "MultiGraph",
+            "MultiDiGraph",
+            "ExternalProperties",
+            "Example_graph_plot",
+            "custom_node_positioning_model",
+            "explicit_node_positions",
+        ),
+    )
 
     # Try using a graphviz node layout, which requires pydot
     try:
