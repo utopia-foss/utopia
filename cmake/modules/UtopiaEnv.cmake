@@ -79,7 +79,7 @@ set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 # systems, leading to failure to install wheel-requiring downstream packages
 
 # pip
-python_find_package(PACKAGE pip VERSION 18.0)
+python_find_package(PACKAGE pip VERSION 20.3)
 if (NOT PYTHON_PACKAGE_pip_FOUND)
     message(STATUS "Installing or upgrading pip ...")
 
@@ -95,7 +95,7 @@ if (NOT PYTHON_PACKAGE_pip_FOUND)
 endif()
 
 # setuptools
-python_find_package(PACKAGE setuptools VERSION 41.2)
+python_find_package(PACKAGE setuptools VERSION 51.1)
 if (NOT PYTHON_PACKAGE_setuptools_FOUND)
     message(STATUS "Installing or upgrading setuptools ...")
 
@@ -110,7 +110,7 @@ if (NOT PYTHON_PACKAGE_setuptools_FOUND)
 endif()
 
 # wheel
-python_find_package(PACKAGE wheel VERSION 0.30)
+python_find_package(PACKAGE wheel VERSION 0.35)
 if (NOT PYTHON_PACKAGE_wheel_FOUND)
     message(STATUS "Installing or upgrading wheel ...")
 
