@@ -61,7 +61,7 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (19.10) setups.
+These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (≥19.10) setups.
 
 _Note:_ Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
@@ -125,7 +125,8 @@ xcode-select --install
 ```
 
 There are two popular package managers on macOS, [Homebrew][Homebrew] and [MacPorts][MacPorts].
-We recommend you use Homebrew. Here are the installation instructions for both:
+We recommend you use Homebrew.
+Here are the installation instructions for both:
 
 * **Homebrew**:
 
@@ -168,6 +169,7 @@ We recommend you use Homebrew. Here are the installation instructions for both:
     port install doxygen ffmpeg graphviz
     ```
 
+
 #### 3 — Configure and build
 Enter the repository and create your desired build directory:
 
@@ -192,10 +194,14 @@ cmake -DPython_ROOT_DIR=/opt/local ..
 The terminal output will show the configuration steps, which includes the installation of further Python dependencies and the creation of a virtual environment.
 
 After this, you can build a specific or all Utopia models using:
+
 ```bash
 make dummy     # builds only the dummy model
 make -j4 all   # builds all models, using 4 CPUs
 ```
+
+_Note:_ On macOS ≥ 11, you might encounter errors at this point; please refer to [the troubleshooting section](#troubleshooting).
+
 
 #### 4 — Run a model 🎉
 You should now be able to run a Utopia model.
@@ -227,7 +233,7 @@ To make sure that Utopia works as expected on your machine, [build and carry out
 
 ### Optional Installation Steps
 
-The following instructions will enable additional, optional features of Utopia.
+The following instructions will enable additional, *optional* features of Utopia.
 
 #### Enable Multithreading in Utopia Models
 
@@ -272,6 +278,7 @@ The following instructions will enable additional, optional features of Utopia.
     ```
 
 1. Depending on the algorithms used inside the respective model, it will automatically exploit the multithreading capabilities of your system when executed! 🎉
+
 
 ### Utopia via Docker
 [Docker][docker] is a free OS-level virtualization software.
@@ -671,6 +678,15 @@ make all -j4
 <!-- ###################################################################### -->
 
 ## Troubleshooting
+* On **macOS Big Sur**, you *might* encounter an error during building of models, claiming that certain SDKs in `/Library/Developer/CommandLineTools/SDKs/` are missing.
+    A remedy can be to add a [symlink](https://apple.stackexchange.com/a/115647/208830) `MacOSX11.0.sdk -> MacOSX.sdk`, depending on the given error message:
+
+    ```bash
+    $ ln -s /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk /Library/Developer/CommandLineTools/SDKs/MacOSX11.0.sdk
+    ```
+
+    This command might require `sudo`.
+
 * If you have a previous installation and the **build fails inexplicably**,
     removing the `build` directory completely and starting anew from the
     [configuration step](#3-configure-and-build) should help.  
