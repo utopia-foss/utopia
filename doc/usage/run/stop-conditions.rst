@@ -2,13 +2,13 @@
 
 Stop Conditions
 ===============
-Depending on the model under investigation, the required number of iteration steps may widely vary.
-Let's say we are in a scenario where we are investigating convergence behaviour of a model; depending on the parameter configuration, the time to reach convergence can span many orders of magnitude.
+Depending on the model under investigation, the required number of iteration steps may vary widely.
+Let's say we are in a scenario where we are investigating the convergence behaviour of a model; depending on the parameter configuration, the time to reach convergence could span many orders of magnitude.
 
-In order to save computational resources, it would be useful to **dynamically stop simulations**, depending on their current state.
+In order to save computational resources, it is useful to **dynamically stop simulations**, depending on their current state.
 
 The **stop conditions** feature implements exactly that:
-Depending on a timeout or on information conveyed to the frontend using the ``monitor`` method, running simulations can be told to stop.
+depending on a timeout or on information conveyed to the frontend using the ``monitor`` method, running simulations can be told to stop.
 
 .. contents::
    :local:
@@ -21,15 +21,15 @@ Using stop conditions
 
 Configuring a simulation run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To configure such stop conditions, add an entry like the following to your :ref:`run configuration <feature_meta_config>`:
+To configure such a stop condition, add an entry like the following to your :ref:`run configuration <feature_meta_config>`:
 
 .. literalinclude:: ../../../python/utopya/test/cfg/stop_conds.yml
     :language: yaml
     :start-after: ---
 
 This example showcases three registered stop conditions.
-The first two implement the exact same condition, a timeout.
-They do so once in short and once in long syntax. (The short syntax is useful if ``to_check`` contains only a single function).
+The first two implement the same condition, a timeout.
+They do so once in short and once in long syntax (the short syntax is useful if ``to_check`` contains only a single function).
 
 The third condition checks against the current model state, as conveyed to the frontend via its :ref:`monitor method <stop_conds_monitor>`.
 
@@ -98,12 +98,12 @@ If the stop conditions kick in, the run should be finished more quickly, though.
 .. note::
 
     There will be *no* extra log output if a universe was stopped.
-    Also, the progress bar will show the status of the run in the same was as without stop conditions: it does not distinguish universes that *finished due to a stop condition* from those that finished regularly after ``num_steps``.
+    Also, the progress bar will show the status of the run in the same way as without stop conditions: it does not distinguish between universes that *finished due to a stop condition* from those that finished regularly after ``num_steps``.
 
 .. hint::
 
     If the stop conditions are **not** detected by the :py:class:`~utopya.workermanager.WorkerManager`,  make sure that the ``run_kwargs`` end up in the :ref:`meta configuration <feature_meta_config>`.
-    You can do so by inspecting the ``config`` directory in the output folder, where all configuration parts are backed-up separately.
+    You can do so by inspecting the ``config`` directory in the output folder, where all configuration parts are backed up separately.
 
 
 After the simulation run
@@ -111,7 +111,7 @@ After the simulation run
 To find out which universes were stopped *due to a stop condition*, inspect the ``_report.txt`` file in the output directory.
 It will contain information on which stop conditions were fulfilled for which universes.
 
-In the example shown above (using the ``dummy`` model and a purely illustrational set of stop conditions) all simulations end up being stopped due to the ``high state`` stop condition rather than the wall timeout.
+In the example shown above (using the ``dummy`` model and a purely illustrative set of stop conditions) all simulations end up being stopped due to the ``high state`` stop condition rather than the wall timeout.
 
 ::
 
@@ -138,7 +138,7 @@ Conveying information from your model to the frontend
 -----------------------------------------------------
 As mentioned above, the ``check_monitor_entry`` function can make use of the values of a monitor entry and use those to stop a simulation.
 
-For an implementation example, let's look at the :ref:`forest fire model's <model_ForestFire>` ``monitor`` method:
+For an implementation example, let's look at the :ref:`Forest Fire model's <model_ForestFire>` ``monitor`` method:
 
 .. literalinclude:: ../../../src/utopia/models/ForestFire/ForestFire.hh
     :language: c++
@@ -153,9 +153,9 @@ Further information on how to set monitor entries can be found `in the doxygen d
     The ``monitor`` method is only invoked after certain *time* intervals, independent of the number of iteration steps.
     As these are invoked quite seldom, it usually is no big issue if you perform more costly operations within ``monitor``.
 
-    To control how frequent the monitor data is emitted and thus becomes available to the frontend, set the ``parameter_space.monitor_emit_inveral`` entry.
+    To control how frequently the monitor data is emitted and thus becomes available to the frontend, set the ``parameter_space.monitor_emit_inveral`` entry.
 
-    We suggest to **not** choose values that are much smaller than a second.
+    We suggest **not** choosing values that are significantly smaller than one second.
     This is because *all* monitor data is retained by the frontend, thus potentially eating up your memory if the monitor is emitting too frequently or the simulation time is very long.
 
 
@@ -168,7 +168,7 @@ If the frontend detects that a stop condition for a specific task (i.e., a unive
 1. The frontend sends the ``SIGUSR1`` signal to the running simulation
 2. The ``Model`` base class catches that signal and sets a flag, denoting that the simulation should stop.
 3. The model will finish its current iteration step (i.e., the ``iterate`` call).
-4. The model will then quit with a non-zero exit code
-5. The corresponding code is caught by the frontend, allowing to detect that the simulation ended due to a stop condition. Unlike for regular non-zero exit codes, no verbose log messages are printed, nor are exceptions being raised.
+4. The model will then quit with a non-zero exit code.
+5. The corresponding code is caught by the frontend, allowing to detect that the simulation ended due to a stop condition. Unlike for regular non-zero exit codes, no verbose log messages are printed, nor are exceptions  raised.
 6. Some tracking variables are updated to reflect this information.
 7. At the end of the simulation, the ``_report.txt`` shows information on which universe was stopped due to which stop condition.

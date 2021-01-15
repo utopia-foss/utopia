@@ -15,7 +15,6 @@ Evaluating Simulations
 
    plotting
    uni_and_mv_plots
-   plot_helper
    animations
    plot_funcs/index
    plotting_api

@@ -2,7 +2,7 @@
 
 Animations
 ==========
-By the powers of ``dantro`` and its plotting framework, it is really simple to
+The capabilities of ``dantro`` and its plotting framework make it really simple to
 let your plot function support animation.
 
 Say you have defined the following plot function, making use of the ``PlotHelper``:
@@ -29,8 +29,7 @@ Say you have defined the following plot function, making use of the ``PlotHelper
         hlpr.provide_defaults('set_title', title=data_path)
         hlpr.provide_defaults('set_labels', y=dict(label=data_path))
 
-To now make this function support animation, you only need to extend it by the
-update function and mark it as supporting an animation:
+All you need to do to make this function support animation is to mark it as supporting animation and add an update function:
 
 .. code-block:: python
 
@@ -76,33 +75,33 @@ update function and mark it as supporting an animation:
         hlpr.register_animation_update(update)
 
 
-Ok, so the following things happened:
+The following things changed:
 
-    * ``update`` function defined
-    * ``update`` function passed to helper via ``register_animation_update``
-    * Plot function marked ``supports_animation``.
+    * an ``update`` function was defined,
+    * the ``update`` function was passed to the helper via ``register_animation_update``, and
+    * the plot function was marked as ``supports_animation``.
 
 
 .. autoclass:: dantro.plot_creators.PlotHelper
   :members: register_animation_update
 
 There are a few things to look out for:
-    * In order for the animation update actually being used, the feature needs
+    * In order for the animation update to actually be used, the feature needs
       to be enabled in the plot configuration. The behaviour of the animation
-      is controlled via the ``animation`` key; in it, set the ``enabled`` flag.
+      is controlled via the ``animation`` key; in it, set the entry ``enabled: true``.
     * While whatever happens before the registration of the animation function
-      is also executed, the animation update function should be build such as
+      is also executed, the animation update function should be built such as
       to also include the initial frame of the animation. This is to allow the
-      plot function itself to be more flexible and the animation update not
-      requiring to distinguish between initial frame and other frames.
+      plot function itself to be more flexible, and the animation update need not
+      distinguish between initial frame and other frames.
     * The animation update function is expected to be a so-called Python
       Generator, thus using the yield keyword. For more information, have a
       look `here <https://wiki.python.org/moin/Generators>`_.
     * The file extension is taken care of by the ``PlotManager``, which is why
-      it needs to be adjusted on the top level of the plot configuration, e.g.
+      it needs to be adjusted at the top level of the plot configuration, e.g.
       when storing the animation as a movie.
 
-An example for an animation configuration is the following:
+Here is an example for an animation configuration:
 
 .. code-block:: yaml
 
@@ -134,5 +133,5 @@ An example for an animation configuration is the following:
 
 .. note::
 
-    For high-resolution plots, e.g. from a cellular automaton state, take care to choose a high-enough ``dpi`` value.
-    Otherwise, you might get interpolation issues.
+    For high-resolution plots, e.g. from a cellular automaton state, take care to choose a sufficiently high ``dpi`` value.
+    Otherwise, you might encounter interpolation issues.

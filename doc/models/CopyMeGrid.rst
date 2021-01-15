@@ -1,6 +1,6 @@
 .. _model_CopyMeGrid:
 
-``CopyMeGrid`` - A good place to start with your CA-based model
+``CopyMeGrid`` — A good place to start with your CA-based model
 ===============================================================
 
 This template model supplies a minimal CA-based Utopia model.

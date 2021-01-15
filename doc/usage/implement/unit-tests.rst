@@ -3,12 +3,11 @@
 Writing Unit Tests
 ******************
 
-Utopia utilizes the Boost Unit Test Framework for conveniently writing and
-executing unit tests. Using it is not required, but highly recommended!
+Utopia utilizes the Boost Unit Test Framework for conveniently writing and executing
+unit tests. Using it is not required, but highly recommended!
 
-This page will give you a small introduction on how to write a unit test in
-Utopia. For advanced usage of the framework, please refer to its
-documentation.
+This page will give you a small introduction on how to write a unit test in Utopia.
+For advanced usage of the framework, please refer to its documentation.
 
 .. contents::
    :local:
@@ -21,13 +20,11 @@ documentation.
 What Is a Unit Test?
 ====================
 
-TLDR: A unit test verifies the usage and operating procedures of single source
-code units (paraphrased from
-`Wikipedia <https://en.wikipedia.org/wiki/Unit_testing>`_).
-
-Whenever you write some new code, you should create a unit test to verify that
-it works. Including the test into the automated CI/CD system ensures that it
-will be working as intended after future updates.
+Unit tests check that individual pieces of code perform as intended, e.g. by
+running the code under conditions for which (if correctly implemented) its
+behaviour is known. Whenever you write some new code, you should create a unit
+test to verify that it works. Including the test into the automated CI/CD system
+ensures that it will be working as intended after future updates.
 
 
 .. _good_unit_test:
@@ -35,33 +32,26 @@ will be working as intended after future updates.
 Writing a *Good* Unit Test
 --------------------------
 
-When writing unit tests, sticking to the following high-level principles will help making your tests robust, extensible, and informative:
+When writing unit tests, sticking to the following high-level principles will help make your tests robust, extensible, and informative:
 
-1. **Granular code testing** — ideally, test cases are as short as possible
-2. **Avoid copy-paste** — as with regular code, test code will become hard to maintain otherwise
-3. **Useful test debug messages** — if a test fails, one ideally immediately knows where and why
+1. **Granular code testing** — ideally, test cases are as short as possible.
+2. **Avoid copy-paste** — as with regular code, test code will become hard to maintain otherwise.
+3. **Useful test debug messages** — if a test fails, one ideally immediately knows where and why.
 
 To achieve this, make sure to use the full capabilities of the testing framework you have at hand; for Boost Test, see :ref:`good_boost_test`.
 
 .. note::
 
-    As general rule of thumb, take as much care of writing tests than of writing your "actual" code!
+    As general rule of thumb, you should put as much care into writing tests as you do into writing your "actual" code!
 
 
 Writing Unit Tests with Boost Test
 ==================================
 
-The Boost Unit Test Framework is a library supplying convenient macros for
-unit testing and is highly customizable. It has a lot of functions, but most
-will not be necessary for simple tests.
+The Boost Unit Test Framework is a library supplying convenient macros for unit testing and is highly customizable. It has a lot of functions, but most will not be necessary for simple tests. Programmers only have to supply the test functions or test function templates. The library itself will wrap everything into a proper executable which can even take additional arguments.
 
-Programmers only have to supply the test functions or test function templates.
-The library itself will wrap everything into a proper executable which can even
-take additional arguments.
-
-
-Most Useful References
-----------------------
+Useful References
+-----------------
 
 * `Declaring and Organizing Tests`_
 * `Summary of the API for Declaring and Organizing Tests`_
@@ -70,7 +60,7 @@ Most Useful References
 
 How to Start
 ------------
-Create a new C++ source file. In there, declare your unit test before including
+Create a new C++ source file. In it, declare your unit test before including
 the proper Boost header.
 
 .. code-block:: c++
@@ -83,7 +73,7 @@ test. The function takes the following arguments:
 
 * ``NAME``: The name of the unit test *as registered in CMake*. This is
   independent from the name you declare for the test module in the source file
-  (though it makes sense to name them similarly...)
+  (though it makes sense to give them similar names).
 * ``GROUP``: The unit test group for this test. The uppercase group name will
   be prepended to the unit test name. The lowercase group name will be used
   to register the test targets. After building them, you can execute all unit
@@ -117,13 +107,13 @@ for the things you want to check.
     }
 
 That's it! At this point, you already have a working unit test. Boost Test will
-take care of the rest. In particular, you must not write any ``main`` function
+take care of the rest. In particular, you don't have to write a ``main`` function
 or handle exceptions.
 
 The important thing about ``BOOST_TEST`` is that execution carries on after an
 assertion failed. This is used to give users a full report on which tests are
 working and which are failing. However, this might lead to undefined behavior.
-You can use ``BOOST_REQUIRE``, if further execution after a failing assertion
+You can use ``BOOST_REQUIRE`` if further execution after a failed assertion
 would not make sense:
 
 .. code-block:: c++
@@ -176,16 +166,11 @@ typedef for ``int``, and one where it is for ``double``.
 
 Using a Fixture
 ---------------
-Fixtures a standardized objects instantiated for every single test function
-execution. Use them to avoid repeating the setup of certain objects within
-multiple test functions. A fixture for Boost Test should be a ``struct`` with
-public members. These members will be *directly* available within the test
-function. You can also define fixtures for entire test suites.
-For more information, see the Boost Test docs on `test fixtures <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html>`_.
+Fixtures are standardized objects instantiated for every single test function execution. Use them to avoid repeating the setup of certain objects within multiple test functions. A fixture for Boost Test should be a ``struct`` with public members. These members will be *directly* available within the test function. You can also define fixtures for entire test suites. For more information, see the Boost Test docs on `test fixtures <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html>`_.
 
 .. code-block:: c++
 
-    // Something we test
+    // Something to test
     struct Agent {
         int index;
         double value;
@@ -207,7 +192,7 @@ For more information, see the Boost Test docs on `test fixtures <https://www.boo
 
 .. hint::
 
-    If you find yourself frequently using the same fixture, have a look at ``BOOST_FIXTURE_TEST_SUITE`` (`documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html#boost_test.tests_organization.fixtures.case.fixture_for_a_complete_subtree>`_).
+    If you find yourself frequently using the same fixture, have a look at the ``BOOST_FIXTURE_TEST_SUITE`` `documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html#boost_test.tests_organization.fixtures.case.fixture_for_a_complete_subtree>`_.
     Inside the fixture test suite, you can conveniently use ``BOOST_AUTO_TEST_CASE``.
     This can also be useful if you want to use the templated test cases described above *and* a fixture at the same time.
 
@@ -216,8 +201,8 @@ For more information, see the Boost Test docs on `test fixtures <https://www.boo
 
 Comparing Custom Types
 ----------------------
-The Boost Test assertion macros can compare all integral types of C++. For
-comparing custom types, additional information has to be made available such
+The Boost Test assertion macros can compare all integral types of C++. To
+compare custom types, additional information has to be made available such
 that failures can be properly reported. In particular, users have to define
 the proper comparison functions and an overload of the ``<<`` stream operator:
 
@@ -261,10 +246,7 @@ There are a number of utilities that help to implement tests or assertions.
 
 Floating-point Comparisons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Comparing floating-point numbers often requires a tolerance in order to be stable and independent of the specific system a test is run on.
-
-With Boost Test, a tolerance can be defined both on the level of a test case and for individual assertions.
-If both are specified, the latter takes precedence over the former, as shown in this example:
+Comparing floating-point numbers often requires a tolerance in order to be stable and independent of the specific system a test is run on. With Boost Test, a tolerance can be defined both on the level of a test case and for individual assertions. If both are specified, the latter takes precedence over the former, as shown in this example:
 
 .. code-block:: c++
 
@@ -290,10 +272,7 @@ See `the documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html
 
 Collection Comparisons
 ^^^^^^^^^^^^^^^^^^^^^^
-By default, collections are compared via their corresponding comparsion operator.
-
-However, performing **element-wise comparison** can often be useful.
-This is simple and straight-forward with Boost Test:
+By default, collections are compared via their corresponding comparsion operator. However, performing **element-wise comparison** can often be useful. This is simple and straight-forward with Boost Test:
 
 .. code-block:: c++
 
@@ -332,19 +311,19 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
 
 * **Write small tests** and organize them into logical units, so-called *test suites*:
 
-    * Test suites help to provide information on where an error occurred and which test suites belong together. You can regard it as another way of modularization.
+    * Test suites help to provide information on where an error occurred and which test suites belong together. You can regard them as alternative kind of modularization.
     * Use ``BOOST_AUTO_TEST_SUITE``, as explained `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/test_tree/test_suite.html#boost_test.tests_organization.test_tree.test_suite.automated_registration>`__.
 
 * **Avoid copy-paste** code by ...
 
     * ... making use of :ref:`fixtures <boost_test_fixture>`. This will furthermore provide robust procedures for setup and teardown of test cases.
-    * ... using :ref:`template test cases <boost_test_templates>`, which allows to easily specify tests for multiple types.
+    * ... using :ref:`template test cases <boost_test_templates>`, which allows easily specifying tests for multiple types.
 
 * **Provide useful information upon failure**.
 
-    * Where possible, directly use ``BOOST_TEST``, i.e.: ``BOOST_TEST(a == b)``
+    * Where possible, directly use ``BOOST_TEST``, i.e.: ``BOOST_TEST(a == b)``.
 
-        * When doing ``BOOST_TEST(some_bool_evaluating_function(a, b))``, the test output will not be useful as it will only say ``false``.
+        * When doing ``BOOST_TEST(some_bool_evaluating_function(a, b))``, the test output will not be insightful, as it will only say ``false``.
         * Note that you can also :ref:`compare custom types <boost_test_compare_custom_types>`.
 
     * There are a multitude of ways to `control test output <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/utf_reference/testout_reference.html>`_.
@@ -365,9 +344,7 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
 
 Using ``Utopia::TestTools``
 ===========================
-Utopia provides a set of test tools which make it easier to apply the above.
-
-Using these tools is as simple as including the ``utopia/core/testtools.hh`` header:
+Utopia provides a set of test tools which make it easier to apply the above. Using these tools is as simple as including the ``utopia/core/testtools.hh`` header:
 
 .. code-block:: c++
 
@@ -390,7 +367,7 @@ The ``BaseInfrastructure`` fixture
 ----------------------------------
 Frequently, tests or models require some kind of logger, random number generator, and some form of configuration.
 The ``BaseInfrastructure`` fixture provides these tools.
-It can be specialized to the need of the currently used test module using inheritance from the base class:
+It can be tailored to the need of the currently used test module by using inheritance from the base class:
 
 .. code-block:: c++
 
@@ -464,11 +441,11 @@ See `the corresponding doxygen documentation <../../doxygen/html/group___test_to
 
 .. warning::
 
-    When ``check_exception`` fails, the test output will show the error originating from within ``utopia/core/testtools``, because that's where the ``BOOST_ERROR`` is invoked from.
+    When ``check_exception`` fails, the test output will show the error originating from within ``utopia/core/testtools``, as this is where the ``BOOST_ERROR`` is invoked from.
 
 .. hint::
 
-    If you have trouble pinning down the error location and :ref:`reducing the test case size <good_unit_test>` is *not* an option, you can supply location information by adding ``{__LINE__, __FILE__}`` as last argument:
+    If you have trouble pinning down the error location and :ref:`reducing the test case size <good_unit_test>` is *not* an option, you can supply location information by adding ``{__LINE__, __FILE__}`` as the last argument:
 
     .. code-block:: c++
 
@@ -482,8 +459,8 @@ See `the corresponding doxygen documentation <../../doxygen/html/group___test_to
 
 Configuration-based test cases
 ------------------------------
-Sometimes you might desire to repeatedly invoke some callable with a different set of parameters.
-Which easier way is there to do this than via a configuration file?
+Sometimes you may want to repeatedly invoke some callable with a different set of parameters.
+What could be easier than doing this via a configuration file?
 The ``test_config_callable`` function is your friend:
 
 .. code-block:: c++
@@ -509,7 +486,7 @@ The ``test_config_callable`` function is your friend:
         );
     }
 
-The corresponding configuration (here: ``cfg``) should look something like this and can specify whether a certain parameter combination is expected to throw an exception, just like with ``check_exception``:
+The corresponding configuration (here: ``cfg``) can specify whether a certain parameter combination is expected to throw an exception, just like with ``check_exception``; it should look something like this:
 
 .. code-block:: yaml
 

@@ -6,7 +6,7 @@ Feature List
 This page aims to give an **overview** of Utopia features and improve feature discoverability.
 The descriptions are brief and aim to convey the functionality of some feature and link it to internal names and the corresponding documentation.
 
-This page heavily links to other pages which provide more information on the features.
+This page links heavily to other pages which provide more information on the features.
 Lines starting with the 📚 symbol also denote further reading material.
 
 .. note::
@@ -293,12 +293,14 @@ Iterate Over Graph Entities
     // ...
 
     // Loop over all vertices and print their states
-    for (auto vertex : range<IterateOver::vertex>(g):
+    for (auto vertex : range<IterateOver::vertex>(g)) {
         std::cout << g[vertex].property << "\n";
+    }
 
     // Loop over all neighbors of vertex '0' and print their states
-    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g):
+    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g)) {
         std::cout << g[vertex].property << "\n";
+    }
 
 .. _feature_parallel_stl:
 

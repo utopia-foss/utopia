@@ -1,6 +1,6 @@
 .. _model_CopyMeGraph:
 
-``CopyMeGraph`` - A good place to start with your graph-based model
+``CopyMeGraph`` — A good place to start with your graph-based model
 ===================================================================
 
 This template model supplies a minimal graph-based Utopia model.

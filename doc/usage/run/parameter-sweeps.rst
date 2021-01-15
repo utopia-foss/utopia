@@ -3,17 +3,17 @@
 Multidimensional Model Runs
 ===========================
 
-You want to sweep over multiple parameters? *Utopia* has just the right tools for you! :)
+You want to sweep over multiple parameters? Utopia has just the right tools for you!
 
-In Utopia, we distinguish universes and multiverses: A multiverse is a collection of multiple universes where all universes are independent of each other.
-So, for example if you want to sweep over ``N`` different seeds of the random number generator you create ``N`` different universes within the run of the multiverse.
+In Utopia, we distinguish between universes and multiverses: a multiverse is a collection of multiple universes in which all the universes are independent of each other.
+So, for example if you want to sweep over *N* different seeds of the random number generator, you create *N* different universes within the run of the multiverse.
 
+Follow these three steps to perform a multiverse run:
 
 1. Create a run configuration file
 ----------------------------------
 
-This configuration should specify the parameters over which to sweep and which the model should have.
-It can look something like this:
+The run configuration should specify the parameters over which to sweep. Sweep parameters need to be indicated by a ``!sweep`` tag and supplied with a ``default`` value (which is used when no sweep is performed) as well as a parameter ``range`` or a set of ``values``. It can look something like this:
 
 .. code-block:: yaml
 
@@ -30,10 +30,10 @@ It can look something like this:
 
      # Write data every ... steps
      write_every: 1  # Default: 1
-     # NOTE Delete it, if you use the default!
+     # NOTE You can delete this if you're using the default!
 
      # The seed the RNG is initialized with
-     # You indicate this by adding the !sweep tag
+     # Indicate this by adding the !sweep tag
      seed: !sweep
        default: 42    # The value which is used if no sweep is done
        range: [10]    # The values over which to sweep, here: 0, 1, ... 9
@@ -56,10 +56,15 @@ It can look something like this:
        # Below, you can make updates to these values
        some_parameter: 42
 
-You can also use this ``!sweep`` tag on more than one parameter.
+You can use this ``!sweep`` tag on more than one parameter.
 It will create a multidimensional hypercube with all possible value combinations.
 
-You can pass the run configuration file to the CLI like this:
+Coupled sweeps
+^^^^^^^^^^^^^^
+
+If you want to vary one or parameters *along* with another (e.g. sweep over a parameter and using a different seed for each run), use the ``!coupled-sweep`` tag on the parameter(s) to be varied along with another, and add a `target` key; see :ref:`here <feature_parameter_sweeps>` for an example.
+
+Once you're done, you can pass the run configuration file to the CLI like this:
 
 .. code-block:: shell
 
@@ -83,10 +88,10 @@ For the following, create a new plot configuration file and specify the desired 
 You can pass the plot configuration file to the CLI by adding ``--plot-cfg path/to/plot_cfg.yml``.
 See ``utopia run --help`` for a detailed description.
 
-a. Plot a single-universe-plot for all the universes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+a. Plot all or specific universes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have a plot function which uses *only* the data of a *single* universe, you have to write something like this:
+If you have a plot function which uses *only* the data of a *single* universe, you need to write something like this:
 
 .. code-block:: yaml
 
@@ -98,16 +103,23 @@ If you have a plot function which uses *only* the data of a *single* universe, y
      module: model_plots.MyFancyModel
      plot_func: state
 
-     # Below, you can put the other plot specific parameters.
+     # Below, you can put the other plot-specific parameters.
 
-This will call the ``state`` function in the ``model_plots.MyFancyModel`` module. With ``universes: all``\ , a plot is generated for each universe that was run.
+This will call the ``state`` function in the ``model_plots.MyFancyModel`` module. With ``universes: all``\ , a plot is generated for each universe that was run. However, you could also specify only certain universes to plot:
+
+.. code-block:: yaml
+
+   state:
+     creator: universe   # Create plots for the universes, not the multiverse
+     universes:
+        some_sweep_parameter: [val_1, val_2, val_3] # Select the universes to plot.
 
 b. Plot a multiverse plot
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You need the data of many different universes? Than you need to write a multiverse plot function.
+If you need the data from mutliple universes for a single plot, you need to write a multiverse plot function.
 Let's say that you want to have an average state (averaged over different model realizations i.e. random number generator seeds).
-The plot configuration than looks like this:
+The plot configuration then looks like this:
 
 .. code-block:: yaml
 
@@ -133,11 +145,9 @@ The plot configuration than looks like this:
      # Below, you can put the other plot specific parameters.
      # ...
 
-The data specified in ``select`` will be passed to the plotting function as ``mv_data`` parameter and as an `\ ``xarray.Dataset`` <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ object.
+The data specified in ``select`` will be passed to the plotting function as ``mv_data`` parameter and as an `xarray.Dataset <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ object. Take a look at the `xarray documentation <http://xarray.pydata.org/en/stable/>`_ to learn more. The big advantage of this package is that your array dimensions are now labelled, so you can just call ``.mean(dim='time')`` on your data and don't have to worry that the wrong dimension might be chosen.
 
-Look at the `xarray documentation <http://xarray.pydata.org/en/stable/>`_ to learn more. The big advantage of this package is that your array dimensions are now labelled, so you can just call ``.mean(dim='time')`` on your data and don't have to worry that the wrong dimension might be chosen.
-
-In this case, you need to write a new plot function ``state_mean``. It looks something like this:
+In the above example, you need to write a new plot function ``mean_state``. It could look something like this:
 
 .. code-block:: python
 
@@ -169,15 +179,15 @@ In this case, you need to write a new plot function ``state_mean``. It looks som
        save_and_close(out_path, save_kwargs=save_kwargs)
 
 
-Perform a Multiverse Run
-------------------------
+3. Perform a Multiverse Run
+---------------------------
 
-The terminal command to "run a multiverse" i.e. to do a parameter sweep is:
+The final step is running the sweep. The terminal command to "run a multiverse" i.e. to do a parameter sweep, is:
 
 .. code-block:: shell
 
    $ utopia run MyFancyModel <path_to_run_config> --sweep --plots-cfg <path_to_plot_config>
 
-If you leave out ``--sweep``\ , utopia will just do a single universe run using the default values you have provided in the run configuration.
-Alternatively, you can add ``perform_sweep: true`` to the top level of your run configuration.
+If you leave out ``--sweep``\ , utopia will just do a single universe run using the default values you provided in the run configuration.
+Alternatively, you can add ``perform_sweep: true`` to the top level of your run configuration and omit the ``--sweep`` flag in the CLI command.
 Again, see ``utopia run --help`` for more information.

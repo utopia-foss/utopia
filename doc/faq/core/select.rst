@@ -4,9 +4,7 @@
 Entity Selection
 ================
 
-Utopia provides a config-accessible interface to select a subset of entities from a manager, e.g. cells from a ``CellManager``.
-
-This page aims to answer only basic questions regarding that interface. For a full documentation, it is crucial to consult the :ref:`cpp_docs`, e.g. starting from the module on entity selection.
+Utopia provides a config-accessible interface to select a subset of entities from a manager, e.g. cells from a ``CellManager``. This page aims to answer some basic questions regarding that interface. For a full documentation, you should consult the :ref:`cpp_docs`, e.g. by starting from the module on entity selection.
 
 .. contents::
    :local:
@@ -18,8 +16,7 @@ Configuration Access
 --------------------
 When is ``select_entities`` accessible via the configuration?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Whenever a model documentation states that it uses the ``select_entities`` interface, that means: a configuration node is passed down into that function.
-Thus, you can make changes to the configuration file and thereby change which entities are selected.
+Whenever a model documentation states that it uses the ``select_entities`` interface, it means that a configuration node is passed down into that function. You can thus make changes to the configuration file and thereby change which entities are selected.
 
 For example, :doc:`../../models/ForestFire` uses this interface to configure heterogeneities:
 
@@ -28,7 +25,7 @@ For example, :doc:`../../models/ForestFire` uses this interface to configure het
    :start-after: # --- Heterogeneities
    :end-before: # --- Output
 
-There, the ``mode`` is crucial. Only those parameters that are relevant for the chosen mode are used; the others may be present but will be ignored.
+There, the ``mode`` is crucial. Only those parameters that are relevant for the chosen mode are used; the others may be present, but will be ignored.
 
 .. note::
 
@@ -37,7 +34,7 @@ There, the ``mode`` is crucial. Only those parameters that are relevant for the 
 
 Which selection modes are available?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The following is an excerpt from the C++ documentation. For information on parameters corresponding to each mode, see there.
+The following is an excerpt from the C++ documentation. For information on parameters corresponding to each mode, take a look there.
 
 .. doxygenenum:: Utopia::SelectionMode
   :project: utopia
@@ -47,8 +44,7 @@ Selecting from the ``CellManager``
 ----------------------------------
 Why can't I select boundary cells?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Probably because you have configured a periodic space and for periodic space it does not really make sense to be able to configure a boundary.
-You should also see a warning in your logs that states this.
+Probably because you have configured a periodic space and for periodic space it does not really make sense to be able to configure a boundary. You should also see a warning in your logs that states this.
 
 Change your ``space`` configuration such that it reads
 

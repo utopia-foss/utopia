@@ -11,23 +11,21 @@ Tutorial
   This applies even to small or very specific questions; other people might have the same small or very specific question.
   This approach preserves the question as well as the answer to it.
 
-  If you happen not to have access to the GitLab, write directly to `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_.
-
   Thank you! :)
 
-In this tutorial, you will learn how to configure, run, and evaluate the models already implemented in *Utopia*.
+In this tutorial, you will learn how to configure, run, and evaluate the models already implemented in Utopia.
 After having worked through it, you can apply the learned concepts and methods to all available models; the content and available parameters may change but the structure remains the same.
 You can also use this tutorial as a reference guide, in which you can look up how to run a model simulation or configure plots.
 
-This requires that you already installed *Utopia* as described in the :doc:`README <../README>`.
+This requires that you already installed Utopia as described in the :doc:`README <../README>`.
 If you have not done so already, please do so now.
 Alternatively, you can use the **Utopia docker image**, which does not require an installation. For usage instructions, see `ccees/utopia <https://hub.docker.com/r/ccees/utopia>`_ on docker hub.
 Note that some parts of the tutorial are not relevant when using Utopia from within the docker container.
 
-Also note, that this guide does not go into how building your own model in *Utopia* works; for that, please refer to :ref:`impl_step_by_step`.
-Before you start building your model, however, you should have familiarized yourself with the core concepts of *Utopia* and the work flow of Git projects, as covered by this tutorial and the :ref:`dev_workflow` page, respectively.
+Also, note that this guide does not go into how building your own model in Utopia works; for that, please refer to the :ref:`impl_step_by_step`.
+Before you start building your model, however, you should have familiarized yourself with the core concepts of Utopia and the workflow of Git projects, as covered by this tutorial and the :ref:`dev_workflow` page, respectively.
 
-So far for an introduction. Let's dive in! 🤓
+So much for an introduction. Let's dive in!
 
 .. contents::
    :local:
@@ -35,7 +33,7 @@ So far for an introduction. Let's dive in! 🤓
 
 .. note::
 
-  These boxes will be used below to give additional remarks. They are not strictly required to follow the tutorial and you can skip them, if you want.
+  These boxes will be used below to give additional remarks. They are not strictly essential to the tutorial and you can skip them, if you want.
 
 .. warning::
 
@@ -51,7 +49,7 @@ So far for an introduction. Let's dive in! 🤓
 
 First steps
 -----------
-*Utopia* can be controlled fully from its command line interface (CLI). And that's what we're going to start with.
+Utopia can be controlled fully from its command line interface (CLI). And that's what we're going to start with.
 
 The first step is to make the CLI accessible.
 
@@ -67,9 +65,9 @@ To do so, go to the ``utopia`` directory and run the following commands (Do not 
   $ cd build             # ... to go to the utopia build directory
   $ source ./activate    # ... to enter the virtual environment
 
-*Utopia* operates inside a so-called virtual environment.
+Utopia operates inside a so-called virtual environment.
 With the ``source ./activate`` command, you have entered it and should now see ``(utopia-env)`` appearing on the left-hand side of your shell.
-When working with *Utopia*, make sure to always be in this virtual environment.
+When working with Utopia, make sure to always be in this virtual environment.
 
 .. note::
 
@@ -89,14 +87,14 @@ When working with *Utopia*, make sure to always be in this virtual environment.
       $ source ./utopia-env/activate.csh   # Activate venv for csh, OR ...
       $ source ./utopia-env/activate.fish  # ... for fish
 
-Let us now look at how to run a model using the CLI. Run on the command line:
+Now let's look at how to run a model using the CLI. On the command line, run:
 
 .. code-block:: console
 
   $ utopia run --help
 
 You should get a wall of text. Don't be scared, all this log output is your friend.
-The command shows you all the possible parameters that you might need to run your model. Use it whenever you forgot what options you have.
+The command shows you all the possible parameters that you might need to run your model. Use it whenever you forget which options you have.
 
 At the very top of the log, you will see the ``usage`` specified, with optional parameters in square brackets. As you see there, the only *non*-optional parameter is the name of the model you want to run.
 For testing purposes, a ``dummy`` model is available. Let's try it out:
@@ -124,25 +122,25 @@ Alright, so let's build the ``dummy`` binary: Make sure you are in the ``build``
 
 .. note::
 
-  The CLI you interacted with so far is part of the so-called *Utopia* **Frontend**. It is a Python framework that manages the simulation and evaluation of a model.
+  The CLI you interacted with so far is part of the so-called Utopia **Frontend**. It is a Python framework that manages the simulation and evaluation of a model.
   It not only supplies the CLI, but also reads in a configuration, manages multi-core simulations, provides a plotting infrastructure and more.
   As mentioned, the frontend operates in a virtual environment, in which all necessary software is installed in the required version.
 
 .. note::
 
-  The ``utopia`` CLI commands always attempt to run through completely and only stop if there were major problems.
-  So, always check the terminal output for example if you are missing plotting results! All errors will be printed out. To increase verbosity, you can add the ``--debug`` flag to your commands.
+  The ``utopia`` CLI commands always attempts to run through completely and only stops if there were any major problems.
+  So, make sure to always check the terminal output, for example if you are missing plotting results! All errors will be printed out. To increase verbosity, you can add the ``--debug`` flag to your commands.
 
 Warm-up Examples
 ^^^^^^^^^^^^^^^^
-Let us go through a couple of examples to show how flexible and interactive *Utopia* can be just from the command line.
+Let us go through a couple of examples to show how flexible and interactive Utopia can be just from the command line.
 Don't bother with the simulation output for now; that will be addressed soon.
 
 * ``utopia run dummy --set-params dummy.foo=1.23 dummy.bar=42`` allows to set model specific parameters (here: ``foo`` and ``bar`` of the ``dummy`` model) directly from the command line.
 * ``utopia run dummy --no-plot`` will run the model without creating any plots. It can be useful if you are only interested in the data created or the terminal output.
-* ``utopia eval dummy`` loads the data of the previous simulation of the named model and performs the default evaluation on it
-* ``utopia eval dummy --plot-only state_mean`` only creates the plot with the specified name
-* ``utopia eval dummy --interactive`` starts an interactive plotting session
+* ``utopia eval dummy`` loads the data of the previous simulation of the named model and performs the default evaluation on it.
+* ``utopia eval dummy --plot-only state_mean`` only creates the plot with the specified name.
+* ``utopia eval dummy --interactive`` starts an interactive plotting session.
 
 Notice that ``utopia eval`` uses the ``eval`` subcommand. You can run ``utopia --help`` to see what other subcommands are available.
 
@@ -151,14 +149,13 @@ Now you should be reasonably warmed-up with the CLI. Let's get to running an act
 
 Running a Simulation
 --------------------
-Diving deeper into *Utopia* is best done alongside an actual model implementation; here, let's go with the ``SandPile`` model.
-Due to its simplicity, this model is the perfect place to start, allowing you to focus on how *Utopia* works.
+Diving deeper into Utopia is best done alongside an actual model implementation; here, let's go with the ``SandPile`` model.
+Due to its simplicity, this model is the perfect place to start, allowing you to focus on how Utopia works.
 
 The ``SandPile`` model
 ^^^^^^^^^^^^^^^^^^^^^^
 The ``SandPile`` model is a simple cellular automata model first described in the seminal work by `Bak et al. <https://doi.org/10.1103/PhysRevLett.59.381>`_ in 1987.
-It models heaps of sand and how their slope differ from a critical value. For more information on the model see the CCEES lecture notes.
-You can also check out the corresponding :doc:`model documentation <../models/SandPile>`.
+It models heaps of sand and how their slopes differ from a critical value. For more information on the model, check out the corresponding :doc:`model documentation <../models/SandPile>`.
 
 
 Run the model and see what happens
@@ -173,7 +170,7 @@ You see how easy it is to run a model? 🙂
 But where are the simulation results?
 
 Navigate to your home folder. You should find a folder named ``utopia_output``.
-Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmmss`` is the timestamp of the simulation, i.e., the date and time the model has been run. (More on this `below <#directory-structure>`_.)
+Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmmss`` is the timestamp of the simulation, i.e., the date and time the model has been run (more on this `below <#directory-structure>`_.)
 
 .. hint::
 
@@ -182,7 +179,7 @@ Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmm
 
 You should see three different folders:
 
-* ``config``: Here, all the model configuration files are stored. You already learned how to set parameters in the terminal through the command line interface. But from the number of files inside the folder you can probably already guess that there are more options to set parameters. You will explore the possibilities below.
+* ``config``: Here, all the model configuration files are stored. You already learned how to set parameters in the terminal through the command line interface. But from the number of files inside the folder you can probably already guess that there are more options to set parameters. You will explore the possibilities in due course.
 * ``data``: Here, the simulation data is stored.
 * ``eval``: Here, the results of the data evaluation are stored. All saved plots are inside this folder.
 
@@ -197,11 +194,11 @@ So, to get an idea of how the simulation went, let us have a look at the ``SandP
 Navigate to the ``eval/YYMMDD-hhmmss/`` folder and open ``mean_slope.pdf``.
 Inside the ``eval`` folder there is again a time-stamped folder.
 Every time you evaluate a simulation, a new folder is created.
-Like this, no evaluation result is ever overwritten.
+This way, no evaluation result is ever overwritten.
 
 The ``mean_slope.pdf`` file contains the plot of the mean slope over time.
 You can see that only four time steps are shown.
-That is because by default *Utopia* runs 3 iteration steps producing four data points taking into account the initial state.
+That is because by default Utopia runs three iteration steps producing four data points taking into account the initial state.
 You can run
 
 .. code-block:: console
@@ -210,10 +207,10 @@ You can run
 
 and open the new plot (remember to go down the new data tree). It should show a more interesting plot now. You can also look at the plot for the complementary cumulative probability distribution in the ``compl_cum_prob_dist.pdf`` file or at any other plot.
 
-Increasing ``num_steps`` can make the evaluation take quite a while, as you could probably already experience for the movie creation of the simulation with 1000 iteration steps.
+Increasing ``num_steps`` can make the evaluation take quite a while, as you probably already saw for the movie creation of the simulation with 1000 iteration steps.
 If you further increase ``num_steps``, you will most certainly need to select which plot to create (e.g. by appending ``--plot-only mean_slope`` to ``utopia run``).
 
-Try the following if you want to see that calculating the complementary cumulative probability distribution can be created fast without the need to plot other time-consuming plots.
+Try the following to see how fast calculating the complementary cumulative probability distribution can be, even for a large number of iterations, when other, more time-consuming plots are ignored:
 
 .. code-block:: console
 
@@ -224,9 +221,9 @@ Alternatively, you can set the ``--write-every`` and ``--write-start`` parameter
 
 Directory structure
 ^^^^^^^^^^^^^^^^^^^
-Let's take a brief detour and have a look at the directory structure of the *Utopia* repository, the output folder and where you can place the configuration files you will need in the rest of this tutorial.
+Let's take a brief detour and have a look at the directory structure of the Utopia repository, the output folder, and where you can place the configuration files you will need in the rest of this tutorial.
 
-Assuming that you have *Utopia* installed inside your home directory, the directory structure should look similar to the following (only most relevant directories listed here):
+Assuming that you have Utopia installed inside your home directory, the directory structure should look somewhat like this (only most relevant directories listed here):
 
 .. code-block:: console
 
@@ -274,7 +271,7 @@ You are already familiar with the ``build`` directory, needed for the build comm
   Remember that what relates to the home directory below is your *mounted* directory in the docker container.
   Inside the docker container, the output directory is ``~/io/utopia_output``.
 
-The *Utopia* frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
+The Utopia frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
 
 .. code-block:: console
 
@@ -293,8 +290,8 @@ The *Utopia* frontend also took care of creating an ``utopia_output`` directory,
       ├── ...
       └── YYMMDD-hhmmss      # Timestamp of another simulation run
 
-As *Utopia* makes frequent use of configuration files, let's take care that they don't become scattered all over the place.
-It makes sense to build up another folder hierarchy for each model, which helps you organize the different *Utopia* run and evaluation settings for different models:
+As Utopia makes frequent use of configuration files, let's take care that they don't become scattered all over the place.
+It makes sense to build up another folder hierarchy for each model, which helps you organize the different Utopia run and evaluation settings for different models:
 
 .. code-block:: console
 
@@ -312,22 +309,22 @@ In this example, the ``test`` directory holds the configuration files for the te
 
 .. note::
 
-  The above is the directory structure this tutorial will follow. You are free to do it in another way, just take care to adapt the paths given in this tutorial accordingly.
+  The above is the directory structure this tutorial will follow. You are free to choose a different structure, just take care to adapt the paths given in this tutorial accordingly.
 
-    - Utopia need not be installed in the home directory; it can be where it suits you.
-    - The configuration file directory can also be anywhere, but it makes sense that it's somewhere easily accessible from the command line.
-    - For changing the output directory, have a look at the corresponding question in the :doc:`FAQ <../faq/frontend>` to see, how this is done.
+    - Utopia need not be installed in the home directory; it can be located wherever it suits you.
+    - The configuration file directory can also be anywhere, though it makes sense to make it easily accessible from the command line.
+    - For changing the output directory, have a look at the corresponding question in the :ref:`FAQ <faq_sim_control>` to see how this is done.
 
   In fact, the more natural place, for the ``utopia_cfgs`` would be within the
   top-level ``Utopia`` directory, right *beside* the ``utopia`` repository.
   But you are free to choose all that. :)
 
 
-Change parameters
-^^^^^^^^^^^^^^^^^
+Changing parameters
+^^^^^^^^^^^^^^^^^^^
 Alright, back to the model now.
 
-What is this business with the configuration files and how can you actually change the model parameters? Enter: Your first configuration file:
+What is this business with the configuration files and how can you actually change the model parameters? Enter: your first configuration file:
 
   - If you have not done so already, create the ``~/utopia_cfgs/SandPile`` directory
   - In it, to keep things sorted, create another directory named ``test``
@@ -361,7 +358,7 @@ Just to give you an idea: A key-value pair can be specified simply with the ``ke
 .. note::
 
   In Utopia, all files with a ``.yml`` endings are configuration files.
-  To learn more about YAML, you can have a look at `learnXinYminutes tutorial <https://learnxinyminutes.com/docs/yaml/>`_ or search for others on the internet.
+  To learn more about YAML, you can have a look at the `learnXinYminutes tutorial <https://learnxinyminutes.com/docs/yaml/>`_; there are of course plenty of others online.
 
 As you can see, the parameters are all bundled under the ``parameter_space`` key. With the above configuration, you set the number of iteration steps to ``2000``, overwriting the default value of ``3``.
 
@@ -410,7 +407,7 @@ You can also see that in the log messages, where it will say something like:
 
 
 Of course, often you want to change more parameters, especially model specific ones. At the same time, you might want to leave some of the default parameters as they are.
-To that end, *Utopia* follows an approach where you can import the default parameters and then overwrite them. To do so, expand your ``run.yml`` file such that it looks like this:
+To that end, Utopia follows an approach where you can import the default parameters and then overwrite them. To do so, expand your ``run.yml`` file such that it looks like this:
 
 .. code-block:: yaml
 
@@ -432,7 +429,7 @@ To that end, *Utopia* follows an approach where you can import the default param
       # want to _change_ from the defaults.
       # ...
 
-Notice, that there now is a whole ``SandPile:`` key. This is the part of the configuration that is available to the ``SandPile`` model. The model will have access only to parameters below this key.
+Notice that there now is a whole ``SandPile:`` key. This is the part of the configuration that is available to the ``SandPile`` model. The model will have access only to parameters below this key.
 By adding additional keys to it, the default configuration is updated recursively at each indentation level.
 
 So far, so good. But what are the model's default parameters? Each models
@@ -448,10 +445,10 @@ default parameters; it looks like this:
 
   You can also locate the default model configuration of the ``SandPile``
   model at ``src/utopia/models/SandPile/SandPile_cfg.yml``. This file really is only
-  for *looking*; to change parameters, there is the ``run.yml`` file.
+  intended as a *reference*; to actually change parameters, it's best to use the ``run.yml`` file. That way, you can always fall back on default values.
 
-So, let's change the grid resolution to a more interesting value. In your
-``run.yml``, add the following entry:
+Let's change the grid resolution to a more interesting value. In your
+``run.yml``, add the following entry to the ``SandPile`` entry:
 
 .. code-block:: yaml
 
@@ -459,16 +456,13 @@ So, let's change the grid resolution to a more interesting value. In your
     grid:
       resolution: 128
 
-Make sure, it is at the correct indentation level (inside the ``SandPile``
-model). As is clear from the configuration keys, this changes the grid
-resolution in the so-called cell manager to :math:`128` cells per unit length
-of the physical space.
+Make sure to indent it! As is clear from the key name, this changes the grid resolution in the so-called cell manager to 128 cells per unit length of the physical space.
 
 Run the model again and look at the resulting plots. What happened?
 
 The resolution encodes the number of grid cells per unit length in the space.
-You could also think about changing the extent of the space which is the unit square as default.
-The run configuration then would be
+You could also think about changing the extent of the space, which by default is the unit square.
+The run configuration would then be
 
 .. code-block:: yaml
 
@@ -479,44 +473,44 @@ The run configuration then would be
     grid:
       resolution: 128
 
-This would result in :math:`256` cells in x and :math:`128` cells in y direction.
+This would result in 256 cells in x and 128 cells in y direction.
 
-By the way: What you learned here, applies also to all other models.
-You just need to know the model specific parameters, which you can find in the model documentation.
-So, just check out another model and change parameters if you like. 😎
+By the way: what you just learned also applies to all other models.
+You only need to know the model specific parameters, which you can find in the model documentation.
+So, just check out another model and change its parameters as you like. 😎
 
 .. note::
 
   **Changing the model configurations:** Technically, it is possible to change the model parameters in the file where the defaults are specified.
   However, this is **not** advisable at all! As the name says, these files are to carry the *default* parameters and are not expected to change.
-  Instead write your own run configuration files as described in this section.
-  This ensures inter alia that all models always work with their default configuration and that tests are guaranteed to run quickly and pass.
+  Instead, write your own run configuration files, as described in this section.
+  This ensures among other things that all models always work with their default configuration and that tests are guaranteed to run quickly and pass.
   Basically, you prevent the universe from collapsing.
 
 .. warning::
 
-  **YAML Indentation Level:** In Utopia, nearly every option can be set through a configuration parameter.
+  **YAML indentation level:** In Utopia, nearly every option can be set through a configuration parameter.
   With these, it is important to take care of the correct indentation level.
   If you place a parameter at the wrong location, it will often be ignored, sometimes even without warning! A common mistake at the beginning is to place model specific parameters outside of the ``<model_name>`` scope (see text).
 
 .. warning::
   Take care to choose model parameters wisely:
 
-  1. Parameters such as ``cell_manager.grid.resolution`` can lead to a dramatically increased computation time,
+  1. Parameters such as ``cell_manager.grid.resolution`` can lead to a dramatically increased computation time.
   2. Some parameters have requirements which can also depend on other parameters. If this is the case, you normally find a comment above the corresponding parameters.
 
   It is prudent to first run a simulation at a minimal (small) configuration to see if everything works as desired.
 
 .. note::
 
-  **User configuration:** It is possible to create a so-called *user configuration file*. This file contains all settings that are user- or machine-specific such as on how many cores to run a simulation or where to store the output data.
+  **User configuration:** It is possible to create a so-called *user configuration file*. This file contains all settings that are user- or machine-specific, such as on how many cores to run a simulation, or where to store the output data.
   See how to create a user configuration by typing ``utopia config --help`` in your terminal.
-  For more information, have a look at the :doc:`FAQ <../faq/frontend>`.
+  For more information, have a look at the frontend :ref:`FAQ <faq_frontend>`.
 
 
 Plotting
 --------
-*Utopia* aims to make it easy to couple the simulation of a model with its evaluation. To that end, the *Utopia* frontend provides a plotting framework, that loads the generated simulation data and can provide it to plotting functions, which then take care of the evaluation of the data.
+Utopia aims to make it easy to couple the simulation of a model with its evaluation. To that end, the Utopia frontend provides a plotting framework that loads the generated simulation data and can provide it to plotting functions, which then takes care of the data evaluation.
 
 There are multiple ways in which plots can be generated:
 
@@ -524,7 +518,7 @@ There are multiple ways in which plots can be generated:
 * General plotting functions are available (to avoid recreating code over and over)
 * External Python plotting scripts can be specified
 
-Like many other parts of *Utopia*, this relies on a YAML-based configuration interface in which the plotting function to be used is specified and the parameters can be passed.
+Like many other parts of Utopia, this relies on a YAML-based configuration interface in which the plotting function to be used is specified and the parameters can be passed.
 
 First, let's look at how a custom configuration can be used to adjust the behavior of existing model plots. Let's assume that – using the above steps – you have arrived at a run configuration you are happy with and you now want to run a simulation and afterwards create some plots from it.
 
@@ -596,7 +590,7 @@ You will notice that the default configuration does not contain an awful lot of 
 It imports an existing so-called "base plot configuration" and uses the additionally specified keys to update it recursively. This avoids copy-pasting configurations and allows to combine configurations using multiple inheritance.
 For more information, you can continue reading :ref:`in the frontend plotting section <plot_cfg_inheritance>`.
 
-So... let's adjust the ``mean_slope`` plot function.
+Let's just adjust the ``mean_slope`` plot function.
 To that end, add the following to your ``plots.yml`` file:
 
 .. code-block:: yaml
@@ -654,7 +648,7 @@ As you see, you can change *some* of the parameters of the plots; but only the o
 
 Animations
 ^^^^^^^^^^
-At one point you might be interested in making cool animations of the state variables, but you might be deterred as it is generally hard to do. Not with *Utopia*\ !
+At one point you might be interested in making cool animations of the state variables, but you might be deterred as it is generally hard to do. Not with Utopia\ !
 In fact, it is part of the default plotting system. You might have noticed the corresponding plot configuration already. It looks something like this:
 
 .. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
@@ -688,7 +682,7 @@ Now that your animation is configured, you might want to run a simulation with a
 
 .. warning::
 
-  Before you launch some cool million-step simulation on a ``1024 x 1024`` grid, remember that it all needs to be stored somewhere and this might either flood your RAM or your hard drive / SSD ... or both.
+  Before you launch some cool million-step simulation on a 1024 x 1024 grid, remember that it all needs to be stored somewhere and this might either flood your RAM or your hard drive / SSD ... or both.
 
 .. note::
 
@@ -704,7 +698,7 @@ Now that your animation is configured, you might want to run a simulation with a
 
 Using your own plot functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Now you might want to have a bit more flexibility with what you plot. For example, you might be interested in plotting the standard deviation for the level of the cells for each time step.
+You might want to have a bit more flexibility with what you plot. For example, you might be interested in plotting the standard deviation for the level of the cells for each time step.
 There is no default plot function that does that, but you can use the plot configuration to specify which python script to use to do the plot.
 
 In the above configurations, the ``module`` key was used to specify which module to use. To load a file as a module, use the ``module_file`` key and then insert the absolute path for your function file. You can use the ``~`` character to resolve your home directory.
@@ -805,11 +799,11 @@ Let's fill that in with the code that calculates the standard deviation for the 
 
 Parameter Sweeps and the ``Multiverse``
 ---------------------------------------
-Alright. With the above, you already came in touch with a lot of the features of *Utopia*.
-In this section, you will learn how to perform multiple simulations for different sets of parameters, and how you can handle them in plotting.
+Alright. With the above, you already came into contact with a lot of Utopia's features. Well done for making it this far!
+In this section, you will learn how to perform multiple simulations for different sets of parameters and how to plot them.
 
 Furthermore, this section will use a different model for the examples.
-This is to show that what you learned above can be applied to other models in *Utopia*, not only the ``SandPile`` model.
+This is to show that what you learned above can be applied to other models in Utopia, not only the ``SandPile`` model.
 
 
 The ``ForestFire`` Model
@@ -828,12 +822,18 @@ Just as for the ``SandPile`` model, it will create and run a simulation with 4 t
 
 .. note::
 
-  Make sure you have built the ``ForestFire`` binary before trying to run it.
+  Make sure you have built the ``ForestFire`` binary before trying to run it:
+  
+  .. code-block:: console
+
+    $ cd build
+    $ make ForestFire
+  
 
 
 Parameters
 """"""""""
-For getting to know the parameters available to the ``ForestFire`` model, let's have a look at that model's default configuration by opening its description in the Utopia documentation.
+To see the parameters available to the ``ForestFire`` model, let's have a look at that model's default configuration by opening its description in the Utopia documentation.
 It looks like this:
 
 .. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
@@ -909,7 +909,7 @@ This now says that instead of using the default value for a single simulation, t
 
 .. note::
 
-  Do not forget the ``--sweep`` flag! This is required to tell *Utopia* that you want to run a parameter sweep. Alternatively, you can add a new entry ``perform_sweep: true`` to the *root level* of the configuration file, i.e. on the same level as the ``parameter_space`` key, with zero indentation.
+  Do not forget the ``--sweep`` flag! This is required to tell Utopia that you want to run a parameter sweep. Alternatively, you can add a new entry ``perform_sweep: true`` to the *root level* of the configuration file, i.e. on the same level as the ``parameter_space`` key, with zero indentation.
 
 You will see some log output from the ``multiverse``, stating that it is
 
@@ -918,11 +918,11 @@ You will see some log output from the ``multiverse``, stating that it is
   Adding tasks for simulation of 3 universes ...
 
 Perhaps now is the time to talk about the nomenclature:
-In *Utopia*, a *multiverse* is a set of several *universes*, which are fully separated from each other: they can **not** interact in any way during the simulation.
+In Utopia, a *multiverse* is a set of several *universes*, which are fully separated from each other: they can **not** interact in any way during the simulation.
 This also means that each universe has a separate and *distinct* set of parameters.
 Depending on the number of CPUs your machine has, they exist (i.e., are being simulated) in parallel. And that's about where the analogy ends. ;)
 
-After this brief detour, have a look at the output again. You will see how it is different to the one where you only run a single universe:
+After this brief detour, have a look at the output again. You will see how it is different to the one where you only ran a single universe:
 
 * You no longer see the direct simulation output, as this would flood the terminal.
 * The progress bar now behaves differently.
@@ -931,7 +931,7 @@ After this brief detour, have a look at the output again. You will see how it is
 This already suggests that more data was written. You can confirm that by opening the output directory.
 
 What about the plots? Check the ``eval`` directory of your latest run.
-You will notice that the default plots were applied to each universe separately and are placed inside a folder; the file name now contains the coordinates of the point in parameter space.
+You will notice that the default plots were applied to each universe separately and are placed inside a folder; the file name now contains the coordinates of the point in parameter space. We will discuss how to create a *single* plot from multiverse data shortly.
 
 Adding more parameter sweeps
 """"""""""""""""""""""""""""
@@ -958,9 +958,9 @@ Together with the three values for the ``seed`` dimensions, there are now 21 pos
 
 .. note::
 
-  If you sweep over multiple parameters, all possible parameter combinations will be used, i.e. the cartesian product of each ``!sweep``-specified set of dimensions.
+  If you sweep over multiple parameters, all possible parameter combinations will be used, i.e. the Cartesian product of each ``!sweep``-specified set of dimensions.
   With :math:`P_1 ... P_n` sweep definitions, you'll get an :math:`n`-dimensional parameter space with :math:`\Pi_{i=1}^n |P_i|` possible combinations.
-  In other words: You'll quickly be in touch with the curse of dimensionality.
+  In other words: You'll quickly feel the curse of dimensionality.
 
 .. note::
 
@@ -970,7 +970,7 @@ Together with the three values for the ``seed`` dimensions, there are now 21 pos
 
 There are a bunch of other things to do with parameter sweeps, which go beyond the scope of this tutorial. (If you're keen to explore the features, you can have a look at the underlying `paramspace package <https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace>`_.)
 
-As you see, parameter sweeps can be used to easily create huge amounts of data. And we all know: With (hopefully) great data, comes great responsibility.
+As you see, parameter sweeps can be used to easily create huge amounts of data. And we all know: with (hopefully) great data comes great responsibility.
 Thus, let's now focus on how the plotting framework can be used to handle the multidimensional data.
 
 
@@ -979,8 +979,8 @@ Multiverse plots
 ^^^^^^^^^^^^^^^^
 Let us plot the mean states of the mean universe states and use the run configuration of the previous part.
 
-Recall, that in the ``SandPile`` model, you first created a plot configuration.
-So, let us do it here equivalently: Create the file ``~/utopia_cfgs/ForestFire/test/plots.yml`` with the content:
+Recall that in the ``SandPile`` model, you first created a plot configuration.
+So, let's do it in the same way: create a file ``~/utopia_cfgs/ForestFire/test/plots.yml`` with the content:
 
 .. code-block:: yaml
 
@@ -1002,31 +1002,30 @@ So, let us do it here equivalently: Create the file ``~/utopia_cfgs/ForestFire/t
 
 The file is located in the same directory as the run configuration to indicate that they belong together.
 
-The short description of what you told *Utopia*'s frontend to do is:
+The short description of what you told Utopia's frontend to do is:
 
 1. Create a plot called ``ensemble_averaged_mean_state`` that should use all the multiverse data (``creator: multiverse``).
-2. Before entering the plot function, make a ``select`` ion of data:
+2. Before entering the plot function, ``select`` data:
 
-    1. For each universe, access the ``field`` located under ``data/ForestFire/kind``. You can look up the path in the data tree that is printed out in the terminal. This dataset has the following dimensions: ``time``, ``x``, and ``y``; remember that you have two dimensional grid data for each time step.
-    2. Align all these data using the parameter sweep dimensions ...
-    3. ... into a higher-dimensional data structure, here: an `xarray <http://xarray.pydata.org/en/stable/>`_ ``Dataset`` object. This will obviously have another additional dimension: the ``seed`` you are sweeping over. If you have more sweep dimensions, they will also appear in the ``Dataset``. The data variable ``kind`` stored in that ``xarray.Dataset`` will thus have four dimensions.
+    1. For each universe, access the ``field`` located under ``data/ForestFire/kind``. You can look up the path in the data tree that is printed out in the terminal. This dataset has the following dimensions: ``time``, ``x``, and ``y``; remember that you have two-dimensional grid data for each time step.
+    2. Align all these data using the parameter sweep dimensions into ...
+    3. ... a higher-dimensional data structure, here: an `xarray <http://xarray.pydata.org/en/stable/>`_ ``Dataset`` object. This will obviously have another additional dimension: the ``seed`` you are sweeping over. If you have more sweep dimensions, they will also appear in the ``Dataset``. The data variable ``kind`` stored in that ``xarray.Dataset`` will thus have four dimensions.
 
 3. Pass this multidimensional data to the plot function as ``mv_data`` argument.
 
 .. note::
 
-  For more information on how to select data from a multiverse, see :ref:`select_mv_data`.
+  For more information on how to select data from a multiverse, take a look :ref:`here <select_mv_data>`.
 
-So, we roughly understand the first part of the configuration file.
-Plotting will, however, not work:
-The second part of the configuration file states: Use the plotting function ``plot_func: ensemble_averaged_mean_state``, which is located in the ``module_file: ~/path/to/my/plot/function/file.py`` and create the plot.
-But this function does not exist yet.
-So let us create it:
+We now roughly understand the first part of the configuration file.
+However, plotting won't quite work yet.
+The second part of the configuration file says: sse the plotting function ``plot_func: ensemble_averaged_mean_state``, which is located in the ``module_file: ~/path/to/my/plot/function/file.py`` and create the plot.
+But this function does not yet exist. Let's create it.
 
-Create a file at a location of your choice, so let's choose: ``~/utopia_FFM_timeseries_plots.py``.
+Create a file at a location of your choice, for instance: ``~/utopia_FFM_timeseries_plots.py``.
 (You would probably want to create it at another location
 – get inspired by the directory structure described earlier in this tutorial.)
-Within this file, let us create the ``ensemble_averaged_mean_state`` function with the following content:
+Within this file, we will write the ``ensemble_averaged_mean_state`` function:
 
 .. code-block:: python
 
@@ -1055,14 +1054,14 @@ Within this file, let us create the ``ensemble_averaged_mean_state`` function wi
       plt.savefig(out_path)
       plt.close()
 
-Now, you still need to adapt the plot configuration from above because the path to python file (module) containing the plotting function is not set correctly yet.
+Lastly, we still need to adapt the plot configuration from above, because the path to the python file (module) containing the plotting function is not yet correctly set.
 So, adapt the parameter:
 
 .. code-block:: yaml
 
     module_file: ~/utopia_FFM_timeseries_plots.py  # Choose the path, where you created the plot function!
 
-Now, everything is ready and set such that the multiverse data you have created in the previous run can be evaluated.
+Now everything is ready and set such that the multiverse data you have created in the previous run can be evaluated.
 To do this, type the following command into your terminal:
 
 .. code-block:: console
@@ -1075,58 +1074,52 @@ Of course, if you want to do a new simulation run that creates new data you can 
 
   $ utopia run ForestFire ~/utopia_cfgs/ForestFire/test/run.yml --sweep --plots-cfg ~/utopia_cfgs/ForestFire/test/plots.yml
 
-Now, go check the resulting plot.
-What does it look like?
+Go and check the resulting plot.What does it look like?
 
-To learn more about parameter sweeps, have a look at :ref:`run_parameter_sweeps`.
+To learn more about parameter sweeps, take a look at :ref:`run_parameter_sweeps`.
 
 .. note::
 
-  In general, if you want your plot to be integrated into the *Utopia* model-specific plots, you can add the plot function to a suitable file within the directory ``utopia/python/model_plots/ForestFire``.
+  In general, if you want your plot to be integrated into the Utopia model-specific plots, you can add the plot function to a suitable file within the directory ``utopia/python/model_plots/ForestFire``.
   However, this should only be done if the plot actually makes sense to have.
   For the ``ensemble_averaged_mean_state`` this probably is not the case.
 
-  You could be wondering why this plot is not within the *Utopia* default plots.
-  Just ask yourself: Is it really necessary to do multiple realizations of the
-  ForestFire model with just different random number seeds and average them?
-  The answer is no because this system is ergodic.
-
-  So, always think about what you want to implement and whether it makes sense to do it or not. :)
+  You could be wondering why this plot is not already among the default plots.
+  The answer is that doing multiple realizations of the
+  ForestFire model with just different random number seeds and averaging them makes little sense, because this system is ergodic.
 
 
 Closing Remarks
 ---------------
 What did you learn?
 ^^^^^^^^^^^^^^^^^^^
-Hopefully, you can answer this question by yourself. 🙂
+You learned the basics of:
 
-Your learned the basics of:
-
-- how to run any implemented model in *Utopia*,
-- how *Utopia* is structured,
-- what *Utopia* is capable of doing (at least the fundamental aspects),
+- how to run any implemented model in Utopia,
+- how Utopia is structured,
+- the fundamental aspects of what Utopia is capable of doing (but this was really just the tip of the iceberg),
 - how to plot the generated data conveniently, and
-- how to do parameter sweeps and plot them.
+- how to perform and plot parameter sweeps.
 
-Summed up, you learned how to use the *Utopia* tool and the concepts that can be applied to all other models.
+In short, you learned how to use tools and concepts that can be applied to all other models in Utopia.
 
 
 How to continue from here?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-The skills you learned in this tutorial are general enough that you can apply them to any model, following the philosophy: If you know how to boil water to cook some pasta you also know how to cook rice.
-Of course, you will need to adjust some parameters.
+The skills you learned in this tutorial are general enough that you can apply them to any model, following the philosophy: if you know how to cook pasta, you also know how to cook rice.
+Of course, some adjustments will always need to be made.
 
-So, just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺 ️
+A good idea is to just play around with different models and explore the world of chaotic, complex, and evolving systems. 🗺
 
-And, perhaps you even want to write your own *Utopia* model. To that end you should work with the features given by GitLab.
-If you have never heard of GitLab or worked with it and you don't know what a ``master`` nor a *branch* is and even less what is meant by *committing* or *merging*, continue with the :ref:`dev_workflow` guide.
+Perhaps you may even want to write your own Utopia model. To that end you should work with the features provided by GitLab.
+If you have never heard of GitLab or Github, or worked with git-based version control, and you don't know what a ``master`` or a *branch* is, and even less what is meant by *committing* or *merging*, continue with the :ref:`dev_workflow` guide.
 
-After mastering that guide, a good starting point for the actual implementation of your own model is the :ref:`impl_step_by_step` ...
+After mastering that guide, acutally implementing your own model is described in the :ref:`impl_step_by_step`.
 
 
 What if I have more questions?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Look if you can find some useful ...
+Look if you can find some useful information ...
 
 - ... elsewhere in :ref:`this documentation <welcome>` (try the search function),
 - ... questions and answers in the :ref:`backend FAQ <faq_core>` or :ref:`frontend FAQ <faq_frontend>`, or

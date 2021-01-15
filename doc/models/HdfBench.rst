@@ -13,10 +13,10 @@ Configuration
 -------------
 
 Benchmarks can be configured completely via the frontend; recompilation is not needed.
-To that end, ``HdfBench`` supplies a set of ``setup_funcs`` and ``bench_funcs``\ , which perform a setup or benchmarking operation, respectively, and then return the time it took for the relevant part of the function to execute.
+To that end, ``HdfBench`` supplies a set of ``setup_funcs`` and ``bench_funcs``\ , which perform a setup or benchmarking operation, respectively, and then return the time it took for the relevant part of the function to execute. Examples for the configuration of such benchmarks are given below.\ :raw-html-m2r:`<br>`
 
-Examples for the configuration of such benchmarks is shown below.\ :raw-html-m2r:`<br>`
-(Note that if you are writing a ``run`` config, the examples below represent the content of the ``parameter_space -> HdfBench`` mapping.)
+.. note::
+    If you are writing a ``run`` config, the examples below represent the content of the ``parameter_space -> HdfBench`` mapping.
 
 Getting started
 ~~~~~~~~~~~~~~~
@@ -41,14 +41,14 @@ This will result in the benchmark ``simple`` being carried out:
 
 
 * It sets up a dataset of shape ``{num_steps + 1, 100}``
-* Each step, it writes vectors of length 100, filled with the value ``42.``.
+* In each step, it writes vectors of length 100, filled with the value ``42.``.
 
-(Note that ``num_steps`` is defined not on this level of the configuration, but on the top-most level of the run configuration.)
+.. note:: ``num_steps`` is defined not on this level of the configuration, but on the top-most level of the run configuration.
 
 Multiple benchmarks
 ~~~~~~~~~~~~~~~~~~~
 
-One can also define multiple configuration and – using YAML anchors – let them share the other benchmarks' configuration:
+One can also define multiple configurations and – using YAML anchors – let them share the other benchmarks' configuration:
 
 .. code-block:: yaml
 
@@ -89,14 +89,13 @@ There are a number of additional configuration flags that change the behaviour o
      - Sleep time at the beginning of each benchmark (not measured)
 
 
-
 .. raw:: html
 
    <!-- TODO: add delete_afterwards flag once implemented -->
 
 
 
-The ``sleep_*`` features can make a benchmark more realistic as they give the operating system time to do its magic, which would, in a real simulation, happen during the computational parts of a simulation step.
+The ``sleep_*`` features can make a benchmark more realistic, as they give the operating system time to do its magic, which would, in a real simulation, happen during the computational parts of a simulation step.
 
 Available setup and write functions
 -----------------------------------
@@ -107,9 +106,9 @@ Available setup and write functions
    * - Name
      - Description
    * - ``setup_nd``
-     - Sets up an $\ ``n``\ $-dimensional dataset with shape ``{num_steps + 1, write_shape}``
+     - Sets up an *n*-dimensional dataset with shape ``{num_steps + 1, write_shape}``
    * - ``setup_nd_with_chunks``
-     - Additionally to ``setup_chunks``\ , allows to manually set the chunk sizes via ``chunks`` argument (needs to include time dimension!)
+     - In addition to ``setup_chunks`` , this allows manually setting the chunk sizes via ``chunks`` argument (needs to include time dimension!)
    * - ``write_const``
      - Writes ``const_val`` in shape ``write_shape`` to the dataset
 
@@ -124,12 +123,12 @@ Data output structure
 
 The ``times`` dataset holds the benchmarking times. Its rows correspond to the time step, the columns correspond to the configured benchmarks (in the same order).
 
-For dynamic evaluation of benchmarks, the dataset attributes should be used:
+For dynamic evaluation of benchmarks, dataset attributes should be used:
 
 
 * ``dims``\ : gives names to dimensions
 * ``coords_benchmark``\ : which benchmark corresponds to which column of the dataset
-* ``initial_write``\ : whether the first benchmarked time (row 0) includes a write operation or *only* the setup time of the dataset.
+* ``initial_write``\ : whether the first benchmarked time (row 0) includes a write operation or *only* the setup time of the dataset
 
 Evaluation scripts
 ^^^^^^^^^^^^^^^^^^

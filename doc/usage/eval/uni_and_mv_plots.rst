@@ -2,7 +2,7 @@
 
 Plotting Universes and Multiverses
 ==================================
-Utopia tries to make the plotting of multidimensional data as easy as possible.
+Utopia makes plotting multidimensional data easy.
 This page describes how to create plot functions and configurations for plotting data from individual universes as well as from the multiverse.
 
 .. contents::
@@ -19,10 +19,9 @@ This page describes how to create plot functions and configurations for plotting
 Plots from Universe Data
 ------------------------
 To create plots that use data from a single universe, use the :py:class:`~utopya.plotting.UniversePlotCreator`.
-It allows to specify a set of universes to create plots for and provides the plotting function with data from the selected universes.
+It allows specifying a set of universes from which to create plots, and passes data from the selected universes to the plotting function.
 
-The plot configuration for a universe plot requires as an additional argument a selection of which universes the plot should be created for.
-This is done via the ``universes`` argument:
+The plot configuration needs to know which universes to plot. This is done via the ``universes`` argument:
 
 .. code-block:: yaml
 
@@ -143,11 +142,8 @@ In other words, when not using the data selection and transformation framework, 
 
 Plots from Multiverse Data
 --------------------------
-To create plots that use data from *more than one* universe — henceforth called *multiverse data* — use the :py:class:`~utopya.plotting.MultiversePlotCreator`.
-This creator makes it possible to select and combine the data from all selected individual universes and provides the result of the combination to the plot function.
-
-This requires the handling of multidimensional data and depends on the dimensionality of the chosen parameter space.
-Say the selected data from each universe has dimensionality three and a parameter sweep was done over four dimensions, then the data provided to the plot function has seven dimensions.
+To create plots that use data from *more than one* universe — which in Utopia is called *multiverse data* — use the :py:class:`~utopya.plotting.MultiversePlotCreator`.
+This creator selects and combines the data from all selected individual universes and passes the combined data to plot function. This requires handling multidimensional data and depends on the dimensionality of the chosen parameter space. For instance, say the selected data from each universe has dimensionality three and a parameter sweep was done over four dimensions: the data provided to the plot function then has seven dimensions.
 
 See :ref:`below <select_mv_data>` on how to control the selection and combination of data.
 
@@ -226,10 +222,10 @@ Remarks
                 - getattr: pspace
                 - getattr: default
 
-    Note that this is the *default* configuration, meaning that all parameters that were specified as a sweep dimensions are set to their default values.
+    Note that this is the *default* configuration, meaning that all parameters that were specified as a sweep dimension are set to their default values.
     To select a parameter that was part of a sweep, it needs to be extracted via ``select_and_combine`` and assembled into an array of the same shape as the parameter space used in the sweep.
 
-* If using the default universe configuration in multiple plots, it makes sense to define a YAML anchor for it in order to reduce copy-paste:
+* When using the default universe configuration in multiple plots, it makes sense to define a YAML anchor for it, in order to reduce copy-paste:
 
     .. code-block:: yaml
 
@@ -259,10 +255,13 @@ Remarks
 
 Without DAG framework *(legacy approach)*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. deprecated:: 0.6
+    
+.. warning::
 
     This approach of selecting data from the multiverse is **deprecated.**
-    Instead, use the data selection and transformation interface described :ref:`above <mv_plot_with_dag>`.
+    Use the data selection and transformation interface described :ref:`above <mv_plot_with_dag>` instead.
 
 The signature for such a plot function looks like this:
 

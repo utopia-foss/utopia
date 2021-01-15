@@ -1,6 +1,6 @@
 .. _model_CopyMeBare:
 
-``CopyMeBare`` - The bare basics for your new model
+``CopyMeBare`` — The bare basics for your new model
 ===================================================
 
 This template model supplies the bare basics needed for a Utopia model implementation:

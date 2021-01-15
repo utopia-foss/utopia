@@ -10,35 +10,34 @@ The **language** of Utopia code and documentation should be American English (to
 
 Python
 ------
-We use Python >= 3.7
+We use Python >= 3.7.
 
 Orientation style guide: `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* very readable :)
-  – This is the basic orientation. If you are unsure how to write things, look it up here.
-* We do not need to be 100% strict on this; the main purpose is: **produce well-readable and documented code.**
-* If you want, you can install a Linter to help you adhere to the style. For Sublime Text, there is the `\ ``SublimeLinter`` <https://github.com/SublimeLinter/SublimeLinter-pep8>`_ package.
+* This is the basic orientation. If you are unsure how to write things, look it up here.
+* We do not need to be 100% strict on this; the main purpose is: **produce readable and well-documented code.**
+* If you want, you can **install a Linter** to help you adhere to the style. For Sublime Text, there is the `SublimeLinter` <https://github.com/SublimeLinter/SublimeLinter-pep8>`_ package.
 * Most important points (these we should stick to!):
 
-  * `A foolish consistency is the hobgoblin of little minds <https://www.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_
+  * `A foolish consistency is the hobgoblin of little minds. <https://www.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_
   * *Definitely* use **4 spaces** instead of a single tab stop. Modern code editors can be configured to perform this replacement.
 
     * In Sublime Text, the options are called: ``translateTabsToSpaces``\ , ``tabSize``\ , and ``useTabStops`` see `here <http://www.sublimetext.com/docs/indentation>`_.
 
-  * String styles (more specific than pep8):
+  * String styles (more specific than PEP 8):
 
     * use single quotes for strings that are parameters, e.g. ``func(mode='auto')``
     * use double quotes for non-parameter strings, e.g. ``log.debug("Something went wrong: %s", bla)``
     * use triple *double quotes* for docstrings
 
-  * don't use spaces around the = sign when used to indicate a keyword argument or a default parameter value.
-  * Do *not* align assignment's equal signs. It looks pretty at first, but is terrible to get consistent and to maintain...
+  * Don't use spaces around the '=' sign when used to indicate a keyword argument or a default parameter value.
+  * Do *not* align assignments' equal signs. It looks pretty at first, but is terrible to get consistent and to maintain.
   * Compound statements (multiple statements on the same line) are generally discouraged.
   * Regarding comments:
 
-    * Comments that contradict the code are worse than no comments. Always make a priority of keeping the comments up-to-date when the code changes!
-    * Avoid comments that are stating the obvious.
+    * Comments that contradict the code are worse than no comments. Always make it a priority to keep the comments up-to-date when the code changes!
+    * Avoid comments that state the obvious.
     * Use inline comments sparingly.
 
   * Stick to the `naming styles <https://www.python.org/dev/peps/pep-0008/#descriptive-naming-styles>`_ of variables.
@@ -68,7 +67,7 @@ We will mostly stick to the STL library. Its complete reference can be found on 
 Style Guidelines
 ~~~~~~~~~~~~~~~~
 
-C++ lacks as concrete style guides as the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ of Python. However, PEP 8 actually offers great instructions on how to write code *in general*. Its instructions on code layout are especially useful. Basically, most of the instructions in the above Python section also apply here.
+C++ lacks concrete style guides such as Python's `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_. However, PEP 8 actually offers great instructions on how to write code *in general*. Its instructions on code layout are especially useful. Basically, most of the instructions in the above Python section also apply here.
 
 * Keep in mind that other people have to read and understand your code.
 
@@ -83,7 +82,7 @@ Still, below are a few (partially harsh restrictions) we would like to impose on
   Indentation:
 
   * use **spaces** instead of tabs
-  * one indentation level is represented by 4 spaces
+  * **one indentation level is represented by 4 spaces**
   * ``private``\ , ``protected``\ , and ``public`` use the enclosing indentation level
   * CPP flags are not indented at all or use the enclosing indentation level
 
@@ -95,7 +94,7 @@ Still, below are a few (partially harsh restrictions) we would like to impose on
   * scope closures of namespaces (or far away scope openings) should be denoted with a ``// namespace foo`` comment preceding the ``}``
 
 *
-  Whitespace
+  Whitespace:
 
   * leave a whitespace after any C++ keyword, before any scope opening, and before a function's parameter list
 
@@ -127,14 +126,15 @@ For these cases, it makes sense to configure the formatter to only be invoked on
 Doxygen Documentation
 ~~~~~~~~~~~~~~~~~~~~~
 
-We use `doxygen <http://www.stack.nl/~dimitri/doxygen/>`_ for automatically creating a code documentation. We advertise the C++ commenting style:
+We use `doxygen <https://www.doxygen.nl/index.html>`_ for automatically creating a code documentation. We advertise the C++ commenting style:
 
-* Start the documentation comment before the documented object with ``///``. State the ``brief`` description right away in one line
+* Start the documentation comment before the documented object with ``///``. State the ``brief`` description right away in one line.
 * Add the detailed description after ``/**`` in the following lines. Start every line with an asterisk ``*`` and align the center asterisks as well as the line starts. This avoids 'glued' words in the documentation later on due to missing whitespaces.
 * Close the comment with ``*/`` in a new line.
 * Use the backslash style for doxygen keywords: ``\param``\ , ``\return``
 * Avoid redundant keywords like ``\brief``.
 * For short comments, you can append a brief description. This is useful for class members.
+* Also see the documentation entry on :ref:`writing documentation <cpp_doc>`.
 
 Example:
 

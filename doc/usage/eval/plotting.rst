@@ -22,9 +22,9 @@ Nomenclature
 In the following, the basic vocabulary to understand the plotting framework is established.
 Relevant conceps and structures are:
 
-* The :ref:`plot configuration <plot_cfg_overview>` contains all the parameters required to make one or multiple plots.
-* The :ref:`plot creator <external_plot_creator>` creates the actual plot. Given some plot configuration, it produces the plot as output.
-* The :py:class:`~utopya.plotting.PlotManager` orchestrates the plotting procedure by feeding the relevant plot configuration to a specific plot creator.
+* The :ref:`plot configuration <plot_cfg_overview>`, which contains all the parameters required to make one or multiple plots.
+* The :ref:`plot creator <external_plot_creator>`, which creates the actual plot. Given some plot configuration, it outputs the plot.
+* The :py:class:`~utopya.plotting.PlotManager`, which orchestrates the plotting procedure by feeding the relevant plot configuration to a specific plot creator.
 
 
 
@@ -32,11 +32,10 @@ Relevant conceps and structures are:
 
 Plot Configuration
 ------------------
-The plotting framework uses a configuration-based approach the aim of which is to keep as much information about how a plot should be created in the configuration rather than in a specific implementation.
+The plotting framework uses a configuration-based approach with the aim of keeping as much information about how a plot should be created in the configuration, rather than in a specific implementation.
 This makes plotting much simpler and facilitates automation.
 
-In this documentation, plot configurations are usually shown using YAML as this is the usual way to define the configuration.
-The structure is:
+In this documentation, plot configurations are usually given in YAML, as this is how configurations are tpyically defined. The standard plot configuration structure is:
 
 .. code-block:: yaml
 
@@ -49,11 +48,22 @@ The structure is:
       creator: another_creator
       # ... plot configuration parameters for this plot ...
 
-This leads to the :py:class:`~utopya.plotting.PlotManager` instantiating a plot creator ``some_creator`` which is instructed to create a plot called ``my_plot``.
-The additional parameters are passed to the plot creator which can then do whatever it likes with it.
-The same happens for the ``my_other_plot`` plot, which uses ``another_creator``.
+This leads to the :py:class:`~utopya.plotting.PlotManager` instantiating a plot creator ``some_creator``, which is instructed to create a plot called ``my_plot``.
+The additional parameters are passed to the plot creator, which then uses these for its own purposes.
+The same happens for the ``my_other_plot`` plot, which uses ``another_creator``. For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `the dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_manager.html>`_.
 
-For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `the dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_manager.html>`_.
+Plot configuration entries can also make use of parameter sweeps. Simply add the ``!pspace`` tag to the top-level entry:
+
+.. code-block:: yaml
+
+    ---
+    my_plot: !pspace
+      some_param: !sweep
+        default: foo
+        values: [foo, bar, baz]
+
+This will automatically create a separate file for each plot and include the value of the parameter into the file or folder name.
+
 
 .. note::
 
@@ -61,7 +71,7 @@ For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `
 
     Many individual plot configurations can be stored in a YAML file.
     The top level of that file then denotes the *names* of the plots.
-    In the example above that is ``my_plot`` and ``my_other_plot``.
+    In the above example, these would be ``my_plot`` and ``my_other_plot``.
 
 .. hint::
 
@@ -79,21 +89,9 @@ For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `
         my_other_plot:  # -> creates my_other_plot
           # ...
 
-    This can be useful when desiring to define YAML anchors that are used in the actual configuration entries.
+    This can be useful when defining YAML anchors that are used in the actual configuration entries.
 
-.. hint::
 
-    Plot configuration entries can also make use of parameter sweeps. Simply add the ``!pspace`` tag to the top-level entry:
-
-    .. code-block:: yaml
-
-        ---
-        my_plot: !pspace
-          some_param: !sweep
-            default: foo
-            values: [foo, bar, baz]
-
-    This will automatically create a separate file for each plot and include the value of the parameter into the file or folder name.
 
 
 .. _plot_cfg_inheritance:
@@ -101,10 +99,7 @@ For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `
 Plot Configuration Inheritance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 New plot configurations can be based on existing ones.
-This makes it very easy to define various plot functions without copy-pasting the plot configurations.
-
-To do so, add the ``based_on`` key to your plot configuration.
-As arguments, you can provide either a string or a sequence of strings, where the strings have to refer to names of so-called "base plot configuration entries". These are configuration entries that utopya and the models already provide.
+This makes it very easy to define various plot functions without copy-pasting the plot configurations. To do so, add the ``based_on`` key to your plot configuration. As arguments, you can provide either a string or a sequence of strings, where the strings have to refer to names of so-called "base plot configuration entries". These are configuration entries that utopya and the models already provide.
 
 For example, the following lines suffice to generate a simple line plot based on the plot function configured as ``.basic_uni.lineplot``:
 
@@ -116,7 +111,7 @@ For example, the following lines suffice to generate a simple line plot based on
     model_name: ForestFire
     path_to_data: tree_density
 
-What happens there is that first the configuration for ``.basic_uni.lineplot`` is loaded and then recursively updated with those keys that are specified below the ``based_on``.
+Here, the configuration for ``.basic_uni.lineplot`` is first loaded and then recursively updated with those keys that are specified below the ``based_on``.
 When providing a sequence, e.g. ``based_on: [foo, bar, baz]``, the first configuration is used as the base and is subsequently recursively updated with those that follow.
 
 For a list of all base plot configurations provided by utopya, see :ref:`utopya_base_cfg`.
@@ -126,28 +121,22 @@ For a list of all base plot configurations provided by utopya, see :ref:`utopya_
 
 The :py:class:`~utopya.plotting.ExternalPlotCreator`
 ----------------------------------------------------
-In Utopia, the :py:class:`~utopya.plotting.ExternalPlotCreator` has a central role as it forms the basis of some further specialized plot creators.
-The *"external"* refers to is abiliy to invoke some plot function that can be in some external module or file.
-
-Such a plot function can basically do whatever it likes.
-However, the :py:class:`~utopya.plotting.ExternalPlotCreator` has some specialized functionality for working with ``matplotlib`` which aims to make plotting more convenient: the ``style`` option and the :py:class:`~utopya.plotting.PlotHelper` framework.
+In Utopia, the :py:class:`~utopya.plotting.ExternalPlotCreator` has a central role, as it forms the basis of several, more specialized plot creators.
+The *"external"* refers to is abiliy to invoke some plot function from an external module or file. Such a plot function can essentially be arbitrary. However, the :py:class:`~utopya.plotting.ExternalPlotCreator` has some specialized functionality for working with ``matplotlib`` which aims to make plotting more convenient: the ``style`` option and the :py:class:`~utopya.plotting.PlotHelper` framework.
 Furthermore, it has access to dantro's :ref:`data transformation framework <external_plot_creator_DAG_support>`.
 
 In practice, the :py:class:`~utopya.plotting.ExternalPlotCreator` *itself* is hardly used in Utopia, but it is the base class of the :py:class:`~utopya.plotting.UniversePlotCreator` and the :py:class:`~utopya.plotting.MultiversePlotCreator`.
-Thus, the following information is valid for both these specialization and is important to understand before looking at the other creators.
+Thus, the following information is valid for both these specializations and is important to understand before looking at the other creators.
 More detail on the specializations themselves is given :ref:`later <uni_and_mv_plots>`.
 
 
 Specifying which plotting function to use
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Let's assume we have a plotting function defined somewhere and want to communicate to the :py:class:`~utopya.plotting.ExternalPlotCreator` that this function should be used for some plot.
-
-For the moment, the exact definition of the function is irrelevant.
-You can read more about it in :ref:`below <plot_func_sig_recommended>`.
+Let's assume we have a plotting function defined somewhere and want to communicate to the :py:class:`~utopya.plotting.ExternalPlotCreator` that this function should be used for some plot. For the moment, the exact definition of the function is irrelevant. You can read more about it in :ref:`below <plot_func_sig_recommended>`.
 
 Importing a plotting function from a module
 """""""""""""""""""""""""""""""""""""""""""
-To do this, the ``module`` and ``plot_func`` entries are required.
+To import a plot function, the ``module`` and ``plot_func`` entries are required.
 The following example shows a plot that uses a plot function from ``utopya.plot_funcs`` and another plot that uses some (importable) package from which the module and the plot function are imported:
 
 .. code-block:: yaml
@@ -174,10 +163,7 @@ The following example shows a plot that uses a plot function from ``utopya.plot_
 
 Importing a plotting function from a file
 """""""""""""""""""""""""""""""""""""""""
-While there are those plot function implementations that are provided by utopya and those that are provided alongside models, you might also want to implement a plot function decoupled from all the existing code.
-
-This can be achieved by specifying the ``module_file`` key instead of the ``module`` key in the plot configuration.
-The python module is then loaded from file and the ``plot_func`` key is used to retrieve the plotting function:
+There are plenty of plot function implementations provided both by utopya and the various Utopia models. However, you might also want to implement a plot function of your own design. This can be achieved by specifying the ``module_file`` key instead of the ``module`` key in the plot configuration. The python module is then loaded from file and the ``plot_func`` key is used to retrieve the plotting function:
 
 .. code-block:: yaml
 
@@ -196,12 +182,7 @@ The python module is then loaded from file and the ``plot_func`` key is used to 
 
 Adjusting a plot's style
 ^^^^^^^^^^^^^^^^^^^^^^^^
-All matplotlib-based plots can profit from this feature.
-
-Using the ``style`` keyword, matplotlib parameters can be configured fully via the plot configuration; no need to touch the code.
-Basically, this sets the ``matplotlib.rcParams`` and makes the matplotlib stylesheets available.
-
-The following example illustrates the usage:
+All matplotlib-based plots can profit from this feature. Using the ``style`` keyword, matplotlib parameters can be configured fully via the plot configuration; no need to touch the code. Basically, this sets the ``matplotlib.rcParams`` and makes the matplotlib stylesheets available. The following example illustrates the usage:
 
 .. code-block:: yaml
 
@@ -239,9 +220,10 @@ For valid RC parameters, see the `matplotlib customization documentation <https:
 
 The :py:class:`~utopya.plotting.PlotHelper`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In short, the :py:class:`~utopya.plotting.PlotHelper` assists in the creation of the plot by providing an interface to matplotlib that is accessible via the plot configuration.
 
-For example, the following plot configuration sets the title of the plot as well as the labels and limits of the axes:
+The aim of the :py:class:`~utopya.plotting.PlotHelper` framework is to let the plot functions focus on what cannot easily be automated: being the bridge between some selected data and its visualization. The plot function should not have to concern itself with plot aesthetics, as these can be easily automated. The :py:class:`~utopya.plotting.PlotHelper` framework can make your life significantly easier, as it already takes care of most of the plot aesthetics by making large parts of the matplotlib interface accessible via the plot configuration. That way, you don't need to touch Python code for trivial tasks like changing the plot limits. It also takes care of setting up a figure and storing it in the appropriate location. Most importantly, it will make your plots future-proof and let them profit from upcoming features. For available plot helpers, have a look at the :py:class:`~utopya.plotting.PlotHelper` API reference.
+
+As an example, the following plot configuration sets the title of the plot as well as the labels and limits of the axes:
 
 .. code-block:: yaml
 
@@ -259,7 +241,6 @@ For example, the following plot configuration sets the title of the plot as well
         x: [0, max]
         y: [1.0, ~]
 
-To learn more about how this works, see :ref:`here <plot_helper>`.
 Furthermore, notice how you can combine the capabilities of the plot helper framework with the ability to :ref:`set the plot style <external_plot_creator_plot_style>`.
 
 
@@ -270,14 +251,10 @@ The data transformation framework
 As part of dantro, a data selection and transformation framework based on a directed, acyclic graph (DAG) of operations is provided.
 This is a powerful tool, especially when combined with the plotting framework.
 
-The motivation of using this DAG framework for plotting is similar to the motivation of the plot helper:
-Ideally, the plot function should focus on the visualization of some data; everything else before (data selection, transformation, etc.) and after (adjusting plot aesthetics, saving the plot, etc.) should be automated.
+What motivates using this DAG framework for plotting is similar what motivates the plot helper:
+ideally, the plot function should focus on the visualization of some data; everything else before (data selection, transformation, etc.) and after (adjusting plot aesthetics, saving the plot, etc.) should be automated. The DAG allows for arbitrary operations, making it a highly versatile and powerful framework. It uses a configuration-based syntax that is optimized for specification via YAML. Additionally, it allows to cache results to a file; this is very useful when the analysis of data takes much longer than the plotting itself.
 
-This is a very powerful framework, allowing arbitrary operations.
-It uses a configuration-based syntax that is optimized for specification via YAML.
-Additionally, it allows to cache results to a file; this is very useful when the analysis of data takes a large amount of time compared to the plotting itself.
-
-To learn more about this, visit the `dantro documentation of the DAG transformation framework <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/data_io/transform.html>`_.
+To learn more, visit the `dantro documentation of the DAG transformation framework <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/data_io/transform.html>`_.
 
 .. hint::
 
@@ -326,9 +303,7 @@ Below, you will learn how to implement a plot function that can be used with the
 The :py:func:`~utopya.plotting.is_plot_func` decorator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When defining a plot function, we recommend using this decorator.
-It takes care of providing essential information to the :py:class:`~utopya.plotting.ExternalPlotCreator` and makes it easy to configure those parameters relevant for the plot function.
-
-For example, to specify which creator should be used for the plot function, the ``creator_type`` can be given.
+It takes care of providing essential information to the :py:class:`~utopya.plotting.ExternalPlotCreator` and makes it easy to configure those parameters relevant for the plot function. For example, to specify which creator should be used for the plot function, the ``creator_type`` can be given.
 To control usage of the data transformation framework, the ``use_dag`` flag can be used and the ``required_dag_tags`` argument can specify which data tags the plot function expects.
 
 
@@ -340,7 +315,7 @@ The recommended way of implementing a plot function makes use of both the :ref:`
 
 When using the data transformation framework, the data selection is taken care of by that framework, moving the data selection procedure to the plot configuration.
 In the plot function, one can specify which tags are required by the plot function; the framework will then make sure that these results are computed.
-In this case, two tags called ``x`` and ``y`` are required which are then fed directly to the plot function.
+In the following example, two tags called ``x`` and ``y`` are required, which are then fed directly to the plot function.
 
 Importantly, such a plot function can be **averse to any creator**, because it is compatible not only with the :py:class:`~utopya.plotting.ExternalPlotCreator` but also with all its specializations.
 This makes it very flexible in its usage, serving solely as the bridge between data and visualization.
@@ -362,11 +337,9 @@ This makes it very flexible in its usage, serving solely as the bridge between d
         # Create a lineplot on the currently selected axis
         hlpr.ax.plot(data['x'], data['y'], **plot_kwargs)
 
-        # Done! The plot helper saves the plot :tada:
+        # Done! The plot helper saves the plot.
 
-Super simple, aye? :)
-
-The corresponding plot configuration could look like this:
+Simple, right? The corresponding plot configuration could look like this:
 
 .. code-block:: yaml
 
@@ -392,15 +365,15 @@ The corresponding plot configuration could look like this:
 
 For more detail on the syntax, see :ref:`above <external_plot_creator_DAG_support>`.
 
-While the plot function signature can remain as it is regardless of the chosen specialization of the :py:class:`~utopya.plotting.ExternalPlotCreator`, the plot configuration will differ for the specializations.
+While the plot function signature can remain as it is regardless of the chosen specialization of the :py:class:`~utopya.plotting.ExternalPlotCreator`, the plot configuration will differ for the various specializations.
 See :ref:`uni_and_mv_plots` for more information.
 
 .. note::
 
-    This is the recommended way to define a plot function because it outsources a lot of the typical tasks (data selection and plot aesthetics) to dantro, allowing you to focus on implementing the bridge from data to visualization of the data.
+    This is the recommended way to define a plot function, because it outsources a lot of the typical tasks (data selection and plot aesthetics) to dantro, allowing you to focus on implementing the bridge from data to visualization of the data.
 
-    Using these features not only reduces the amount of code required in a plot function but also makes the plot function future-proof.
-    We **highly** recommend to use *this* interface.
+    Using these features not only reduces the amount of code required in a plot function, but also makes the plot function future-proof.
+    We **highly** recommend using *this* interface.
 
 
 
@@ -415,8 +388,8 @@ Other possible plot function signatures
 
 Without DAG framework
 """""""""""""""""""""
-To not use the data transformation framework, simply omit the ``use_dag`` flag or set it to ``False`` in the decorator.
-When not using the transformation framework, the ``creator_type`` should be specified, thus making the plot function bound to one type of creator.
+If you wish not to use the data transformation framework, simply omit the ``use_dag`` flag or set it to ``False`` in the decorator.
+When not using the transformation framework, the ``creator_type`` should be specified, thus binding the plot function to one type of creator.
 
 .. code-block:: python
 
@@ -447,10 +420,9 @@ When not using the transformation framework, the ``creator_type`` should be spec
 
 Bare basics
 """""""""""
-If you desire to do everything by yourself, you can disable the plot helper framework by passing ``use_helper=False`` to the decorator.
-Subsequently, the ``hlpr`` argument is **not** passed to the plot function.
+If you really want to do everything by yourself, you can also disable the plot helper framework by passing ``use_helper=False`` to the decorator. The ``hlpr`` argument is then **not** passed to the plot function.
 
-There is an even more basic version to do this, leaving out the :py:func:`~utopya.plotting.is_plot_func` decorator:
+There is an even more basic version of doing this, leaving out the :py:func:`~utopya.plotting.is_plot_func` decorator:
 
 .. code-block:: python
 

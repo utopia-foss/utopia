@@ -2,12 +2,9 @@
 
 Batch Framework
 ===============
-Most of the Utopia frontend focusses on making a single simulation or evaluation run as easy and configurable as possible because working on the level of the individual simulation is the most frequent use case.
-
-When working with *multiple* simulations, Utopia can be of help as well:
-The Batch Framework allows defining and performing multiple tasks all from the comfort of a single so-called "batch configuration file" or: **batch file**.
+Most of the Utopia frontend focusses on making a single simulation or evaluation run as easy and configurable as possible, because working on the level of the individual simulation is the most frequent use case. When working with *multiple* simulations, Utopia can be of help as well:
+the Batch Framework allows defining and performing multiple tasks all from the comfort of a single so-called "batch configuration file", or **batch file**.
 This batch file can be used to define so-called ``eval`` and ``run`` tasks, corresponding to evaluation and running of simulations, respectively.
-For an example, see :ref:`below <batch_cfg>`.
 
 .. contents::
     :local:
@@ -60,20 +57,18 @@ The batch configuration consists of four layers:
     3. The batch file, specified via ``batch_cfg_path`` in the CLI
     4. Runtime update values, e.g. the ``debug`` CLI option
 
-Same as with the :py:class:`~utopya.multiverse.Multiverse` meta-configuration, these dict-like configuration trees are updated recursively, starting from the first level.
-The resulting batch configuration and the involved files are backed-up to ``{batch_out_dir}/{timestamp}/config``.
+As with the :py:class:`~utopya.multiverse.Multiverse` meta-configuration, these dict-like configuration trees are updated recursively, starting from the first level.
+The resulting batch configuration and the involved files are backed up to ``{batch_out_dir}/{timestamp}/config``.
 
 .. hint::
 
-    If you have the feeling that some configuration key is not taken into account, inspecting this file may help to figure out if it ended up in the wrong place without raising an error.
+    If you have the feeling that some configuration key is not taken into account, inspecting this file may help you figure out if it ended up in the wrong place without raising an error.
 
 .. _batch_cfg_user:
 
 User-specific batch framework defaults
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The user-specific batch configuration is akin to the "user configuration" of the :py:class:`~utopya.multiverse.Multiverse` meta-configuration, where often-used default values (e.g. for the ``worker_manager``) can be set.
-
-To set values, either directly edit the ``~/.config/utopia/batch.yml`` file or use the CLI:
+The user-specific batch configuration is akin to the :ref:`user configuration <config_hierarchy>` of the :py:class:`~utopya.multiverse.Multiverse` meta-configuration, where often-used default values (e.g. for the ``worker_manager``) can be set. To set values, either directly edit the ``~/.config/utopia/batch.yml`` file or use the CLI:
 
 .. code-block::
 
@@ -88,18 +83,16 @@ To set values, either directly edit the ``~/.config/utopia/batch.yml`` file or u
 
 Batch Output
 ------------
-This section details the output directory structure and shows how to configure it to suit your needs.
+This section details the output directory structure and shows how to configure it to suit your needs. First, let's introduce some terminology:
 
-First, let's introduce some terminology:
-
-* **Batch directory** or **batch output directory** refers to the directory that batch task meta-data and output are stored at.
+* **Batch directory** or **batch output directory** refers to the directory where batch task meta-data and output are stored.
 
     * By default, this is ``~/utopia_output/_batch``
     * It can be configured by the ``paths.out_dir`` option
 
 * The **batch run directory** is the timestamped directory in the batch directory that is created when calling ``utopia batch``.
 
-    * It has the format ``YYMMDD-HHMMSS``, potentially with the ``paths.note`` as a suffix, i.e. ``YYMMDD-HHMMSS_{note}``
+    * It has the format ``YYMMDD-HHMMSS``, potentially with the ``paths.note`` as a suffix, i.e. ``YYMMDD-HHMMSS_{note}``.
     * It serves as a backup of the used configuration files and stores log output.
     * This is not to be confused with the output of a run *task* (which denotes a simulation run invoked via a batch task).
 
@@ -138,7 +131,7 @@ The *default* **folder structure** will thus look something like this:
 Some general remarks:
 
 * The batch directory will *always* be created when ``utopia batch`` is invoked, as it stores the meta-data and log files.
-* Output of *run* tasks will be stored to the regular ``~/utopia_output`` directory (or whichever directory you configured as default)
+* Output of *run* tasks will be stored to the regular ``~/utopia_output`` directory (or whichever directory you configured as default).
 * If the output of *evaluation* tasks is :ref:`stored in a custom directory <batch_output_custom_eval_outdir>`, the ``eval`` subdirectory within the batch run directory will still be created but remain empty.
 
 .. note::
@@ -150,9 +143,7 @@ Some general remarks:
 
 Custom batch directory
 ^^^^^^^^^^^^^^^^^^^^^^
-If you changed the default Utopia output directory (``~/utopia_output``), you might also want to change the location of the batch output directory.
-
-This can be done conveniently via the :ref:`user-specific configuration <batch_cfg_user>` and the ``utopia config`` CLI command:
+If you changed the default Utopia output directory (``~/utopia_output``), you might also want to change the location of the batch output directory. This can be done conveniently via the :ref:`user-specific configuration <batch_cfg_user>`, or the ``utopia config`` CLI command:
 
 .. code-block::
 
@@ -163,9 +154,7 @@ This can be done conveniently via the :ref:`user-specific configuration <batch_c
 
 Custom evaluation output directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For evaluation tasks, it might be desirable to put the output into a custom directory (e.g. ``my_thesis/figures``) rather than into the default batch output directory.
-
-To do so, add the following key to the ``task_defaults.eval`` entry:
+For evaluation tasks, it might be desirable to put the output into a custom directory (e.g. ``my_thesis/figures``) rather than into the default batch output directory. To do so, add the following key to the ``task_defaults.eval`` entry:
 
 .. code-block:: YAML
 
@@ -255,8 +244,8 @@ There is no option to share memory between processes; this would be too difficul
 
 .. hint::
 
-    Keep a lookout for memory usage of ``utopia batch``.
-    Running multiple memory-hungry evaluation tasks in parallel can lead to trouble ...
+    Keep a lookout for memory usage of ``utopia batch``:
+    running multiple memory-hungry evaluation tasks in parallel can lead to trouble!
     In such a case, consider setting a different ``parallelization_level``.
 
 

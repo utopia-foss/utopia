@@ -3,7 +3,7 @@
 Cell and Agent Managers
 =======================
 
-Below, some frequently asked questions regarding the ``CellManager`` and ``AgentManager`` are addressed.
+Here we address some frequently asked questions regarding the ``CellManager`` and ``AgentManager``.
 
 .. contents::
    :local:
@@ -17,9 +17,7 @@ What are these trait objects needed for manager setup?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``Utopia::CellTraits`` and ``Utopia::AgentTraits`` are structs that define the properties and behaviour of the cells or agents, respectively.
-They are passed to the managers to allow them to set up these entities in the desired way.
-
-Only two properties need always be defined: The state type of the entity and whether it is to be updated synchronously (all agents of a manager at once), or asynchronously (states change directly, regardless of other agents):
+They are passed to the managers to allow them to set up these entities in the desired way. Only two properties need to always be defined: the state type of the entity, and whether it is to be updated synchronously (all agents of a manager at once), or asynchronously (states change directly, regardless of other agents):
 
 .. code-block :: c++
 
@@ -44,7 +42,7 @@ There are three different ways to initialize cells and agents in your ``CellMana
 Constructing an initial state from configuration (recommended)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-For this (recommended) way, the constructor of the state type accepts a ``Utopia::Config&`` node, where all the information needed for that state can be extracted:
+For this (recommended) way, the constructor of the state type accepts a ``Utopia::Config&`` node, from which all the information needed for that state can be extracted:
 
 .. code-block :: c++
 
@@ -136,11 +134,11 @@ entries are listed below:
 
 .. note ::
 
-  For setting up cell states individually for *each* cell, see the question regarding use of random number generators.
+  For setting up cell states individually for *each* cell, see the :ref:`question regarding the use of random number generators <random_num_q>`.
 
 
-Constructing initial state from default constructor
-"""""""""""""""""""""""""""""""""""""""""""""""""""
+Constructing an initial state from the default constructor
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 As default constructors can sometimes lead to undefined behaviour, they need to be explicitly allowed. This happens via the ``Utopia::CellTraits`` struct.
 
@@ -165,13 +163,13 @@ In such a case, the manager (as with config-constructible) does not require an i
 
 .. note ::
 
-  For setting up cell states individually for *each* cell, see the question regarding use of random number generators.
+  For setting up cell states individually for *each* cell, see the :ref:`question regarding the use of random number generators <random_num_q>`.
 
 
 Explicit initial state
 """"""""""""""""""""""
 
-In this mode, all cells have an identical initial state, which is passed down from the ``CellManager``. Presuming you are setting up the manager as member of ``MyFancyModel``, this would look something like this:
+In this mode, all cells have an identical initial state, which is passed down from the ``CellManager``. Assuming you are setting up the manager as a member of ``MyFancyModel``, this would look something like this:
 
 .. code-block:: c++
 
@@ -205,14 +203,11 @@ In this mode, all cells have an identical initial state, which is passed down fr
       {}
   };
 
+.. _random_num_q:
 
-Can I have a random number generator when constructing cells or agents?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Yes.
-
-The respective managers have access to the shared RNG of the model.
-If cells or agents provide a constructor that allows passing not only a ``const Config&``, but *also* a random number generator, that constructor has precedence over the one that does not allow passing an RNG:
+Can I use a random number generator when constructing cells or agents?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Yes. The respective managers have access to the shared RNG of the model. If cells or agents provide a constructor that allows passing not only a ``const Config&``, but *also* a random number generator, that constructor has precedence over the one that does not allow passing an RNG:
 
 .. code-block:: c++
 
@@ -237,7 +232,7 @@ If cells or agents provide a constructor that allows passing not only a ``const 
 
 With this constructor available, a constructor with the signature ``CellStateRC(const Config& cfg)`` is not necessary and would *not* be called!
 
-Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` creation is done with the config constructor and not the default constructor. For this, set the boolean correctly at the end of the template list to `true` as explained above:
+Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` creation is done with the config constructor and not the default constructor. For this, set the boolean correctly at the end of the template list to ``true``, as explained above:
 
 .. code-block:: c++
 
@@ -251,7 +246,7 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
   globally. That is why the RNG needs to be passed *through* all the way down
   to the cell state constructor.
 
-  You should **not** create a new RNG; not here, not anywhere.
+  You should **not** create a new RNG, neither here nor anywhere else.
 
 
 
@@ -265,22 +260,22 @@ Neighborhood calculation
 
 Where and how are neighborhoods calculated?
 """""""""""""""""""""""""""""""""""""""""""
-The neighborhood computation does not take place in the ``CellManager`` itself but in the underlying ``Grid`` object and based on the cells' IDs.
+The neighborhood computation does not take place in the ``CellManager`` itself, but in the underlying ``Grid`` object and based on the cells' IDs.
 The ``CellManager`` then retrieves the corresponding shared pointers from the IDs and makes them available via the ``neighbors_of`` method.
 
 The available neighborhood modes vary depending on the chosen `grid specialization <../../doxygen/html/class_utopia_1_1_grid.html>`_.
 
 
-Are neighborhoods computed on the fly or can I cache them?
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-**Yes,** the ``CellManager`` offers to cache the neighborhood computation's result.
+Are neighborhoods computed on the fly, or can I cache them?
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Yes, the ``CellManager`` allows caching the neighborhood computation's result.
 This feature can be controlled via the ``compute_and_store`` argument.
 
 If enabled (which is the default), the neighborhood is computed once for each cell, stored, and retrieved upon calls to ``neighbors_of``.
 For more information, see `the doxygen documentation <../../doxygen/html/class_utopia_1_1_cell_manager.html>`_.
 
 Having this feature enabled gives a slight performance gain in most situations.
-However, when being memory-limited, it might make sense to disable it:
+However, if memory is limited, it might make sense to disable it:
 
 .. code-block:: yaml
 
@@ -289,4 +284,5 @@ However, when being memory-limited, it might make sense to disable it:
         mode: Moore
         compute_and_store: false
 
-*Note:* In the ``Grid`` itself, the IDs of the cells in the neighborhood are always computed on the fly.
+.. note::
+    In the ``Grid`` itself, the IDs of the cells in the neighborhood are always computed on the fly.

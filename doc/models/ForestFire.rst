@@ -14,10 +14,10 @@ Trees grow on a random basis and lightning causes them and the trees in the same
 
 Implementation
 --------------
-The model is implemented based on the the description in the CCEES lecture notes by Kurt Roth (chapter: Discrete Complex Systems - Contact Processes).
-The forest is modelled as a cellular automaton, where each cell has a state: ``empty`` or ``tree``.
+The model is implemented based on the the description in the CCEES lecture notes by Kurt Roth (chapter: Discrete Complex Systems — Contact Processes).
+The forest is modelled as a cellular automaton where each cell has can be in one of two states: ``empty`` or ``tree``.
 
-The update procedure is as follows: In each iteration step, iterate over all cells in a random order. For each cell, one of two actions can take place, depending on the current state of the cell:
+The update procedure is as follows: in each iteration step, iterate over all cells in a random order. For each cell, one of two actions can take place, depending on the current state of the cell:
 
 * An ``empty`` cell becomes a ``tree`` with probability ``p_growth``.
 * A ``tree`` ignites with a probability ``p_lightning`` and ignites all cells indirectly connected to it. The cluster burns down instantaneously and all cells transition to state ``empty``.
@@ -26,9 +26,9 @@ The new state of a cell is applied directly after it was iterated over, i.e. cel
 
 Heterogeneities
 ^^^^^^^^^^^^^^^
-There is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states, ``source`` and ``stone``:
+There is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states: ``source`` and ``stone``:
 
-* A cell can be a constantly ignited fire ``source``, instantly burning down a cluster that comes in contact with it.
+* A cell can be a constantly ignited fire ``source``, instantly burning down a cluster that comes into contact with it.
 * A cell can be a ``stone``, being immune to fire and not taking part in any model dynamics.
 
 These heterogeneities are controlled via the ``ignite_permanantly`` and ``stones`` entries of the model configuration, which both make use of the :ref:`entity selection interface <entity_selection>`.
@@ -53,11 +53,11 @@ The following data is stored alongside the simulation:
 Simulation Results
 ------------------
 Below, some example simulation results are shown.
-If not marked otherwise, the default values (see below) were used and the grid was chosen to have :math:`1024^2` cells.
+If not marked otherwise, the default values (see below) were used and the grid was chosen to have 1024x1024 cells.
 
 Spatial Representation
 ^^^^^^^^^^^^^^^^^^^^^^
-Snapshots of the forest state, its age and the identified clusters after 223 iteration steps:
+Snapshots of the forest state, its age, and the identified clusters after 223 iteration steps:
 
 .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/forest_snapshot.png
   :width: 600
@@ -91,7 +91,7 @@ The time development of the tree density shows how the system relaxes into its q
 
 Cluster Size Analysis
 ^^^^^^^^^^^^^^^^^^^^^
-In a complementary cumulative cluster size distribution plot, the scale-free nature of the system can be deduced by observation of those parts of the plot that appear linear in a log-log representation.
+In a complementary cumulative cluster size distribution plot, the scale-free nature of the system can be deduced by observing those parts of the plot that appear linear in a log-log representation.
 
 .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/compl_cum_cluster_size_dist.png
   :width: 600
@@ -100,7 +100,7 @@ In a complementary cumulative cluster size distribution plot, the scale-free nat
 
 Default Configuration Parameters
 --------------------------------
-Below are the default configuration parameters for the ``ForestFire`` model.
+Below are the default configuration parameters for the ``ForestFire`` model:
 
 .. literalinclude:: ../../src/utopia/models/ForestFire/ForestFire_cfg.yml
    :language: yaml
@@ -132,4 +132,4 @@ References
   doi: `10.1016/0375–9601(90)90451–S <https://doi.org/10.1016/0375-9601(90)90451-S>`_
   (`PDF <http://cqb.pku.edu.cn/tanglab/pdf/1990-55.pdf>`_).
 
-* Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter: Discrete Complex Systems - Contact Processes
+* Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter: Discrete Complex Systems — Contact Processes

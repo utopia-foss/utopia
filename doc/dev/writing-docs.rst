@@ -7,27 +7,32 @@ User Manual
 
 The user manual (including the page you are currently reading) is generated with `Sphinx <http://www.sphinx-doc.org/en/master/>`_
 using the `reStructuredText syntax <http://docutils.sourceforge.net/rst.html>`_.
-Here, you find some examples that help you write your own documentation entry.
+Here, you will find some examples that help you write your own documentation entry (take a look at the "page source" to see the code behind the text).
 
 Examples
 ^^^^^^^^
-Here, you find a few examples on how to write the Sphinx documentation.
+Tables of contents are implemented like this:
 
 .. contents::
    :depth: 2
 
-A loose collection of directives and their usage.
+Notes, warnings, and hints can be included thusly:
 
 .. note::
 
-    This is an extremely dumb page!
+    This is a note.
 
 .. warning::
 
-    I mean **really** dumb!
+    This is a warning.
+    
+.. hint::
+    
+    This is a hint.
 
 Math and Formulae
 """""""""""""""""
+Mathematical expressions can be included like so:
 
 Let :math:`x \rightarrow \infty`, then
 
@@ -35,8 +40,15 @@ Let :math:`x \rightarrow \infty`, then
 
     \lim_{x \rightarrow \infty} \frac{1}{x} = 0
 
-Very smart!
+Code snippets and blocks
+""""""""""""""""""""""""
+Code snippets like ``std::algorithm`` or ``cell_manager`` are indicated like this. Code blocks can be included like this:
 
+    .. code-block:: python
+    
+        def id(x):
+            return x
+            
 Python Documentation Bits
 """""""""""""""""""""""""
 
@@ -63,6 +75,7 @@ This is a documentation of the entire ``Logging`` module:
 .. doxygengroup:: Logging
    :members:
 
+.. _cpp_doc:
 
 C++ Documentation
 -----------------
@@ -108,8 +121,4 @@ documentation inside these files must have the syntax of a C++ comment.
 
 Python Documentation
 --------------------
-When developing utopya or any other part of the Utopia frontend, you will also have to write documentation of the Python code.
-A few brief remarks on that:
-
-* Use `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
-* Use `Google Style Python Docstrings <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_
+When developing utopya or any other part of the Utopia frontend, you will also have to write documentation of the Python code. For this, please consult and follow the :ref:`coding guidelines <coding_guidelines>`.

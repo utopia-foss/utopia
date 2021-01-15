@@ -3,8 +3,8 @@
 Step-by-step Guide
 ==================
 
-After having been through the :doc:`README <../../README>`, the
-:ref:`tutorial <tutorial>`, and the :ref:`workflow <dev_workflow>`, this guide is for creating a new model in *Utopia*.
+After having worked through the :doc:`README <../../README>`, the
+:ref:`tutorial <tutorial>`, and the :ref:`workflow <dev_workflow>`, this guide is for creating a new model in Utopia.
 
 .. note::
 
@@ -12,35 +12,35 @@ After having been through the :doc:`README <../../README>`, the
   Follow the instructions given there to find out how.
 
 If you go through all the steps, you will end up with a model that can profit
-from all *Utopia* features and can do ... basically nothing interesting yet.
-It is a **starting point** for your own expedition into the *Utopia* world.
-You will be the one who afterwards defines the rules, the entities etc. of
+from all Utopia features, but doesn't really do anything terribly interesting yet.
+It is merely a **starting point** for your own expedition into the Utopia world.
+You will be the one who afterwards defines the rules, entities etc. of
 that world.
 
 To that end, there are three models supplied that can be used as a basis for
-new models, the so-called ``CopyMe`` models.
+new models: the so-called ``CopyMe`` models.
 They not only showcase some Utopia functionality, but also provide good
 starting conditions for different scenarios:
 
-    * ``CopyMeGrid``: A basic Cellular Automaton model.
+    * ``CopyMeGrid``: a basic Cellular Automaton model.
 
         * Already includes the ``CellManager``.
-        * Recommended if you want to work with a Cellular Automaton
+        * Recommended if you want to work with a Cellular Automaton.
 
-    * ``CopyMeGraph``: A basic graph model.
+    * ``CopyMeGraph``: a basic graph model.
 
-        * Already includes a graph and example functionality
-        * Recommended if you want to work with a graph
+        * Already includes a graph and example functionality.
+        * Recommended if you want to work with a graph.
 
-    * ``CopyMeBare``: The bare basics. Really.
+    * ``CopyMeBare``: the bare basics. Really.
 
-        * Recommended if you do not need a Cellular Automaton or a Graph.
+        * Recommended if you do not need a cellular automaton or a graph.
         * Recommended if you are proficient with Utopia.
 
 You should now decide with which model you want to start with.
-This can be one of the above ``CopyMe`` models or some other model.
+This could be one of the above ``CopyMe`` models, but of course you can also take a pre-implemented model and adapt it to your needs.
 
-⚠️ Below, you will need to replace all mentions of ``CopyMe`` with the name of the model of your choice.
+⚠️ In the following, you will need to replace all mentions of ``CopyMe`` with the name of your own model.
 
 
 Choosing a name for your model
@@ -56,14 +56,14 @@ So, keep in mind to replace every ``MyFancyModel`` below with the actual model n
     Utopia has a naming convention for models.
     Your model name should consist of words that start with Capital Letters and are ``DirectlyConcatenatedWithoutSeparatingSymbols``.
 
-    Also, you should not include the ``Model`` string into the name, e.g.: you *should* name your model ``ForestFire`` rather than ``ForestFireModel``.
-    (So... ``MyFancyModel`` is actually not the best example ;))
+    Also, you should not include the ``Model`` string into the name, e.g.: you *should* name your model ``ForestFire`` rather than ``ForestFireModel``
+    (so ``MyFancyModel`` is actually not the best example ;) ).
 
 
 Setting Up The Infrastructure
 -----------------------------
 Ok, let's get started by setting up the model infrastructure.
-The following will involve a lot of copying and renaming, so make sure to be concentrated.
+The following will involve a lot of copying and renaming, so make sure to pay special care.
 
 .. hint::
 
@@ -78,16 +78,11 @@ The following will involve a lot of copying and renaming, so make sure to be con
 
     See ``utopia models copy --help`` for more usage information.
 
-    **For CCEES Group Members:** To copy to the ``utopia/models`` repository, the target project name need be ``UtopiaModels``.
+    **For CCEES group members:** to copy to the ``utopia/models`` repository, the target project name needs to be ``UtopiaModels``.
     If this does not work, make sure that the ``utopia/models`` repository on your machine is up-to-date with the latest master and you invoked ``cmake ..`` after the update.
 
 
-To avoid problems, go through the following points from top to bottom, and first read all of the instructions of one step before starting to carry them out.
-
-.. note::
-
-    The steps in this guide are numbered; if you run into problems and ask for
-    help, you can name the step you got stuck at.
+To avoid problems, go through the following points from top to bottom, and first read the entire instructions for one step before starting to carry it out.
 
 
 1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
@@ -104,23 +99,22 @@ To avoid problems, go through the following points from top to bottom, and first
 4. Rename all the files inside of the newly created directory such that all
    occurrences of ``CopyMe`` are replaced by ``MyFancyModel``.
 
-  - You can do so by using the `parameter expansion capabilities <http://wiki.bash-hackers.org/syntax/pe>`_ of BASH:
-  Inside your model directory, call
+  - You can do so by using the `parameter expansion capabilities <http://wiki.bash-hackers.org/syntax/pe>`_ of BASH: inside your model directory, call
 
   .. code-block:: bash
 
     for file in CopyMe*; do mv $file ${file/CopyMe/MyFancyModel}; done
 
-5. Tell *Utopia* that there is a new model, e.g. include your model in the
+5. Tell Utopia that there is a new model, e.g. include your model in the
    Utopia CMake build routine:
 
-  - In ``src/utopia/models/``, you find a ``CMakeLists.txt`` file. Open it and let
+  - In ``src/utopia/models/``, you will find a ``CMakeLists.txt`` file. Open it and let
     CMake find your model directory by including the command:
-    ``add_subdirectory(MyFancyModel)``
+    ``add_subdirectory(MyFancyModel)``.
   - In ``src/utopia/models/MyFancyModel/``, there is another ``CMakeLists.txt`` file.
     Open it and change the line ``add_model(CopyMe CopyMe.cc)`` to
-    ``add_model(MyFancyModel MyFancyModel.cc)``. With this command, you tell
-    CMake that a new model should be kept track of.
+    ``add_model(MyFancyModel MyFancyModel.cc)``. With this command, you are telling
+    CMake to keep track of a new model.
 
 6. Open the file ``MyFancyModel.cc`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
@@ -130,26 +124,26 @@ To avoid problems, go through the following points from top to bottom, and first
 7. Open the file ``MyFancyModel.hh`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
-  - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
-  - Throughout the file, replace all ``COPYME``\ 's by ``MYFANCYMODEL``\ 's.
+  - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
+  - Throughout the file, replace all ``COPYME``'s by ``MYFANCYMODEL``'s.
 
 8. Open the ``MyFancyModel_plots.yml`` and ``MyFancyModel_base_plots.yml`` files in the ``src/utopia/models/MyFancyModel/`` directory and do the following:
 
-  - Throughout the files, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
+  - Throughout the files, replace all ``CopyMe``'s by ``MyFancyModel``'s.
 
 9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/utopia/models/MyFancyModel/``
    directory and do the following:
 
-  - Throughout the file, replace all ``CopyMe``\ 's by ``MyFancyModel``\ 's.
+  - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
 
-It's time for a little check if everything works as desired. For that, follow
+Now check if everything works as desired. For that, follow
 these steps
 
-10. Enter the ``build`` directory and run ``cmake ..``
-11. Check that the CMake log contains ``Registered model target: MyFancyModel``
-12. Now execute ``make MyFancyModel`` ...
+10. Enter the ``build`` directory and run ``cmake ..``.
+11. Check that the CMake log contains ``Registered model target: MyFancyModel``.
+12. Now execute ``make MyFancyModel``.
 
-  * Are there errors? Hmmm... check above that you adjusted everything as
+  * Are there errors? Check above that you adjusted everything as
     described.
   * Building succeeds? Congratulations! 🎉
 
@@ -161,21 +155,21 @@ these steps
      source ./activate
      utopia run MyFancyModel
 
-Hoping that everything went well so far, let's continue with setting up the
-testing and plotting framework...
+If everything works, let's continue with setting up the
+testing and plotting framework.
 
 The Python Testing Framework
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can set up a simple Python testing framework in the following way:
 
-12. Move to the ``python/model_tests`` directory
-13. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
+14. Move to the ``python/model_tests`` directory.
+15. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
     that there is a file named ``__init__.py`` inside the directory.
-14. Inside the created ``MyFancyModel`` directory, rename the
+16. Inside the created ``MyFancyModel`` directory, rename the
     ``test_CopyMe.py`` file to ``test_MyFancyModel.py``.
-15. Open the ``test_MyFancyModel.py`` file and replace all ``CopyMe``\ 's
-    by ``MyFancyModel``\ 's.
+17. Open the ``test_MyFancyModel.py`` file and replace all ``CopyMe``'s
+    by ``MyFancyModel``'s.
 
 In this ``test_MyFancyModel.py`` file you can add tests to your model.
 You have the full capabilities of `pytest <https://pytest.org>`_ available plus
@@ -190,11 +184,11 @@ the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
 
 Custom Model Plots
 ^^^^^^^^^^^^^^^^^^
-As you saw in the :ref:`tutorial`, it is possible to have custom model plots which are tailored to the data your model is producing.
+As you saw in the :ref:`tutorial <tutorial>`, it is possible to have custom model plots tailored to the data your model is producing.
 You can set them up in the following way:
 
-16. Move to the ``python/model_plots`` directory
-17. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``.
+18. Move to the ``python/model_plots`` directory.
+19. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``.
     Make sure that there is a file named ``__init__.py`` inside the directory.
 
 The ``*_plots.yml`` files you copied alongside the model configuration control
@@ -223,26 +217,27 @@ the :ref:`detailed plotting documentation <eval_plotting>`!
 Adapting your code
 ------------------
 Depending on what model you want to implement, you will need to delete or
-adapt some provided functions. So, feel free to remove anything, you do not
+adapt some provided functions. So, feel free to remove anything you do not
 need.
 
 * All variables, functions, etc. that are just there to show how you would use and implement them are denoted with the prefix ``some_`` or ``_some``\ , e.g. ``_ some_variable``\ , ``some_function``\ , ``some_interaction``\ , ...
-  If you write your model, you should change these.
-* Keep in mind to adapt the plotting and testing functions such that they belong to your model.
+  When writing your model, you should change these.
+* Remember to adapt the plotting and testing functions such that they belong to your model.
+
 
 Some Final Remarks and Advice
 -----------------------------
 
 Inspiration from other models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you want to learn more about the capabilities of Utopia and how models can look like, we recommend that you have a look at the already implemented models in the ``src/utopia/models`` directory.
+If you want to learn more about the capabilities of Utopia and what models can look like, we recommend that you have a look at the already implemented models in the ``src/utopia/models`` directory.
 
 
 ``log->debug`` instead of ``std::cout``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 If you are used to writing C++ code you probably often use ``std::cout`` to print information or to debug your code.
 
-We advice to use the functionality of the ``spdlog`` package instead when working with *Utopia*.
+We advise using the functionality of the ``spdlog`` package instead when working with Utopia.
 To that end, the ``Model`` base class already provides the ``_log`` member.
 Advantages of using a logger instead of directly writing to ``std::cout`` are:
 
@@ -254,7 +249,7 @@ As a rough guideline:
 
 * Use ``log->info("Some info")`` for information that is not repetitive, e.g.
   not inside a loop, and contains rather general information.
-* Use ``log->debug("Some more detailed info, e.g. for helping you debug")``
+* Use ``log->debug("Some more detailed info, e.g. for helping you debug")`` for debugging purposes.
 * Use the python-like formatting syntax:
   ``log->debug("Some parameter: {:.3f}", param)`` to output parameters.
 
@@ -272,28 +267,28 @@ For an example, check out the ``monitor`` function of the ``CopyMe`` model.
 
 Finished!
 ---------
-Congratulations, you have build a new model! :)
+Congratulations, you have built a new model! :)
 
 Your next guide will be the :ref:`model requirements <dev_model_requirements>`.
-It contains information what requirements your code must fulfill such that it can be accepted as a model within *Utopia*, e.g. that it can be merged into *Utopia*'s ``master`` branch.
+It contains information about which requirements your code must fulfill so that it can be accepted as a model within Utopia, i.e. that it can be merged into Utopia's ``master`` branch.
 
-Have fun implementing your own *Utopia* model! :)
+Have fun implementing your own Utopia model! :)
 
 
 
 .. _model_coupling:
 
-Coupling of Models - the Post-Model Era
+Coupling Models - the Post-Model Era
 ---------------------------------------
 
 .. note::
 
     This is an advanced feature.
-    Only go forward to couple models if each of them is tested individually.
+    Only couple models when each of them has been tested individually.
 
 Once you have your own model implemented, you might want to consider to couple two or more models.
-It is absolutely intended to do so, even in complicated hierarchy.
-Every model is placed one level below its parent model (the `pseudo parent` at the top), which it is given at initialization.
+Doing so is explicitly allowed in Utopia, which provides the functionality to couple even complicated model hierarchies.
+Every model is placed one level below its parent model (with the `pseudo parent` at the top), and it passed its parent model at initialization.
 Hence, the child model is a member of the parent model and the configuration is passed through the parent.
 
 Operating coupled models usually requires a couple of additional thoughts:
@@ -308,20 +303,20 @@ Operating coupled models usually requires a couple of additional thoughts:
   #.
     The ``epilog``.
     A function that is called after the last iteration of this model.
-    It should be directly thereafter, but it does not have to be.
+    Ideally it should be called directly after the last iteration, though this is not a requirement.
     Check with the model's documentation.
   #.
     The `breakpoint`.
     The model may receive a signal to stop iteration, e.g. due to a break condition or the user interrupting the simulation run.
     Upon that signal, the ``stop_now`` flag is set to ``true``, indicating that the iteration should stop and the model should shut down.
     A grace period (default: 2s, configurable via frontend) is given; after that, the model process is killed, which may lead to loss of data.
-    If – for special reasons – a system of coupled models needs to perform a specific task at the breakpoint, the flag may be queries using ``this->stop_now.load()``.
+    If – for special reasons – a system of coupled models needs to perform a specific task at the breakpoint, the flag may be queried using ``this->stop_now.load()``.
     Be aware that time-intensive tasks should *not* be carried out after the breakpoint; the aim is to swiftly take down the model object.
     Also note that this flag is not part of the public interface and may change unexpectedly.
 
   These operations must be handled manually if the child-model is only iterated.
   That means, call the `prolog` before the first iteration, call the `epilog` after the last iteration, and set a breakpoint if you are performing several iterations in a row.
-  Note, that the maximum time is equal for all models.
-  However, per iteration a model can surpass the maximum time.
+  Note that the maximum time is equal for all models.
+  However, by iterating a model can exceed the maximum time.
 
-For further information, see the :ref:`Environment model <model_Environment>`, that is intended to be used as a child-model and includes a guide how to use it.
+For an example, see the :ref:`Environment model <model_Environment>`, that is intended to be used as a child-model and includes a guide how to use it.

@@ -1,34 +1,35 @@
-Utopia Datamanager - How to
+Utopia Datamanager — How to
 ===========================
 
 This guide shows you how to set up your model to use the Datamanager layer of the
 Utopia data-IO module.
 
-.. contents:: Outline
+.. contents:: Contents
     :local:
     :depth: 2
 
+
 .. note:: If you just want to know what to do to get your model up and running
-          with the datamanager, jump to section `Usage`. The `Overview` and
+          with the datamanager, jump to the `Usage` section. The `Overview` and
           `Structure` sections are meant as a supplement for developers, or for
-          the curious, but the information they contain are not needed for
-          using it.
+          the curious, but the information they contain is not needed for
+          using the datamanager.
 
 Overview
 --------
 The Datamanager layer exists to allow the user to write any data from the model
 under any conditions she defines to the hard disk, without having to fiddle
 with HDF5. In fact, it is build such that it is largely independent of HDF5,
-and in general tried to rely on a minimal set of assumptions. Its goal is, in
+and in general tries to rely on a minimal set of assumptions. Its goal is, in
 agreement with the general Utopia setup, usability without restrictivity,
 i.e., the most common tasks are made easy, but you always can dive into the
-code and change and customize everything to solve your specific problem should
+code and change and customize everything to solve your specific problem, should
 the need arise.
 
 The basic idea is that the process of acquiring resources to write data to,
 getting the data, processing them, and writing out the results to the mentioned
-resources, can be seen as an abstract pipeline - a process which has to be
-worked through each time data should be written out from a source. This source
+resources, can be seen as an abstract pipeline — a process which has to be
+worked through each time data has to be written out from a source. This source
 is, in our case, our Utopia model.
 Hence, we bundled this pipeline into a ``Task``, a class which represents this
 pipeline. The Datamanager layer is designed around this idea, and relies
@@ -48,11 +49,11 @@ other.
 
 All the ``DataManager`` does then is to manage deciders and triggers with their
 associated tasks, i.e., link them together based on some user input, and
-orchestrate their execution. It therefore links a source of data to a traget,
-and adds some processing capabilities inbetween, thus is a
+orchestrate their execution. It therefore links a source of data to a target,
+and adds some processing capabilities inbetween; it is thus a
 `C++ stream <https://en.cppreference.com/w/cpp/io>`_.
 
-As an aside, the execution process can be customized, too!
+As a side note: the execution process can be customized too!
 
 
 Structure
@@ -61,17 +62,17 @@ Structure
 The implementation of the entire Datamanager layer is comprised of two core
 parts:
 
-* the ``DataManager`` class, which manages ``WriteTasks``. This class is
-  indepenent of HDF5, hence could be used with your favorite csv-library, some
+* The ``DataManager`` class, which manages ``WriteTasks``. This class is
+  indepenent of HDF5, hence could be used with your favorite csv-library or some
   other binary format like `NetCDF <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html>`_,
-  as long as you adhere to the task structure the entire module is build
+  as long as you adhere to the task structure the entire module is built
   around.
 
-* the ``WriteTask`` class, which represents an encapsulated task for
+* The ``WriteTask`` class, which represents an encapsulated task for
   determining when to write, what data to write, and how and when to acquire
   and release resources. Each ``WriteTask`` is bound to a ``Trigger``, which
   tells it when to acquire resources to write data to, and a ``Decider``,
-  which tells it when to actually write data. As mentioned, ``Trigger`` and a
+  which tells it when to actually write data. As mentioned, ``Trigger`` and
   ``Decider`` are functions which get some input and return either true or
   false. The WriteTask, as currently implemented, implicitly references HDF5,
   but is exchangeable should the need arise.
@@ -84,13 +85,13 @@ are functionally not required:
   cases. It also provides a default execution process is the heart of the
   datamanager class and orchestrates the execution of the ``WriteTasks``. More
   on the latter below.
-  In about ninety percent of cases, you should be fine with selecting from what
+  In about 90% of cases, you should be fine by selecting from what
   is provided.
 
-* The *Factory*. This implements, well, factories - one for the ``WriteTasks``,
+* The *Factory*. This implements, well, factories — one for the ``WriteTasks``,
   and one for the ``DataManager`` itself. They are used to integrate the
-  datamanager into the model class and allow you as user to supply fewer and
-  simpler arguments to the model which are then augmented using the model
+  datamanager into the model class and allow you as a user to supply fewer and
+  simpler arguments to the model, which are then augmented using the model
   config and finally employed to construct the datamanager.
 
 
@@ -98,18 +99,18 @@ WriteTask
 ^^^^^^^^^
 A ``WriteTask`` is a class which holds five functions:
 
-* A function which builds a HDF5 Group where all the written data shall go to.
+* A function which builds an HDF5 group where all the written data goes to.
   This is called ``BasegroupBuilder``.
 
-* A function which builds a HDF5 Dataset to which the currently written data is
+* A function which builds an HDF5 dataset to which the currently written data is
   dumped. This functions is just called ``Builder``, because it is needed more
   often.
 
-* A function which writes data to the dataset - the most important part of
-  course. This is very creatively named ``Writer``.
+* A function which writes data to the dataset — the most important part of
+  course. This is creatively named ``Writer``.
 
-* The forth function is called ``AttributeWriterGroup``, it writes metadata to
-  the basegroup which has been build by the basegroup builder.
+* The fourth function is called ``AttributeWriterGroup``; it writes metadata to
+  the basegroup which has been built by the basegroup builder.
 
 * The last function is called ``AttributeWriterDataset``, and writes metadata
   to the dataset.
@@ -124,11 +125,11 @@ The ``DataManager`` class internally holds the five dictionaries (maps) which
 decay into two groups. The first three store the needed objects and identify
 them:
 
-* The first associates a name with a single Task. It's called *TaskMap*.
+* The first associates a name with a single Task. It is called *TaskMap*.
 
-* The second associates a name with a Trigger. It's called *TriggerMap*.
+* The second associates a name with a Trigger. It is called *TriggerMap*.
 
-* The third associates a name with a Decider.  It's called *DeciderMap*.
+* The third associates a name with a Decider.  It is called *DeciderMap*.
 
 The last two then link them together:
 
@@ -150,19 +151,18 @@ Here, the Utopia and HDF5 specifics come in. The defaults provide types and
 classes needed for the usage of the datamanager with an Utopia model.
 First, we need types for the five functions a ``WriteTask`` holds.
 
-* ``DefaultBaseGroupBuilder``: A function which gets a reference to an HDF5
-  group as input and returns another HDF5Group as output.
+* ``DefaultBaseGroupBuilder``: a function which gets a reference to an `HDFGroup` as input and returns another `HDFGroup` as output.
 
-* ``DefaultDataWriter``: A function which gets a reference to a HDF5Dataset
+* ``DefaultDataWriter``: a function which gets a reference to an `HDFDataset`
   and a reference to the model as input and returns nothing.
 
-* ``DefaultBuilder``: A function which gets a reference to an HDFGroup and a
-  reference to the model as input and returns a new HDFDataset.
+* ``DefaultBuilder``: a function which gets a reference to an `HDFGroup` and a
+  reference to the model as input and returns a new `HDFDataset`.
 
-* ``DefaultAttributeWriterGroup``: A function which gets a reference to a
-  HDFGroup and a reference to the model, and returns nothing.
+* ``DefaultAttributeWriterGroup``: a function which gets a reference to an
+  `HDFGroup` and a reference to the model, and returns nothing.
 
-* ``DefaultAttributeWriterDataset``: A function which gets a HDFDataset and a
+* ``DefaultAttributeWriterDataset``: a function which gets an `HDFDataset` and a
   reference to the model as input and returns nothing.
 
 All of these are implemented as `std::function` so that we can use (generic)
@@ -183,27 +183,27 @@ lambdas to supply them:
                        [](auto&& cell){return cell.state;});
     };
 
-Then there is the ``DefaultWriteTask``, which is a ``WriteTask`` build with
+Then there is the ``DefaultWriteTask``, which is a ``WriteTask`` built with
 the default functions defined above.
 
 Finally, there is the ``DefaultExecutionProcess``, which assumes that the
 datamanager it belongs to uses default functions as defined above.
-The execution process orchestrates the calling of the tasks, triggers and
+The execution process orchestrates the calling of the tasks, triggers, and
 deciders with their respective argument in a sensible way, which is too long
 to describe here.
-Refer to the C++ documentation if you really want to know exactly what is
+Refer to the C++ documentation if you want to know exactly what is
 going on.
 
 Default Triggers and Deciders
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Of prime importance are the defaults for the triggers and the deciders. These
-are not mere types, but full fledged (if small) classes.
+are not mere types, but fullly-fledged (if small) classes.
 A *Decider* is a function which gets a reference to a model and returns a
-boolean. If you paid attention, you noticed that deciders and triggers are
-ultimatly the same, (using a model to derive a boolean), and hence the
+boolean. You may have noticed that deciders and triggers are
+ultimately the same (using a model to derive a boolean), and hence the
 *Triggers* are identical to the *Decider*.
 
-Five default deciders are provided:
+The following default deciders are provided:
 
 ``IntervalDecider``
 """""""""""""""""""
@@ -211,22 +211,21 @@ Five default deciders are provided:
 For an interval ``[start, stop, step]`` the decider returns true exactly when
 for model time ``t`` it holds that ``(start <= t < stop) && t%step == 0``. The
 default value for ``step`` is 1. If model time is in the foremost of these
-intervals, it returns true every step-th time, else it returns false, and if
+intervals, it returns true every ``step``-th time, else it returns false, and if
 model time hits `stop`, it removes the foremost interval of the list. It
 continues this until either the model has run out or its list of intervals
-becomes empty. Note, that ``start`` of an interval must be larger or equal to
+becomes empty. Note that the ``start`` of an interval must be larger or equal to
 ``stop`` of the previous interval.
 
 ``OnceDecider``
 """""""""""""""
 
-This returns true if model time is equal to the value it holds,
-and otherwise it returns false.
+This returns true if model time is equal to the value it holds, otherwise it returns false.
 
 ``AlwaysDecider``
 """""""""""""""""
 
-This returns true always.
+This always returns true.
 
 
 These deciders are stored in a global map called ``default_decidertypes``,
@@ -290,9 +289,9 @@ You have two choices:
 
 
 
-.. note:: Currently, you only have a  all-or-nothing choice. If you write one
+.. note:: Currently, you only have an all-or-nothing choice. If you write one
     task using the full function signature, you have to provide all of them
-    like this. We are aware that this is unfortunate, and will change in the
+    like this. We are aware that this is unfortunate, and will change this in the
     future.
 
 * Write a minimal set with abbreviated arguments, translated by the factories
@@ -359,7 +358,7 @@ order to capture the dynamic episodes of the model.
 To accomodate such needs, a user can supply their own deciders and/or triggers.
 
 Before starting, a little background knowledge is necessary:
-The model base class expects the deciders and triggers to be derived from
+the model base class expects the deciders and triggers to be derived from
 ``Utopia::DataIO::Default::Decider<MyModel>`` and
 ``Utopia::DataIO::Default::DefaultTrigger<MyModel>``, respectively, where
 ``MyModel`` is the name of the model class we implemented and are using the
@@ -386,8 +385,8 @@ this were a trigger, if a new dataset should be created).
 up the decider, e.g., reading the interval in which the decider should return
 true from the config (as is done for ``IntervalDecider`` for instance).
 
-After we know the basics, we can start implementing our own decider:
-The first step consists of writing a class, called ``CustomDecider`` here,
+Once we know the basics, we can start implementing our own decider:
+the first step consists of writing a class, called ``CustomDecider`` here,
 which inherits from the ``Decider`` interface, and hence must implement the
 ``operator()(Model&)`` and also the ``set_from_cfg(Config&)`` functions:
 
@@ -414,11 +413,11 @@ which inherits from the ``Decider`` interface, and hence must implement the
     };
 
 You can do this in your main ``model.cc`` file, but if you do it multiple
-times, a new header file where all the data-IO things go may be appropriate.
+times, a new header file where all the data-IO things go may be more appropriate.
 
 The second step consists of instantiating the "dicitionary" that maps names to
 functions producing deciders.
-This can to happen in your main file:
+This too can happen in your main file:
 
 .. code-block:: c++
 
@@ -441,11 +440,11 @@ builds the datamanager for the model to use.
         return std::make_shared<CustomDecider<MyModel>>();
     };
 
-You now see why we have the ``DefautDecider`` base class: By using dynamic
+You now see why we have the ``DefautDecider`` base class: by using dynamic
 polymorphism, we can build deciders and triggers with wildly varying
 functionality but store them in one homogeneous container without having to
 resort to metaprogramming magic.
-The forth and final step is to supply this map to your model:
+The fourth and final step is to supply this map to your model:
 
 .. code-block:: c++
 
@@ -466,7 +465,7 @@ custom decider you write can double as a trigger and vice versa.
 So in order to use our custom decider from above as trigger as well, we have
 to repeat step two and three and modify step four:
 
-Step two: Instantiate deciders **and** triggers:
+Step two: instantiate deciders **and** triggers:
 
 .. code-block:: c++
 
@@ -476,7 +475,7 @@ Step two: Instantiate deciders **and** triggers:
     auto triggers = Utopia::DataIO::Default::DefaultTriggermap<MyModel>;
 
 
-Step three: Add the custom trigger factory function:
+Step three: add the custom trigger factory function:
 
 .. code-block:: c++
 
@@ -488,7 +487,7 @@ Step three: Add the custom trigger factory function:
     };
 
 
-Step four: Add the custom decider **and** trigger dictionaries to the model
+Step four: add the custom decider **and** trigger dictionaries to the model
 constructor
 
 .. code-block:: c++
@@ -503,7 +502,7 @@ Finally, note that as long as you stick to the type of the dictionary/map that
 holds associates names to functions producing deciders or triggers, and you
 always inherit from ``Decider`` or ``DefaultTrigger``, you can essentially do
 whatever you see fit:
-You do not have to instantiate the default dictionaries and extend them, but
+you do not have to instantiate the default dictionaries and extend them, but
 can build completely new ones, filled with your own deciders and triggers in
 step three:
 
@@ -526,9 +525,11 @@ How to write the config file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In your model config, you need to supply a 'data_manager' node, which then
 has three subnodes.
-.. note:: In the following , the data_manager node is listed at top of each
-example, but of course you only have to specify it once in your config, and
-the others than follow.
+
+.. note:: In the following, the 'data_manager' node is listed at the top of each
+    example, but of course you only have to specify it once in your config, and
+    the others then follow.
+    
 
 Deciders
 """"""""
@@ -580,11 +581,11 @@ For instance, the deciders node could look like this:
 
 
 If you have added a custom decider as described under
-`How to use custom deciders or triggers`, you add its config node in the same way:
+`How to use custom deciders or triggers`, you can add its config node in the same way:
 
   .. code-block:: yaml
 
-  data_manager:
+    data_manager:
     # this builds the deciders
     deciders:
       write_interval:
@@ -614,7 +615,7 @@ Triggers
 This node has an arbitrary number of subnodes which represent the name of
 a trigger each. Since the default triggers are identical to the deciders,
 this section shows how to reuse some decider nodes instead of repeating
-the last one. `Yaml anchors <https://blog.daemonl.com/2016/02/yaml.html>`
+the last one. `Yaml anchors <https://blog.daemonl.com/2016/02/yaml.html>`_
 are employed to achieve this reusability.
 
 .. code-block:: yaml
@@ -645,11 +646,9 @@ Tasks
 
 This is the final, and biggest, subnode of the data_manager node.
 It follows more or less the same principles as the other two, but with some
-additions. Without further ado, lets dive into it.
+additions. The full node for a task looks like this:
 
-The full node for a task looks like this
-
-.. code-block: yaml
+.. code-block:: yaml
 
     tasks:
       taskname1:
@@ -658,7 +657,7 @@ The full node for a task looks like this
         trigger: trigger_name
         basegroup_path: path/to/basegroup
         typetag: plain/vertex_descriptor/edge_descriptor/vertex_property/edge_property
-        dataset_path: path/to/dataset/in/basegroup$(keyword)
+        dataset_path: path/to/dataset/in/basegroup$<keyword>
 
         # optional
         capacity:  some integer number or 2d array
@@ -676,47 +675,47 @@ Let's go through this.
 
 * The ``active`` node tells us if this task shall be used or not
 
-* The ``Decider`` and ``Trigger`` nodes tell to which decider and trigger this
-  task  is to be bound, respectively.
+* The ``decider`` and ``trigger`` nodes tell to which decider and trigger this
+  task is to be bound, respectively.
 
 * ``basegroup_path`` tells where, from the model root group, the base_group of
-  the task shall be build.
+  the task is to be built.
 
-* The ``typetag`` node this is something peculiar. It's a concession to
+* The ``typetag`` node is somewhat particular. It's a concession to
   boost::graph, and we get a uniform interface for all containers we can get
   data from, graphs included.
-  It basically tells us how to access the data in a graph if we want to write
-  out graph data. If we do not deal with graphs, use *plain* here.
+  Basically, it tells us how to access the data in a graph if we want to write
+  out graph data. If you don't intend do deal with graphs, just use *plain* here.
 
-* ``dataset_path`` represents path of the dataset in the basegroup, may include
-  intermediate groups. Now you probably took note of the ``$keyword`` there.
-  This is basically string interpolation like you may know it from how
+* ``dataset_path`` represents the path of the dataset in the basegroup, and may include
+  intermediate groups. You probably took note of the ``$keyword`` there.
+  This is basically string interpolation, the way you may  be familiar with from how
   variables are treated in bash programming.
   Currently, however, there is only one keyword available, which is ``time``.
   So if you put ``some/path/to/dataset$time`` there, you get out, if you write
   at timesteps 5 and 10: ``some/path/to/dataset_5`` and
   ``some/path/to/dataset_10``.
 
-Now come some optional dataset related parameters, which you may know from the
-HDF5 interface already:
+Now come some optional dataset related parameters, which you may already know from the
+HDF5 interface:
 
-* ``capacity`` tells how big the dataset can be at maximum
+* ``capacity`` tells how big the dataset can be at a maximum.
 
 * ``chunksize`` represents the size of chunks of the data to be written, i.e.
   how big the bites are the system takes of the data to write to file at once.
 
-* ``compression`` is the most important thing probably, because it tells the
+* ``compression`` is possibly the most important thing, because it tells the
   HDF5 backend to compress the data written via zlib. Reduction in data size
-  can be signficant, but so can be the loss of speed.
+  can be signficant, though it can also slow everything down.
 
 .. note::
     Note that the `$` based string interpolation can be extended upon request.
 
 .. note:: For all of the optional parameters the following advice holds:
-            Use them only when you know what you are doing. The automatic
-            guesses (or default values), are typically good enough.
+            use them only when you know what you are doing. The automatic
+            guesses (or default values) are typically good enough.
 
-A realistic ``WriteTasks`` node looks like this, for instance:
+As an example, a realistic ``WriteTasks`` node might look like this:
 
 .. code-block:: yaml
 
