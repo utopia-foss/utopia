@@ -1,9 +1,10 @@
 """This module provides a generic function for graph plotting."""
+
 import os
 import copy
 import logging
 import warnings
-from typing import Sequence, Union
+from typing import Sequence, Union, Callable, Dict, Tuple, Any
 
 import numpy as np
 import matplotlib as mpl
@@ -90,20 +91,32 @@ def draw_graph(*, hlpr: PlotHelper,
                 Configuration for the node positioning. The following arguments
                 are available:
 
-                model (str, optional):
+                from_dict (dict, optional): A dictionary with nodes as keys and
+                    positions as values. Positions should be sequences of
+                    length 2. If given, the layouting algorithm given by the
+                    ``model`` argument will be ignored. For animated graphs,
+                    ``update_positions`` will overwrite the positions given
+                    via this argument.
+
+                model (Union[str, Callable], optional):
                     The layout model that is used to calculate the node
                     positions (default: ``spring``). Available
                     `networkx layout models <https://networkx.github.io/documentation/stable/reference/drawing.html#module-networkx.drawing.layout>`_
                     are: ``spring``, ``circular``, ``shell``, ``bipartite``,
                     ``kamada_kawai``, ``planar``, ``random``, ``spectral``,
                     ``spiral``.
-                    
+
                     If installed, `GraphViz <https://pypi.org/project/graphviz/>`_
                     models can be selected with a prepended ``graphviz_``.
                     Options depend on the ``GraphViz`` version but may include:
                     ``dot``, ``neato``, ``fdp``, ``sfdp``, ``twopi``,
                     ``circo``. (Passed as ``prog`` to
                     `networkx.graphviz_layout <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pydot.graphviz_layout.html>`_).
+
+                    If the argument is a callable, it is invoked with the graph
+                    as the first positional argument and is expected to return
+                    networkx-compatible node positions, i.e. a mapping from
+                    nodes to a 2-tuple denoting the position.
                 further kwargs:
                     Passed on to the chosen layout model.
 
@@ -163,11 +176,11 @@ def draw_graph(*, hlpr: PlotHelper,
                         :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`).
                     further kwargs:
                         Passed on to :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`.
-                
+
                 further kwargs:
                     After applying property mapping, passed on to
                     `draw_networkx_nodes <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_nodes.html>`_.
-                
+
                 The following arguments are available for property mapping:
                 ``node_size``, ``node_color``, ``alpha``.
 
@@ -178,7 +191,7 @@ def draw_graph(*, hlpr: PlotHelper,
                 for the nodes. Any further kwargs are, after applying property
                 mapping, passed on to
                 `draw_networkx_edges <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_edges.html>`_.
-                
+
                 The following arguments are available for property mapping:
                 ``edge_color``, ``width``.
 
@@ -251,9 +264,9 @@ def draw_graph(*, hlpr: PlotHelper,
                 Select the times by index.
             update_positions (bool, optional):
                 Update the node positions for each frame by recalculating the
-                layout with the parameters specified in 
+                layout with the parameters specified in
                 graph_drawing['positions']. If this parameter is not given or
-                false, the positions are calculated once initially and then 
+                false, the positions are calculated once initially and then
                 fixed.
 
         register_property_maps (Sequence[str], optional): Names of properties
@@ -270,8 +283,7 @@ def draw_graph(*, hlpr: PlotHelper,
             ``set_suptitle`` helper function. Only used if animations are
             enabled. The ``title`` entry can be a format string with the
             ``value`` key, which is updated for each frame of the animation.
-            Default: ``time = {value:d}`` if times given by value,
-            ``time idx = {value:d}`` if times given by index.
+            Default: ``time = {value:d}``.
 
     Raises:
         ValueError: On invalid or non-computed dag tags in
@@ -281,14 +293,14 @@ def draw_graph(*, hlpr: PlotHelper,
         """Given a list of nodes, selects all nodes and edges needed for the
         graph plotting. If ``open_edges=False``, those edges are selected for
         which both ends are in ``nodes``.
-        
+
         Args:
             g (nx.Graph): The graph
             nodelist (list): The nodes to be selected
             open_edges (bool, optional): Whether the loose edges (i.e., edges
                 with only source *or* destination in ``nodelist``) are plotted.
                 If True, the 'outer' nodes are shrinked to size zero.
-        
+
         Returns:
             Tuple containing a list of selected nodes, a list of selected
             edges, and the nodes to be shrinked to size zero.
@@ -326,7 +338,7 @@ def draw_graph(*, hlpr: PlotHelper,
         (measured in numbers of neighborhoods). If ``open_edges=False``, those
         edges are selected for which both ends are in the set of selected
         nodes.
-        
+
         Args:
             g (nx.Graph): The graph
             center (int): index of the central node
@@ -334,7 +346,7 @@ def draw_graph(*, hlpr: PlotHelper,
             open_edges (bool, optional): Whether the loose edges (i.e., edges
                 with only source *or* destination in ``nodes``) are plotted.
                 If True, the 'outer' nodes are shrinked to size zero.
-        
+
         Returns:
             Tuple containing a list of selected nodes, a list of selected
             edges, and the nodes to be shrinked to size zero.
@@ -396,14 +408,14 @@ def draw_graph(*, hlpr: PlotHelper,
     def scale_to_interval(data: list, interval=None):
         """Rescales the data linearly to the given interval. If not interval is
         given the data is returned as it is.
-        
+
         Args:
             data (list): data that is rescaled linearly to the given interval
             interval (Sequence, optional): The target interval
-        
+
         Returns:
             list: rescaled data
-        
+
         Raises:
             TypeError: On invalid interval specification
         """
@@ -427,17 +439,46 @@ def draw_graph(*, hlpr: PlotHelper,
 
         return list(rescaled_data)
 
-    def parse_positions(g, *, model: str, **kwargs):
+    def parse_positions(g, *,
+                        from_dict: Dict[Any, Tuple[float, float]]=None,
+                        model: Union[str, Callable]=None,
+                        **kwargs) -> dict:
         """Assigns a position to each node in graph g.
 
         Args:
             g (networkx graph or list of nodes): The graph
-            model (str): The model used for node positioning
+            from_dict (dict, optional): Explicit node positions. If given, the
+                ``model`` argument will be ignored.
+            model (Union[str, Callable], optional): The model used for node
+                positioning. If it is a string, it is looked up from the
+                available networkx positioning models.
+                If it is callable, it will be called with the graph as first
+                positional argument.
             **kwargs: Passed to the node positioning routine
 
         Returns:
             dict: A dictionary of positions keyed by node
+
+        Raises:
+            ModuleNotFoundError: If a graphviz model was chosen but pygraphviz
+                was not importable (via networkx)
         """
+        if from_dict:
+            if model is not None:
+                warnings.warn(
+                    "Node positions were specified *both* via a positioning "
+                    "model and explicitly via the `from_dict` argument. The "
+                    "specified model will be ignored. To remove this warning, "
+                    "set the graph_drawing.positions.model entry to None.",
+                    UserWarning
+                )
+
+            return copy.deepcopy(from_dict)
+
+
+        if callable(model):
+            return model(g, **kwargs)
+
         if model.startswith('graphviz_'):
             try:
                 # graphviz models
@@ -449,13 +490,13 @@ def draw_graph(*, hlpr: PlotHelper,
                                           "node positioning model '{}': '{}'"
                                           "".format(model, err)) from err
 
-        # networkx models
+        # else: is a networkx positioning model
         return POSITIONING_MODELS_NETWORKX[model](g, **kwargs)
 
     def parse_node_kwargs(g, *, nodelist: list, node_kwargs: dict,
                           mark: dict=None, shrink_to_zero: list=None):
         """Parses node kwargs which are then passed to draw_networkx_nodes.
-        
+
         Args:
             g (networkx graph): The graph
             nodelist (list): List of nodes for which property mapping is done
@@ -464,7 +505,7 @@ def draw_graph(*, hlpr: PlotHelper,
             shrink_to_zero (list, optional): List of nodes for which the node
                 size is set to zero. If given, this takes precendence over the
                 entry in ``node_kwargs``.
-        
+
         Returns:
             (dict, dict, ColorManager): (parsed node configuration, parsed node
                 colorbar configuration, color manager)
@@ -519,7 +560,7 @@ def draw_graph(*, hlpr: PlotHelper,
                         map_to_scalar = np.vectorize(
                                                 g_prop['map_to_scalar'].get)
                         node_colors = list(map_to_scalar(node_colors))
-                    
+
                     node_kwargs['node_color'] = node_colors
 
                     cbar_kwargs['enabled'] = cbar_kwargs.get('enabled', True)
@@ -546,7 +587,7 @@ def draw_graph(*, hlpr: PlotHelper,
         cmap = node_kwargs.get('cmap', 'viridis')
         cmap_norm = node_kwargs.pop('cmap_norm', 'Normalize')
         cbar_labels = cbar_kwargs.pop('labels', None)
-        
+
         colormanager = ColorManager(cmap=cmap, norm=cmap_norm,
                                     labels=cbar_labels, vmin=vmin, vmax=vmax)
 
@@ -618,7 +659,7 @@ def draw_graph(*, hlpr: PlotHelper,
                         edge_colors = list(map_to_scalar(edge_colors))
 
                     edge_kwargs['edge_color'] = edge_colors
-                    
+
                     cbar_kwargs['enabled'] = cbar_kwargs.get('enabled', True)
 
                 elif plt_prop == 'width':
@@ -635,7 +676,7 @@ def draw_graph(*, hlpr: PlotHelper,
         cmap = edge_kwargs.get('edge_cmap', 'viridis')
         cmap_norm = edge_kwargs.pop('cmap_norm', 'Normalize')
         cbar_labels = cbar_kwargs.pop('labels', None)
-        
+
         colormanager = ColorManager(cmap=cmap, norm=cmap_norm,
                                     labels=cbar_labels, vmin=vmin, vmax=vmax)
 
@@ -662,7 +703,7 @@ def draw_graph(*, hlpr: PlotHelper,
                 # Transform to color-like if needed
                 if not mpl.colors.is_color_like(edge_color[0]):
                     edge_color = colormanager.map_to_color(edge_color)
-                
+
                 colors = {e[:2]: edge_color[i] for i, e in enumerate(edgelist)}
 
             else:
@@ -690,7 +731,7 @@ def draw_graph(*, hlpr: PlotHelper,
                                 shrink_to_zero: list=None):
         """Parses node label kwargs which are then passed to
         draw_networkx_lables.
-        
+
         Args:
             g (networkx graph or list of nodes): The graph
             nodelist (list): List of nodes that will be drawn
@@ -698,7 +739,7 @@ def draw_graph(*, hlpr: PlotHelper,
             shrink_to_zero (list, optional): List of nodes for which to hide
                 the node label. If given, this takes precendence over the
                 entry in ``label_kwargs``.
-        
+
         Returns:
             (dict, bool): (parsed label_kwargs, whether to show labels)
         """
@@ -829,7 +870,7 @@ def draw_graph(*, hlpr: PlotHelper,
                          positions: dict=None,
                          suppress_cbars=False):
         """Plots graph with given configuration.
-        
+
         Args:
             graph_group (GraphGroup): The GraphGroup from which the networkx
                 graph is created
@@ -837,11 +878,11 @@ def draw_graph(*, hlpr: PlotHelper,
             graph_drawing_cfg (dict): The configuration of the graph layout
             positions (dict, optional): dict assigning a position to each node
             suppress_cbars (bool, optional): Whether to suppress colorbars
-        
+
         Returns:
             (dict): Dict containing node positions, PatchCollections of drawn
                 nodes, edges, and labels, and drawn colorbars.
-        
+
         Raises:
             Warning: On enabled colorbar for directed edges.
         """
@@ -889,7 +930,7 @@ def draw_graph(*, hlpr: PlotHelper,
             # removes all edges for which the source or destination was removed.
             nodes_to_remove = g.nodes - set(nodes_to_plot)
             g.remove_nodes_from(nodes_to_remove)
-        
+
         # Do the node positioning
         pos = positions if positions else parse_positions(g, **pos_kwargs)
 
@@ -926,7 +967,7 @@ def draw_graph(*, hlpr: PlotHelper,
         # NOTE networkx does not pass on the norms to the respective matplotlib
         #      functions. Hence, they need to be set manually. For the edges,
         #      the cmap also needs to be set manually. Can only be set for the
-        #      edges if graph is undirected or `arrows=False`. 
+        #      edges if graph is undirected or `arrows=False`.
         nodes.set_norm(node_colormanager.norm)
 
         if not isinstance(edges, list):
@@ -969,13 +1010,16 @@ def draw_graph(*, hlpr: PlotHelper,
                                                          ax=hlpr.ax,
                                                          **edge_cbar_kwargs)
 
-        return {'pos': pos,
-                'nodes': nodes,
-                'edges': edges,
-                'node_labels': node_labels,
-                'edge_labels': edge_labels,
-                'cb_n': cb_n,
-                'cb_e': cb_e}
+        return {
+            'pos': pos,
+            'nodes': nodes,
+            'edges': edges,
+            'node_labels': node_labels,
+            'edge_labels': edge_labels,
+            'cb_n': cb_n,
+            'cb_e': cb_e,
+            'attrs': g.graph,
+        }
 
     # .. Actual plotting routine starts here ..................................
     # Get the GraphGroup
@@ -1016,7 +1060,8 @@ def draw_graph(*, hlpr: PlotHelper,
     # Perform single graph plot
     rv = prepare_and_plot(graph_group,
                           graph_creation_cfg=graph_creation,
-                          graph_drawing_cfg=graph_drawing)
+                          graph_drawing_cfg=graph_drawing,
+                          positions=None)
 
     # Hide the axes
     hlpr.ax.axis('off')
@@ -1034,7 +1079,7 @@ def draw_graph(*, hlpr: PlotHelper,
         """Animation generator for the draw_graph function.
 
         When the animation frames are given by different points in time, they
-        can be specified by value (via ``sel``), by index (via ``isel``), or 
+        can be specified by value (via ``sel``), by index (via ``isel``), or
         ``from_property``. In the latter case, the time values are extracted
         from the ``time`` coordinates of the specified property data.
 
@@ -1107,10 +1152,7 @@ def draw_graph(*, hlpr: PlotHelper,
 
         # Prepare the suptitle format string
         if 'title' not in suptitle_kwargs:
-            if times:
-                suptitle_kwargs['title'] = "time = {value:d}"
-            else:
-                suptitle_kwargs['title'] = "time idx = {value:d}"
+            suptitle_kwargs['title'] = "time = {value:d}"
 
         # Iterate over the selected times (can be time value _or_ index)
         for time in time_iter:
@@ -1126,7 +1168,9 @@ def draw_graph(*, hlpr: PlotHelper,
 
             # Apply the suptitle format string, then invoke the helper
             st_kwargs = copy.deepcopy(suptitle_kwargs)
-            st_kwargs['title'] = st_kwargs['title'].format(value=(time))
+            st_kwargs['title'] = st_kwargs['title'].format(
+                value=(rv['attrs']['time'])
+            )
             hlpr.invoke_helper('set_suptitle', **st_kwargs)
 
             # Let the writer grab the current frame
