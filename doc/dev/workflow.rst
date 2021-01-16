@@ -37,8 +37,8 @@ The workflow with Git is as follows:
 4. **Merge other people's changes into your branch, or merge your changes into another branch.** If you wish to include updates other people have made to the master branch (or any other branch) in your own branch, you can merge these into your own branch.
 
 
-Step 1: Create a new branch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create a new branch
+^^^^^^^^^^^^^^^^^^^
 
 A simple way to create a new branch is right in the `Utopia Gitlab project <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia>`_: in the left-hand navigation pane, navigate to Repository -> Banches, and click on "New Branch". Give your branch a descriptive name, and select from where you want to branch off (typically the master branch). Click "Create branch" – and the branch is created!
 
@@ -74,8 +74,8 @@ Now that you have created a new branch, you are ready to code and upload your ch
 Here, we provide only a small selection of commands that you will use a lot during your code development and address some frequent issues encountered when starting to use git. If you have questions or run into problems, it is always worth consulting the ``git <command> --help`` or checking out the guides linked above. Also, searching the internet for what you want to do is usually quite effective when it comes to questions with git.
 
 
-Step 2: Stage, commit, and push changes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Stage, commit, and push changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To check the status of your repository, do
 
 .. code-block:: shell
