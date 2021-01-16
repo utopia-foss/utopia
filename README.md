@@ -1,7 +1,5 @@
 # Utopia
 
-__Utopia__ (_gr.,_ no-place), a non-existent society described in considerable detail. [Wikipedia, 2016]
-
 Utopia is a comprehensive modelling framework for complex and evolving systems.
 It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 
@@ -38,7 +36,7 @@ Please cite at least the following publication if you use Utopia (or a modified 
 The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation file format](https://citation-file-format.github.io/) and contains additional metadata to reference this software, its authors, and associated publications.
 
 ### Contents of this README
-* [Installation](#installation)
+* [How to install](#how-to-install)
     * [On your machine](#step-by-step-instructions)
     * [Alternative: docker image](#utopia-via-docker)
 * [Quickstart](#quickstart)
@@ -50,10 +48,9 @@ The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation
 ---
 
 
-
 <!-- ###################################################################### -->
 
-## Installation
+## How to install
 The following instructions will install Utopia into a development environment
 on your machine.
 
@@ -61,7 +58,7 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (≥19.10) setups.
+These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (20.04 or newer) setups.
 
 _Note:_ Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
@@ -73,7 +70,7 @@ If this does not resolve your installation problems, [please file an issue in th
 #### 1 — Clone Utopia
 First, create a `Utopia` directory at a place of your choice.
 This is where the Utopia repository will be cloned to.
-When working with or developing for Utopia, auxilary data will have a place
+When working with or developing for Utopia, auxiliary data will have a place
 there as well.
 
 In your terminal, enter the `Utopia` directory you just created.
@@ -322,7 +319,7 @@ utopia run SomeModel
 
 where `SomeModel` needs to be replaced with a valid model name.
 To get a list of available models, run the `utopia models ls` command.
-Alternatively, have a look at the [`src/utopia/models`](src/utopia/models) directory, where they are implemented.
+Alternatively, have a look at the [`src/utopia/models`](../src/utopia/models) directory, where they are implemented.
 
 The `utopia run` command carries out a pre-configured simulation for that model, loads the data, and performs automated plots.
 
@@ -500,7 +497,7 @@ Each _individual_ test also has an individual build target, the names of which
 you see in the output of the `make build_tests_*` command.
 For invoking the individual test executable, you need to go to the
 corresponding build directory, e.g. `build/tests/core/`, and run the executable
-from that directory, as some of the tests rely on auxilary files which are
+from that directory, as some of the tests rely on auxiliary files which are
 located relative to the executable.
 
 For invoking individual *Python* tests, there are no targets specified.

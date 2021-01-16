@@ -1,6 +1,7 @@
+.. _model_Environment:
 
-``Environment`` — Model for non-uniform parameter background
-============================================================
+``Environment`` — Generic Parameter Background Model
+====================================================
 
 The ``Environment`` model is designed to handle changing external parameters
 and the initialization and update of non-uniform parameter backgrounds to any
@@ -16,12 +17,12 @@ that can be used to modify the uniform parameter values in time, and a second
 library of so-called "environment state functions" that can be used to set and
 modify cell-wise (heterogeneous) parameters. It is also possible to add custom
 environment functions of both types.
-For the environment state functions it differentiates between functions which
+For the environment state functions, it differentiates between functions which
 are invoked once at initialization and others which are invoked during
 iteration. Furthermore, it is possible to control the times at which these
 functions are invoked.
-Additionally a select config can be added within the state function
-configuration, that is passed to the ``select_cells`` feature of the
+Additionally, a select config can be added within the state function
+configuration, which is passed to the ``select_cells`` feature of the
 ``CellManager`` (see :ref:`entity_selection`).
 
 The ``Environment`` model is an example of how Utopia models can be nested in
@@ -39,7 +40,7 @@ The model is considered to have a global parameter named
 ``some_heterogeneous_parameter`` which were up to now constant in time and
 spatially uniform, i.e. of the same value for all cells.
 Of course it is possible to use only either of the two types of parameters and
-to have several global or heterogeneous parameter.
+to have several global or heterogeneous parameters.
 
 First things first: include the header of the Environment model:
 
@@ -47,8 +48,7 @@ First things first: include the header of the Environment model:
 
     #include <utopia/models/Environment/Environment.hh>
 
-Create your Environment's global parameter. Here, you add those parameters
-that you consider part of the environment.
+Create your Environment's global parameter, adding any parameters you consider part of the environment.
 
 .. code-block:: cpp
 
@@ -98,8 +98,8 @@ that you consider part of the environment.
         }
     };
 
-Create your Environment's cell state. Here, you add those heterogeneous
-parameters that you consider part of the environment.
+Create your Environment's cell state, adding any *heterogeneous*
+parameters you consider part of the environment.
 
 .. code-block:: cpp
 
@@ -156,7 +156,7 @@ parameters that you consider part of the environment.
         }
     };
 
-Create the link that is used to access the associated cell in the environment:
+Next, create the link that is used to access the associated cell in the environment:
 
 .. code-block:: cpp
 
@@ -173,12 +173,7 @@ Create the link that is used to access the associated cell in the environment:
         std::shared_ptr<EnvCell> env;
     };
 
-If you use the EnvCellState:
-Pass the created link to the ``CellTraits`` in your model; adapt this to the
-current definitions in your model.
-Important is the last entry, ``EnvLinks``. If your current model does not have
-one or more of the entries shown below, use the values given in this example,
-i.e. the trait's default values.
+If you use the EnvCellState: pass the created link to the ``CellTraits`` in your model, adapting this to the current definitions in your model. The last entry, ``EnvLinks``, is important. If your current model does not have one or more of the entries shown below, use the values given in this example, i.e. the trait's default values.
 
 .. code-block:: cpp
 
@@ -189,10 +184,10 @@ i.e. the trait's default values.
                             EmptyTag,      // cell tags
                             EnvLinks>;     // -- the links --
 
-The following changes will need to happen in your models class as it will be
+The following changes will need to happen in your model's class, as it will be
 the parent to the Environment model.
 
-First, you will need to add a (private) member to your model, best somewhere
+First, you will need to add a (private) member to your model, preferably somewhere
 close to where you currently define the ``CellManager`` of your model:
 
 .. code-block:: cpp
@@ -206,17 +201,13 @@ close to where you currently define the ``CellManager`` of your model:
 
     /// You might want to keep the global parameter
     double _some_global_parameter;
-    // NOTE you have to manually synchronize it with the envm!
+    // NOTE you need to manually synchronize it with the environment!
 
     // ...
 
-Then, within the constructor of your model the constructor of the ``EnvModel``
-must be called. Again this should happen close to the construction of the
-``CellManager``, but afterwards.
-The ``EnvModel`` gets your ``CellManager`` as an argument, because it uses
-its configuration in order to create a corresponding grid representation. It
-then associates the cells with each other, such that the ``env`` member is
-set correctly.
+Then, within the constructor of your model, the constructor of the ``EnvModel``
+must be called. Again, this should happen shortly after the construction of the
+``CellManager``. The ``EnvModel`` receives your ``CellManager`` as an argument, because it uses its configuration in order to create a corresponding grid representation. It then associates the cells with each other, such that the ``env`` member is set correctly.
 
 .. code-block:: cpp
 
@@ -252,11 +243,11 @@ set correctly.
                                        "some_other_het_parameter"});
         }
 
-.. note::
+.. warning::
 
-  **Important:** Make sure you iterate the ``Environment`` model when
-  performing a step. This should happen first to ensure, that the timings of
-  both models corresponds.
+  Make sure to iterate the ``Environment`` model when
+  performing a step. This should happen first, to ensure that the timings of
+  both models correspond.
 
 .. code-block:: cpp
 
@@ -270,13 +261,13 @@ set correctly.
         // ... all the rest of your perform_step method
     }
 
-You can access the parameter the following way
+You can access the parameters in the following way:
 
 .. code-block:: cpp
 
     RuleFunc update = [this](const auto& cell)
     {
-        // The cells state
+        // The cell's state
         auto state = cell->state;
 
         // The environment cell's state
@@ -284,29 +275,29 @@ You can access the parameter the following way
 
         // use the synchronized some_global_parameter
 
-With this, your model is ready to use and just needs to be configured.
+With this, your model is ready to use and just needs to be configured!
 
-Eventually, coupled models require manual writing of the prolog and epilog
+At some point, coupled models will require manually writing the prolog and epilog:
 
 .. code-block:: cpp
 
     /// Call the prolog of the sub-models and the model defaults
     void prolog () {
         _envm.prolog(); // prolog of the submodel
-        // NOTE the prolog has to be called before starting the iteration of a 
-        //      submodel. This can be at any time. Usually it will be here.
+        // NOTE the prolog has to be called before starting the iteration of a
+        //      submodel. This can be at any time, but usually it will be here.
 
         this->__prolog();; // default prolog
     }
 
     /// Call the epilog of the sub-models
-    /** NOTE this overwrites the default of your model's epilog. So make 
-     *  sure, that everything that needs to be done is done.   
+    /** NOTE this overwrites the default of your model's epilog. So make
+     *  sure that everything that needs to be done has been done.
      */
     void epilog () {
         _envm.epilog(); // epilog of the submodel
-        // NOTE the epilog should be called at the end of the submodel's 
-        //      iteration. This can be at any time. Usually it will be here.
+        // NOTE the epilog should be called at the end of the submodel's
+        //      iteration. This can be at any time, but typically it will be here.
 
         this->__epilog(); // default epilog
     }
@@ -315,9 +306,9 @@ Eventually, coupled models require manual writing of the prolog and epilog
 Configuring the Environment model
 ---------------------------------
 
-To restore the uniform configuration of your model just move the
+To restore the uniform configuration of your model, simply move the
 ``some_heterogeneous_parameter`` key to the parameters of your cell initialization.
-This works even if you don't initialize your model from configuration, because
+This works even if you don't initialize your model from the configuration, because
 the ``Environment`` model inherits the full CellManager configuration.
 
 .. code-block:: yaml
@@ -333,7 +324,7 @@ the ``Environment`` model inherits the full CellManager configuration.
 
         ..
 
-Now you can use the Environment model to introduce non-uniformities to your
+Now you can use the Environment model to introduce non-uniformities into your
 model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter``.
 
 .. code-block:: yaml
@@ -390,13 +381,9 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
                   fix_selection: false  # generated new for every call
 
 
-.. note::
+.. warning::
 
-    Make sure that when using recursive update of the configuration files to
-    overwrite entries that you no longer wish to use.
-    So, if you define default ``env_state_funcs`` in your default model config,
-    but don't want to update the intial environmental state from a run config
-    write:
+   When using recursive update of the configuration files, make sure to overwrite entries you no longer wish to use. For instance, if you set a default ``env_state_funcs`` in your default model configuration, but do not wish to update the intial environmental state from a run config, write:
 
     .. code-block:: yaml
 
@@ -404,31 +391,30 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
           init_env_state_funcs:
             # your init sequence here ...
 
-          env_state_funcs: ~  # overwrites the sequence -> nothing invoked
+          env_state_funcs: ~  # overwrites the sequence, and nothing is invoked
 
-.. note::
+.. warning::
+
+    The cell manager is currently set up according to the configuration of the parent's
+    cell manager. Unfortunately, this does not include information about the
+    space, hence make sure to also copy the space config to the
+    Environment's configuration, e.g. using yaml anchors, or the association of
+    the two cell managers will fail!
+
+.. hint::
 
     If you are unsure which environment functions are set up and are invoked at
     which point in time, call ``utopia run`` with the ``--debug`` flag, which
     will increase log verbosity and tell you when environment functions are
-    called.
-    Alternatively, you can add the ``log_level: debug`` or ``log_level: trace``
+    called. Alternatively, you can add the ``log_level: debug`` or ``log_level: trace``
     entry to the ``Environment`` model entry in the configuration.
-
-.. warning::
-
-    The cell manager is currently set up according to the config of the parent's
-    cell manager. Unfortunately this does not include information about the
-    space, hence make sure, that you copy the space config also to the
-    Environment's config, e.g. using yaml anchors. Otherwise the association of
-    the two cell manager will fail!
-
+    
 .. note::
 
-    If your current model is not using a cell_manager you can still use the features of the model.
-    If you only use the EnvParam just use the model without associated cell manager (see changes to constructor of your model).
-    If you want to use the EnvCellState pass the template argument ``associate=false``; the model can now be initialized without associated cm.
-    However, in these cases you must configure the cell_manager within the Environment node of your config
+    You can still use the features of the model even if your current model does not use the ``cell_manager``.
+    If you only use the ``EnvParam``, just use the model without an associated cell manager (see the above description of how to change to constructor of your model).
+    If you want to use the ``EnvCellState``, pass the template argument ``associate=false``; the model can then be initialized without an associated cell manager.
+    However, in all of these cases **you must configure the** ``cell_manager`` within the ``Environment`` node of your configuration:
 
     .. code-block:: yaml
 
@@ -447,9 +433,9 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
 Collection of parameter and state functions
 -------------------------------------------
 
-The currently implemented environment functions are available in the two
+Currently implemented environment functions are available in the two
 collections ``ParameterFunctionCollection`` and ``StateFunctionCollection``.
-Please check their documentation for the configuration of the respective
+Please check their documentations for the configuration of the respective
 function.
 
 

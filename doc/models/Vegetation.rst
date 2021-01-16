@@ -1,18 +1,9 @@
+.. _model_Vegetation:
 
-``Vegetation`` — Model of Simple Vegetations
-============================================
+``Vegetation`` — Simple Vegetation Model
+========================================
 
-This is a very simple implementation of a vegetation model. It is implemented
-as a stochastic cellular automaton on a grid, where the state of each cell is
-a double scalar representing the plant bio-mass on that cell.
-
-So far, the only driver for a change in the plant bio-mass is rainfall,
-implemented as a gauss-distributed random number drawn for each cell.
-
-.. contents::
-   :local:
-   :depth: 2
-
+This is a very simple implementation of a vegetation model. It is implemented as a stochastic cellular automaton on a grid, where the state of each cell is a double scalar representing the plant bio-mass on that cell. The only driver for a change in the plant bio-mass is rainfall, implemented as a Gauss-distributed random number drawn for each cell.
 
 Model parameters
 ----------------
@@ -39,7 +30,7 @@ population density is silenty set to zero, :math:`m_{t+1,i} = 0`.
 Seeding process
 ---------------
 
-Since logistic growth does never get started if the initial plant bio-mass is
+Since logistic growth will never start if the initial plant bio-mass is
 zero, a seeding process is included into the model. If :math:`m_{t,i} = 0`, the
 plant bio-mass at time :math:`t+1` is then determined as
 
@@ -48,12 +39,12 @@ plant bio-mass at time :math:`t+1` is then determined as
 Default configuration parameters
 --------------------------------
 
-These are the default configuration parameters of the model:
+Below are the default configuration parameters of the model:
 
 .. literalinclude:: ../../src/utopia/models/Vegetation/Vegetation_cfg.yml
    :language: yaml
    :start-after: ---
 
-For these parameters and a grid size of :math:`20 \times 20` the system takes
-roughly :math:`50` time steps to reach a dynamic equilibrium, in which the
-plant bio-mass on all cells fluctuates around :math:`9.5`.
+For these parameters and a grid size of 20 x 20, the system takes
+roughly 50 time steps to reach a dynamic equilibrium, in which the
+plant bio-mass on all cells fluctuates around 9.5.

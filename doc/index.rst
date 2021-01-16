@@ -1,113 +1,121 @@
-Welcome to Utopia's documentation!
-==================================
+.. _welcome:
+
+Welcome to Utopia!
+==================
 
 Utopia is a comprehensive modelling framework for complex and evolving systems.
 It is tailored to build models based on cellular automata (CA), agent-based models (ABMs), and network models.
 Utopia provides tools for implementing a model, configuring and performing simulation runs, and evaluating the resulting data.
 Additionally, several readily implemented models are shipped with Utopia.
 
-Utopia is free software and licensed under the
-`GNU Lesser General Public License Version 3 <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_
-or any later version.
-For details, please refer to the :doc:`COPYING`.
+Utopia is free software and licensed under the `GNU Lesser General Public License Version 3 <https://www.gnu.org/licenses/lgpl-3.0.en.html>`_.
+For more information and a list of copyright holders, please refer to the :doc:`COPYING`.
 
-
-Welcome to Utopia!
-------------------
-
-We are happy that you found your way to the documentation.
-If you want to know more about Utopia, have a look at the :ref:`models included <index_models>`, or scroll through the extensive :doc:`features`.
-For a complete overview, refer to the :doc:`ReadMe <README>`.
-
-If you want to start using Utopia, head right into the :doc:`Tutorial <guides/tutorial>`!
-You can then work your way through the other :ref:`guides <index_guides>`.
-
-.. admonition:: Wondering if you should start using Utopia?
-
-   You might ask yourself: "Why not use `NetLogo <https://ccl.northwestern.edu/netlogo/index.shtml>`_?"
-   Here's why:
-
-   - Utopia is written in modern C++ and Python, and allows developers to exploit the full potential of both programming languages.
-   - Utopia offers tools to perform parameter sweeps of models and analyze their high-dimensional data efficiently.
-   - Utopia includes a multithreading interface and can execute simulations concurrently on distributed cluster nodes.
-   - Utopia supports and encourages software engineering workflows, including version control, unit testing, and more.
-
-   On the other hand, you should *not* use Utopia, if
-
-   - Programming and using the command line is not your thing; *Utopia embraces flexibility for programmers.*
-   - You want a library with a simple and concise feature set; *Utopia is feature-rich and extensive.*
-   - You want a *very* quick solution; *Utopia has a steep learning curve.*
+.. TODO Nice image (hosted OUTSIDE of this repo)
 
 .. hint::
 
-   If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform `Benni <herdeanu@iup.uni-heidelberg.de>`_ and/or `Yunus <yunus.sevinchan@iup.uni-heidelberg.de>`_ of them. Thank you! :)
+    **Where to next?**
+
+    * To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
+    * If you want to start using Utopia right away, head for the :ref:`tutorial`.
+    * To explore other parts of the documentation, use the navigation sidebar.
+
+.. note::
+
+    If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform us about them by `opening an issue <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/-/issues/new>`_ or `emailing us <mailto:utopia-dev@iup.uni-heidelberg.de>`_.
+    Thank you!
 
 
-Contents of this Documentation
-------------------------------
+.. ----------------------------------------------------------------------------
+.. Hidden TOCtree – the sidebar should be used for navigation
 
 .. toctree::
+   :hidden:
+
+   about/utopia
+   about/should_i_use
+   about/features
+
+
+.. toctree::
+   :caption: Getting started
    :maxdepth: 1
-   :glob:
+   :hidden:
 
-   The README <README>
-   C++ Documentation <cpp_doc>
-   Utopia Feature List <features>
+   Installation <README.md>
+   getting_started/tutorial
 
-.. _index_guides:
 
 .. toctree::
-   :caption: Guides
+   :caption: Usage
    :maxdepth: 1
-   :glob:
+   :hidden:
 
-   guides/tutorial
-   guides/greenhorn-guide
-   guides/how-to-build-a-model
-   guides/*
+   usage/workflow
+   usage/implement/index
+   usage/run/index
+   usage/eval/index
 
-.. toctree::
-   :caption: Frontend & utopya
-   :glob:
-   :maxdepth: 2
-
-   frontend/inc/utopya_base_cfg
-   frontend/data
-   frontend/plotting
-   frontend/batch
-   frontend/inc/base_plots_cfg
-   frontend/inc/batch_cfg
-   utopya API Reference <api_utopya/utopya>
-   frontend/interactive
-   frontend/*
-   frontend/inc/api_paramspace
-
-.. _index_models:
 
 .. toctree::
    :caption: Models
    :maxdepth: 1
-   :glob:
+   :hidden:
 
-   models/*
+   models/ContDisease
+   models/ForestFire
+   models/GameOfLife
+   models/PredatorPrey
+   models/SandPile
+   models/SEIRD
+   models/SimpleEG
+   ... and more <models/index>
+
+.. NOTE If adding models above, also adjust models/index
+
 
 .. toctree::
-   :caption: Frequently Asked Questions (FAQ)
-   :maxdepth: 2
-   :glob:
+   :caption: Frequently Asked Questions
+   :maxdepth: 1
+   :hidden:
 
-   faq/*
+   faq/frontend/index
+   faq/core/index
+
+
+.. toctree::
+   :caption: References
+   :maxdepth: 1
+   :hidden:
+
+   C++ Documentation <../../doxygen/html/index.html#http://>
+   ref/cpp_doc
+   api/utopya/utopya
+   dantro package <https://dantro.readthedocs.io/en/stable/>
+   api/paramspace/paramspace
+   ref/utopya_base_cfg
+   ref/base_plots_cfg
+   ref/batch_cfg
+
+
+.. toctree::
+   :caption: Utopia Development
+   :maxdepth: 1
+   :hidden:
+
+   dev/workflow
+   dev/coding-guidelines
+   dev/model-requirements
+   dev/writing-docs
 
 .. toctree::
    :caption: Miscellaneous
    :maxdepth: 1
-   :glob:
+   :hidden:
 
    Copyright Notice <COPYING>
    cite
    Contribution Guide <CONTRIBUTING>
    Code of Conduct <CODE_OF_CONDUCT>
-   Documentation Examples <examples>
-
-* :ref:`Page Index <genindex>`
-* :ref:`Python Module Index <modindex>`
+   index_pages

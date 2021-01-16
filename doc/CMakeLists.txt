@@ -19,7 +19,9 @@ utopia_install_doc_utils()
 # Register subdirectories
 add_subdirectory("doxygen")
 
-# Copy README.md and COPYING.md to this directory
+# Copy some files into the doc directory such that they can be included into
+# the built documentation
+# NOTE These need to be manually added to .gitignore!
 file(COPY ${PROJECT_SOURCE_DIR}/README.md
           ${PROJECT_SOURCE_DIR}/COPYING.md
           ${PROJECT_SOURCE_DIR}/CONTRIBUTING.md
@@ -41,8 +43,8 @@ add_custom_target(sphinx_html
 add_custom_target(sphinx_apidoc_utopya
     COMMAND ${RUN_IN_UTOPIA_ENV}
             sphinx-apidoc -f
-                --module-first --private --separate --no-toc
-                --output-dir ${CMAKE_CURRENT_SOURCE_DIR}/api_utopya/
+                --module-first --private --no-toc
+                --output-dir ${CMAKE_CURRENT_SOURCE_DIR}/api/utopya/
                 ${PROJECT_SOURCE_DIR}/python/utopya/utopya
 )
 add_dependencies(sphinx_html sphinx_apidoc_utopya)

@@ -1,3 +1,5 @@
+.. _cite:
+
 How to Cite Utopia
 ==================
 

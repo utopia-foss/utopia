@@ -1,43 +1,43 @@
-``PredatorPreyPlant`` — Model of Predator-Prey Dynamics including Vegetation
-============================================================================
+.. _model_PredatorPreyPlant:
 
-This is an expansion of the :doc:`Predator-Prey <PredatorPrey>` model where plants (the resource the prey feeds on) is modelled explicitly.
+``PredatorPreyPlant`` — Predator-Prey Dynamics including Vegetation
+===================================================================
 
-The main additions/changes are the following:
+This is an expansion of the :doc:`Predator-Prey <PredatorPrey>` model in which plants (the resource the prey feeds on) are modelled explicitly. The main additions/changes are the following:
 
-* The movement mechanism changed and the movement rule now involves a movement radius so that each entity can move more than one cell per turn.
-* The presence of plants which can grow according to different growth models
+* The movement mechanism is different, and the movement rule now involves a movement radius so that each entity can move further than one cell per turn.
+* The presence of plants which can grow, based on different growth models
 
- 
+
 Implementation Details
 ----------------------
 Movement
 ^^^^^^^^
 In contrast to the ``PredatorPrey`` model, the movement rule is no longer called once per cell each turn.
 Instead, it is called for ``num_moves`` random cells each turn.
-This makes it possible that one cell can be selected multiple times to carry out the movement rule and other cells might not be selected at all within that time step.
+This makes it possible for one cell to be selected multiple times to carry out the movement rule and other cells might not be selected at all within that time step.
 
-The internal ``num_moves`` parameter can be specified in the configuration only via the ``num_moves_fraction``, which allows to specify it in units of the total number of grid cells.
+The internal ``num_moves`` parameter can be set in the configuration via the ``num_moves_fraction`` key, which allows specifying it in units of the total number of grid cells.
 
 Three possible actions take place on a selected cell:
 
-* In case there are both predator and prey on a cell, the prey will flee in the same fashion as in the Predator-Prey model.
+* In case both a predator and a prey are on a cell, the prey will flee in the same fashion as in the standard Predator-Prey model.
 * If there is a predator but no prey on the cell, the predator will move until it finds a prey or until it reaches the ``move_limit``.
-* If there is only a prey and no resource, the prey will move to find resources until it reaches it or arrives at the ``move_limit``. In this phase the prey will walk on a cell even if there is a predator on it.
+* If there is only a prey but no resource, the prey will move to find resources until it reaches it or arrives at the ``move_limit``. In this phase the prey will move to a cell even if there is a predator on it.
 
 
 Vegetation Growth Model
 ^^^^^^^^^^^^^^^^^^^^^^^
 There are three options for the growth models of the vegatation:
 
-* ``none``: deactivates explicit modelling of vegetation. Grass regrows every turn, thus preys can also eat every turn.
+* ``none``: deactivates explicit modelling of vegetation. Grass regrows every turn, thus prey can also eat every turn.
 * ``deterministic``: vegetation will regrow after a specific number of time-steps.
 * ``stochastic``: vegetation will regrow with a certain probability, evaluated each time step.
 
 
 Default configuration parameters
 --------------------------------
-Below are the default configuration parameters for the ``PredatorPreyPlant`` model.
+Below are the default configuration parameters for the ``PredatorPreyPlant`` model:
 
 .. literalinclude:: ../../src/utopia/models/PredatorPreyPlant/PredatorPreyPlant_cfg.yml
    :language: yaml
@@ -60,7 +60,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
+For the utopya base plots, see :ref:`utopya_base_cfg`.
 
 
 References

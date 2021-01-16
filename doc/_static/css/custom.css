@@ -1,0 +1,35 @@
+/*
+Utopia-specific customizations to the readthedocs theme
+=======================================================
+
+For some adjustments, the !important tag is required to overwrite dominant
+theme-specific values.
+
+To assign a specific class to some content, use the following sphinx directive:
+
+    .. cssclass:: my-class
+
+        Lorem ipsum dolor sit amet ...
+*/
+
+
+/* In lists, adjust margins to be more asymmetic than the default (12px) */
+ul, ol {
+    margin-top: 4px !important;
+    margin-bottom: 8px !important;
+}
+
+
+/* In FAQ, let first-level TOC be more prominent */
+.faq-toc > ul > li {
+    list-style-type: none !important;
+    list-style: none !important;
+    margin-left: 0 !important;
+    margin-top: 1.5rem;
+}
+
+.faq-toc li.toctree-l1 > a {
+    font-size: 150%;
+    font-weight: 700;
+    font-family: Roboto Slab, ff-tisa-web-pro, Georgia, Arial, sans-serif;
+}

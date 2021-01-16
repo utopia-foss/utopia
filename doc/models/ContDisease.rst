@@ -1,30 +1,31 @@
+.. _model_ContDisease:
 
-``ContDisease`` — Model of Contagious Diseases
-==============================================
+``ContDisease`` — Contagious Diseases
+=====================================
 
 This is a simple model of a contagious disease on a 2D grid. It is based
-on the description in the script of the CCEES lecture of Prof. Roth.
+on the description in the script of the CCEES lecture by Prof. Roth.
 
 Fundamentals
 ------------
 We model a "forest" on a two-dimensional square grid of cells. Each cell can be
-in one of five different states: empty, tree, infected, source or stones.
+in one of five different states: empty, tree, infected, source, or stone.
 
 Implementation
 --------------
 Update Rules
 ^^^^^^^^^^^^
-Each time step the cells update their respective states according to the
+In each time step, the cells update their respective states according to the
 following rules:
 
-1. An ``infected`` cell turns into an ``empty`` cell
+1. An ``infected`` cell turns into an ``empty`` cell.
 2. An ``empty`` cell can become a ``tree`` cell with probability ``p_growth``.
 3. A ``tree`` cell can become infected in the following ways:
 
-   - From a neighboring infected cell with probability 1-``p_immunity``
-     *per neighbor*
-   - Via a random point infection with probability ``p_infect``
-   - Via a constantly infected cell, an infection ``source``
+   - from a neighboring infected cell with probability 1-``p_immunity``
+     *per neighbor*,
+   - via a random point infection with probability ``p_infect``,
+   - via a constantly infected cell, an infection ``source``.
 
 For the neighborhood, both the von Neumann neighborhood (5-neighborhood) and the Moore neighborhood (9-neighborhood) are supported (see model configuration).
 
@@ -32,16 +33,14 @@ Heterogeneities
 ^^^^^^^^^^^^^^^
 As in the :doc:`Forest Fire model <ForestFire>`, there is the possibility to introduce heterogeneities into the grid, which are implemented as two additional possible cell states:
 
-* ``source``: These are constant infection sources. They spread infection like normal infected trees, but don't revert back to the empty state. If activated, they are per default on the lower boundary of the grid. 
-* ``stone``: Stones are cells that can't be infected nor turn into trees. They are used to represent barriers in the forest. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed stones whose neighbours have a certain probability to also be a stone.
+* ``source``: these are constant infection sources. They spread infection like normal infected trees, but don not revert back to the empty state. If activated, they are per default on the lower boundary of the grid, though this can be changed in the configuration.
+* ``stone``: stones are cells that can not be infected nor turn into trees. They are used to represent barriers in the forest. If enabled, the default mode is ``clustered_simple``, which leads to randomly distributed stones whose neighbours have a certain probability to also be a stone.
 
 Both make use of the :ref:`entity selection interface <entity_selection>`.
 
 Infection Control
 ^^^^^^^^^^^^^^^^^
-Via the ``infection_control`` parameter in the model configuration, additional infections can be introduced at desired times.
-
-The infections are introduced before the update rule above is carried out.
+Via the ``infection_control`` parameter in the model configuration, additional infections can be introduced at desired times. The infections are introduced before the update rule above is carried out.
 
 Data Output
 ^^^^^^^^^^^
@@ -53,7 +52,7 @@ The following data is stored alongside the simulation:
    * ``1``: ``tree``
    * ``2``: ``infected``
    * ``3``: ``source``, is constantly ignited
-   * ``4``: ``stone``, does not take part in any interaction 
+   * ``4``: ``stone``, does not take part in any interaction
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
@@ -85,7 +84,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :doc:`here </frontend/inc/base_plots_cfg>`.
+For the utopya base plots, see :ref:`utopya_base_cfg`.
 
 
 References
