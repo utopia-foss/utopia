@@ -57,7 +57,8 @@ add_custom_target(test_utopya
                   COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test &&
                     ${CMAKE_BINARY_DIR}/run-in-utopia-env
                     python ../run_test.py ./ -vv
-                    --cov=utopya --cov-report=term-missing
+                    --cov=utopya --cov-config=.coveragerc
+                    --cov-report=term-missing --cov-report=xml
 )
 
 # Add tests for models, accessible via `make test_models_python`

@@ -2,11 +2,6 @@
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 variables:
-  # For __deployment__, the Utopia version
-  UTOPIA_VERSION: "1.0"
-  # NOTE Currently unused, but should be used in docker image deployment.
-  # TODO Single-source this
-
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
   BASE_IMAGE_UBUNTU_VERSION: focal  # NOTE Adjust upon new Ubuntu Release
@@ -54,7 +49,7 @@ stages:
   - setup     # (on master) set up the docker base image
   - build     # build utopia and all tests
   - test      # carry out tests
-  - deploy    # (on master) deploy documentation; build and deploy docker image
+  - deploy    # deploy documentation; build and deploy docker image (on master)
 
 
 # As base image for the jobs, use the Utopia image created in the setup stage
@@ -62,13 +57,44 @@ image: ${BASE_IMAGE}
 
 
 # .. YAML Templates ...........................................................
-# This makes includes below easier using the `<<: *anchor_name` syntax
+# These are used in job definitions via YAML anchors or the `extends` keyword
 
-# To install the python environment, the configuration needs access to
-# external but private repositories; by adding a deploy key to selected jobs,
-# the pull from these repositories becomes possible. The key is available under
-# the SSH_PRIVATE_KEY variable.
-.ssh-access: &ssh_access
+# Create artifacts of build results and meta-data that's shared between jobs
+.default_artifacts:
+  artifacts:
+    name: "$CI_JOB_NAME"
+    paths:
+      - $CI_PROJECT_DIR/build       # Build files
+      - $CI_PROJECT_DIR/python      # Editably-installed python code
+      - $CI_PROJECT_DIR/.config     # Frontend configuration files
+    expire_in: 3 hours
+
+
+# Add cobertura coverage report visualization for MRs
+# Docs: https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
+# Reports are generated from multiple jobs and is then merged by GitLab
+.cobertura:
+  artifacts:
+    reports:
+      cobertura: $CI_PROJECT_DIR/build/coverage/cobertura.xml
+
+
+# Use the Docker-in-Docker executor and services, log into Docker Hub
+.dind:
+  image: docker:stable
+  tags:
+    - dind
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - $DOCKER_HUB_LOGIN
+
+
+# For docserver deployment, we need SSH access. By adding a deploy key to
+# selected jobs, we are authenticated. The key is a CI/CD secret.
+.ssh-access:
   before_script:
     # For outside dependencies, use the "Utopia CI" deploy key
     # Instructions:
@@ -91,38 +117,13 @@ image: ${BASE_IMAGE}
     - chmod 644 ~/.ssh/known_hosts
 
 
-# Use the Docker-in-Docker executor and services, log into Docker Hub
-.dind: &dind
-  image: docker:stable
-  tags:
-    - dind
-  services:
-    - docker:dind
-  variables:
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - $DOCKER_HUB_LOGIN
-
-
-# Create artifacts of the build directory
-.artifacts: &artifacts
-  artifacts:
-    name: "$CI_JOB_NAME"
-    paths:
-      - $CI_PROJECT_DIR/build       # Build files
-      - $CI_PROJECT_DIR/python      # Editably-installed python code
-      - $CI_PROJECT_DIR/.config     # Frontend configuration files
-    expire_in: 3 hours
-
 
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
 # -- Setup stage --------------------------------------------------------------
 # This stage takes care to build the utopia base testing image
 
 setup:utopia-base:
-  <<: *dind
+  extends: .dind
   stage: setup
   only:
     - master
@@ -142,37 +143,40 @@ setup:utopia-base:
 # Build the documentation; artifacts used for documentation deployment
 build:docs:
   stage: build
-  <<: *ssh_access
+  script:
+    - mkdir build && cd build
+    - cmake ..
+    - make doc
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build/doc
     expire_in: 1 day
-  script:
-    - mkdir build && cd build
-    - cmake ..
-    - make doc
 
-# Build the unit tests; artifacts used in test stage
-build:tests_core: &build_tests_core
+
+# Build the core unit tests; artifacts used in test stage
+build:tests_core:
   stage: build
-  <<: [*ssh_access, *artifacts]
+  extends: .default_artifacts
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On ..
     - make $MAKE_FLAGS_BUILD build_tests_core
 
+
+# Build the data I/O unit tests; artifacts used in test stage
 build:tests_dataio:
-  <<: *build_tests_core
+  extends: build:tests_core
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On ..
     - make $MAKE_FLAGS_BUILD build_tests_dataio
 
+
 # Build the models and their tests; artifacts used in test stage
 build:models:
   stage: build
-  <<: [*ssh_access, *artifacts]
+  extends: .default_artifacts
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On ..
@@ -183,10 +187,10 @@ build:models:
     # of the artifacts and can be re-used in the test stages
     - cp -r ~/.config $CI_PROJECT_DIR/
 
-# Build in debug mode, once with gcc and once with clang
-build:debug: &build_debug
+
+# Build in debug mode using gcc
+build:debug:
   stage: build
-  <<: *ssh_access
   allow_failure: true
   variables:
     CXXFLAGS: -Werror
@@ -205,8 +209,10 @@ build:debug: &build_debug
     # Build all the models
     - make $MAKE_FLAGS_BUILD all
 
+
+# Build in debug mode using clang
 build:debug-clang:
-  <<: *build_debug
+  extends: build:debug
   variables:
     CC: clang
     CXX: clang++
@@ -226,9 +232,10 @@ build:debug-clang:
     # Build all the models
     - make $MAKE_FLAGS_BUILD all
 
+
+# Build for installation tests
 build:install:
   stage: build
-  <<: *ssh_access
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -249,11 +256,11 @@ build:install:
 # Using the artifacts of the build stage, executes tests of core, data I/O,
 # frontend, models, and CLI.
 
-test:core: &test_core
+# Test the core library
+test:core:
   stage: test
-  <<: *ssh_access
-  dependencies:
-    - build:tests_core
+  extends: .cobertura
+  dependencies: ["build:tests_core"]
   needs: ["build:tests_core"]
   variables:
     GCOVR_PATHS:
@@ -262,27 +269,31 @@ test:core: &test_core
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
-  after_script: # NOTE: This will always execute, even if the script fails
+  after_script:  # NOTE: This will always execute, even if the script fails
+    # Install gcvor
     - source $CI_PROJECT_DIR/build/activate
     - pip3 install gcovr
     - cd $CI_PROJECT_DIR/build
     - mkdir coverage
-    # Run once for report in HTML format
-    - gcovr $GCOVR_PATHS --html --html-details -o coverage/report.html
-    # Run again for coverage report in GitLab
+
+    # Run once for report in HTML (for viewing) and XML (for cobertura) ...
+    - gcovr $GCOVR_PATHS --html --html-details -o coverage/report.html --print-summary --xml coverage/cobertura.xml
+
+    # ... and again for a coverage report in the GitLab job log
     - gcovr $GCOVR_PATHS
-  coverage: '/^TOTAL.*\s+(\d+\%)$/'
-  artifacts: &coverage_artifacts
+  coverage: '/^lines: (\d+.\d+\%).*$/'   # matches output of --print-summary
+  artifacts:
     name: "$CI_JOB_NAME"
     expose_as: Coverage report of Core tests
     paths:
       - build/coverage/
     expire_in: 1 week
 
+
+# Test the data I/O library
 test:dataio:
-  <<: *test_core
-  dependencies:
-    - build:tests_dataio
+  extends: test:core
+  dependencies: ["build:tests_dataio"]
   needs: ["build:tests_dataio"]
   variables:
     GCOVR_PATHS:
@@ -292,39 +303,24 @@ test:dataio:
     - cd build
     - make $MAKE_FLAGS_TEST test_dataio
   artifacts:
-    <<: *coverage_artifacts
     expose_as: Coverage report of DataIO tests
 
-test:utopya:
-  stage: test
-  dependencies:
-    - build:models
-  needs: ["build:models"]
-  before_script:
-    # Place a symlink at the expected path to make the model registry available
-    - &add_cfg_symlink ln -s $CI_PROJECT_DIR/.config ~/.config && ls -la ~/
-  script:
-    - cd build
-    - make test_utopya
-  retry:
-    max: 2
-    when: script_failure
 
+# Test the models via their own tests and via the CLI
 test:models:
   stage: test
-  <<: *test_core
-  dependencies:
-    - build:models
+  extends: test:core
+  dependencies: ["build:models"]
   needs: ["build:models"]
   variables:
-    # Exclude any paths containing 'test'
+    # Exclude any paths containing 'test', should not count towards coverage
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
       --filter $CI_PROJECT_DIR/src/utopia/models
       --exclude '.*[Tt]est.*'
   before_script:
-    # Make model registry available (from build:models job)
-    - *add_cfg_symlink
+    # Place a symlink at the expected path to make the model registry available
+    - &add_cfg_symlink ln -s $CI_PROJECT_DIR/.config ~/.config && ls -la ~/
   script:
     # Test models using C++ and Python model tests
     - cd build
@@ -352,20 +348,55 @@ test:models:
     - utopia run SEIRD --debug --num-steps 50
     - utopia run SimpleEG --debug
     - utopia run Vegetation --debug
+
   artifacts:
-    <<: *coverage_artifacts
     expose_as: Coverage report of Model tests
 
+
+# Test the utopya package
+test:utopya:
+  stage: test
+  extends: .cobertura
+  dependencies: ["build:models"]
+  needs: ["build:models"]
+  before_script:
+    # Make model registry available (from build:models job)
+    - *add_cfg_symlink
+  script:
+    - cd build
+    - make test_utopya
+
+  # In rare cases, this job fails due to race conditions on job executors with
+  # a high load. To cover those cases, simply retry the job ...
+  retry:
+    max: 2
+    when: script_failure
+
+  # Post-process the coverage report for cobertura MR visualization
+  coverage: '/^TOTAL.*?(\d+.?\d*\%)$/'
+  after_script:
+    # Copy the coverage XML file produced by `make test_utopya` into the
+    # expected coverage report directory ...
+    - cd $CI_PROJECT_DIR/build && mkdir coverage
+    - cp $CI_PROJECT_DIR/python/utopya/test/coverage.xml coverage/cobertura.xml
+
+    # Apply patch against: https://gitlab.com/gitlab-org/gitlab/-/issues/217664
+    # … as suggested here: https://forum.gitlab.com/t/enabling-cobertura/36918
+    - sed -i "s=<source>.*</source>=<source>$CI_PROJECT_DIR</source>=g" coverage/cobertura.xml
+    - sed -i "s;filename=\"$CI_PROJECT_DIR/;filename=\";g" coverage/cobertura.xml
+
+
+# Test the utopia command line interface
 test:cli:
   stage: test
-  dependencies:
-    - build:models
+  dependencies: ["build:models"]
   needs: ["build:models"]
   artifacts:
     name: utopia_output
     paths:
       - $CI_PROJECT_DIR/utopia_output/
-    expire_in: 1h
+    expose_as: Utopia Output
+    expire_in: 3h
   before_script:
     # Make model registry available (from build:models job)
     - *add_cfg_symlink
@@ -470,26 +501,30 @@ test:cli:
 
 
 # Test if using Utopia in a downstream module works
-test:link_build_tree: &test_link
+test:link_build_tree:
   stage: test
-  dependencies:
-    - build:install
+  dependencies: ["build:install"]
   needs: ["build:install"]
   script:
-    # move the package registry into the user path
+    # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
-    # build downstream module
+
+    # Build downstream module
     - cd $CI_PROJECT_DIR && mkdir build-dep && cd build-dep
-    # package should be found via registry
+
+    # Package should be found via registry
     - cmake ../test/dependency
     - make $MAKE_FLAGS_BUILD all
     - make test
 
+
+# Test if using Utopia in a downstream module works also via the install tree
 test:link_install_tree:
-  <<: *test_link
+  extends: test:link_build_tree
   script:
-    # build downstream module
+    # Build downstream module
     - mkdir build-dep && cd build-dep
+
     # CMake v3.10 is restricted to _DIR, CMake >=v3.14 can use _ROOT
     - cmake
         -DUtopia_DIR=$CI_PROJECT_DIR/install/lib/cmake/Utopia
@@ -503,12 +538,11 @@ test:link_install_tree:
 # Deploy the documentation to a self-hosted web server
 deploy:docs:
   stage: deploy
-  <<: *ssh_access
+  extends: .ssh-access
   only:
     - branches@utopia/utopia
-  dependencies:
-    - build:docs
-  needs: ["build:docs"] # May execute out of order if dependencies are ready
+  dependencies: ["build:docs"]
+  needs: ["build:docs"]
   script:
     # Create the directory on the remote, removing any prior version
     - echo "Creating remote directory $DOC_REMOTE_PATH ..."
@@ -528,11 +562,13 @@ deploy:docs:
     url: https://hermes.iup.uni-heidelberg.de/utopia_doc/$CI_COMMIT_REF_SLUG/html/
     on_stop: deploy:stop_docs
 
+
 # Stop the deployed "docs" environment for this branch
 # NOTE: This job is automatically executed if the original branch is deleted
 #       (*GitLab Magic*) or someone stops the environment.
 deploy:stop_docs:
   stage: deploy
+  extends: .ssh-access
   when: manual # Also triggered on branch deletion
   variables:
     # Stop GitLab from checking out the commit again (branch is deleted!)
@@ -542,7 +578,6 @@ deploy:stop_docs:
   #       work otherwise (this might be a bug?)
   needs: ["build:docs"]
 
-  <<: *ssh_access
   script:
     - echo "Removing remote directory $DOC_REMOTE_PATH ..."
     - ssh -p $DOC_PORT $DOC_HOST "rm -rf $DOC_REMOTE_PATH"
@@ -556,7 +591,7 @@ deploy:stop_docs:
 
 # Build and deploy the docker image to docker hub: ccees/utopia:latest
 deploy:dockerhub-latest:
-  <<: *dind
+  extends: .dind
   stage: deploy
   only:
     - master

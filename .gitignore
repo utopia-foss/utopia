@@ -39,6 +39,7 @@
 # Python and configuration
 !*.py
 !*.yml
+!*.coveragerc
 
 # Miscellaneous
 !python/utopya/utopya/bin/utopia
