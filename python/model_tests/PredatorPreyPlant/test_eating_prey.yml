@@ -1,8 +1,15 @@
 ---
+perform_sweep: true
+
 parameter_space:
   num_steps: 2
 
   PredatorPreyPlant:
+    space:
+      periodic: !sweep
+        default: true
+        values: [true, false]
+      
     cell_manager:
       cell_params:
         prey:

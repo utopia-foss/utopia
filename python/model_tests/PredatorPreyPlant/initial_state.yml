@@ -14,6 +14,11 @@ parameter_space:
   PredatorPreyPlant: !model
     model_name: PredatorPreyPlant
 
+    space: 
+      periodic: !sweep
+        default: true
+        values: [true, false]
+      
     cell_manager:
       grid:
         structure: square

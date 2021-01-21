@@ -31,14 +31,15 @@ def test_cost_of_living_prey():
     # Create, run, and load a universe
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_prey.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPreyPlant']
-    prey = data["prey"]
-    res_prey = data['resource_prey']    
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        prey = data["prey"]
+        res_prey = data['resource_prey']    
 
-    # Assert that in the end all prey is dead due to starvation
-    assert np.all(prey.isel(time=-1) == 0)
-    assert np.all(res_prey.diff(dim="time") <= 1.)
+        # Assert that in the end all prey is dead due to starvation
+        assert np.all(prey.isel(time=-1) == 0)
+        assert np.all(res_prey.diff(dim="time") <= 1.)
 
 
 def test_cost_of_living_Predator():
@@ -47,14 +48,15 @@ def test_cost_of_living_Predator():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_predator.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPreyPlant']
-    pred = data['predator']
-    res_pred = data['resource_predator']
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        pred = data['predator']
+        res_pred = data['resource_predator']
 
-    # Assert that life is costly and all predators die in the end
-    assert np.all(pred.isel(time=-1) == 0)
-    assert np.all(res_pred.diff(dim="time") <= 1.)
+        # Assert that life is costly and all predators die in the end
+        assert np.all(pred.isel(time=-1) == 0)
+        assert np.all(res_pred.diff(dim="time") <= 1.)
 
 
 def test_eating_prey():
@@ -67,17 +69,18 @@ def test_eating_prey():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_eating_prey.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPreyPlant']
-    res_prey = data['resource_prey']
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        res_prey = data['resource_prey']
 
-    # Assert that prey takes up resources every step and spends 1 resource
-    # for its cost of living
-    # NOTE Requires initial resources of 2 and cost of living of 1 and 
-    #      resource intake of 2
-    for i, r in enumerate(res_prey):
-        unique = np.unique(r)
-        assert unique == 2+i
+        # Assert that prey takes up resources every step and spends 1 resource
+        # for its cost of living
+        # NOTE Requires initial resources of 2 and cost of living of 1 and 
+        #      resource intake of 2
+        for i, r in enumerate(res_prey):
+            unique = np.unique(r)
+            assert unique == 2+i
     
 
 def test_prey_reproduction(): 
@@ -86,28 +89,28 @@ def test_prey_reproduction():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_prey_reproduction.yml")
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPreyPlant']
-    prey = data['prey']
-    predator = data['predator']
+    for uni_no, uni in dm['multiverse'].items():           
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        prey = data['prey']
+        predator = data['predator']
 
-    # There are no predators
-    assert np.all(predator) == 0
+        # There are no predators
+        assert np.all(predator) == 0
 
-    # Count the number of prey for each time step
-    num_prey = prey.sum(dim=['x', 'y'])
-    # Calculate total number of prey which can be created from the
-    # amount of available resources
-    # NOTE  The parameters are selected such that each prey can have one 
-    #       offspring
-    expected_final_num_prey = num_prey[0] * 2
+        # Count the number of prey for each time step
+        num_prey = prey.sum(dim=['x', 'y'])
+        # Calculate total number of prey which can be created from the
+        # amount of available resources
+        # NOTE  The parameters are selected such that each prey can have one 
+        #       offspring
+        expected_final_num_prey = num_prey[0] * 2
 
-    # Check that not all preys reproduce after the first iteration step
-    assert expected_final_num_prey != num_prey[1]
+        # Check that not all preys reproduce after the first iteration step
+        assert expected_final_num_prey != num_prey[1]
 
-    # Check that at the end every prey has reproduced
-    assert expected_final_num_prey == num_prey[-1]
+        # Check that at the end every prey has reproduced
+        assert expected_final_num_prey == num_prey[-1]
 
 
 def test_predator_reproduction(): 
@@ -116,25 +119,25 @@ def test_predator_reproduction():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_predator_reproduction.yml")
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPreyPlant']
-    predator = data['predator']
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        predator = data['predator']
 
-    # Count the number of predators for each time step
-    num_predator = predator.sum(dim=['x', 'y'])
+        # Count the number of predators for each time step
+        num_predator = predator.sum(dim=['x', 'y'])
 
-    # Calculate total number of predator which can be created from the
-    # amount of available resources
-    # NOTE  The parameters are selected such that each predator can have one 
-    #       offspring
-    expected_final_num_predator = num_predator[0] * 2
+        # Calculate total number of predator which can be created from the
+        # amount of available resources
+        # NOTE  The parameters are selected such that each predator can have one 
+        #       offspring
+        expected_final_num_predator = num_predator[0] * 2
 
-    # Check that not all predators reproduce after the first iteration step
-    assert expected_final_num_predator != num_predator[1]
+        # Check that not all predators reproduce after the first iteration step
+        assert expected_final_num_predator != num_predator[1]
 
-    # Check that at the end every predator has reproduced
-    assert(expected_final_num_predator == num_predator[-1])
+        # Check that at the end every predator has reproduced
+        assert(expected_final_num_predator == num_predator[-1])
 
 
 def test_plant_deterministic_mode(): 
@@ -143,16 +146,16 @@ def test_plant_deterministic_mode():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_plant_deterministic_mode.yml")
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPreyPlant']
-    plant = data['plant']
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        plant = data['plant']
 
-    # Count the number of predators for each time step
-    num_plant = plant.sum(dim=['x', 'y'])
+        # Count the number of predators for each time step
+        num_plant = plant.sum(dim=['x', 'y'])
 
-    assert num_plant[20] == 0
-    assert num_plant[21] == 100
+        assert num_plant[20] == 0
+        assert num_plant[21] == 100
 
 
 def test_plant_stochastic_mode(): 
@@ -160,24 +163,24 @@ def test_plant_stochastic_mode():
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_plant_stochastic_mode_1.yml")
+    
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        plant = data['plant']
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPreyPlant']
-    plant = data['plant']
-
-    # Count the number of predators for each time step
-    num_plant = plant.sum(dim=['x', 'y'])
-    assert num_plant[-1] == 0
+        # Count the number of predators for each time step
+        num_plant = plant.sum(dim=['x', 'y'])
+        assert num_plant[-1] == 0
 
 
     mv, dm = mtc.create_run_load(from_cfg="test_plant_stochastic_mode_2.yml")
+    
+    for uni_no, uni in dm['multiverse'].items():
+        # Get the data
+        data = uni['data']['PredatorPreyPlant']
+        plant = data['plant']
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPreyPlant']
-    plant = data['plant']
-
-    # Count the number of predators for each time step
-    num_plant = plant.sum(dim=['x', 'y'])
-    assert num_plant[-1] == 100
+        # Count the number of predators for each time step
+        num_plant = plant.sum(dim=['x', 'y'])
+        assert num_plant[-1] == 100
