@@ -111,6 +111,9 @@ MultiGraph:
         from_property: degree
       node_color:
         from_property: some_state
+      alpha:
+        from_property: some_state
+        scale_to_interval: [0.1, 0.9]
       ### Start -- graph_coloring_lognorm
       cmap:
         name: magma
@@ -217,13 +220,26 @@ explicit_node_positions:
   transform:
     - call_lambda: "lambda num_nodes: {i: (i, i) for i in range(num_nodes)}"
       kwargs:
-        num_nodes: 10  # got 10 edges configured in cfg/graphgroup_cfg.yml
+        num_nodes: 10  # got 10 nodes configured in cfg/graphgroup_cfg.yml
       tag: pos_from_dict
 
   graph_drawing:
     <<: *graph_drawing
     positions:
       from_dict: !dag_result pos_from_dict
+
+custom_graph_creation:
+  <<: *base
+  transform:
+    - nx.: "complete_graph"
+      kwargs:
+        n: 10
+      tag: graph
+
+  graph: !dag_result graph
+  graph_drawing:
+    positions:
+      model: random
 
 # NOTE If you add test cases here, also register them in test_plotting.py
 
@@ -280,8 +296,25 @@ invalid_ext_prop:
   <<: *ext_prop
   compute_only: ['graph_group']
 
+invalid_interval:
+  <<: *base
+  graph_drawing:
+    <<: *graph_drawing
+    nodes:
+      node_size:
+        from_property: some_state
+        scale_to_interval: [200, 400, 333]
+
+invalid_layout_property:
+  <<: *base
+  graph_drawing:
+    <<: *graph_drawing
+    nodes:
+      invalid_entry:
+        from_property: some_state
+
 # -- Animation configurations -------------------------------------------------
-graph_anim1:
+graph_anim1: &graph_anim
   <<: *base
   animation:
     enabled: True
@@ -318,6 +351,10 @@ graph_anim3:
     <<: *graph_creation
   graph_drawing:
     <<: *graph_drawing
+    node_labels:
+      enabled: True
+    edge_labels:
+      enabled: True
   graph_animation:
     times:
       sel: [0, 1, 2]
@@ -330,6 +367,26 @@ graph_anim_external:
   graph_animation:
     times:
       from_property: some_state_transformed
+
+# -- Animations that raise Errors or Warnings ---------------------------------
+
+anim_invalid_time_spec:
+  <<: *graph_anim
+  graph_animation:
+    times:
+      invalid_entry: foo
+
+anim_amgiguous_time_spec:
+  <<: *graph_anim
+  graph_animation:
+    times:
+      sel: [0]
+      isel: [0]
+
+anim_missing_time_spec:
+  <<: *graph_anim
+  graph_animation:
+    times: {}
 
 # -- Documentation example ----------------------------------------------------
 ### Start -- graph_plot_cfg
