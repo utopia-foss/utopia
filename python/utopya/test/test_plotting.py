@@ -359,9 +359,16 @@ def test_graph_plots(tmpdir):
             "Example_graph_plot",
             "custom_node_positioning_model",
             "explicit_node_positions",
+            "custom_graph_creation",
         ),
     )
 
+    # Animation plots
+    mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                        plot_only=["graph_anim1", "graph_anim2", "graph_anim3",
+                                   "graph_anim_external"])
+
+    # Test failing cases
     # Try using a graphviz node layout, which requires pydot
     try:
         import pydot
@@ -370,7 +377,6 @@ def test_graph_plots(tmpdir):
             mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
     else:
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS, plot_only=["Graphviz"])
-
 
     # Try plotting a colorbar for directed edges with arrows=True
     with pytest.warns(UserWarning, match="No colorbar can be shown"):
@@ -396,7 +402,34 @@ def test_graph_plots(tmpdir):
         mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
                             plot_only=["invalid_ext_prop"])
 
-    # Animation plots
-    mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
-                        plot_only=["graph_anim1", "graph_anim2", "graph_anim3",
-                                   "graph_anim_external"])
+    # Providing invalid interval for property rescaling
+    with pytest.raises(PlotCreatorError, match="'interval' must be a 2-tuple"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["invalid_interval"])
+
+    # Trying to map to an invalid layout property
+    with pytest.raises(
+        PlotCreatorError, match="can not be mapped to the 'invalid_entry'"
+    ):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["invalid_layout_property"])
+
+    # Invalid time specification for animation
+    with pytest.raises(
+        PlotCreatorError, match="invalid specifications for the animation time"
+    ):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["anim_invalid_time_spec"])
+
+    # Ambiguous time specifications for animation
+    with pytest.raises(
+        PlotCreatorError, match="ambiguous time specifications"
+    ):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["anim_amgiguous_time_spec"])
+
+    # Missing time specification for animation
+    with pytest.raises(PlotCreatorError, match="Missing time specifications"):
+        mv.pm.plot_from_cfg(plots_cfg=GRAPH_PLOTS,
+                            plot_only=["anim_missing_time_spec"])
+

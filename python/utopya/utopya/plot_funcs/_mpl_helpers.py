@@ -224,7 +224,7 @@ class ColorManager:
 
         else:
             try:
-                cmap = mpl.cm.get_cmap(name, **cmap_kwargs)
+                cmap = copy.copy(mpl.cm.get_cmap(name, **cmap_kwargs))
 
             except ValueError as err:
                 raise ValueError(f"Received invalid colormap name: '{name}'. "
