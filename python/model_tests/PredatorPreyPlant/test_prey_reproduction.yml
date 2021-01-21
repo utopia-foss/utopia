@@ -1,4 +1,6 @@
 ---
+perform_sweep: true
+
 parameter_space:
   num_steps: 50
 
@@ -7,7 +9,9 @@ parameter_space:
 
     space:
       extent: [10, 10]
-
+      periodic: !sweep
+        default: true
+        values: [true, false]
     cell_manager:
       grid:
         structure: square

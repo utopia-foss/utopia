@@ -5,7 +5,7 @@
 # NOTE that this sets only the common values; the changes are set via passing
 #      additional keys to the the ModelTest.create_run_load method
 ---
-perform_sweep: false
+perform_sweep: true
 
 parameter_space:
   # Do a number of steps
@@ -17,6 +17,9 @@ parameter_space:
 
     space:
       extent: [10, 10]
+      periodic: !sweep
+        default: true
+        values: [true, false]
 
     cell_manager:
       grid:

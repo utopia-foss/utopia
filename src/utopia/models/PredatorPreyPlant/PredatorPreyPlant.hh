@@ -100,7 +100,6 @@ using CellTraits = Utopia::CellTraits<State, Update::manual>;
 /// Typehelper to define data types of PredatorPreyPlant model
 using ModelTypes = ModelTypes<>;
 
-
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 /// PredatorPreyPlant Model on grid cells
@@ -170,9 +169,6 @@ private:
     /// Uniform real distribution [0, 1) for evaluating probabilities
     std::uniform_real_distribution<double> _prob_distr;
 
-    /// uniform integer distribution used when selecting a random neighbor
-    std::uniform_int_distribution<> _rand_walk;
-
     /// Distribution for randomly selecting a cell in your cellmanager
     std::uniform_int_distribution<> _cm_dist;
 
@@ -192,6 +188,7 @@ private:
 
     /// Dataset of Plant resources
     const std::shared_ptr<DataSet> _dset_plant;
+
 
     // .. Rule functions and helper methods ...................................
     /// Cost of Living
@@ -226,6 +223,16 @@ private:
 
         return state;
     };
+
+    /// Returns a random neighbor
+    /** This method chooses uniform randomly a cell from the 
+     *  neighborhood of the given cell.
+     */
+    std::shared_ptr<Cell>
+    get_random_neighbor(const CellContainer<Cell>& nbs) const
+    {
+        return nbs[std::uniform_int_distribution<std::size_t>(0, nbs.size() - 1)(*this->_rng)];
+    }
 
     /// Move a predator to a neighboring cell
     /** This function resets the states predator state and updates the
@@ -315,7 +322,7 @@ private:
         }
         // if there isn't one, then try a random walk
         else {
-            auto nb_cell = this->_cm.neighbors_of(cell)[_rand_walk(*this->_rng)];
+            const std::shared_ptr<Cell> nb_cell = get_random_neighbor(_cm.neighbors_of(cell));
             // The will move even if there is a predator.
             if (not nb_cell->state.prey.on_cell) {
                 move_prey_to_nb_cell(cell, nb_cell);
@@ -357,8 +364,7 @@ private:
         }
         else {
             // If no prey in the neighborhoods try a random step if possible
-            auto nb_cell = this->_cm.neighbors_of(cell)[_rand_walk(*this->_rng)];
-
+            const std::shared_ptr<Cell> nb_cell = get_random_neighbor(_cm.neighbors_of(cell));
             if (not nb_cell->state.predator.on_cell){
                 // move the predator to the given cell
                 move_predator_to_nb_cell(cell, nb_cell);
@@ -458,7 +464,7 @@ private:
             and (   state.predator.resources
                  >= _params.predator.repro_resource_requ))
         {
-            auto nb_cell = this->_cm.neighbors_of(cell)[_rand_walk(*this->_rng)];
+            const std::shared_ptr<Cell> nb_cell = get_random_neighbor(_cm.neighbors_of(cell));
             if (not nb_cell->state.predator.on_cell) {
                 nb_cell->state.predator.on_cell = true;
 
@@ -473,8 +479,7 @@ private:
             and this->_prob_distr(*this->_rng) < _params.prey.repro_prob
             and state.prey.resources >= _params.prey.repro_resource_requ)
         {
-            auto nb_cell = this->_cm.neighbors_of(cell)[_rand_walk(*this->_rng)];
-            
+            const std::shared_ptr<Cell> nb_cell = get_random_neighbor(_cm.neighbors_of(cell));
             if (not nb_cell->state.prey.on_cell) {
                 nb_cell->state.prey.on_cell = true;
 
@@ -556,7 +561,6 @@ public:
 
         // create random distributions
         _prob_distr(0., 1.),
-        _rand_walk(0, _cm.nb_size() - 1),
         _cm_dist(0, _cm.cells().size() - 1),
 
         // create datasets
