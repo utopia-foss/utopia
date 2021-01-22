@@ -18,7 +18,7 @@ from_intervals:
   cmap:
     from_values:
       [-.5,0.5]: r
-      [0.5,1.5]: g
+      [0.5,1.5]: ~ # None entry, use placeholder color here
       [1.5,4.5]: b
 
 simple_syntax:
@@ -45,6 +45,17 @@ advanced_syntax:
   norm:
     name: PowerNorm
     gamma: 0.5
+
+shortcut_categorical:
+  cmap:
+    from_values:
+      - # None entry, use placeholder color here
+      - blue
+    placeholder_color: g
+  labels:
+    - first-category
+    - second-category
+  vmax: 3
 
 # -- Different norms ----------------------------------------------------------
 Normalize:
