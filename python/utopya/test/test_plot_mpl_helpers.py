@@ -82,7 +82,7 @@ def test_ColorManager():
         assert isinstance(cb, mpl.colorbar.Colorbar)
         assert cb.norm == norm
         assert cb.cmap == cmap
-        if 'labels' in cfg:
+        if 'labels' in cfg and isinstance(cfg['labels'], dict):
             assert (cb.get_ticks() == list(cfg['labels'].keys())).all()
         plt.close()
 
@@ -91,3 +91,11 @@ def test_ColorManager():
         assert mpl.colors.is_color_like(colors)
         colors = colormanager.map_to_color(np.linspace(2.1,5.3,10))
         assert all([mpl.colors.is_color_like(c) for c in colors])
+
+        # NOTE Some explicit color checks. If it fails check the respective
+        #      configurations.
+        if name == "from_intervals":
+            assert cmap(1) == mpl.colors.to_rgba("w")
+
+        if name == "shortcut_categorical":
+            assert cmap(0) == mpl.colors.to_rgba("g")

@@ -45,7 +45,7 @@ class ColorManager:
     """
     def __init__(self, *, cmap: Union[str, dict]=None,
                           norm: Union[str, dict]=None,
-                          labels: dict=None,
+                          labels: Union[dict, list]=None,
                           vmin: float=None,
                           vmax: float=None):
         """Initializes the ``ColorManager`` by building the colormap, the norm,
@@ -56,9 +56,9 @@ class ColorManager:
                 it must name a registered colormap. If it is a dict, the
                 following arguments are available:
 
-                name (str):
+                name (str, optional):
                     Name of a registered colormap.
-                from_values (dict, optional):
+                from_values (Union[dict, list], optional):
                     Dict of colors keyed by bin-specifier. If given, ``name``
                     is ignored and a discrete colormap is created from the list
                     of specified colors. The ``norm`` is then set to
@@ -69,6 +69,9 @@ class ColorManager:
                     bin-edges are assumed halfway between the bin-centers. For
                     the latter, the given intervals must be pairwise connected.
                     In both cases, the bins must monotonically increase.
+
+                    If a list of colors is passed they are automatically
+                    assigned to the bin-centers [0, 1, 2, ...].
                 under (Union[str, dict], optional):
                     Passed on to
                     `Colormap.set_under <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_under>`_.
@@ -78,6 +81,9 @@ class ColorManager:
                 bad (Union[str, dict], optional):
                     Passed on to
                     `Colormap.set_bad <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_bad>`_.
+                placeholder_color (optional): ``None`` values in
+                    ``from_values`` are replaced with this color
+                    (default: white).
 
             norm (Union[str, dict], optional): The norm that is applied for the
                 color-mapping. If it is a string, the matching norm in
@@ -86,8 +92,9 @@ class ColorManager:
                 entry specifies the norm and all further entries are passed to
                 its constructor. May be overwritten if a discrete colormap is
                 specified in ``cmap``.
-            labels (dict, optional): Colorbar tick-labels keyed by tick
-                position.
+            labels (Union[dict, list], optional): Colorbar tick-labels keyed by
+                tick position. If a list of labels is passed they are
+                automatically assigned to the positions [0, 1, 2, ...].
             vmin (float, optional): The lower bound of the color-mapping.
                 Ignored if norm is *BoundaryNorm*.
             vmax (float, optional): The upper bound of the color-mapping.
@@ -102,8 +109,21 @@ class ColorManager:
         cmap_kwargs = copy.deepcopy(cmap)
         norm_kwargs = copy.deepcopy(norm)
 
+        # Parse configuration for custom discrete colormapping
         if 'from_values' in cmap_kwargs:
             mapping = cmap_kwargs.pop('from_values')
+
+            # Parse shortcut notation
+            if isinstance(mapping, list):
+                mapping = {k: v for k, v in enumerate(mapping)}
+
+            # Replace all None entries by the placeholder color. If not given,
+            # set white as default.
+            _placeholder_color = cmap_kwargs.pop("placeholder_color", "w")
+            mapping = {
+                k: (v if v is not None else _placeholder_color)
+                for k, v in mapping.items()
+            }
             
             cmap_kwargs['name'] = 'ListedColormap'
             cmap_kwargs['colors'] = mapping.values()
@@ -122,6 +142,10 @@ class ColorManager:
             norm_kwargs['vmax'] = vmax
 
             log.remark("norm.vmin and norm.vmax set to %s and %s.", vmin, vmax)
+
+        # Parse shortcut notation
+        if isinstance(labels, list):
+            labels = {k: v for k, v in enumerate(labels)}
 
         self._cmap = self._create_cmap(**cmap_kwargs)
         self._norm = self._create_norm(**norm_kwargs)
