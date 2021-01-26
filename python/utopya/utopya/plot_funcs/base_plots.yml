@@ -410,6 +410,20 @@
   style:
     <<: *default_style
 
+
+# .. Multiplot ................................................................
+# Plot one or multiple overlaying functions, also supporting seaborn
+#    Docs: https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html
+.dag.multiplot:
+  module: dantro.plot_creators.ext_funcs.multiplot
+  plot_func: multiplot
+
+  helpers:
+    <<: *default_helpers
+  style:
+    <<: *default_style
+    
+
 # .. Graph plots ..............................................................
 .dag.graph:
   creator: universe
