@@ -9,9 +9,9 @@ living_density:
 
 # Plot an animation of the cellular automaton
 CA_state_anim:
-  based_on: state_anim
-
+  based_on:
+    - state_anim
+    - .ca.state.anim_ffmpeg 
   to_plot:
     living:
       title: Living
-    
