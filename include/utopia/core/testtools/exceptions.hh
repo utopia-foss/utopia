@@ -84,8 +84,9 @@ void check_exception(Callable&& func,
             // else: everything ok
         }
         catch (std::exception& e) {
-            BOOST_ERROR(loc << "Threw error of unexpected type: "
-                        << boost::core::demangle(typeid(e).name()));
+            BOOST_ERROR(loc << "Threw error of unexpected type ("
+                        << boost::core::demangle(typeid(e).name())
+                        << ") with message: " << e.what());
         }
         catch (...) {
             BOOST_ERROR(loc << "Threw non-std::exception!");
