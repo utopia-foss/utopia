@@ -14,6 +14,7 @@
 #include <utopia/core/model.hh>
 #include <utopia/core/graph.hh>
 #include <utopia/data_io/graph_utils.hh>
+#include <utopia/data_io/graph_load.hh>
 
 namespace Utopia::Models::CopyMeGraph
 {
@@ -257,7 +258,7 @@ class CopyMeGraph : public Model<CopyMeGraph, ModelTypes>
         _prob_distr(0., 1.),
 
         // Now initialize the graph
-        _g {initialize_graph()},
+        _g {Utopia::DataIO::GraphLoad::load_graphml<GraphType>("airlines.graphml")},
 
         // Initialize model parameters
         _some_parameter(get_as<double>("some_parameter", this->_cfg)),
