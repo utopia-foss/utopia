@@ -104,7 +104,8 @@ Have a look at the [troubleshooting](#troubleshooting) section to see how to add
 ```bash
 apt update
 apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
-            libboost-dev libboost-test-dev libhdf5-dev libspdlog-dev \
+            libboost-dev libboost-test-dev libboost-graph-dev \
+            libboost-regex-dev libhdf5-dev libspdlog-dev \
             libyaml-cpp-dev pkg-config python3-dev python3-pip python3-venv
 ```
 
@@ -619,7 +620,7 @@ Follow the instructions in [the `models_template` project][models_template] for 
 | [CMake][cmake]       | >= 3.13             | 3.16            | |
 | pkg-config           | >= 0.29             | 0.29            | |
 | [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
-| [Boost][Boost]       | >= 1.67             | 1.71            | |
+| [Boost][Boost]       | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
 | [Armadillo][arma]    | >= 9.600            | 9.800           | |
 | [yaml-cpp][yaml-cpp] | >= 0.6.2            | 0.6.2           | |
 | [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |
