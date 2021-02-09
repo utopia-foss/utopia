@@ -1,6 +1,7 @@
 # place auxilary files in build directory
 file(COPY
         "cfg_utils_test.yml"
+        "filesystem_test.yml"
         "datamanager_test.yml"
         "datamanager_test_anchors.yml"
         "datamanager_test_factory.yml"
@@ -10,6 +11,7 @@ file(COPY
 # register targets
 set(TESTS_DATAIO
     cfg_utils_test
+    filesystem_test
     graph_utils_test
     hdfbufferfactory_test
     hdfchunking_test
@@ -31,10 +33,10 @@ set(TESTS_DATAIO
     # hdfobject_test
     hdfidentifier_test
 
-    # this is a template for testing memory usage over time and intended for 
+    # this is a template for testing memory usage over time and intended for
     # closer scrutinization with sanitizers, valgrind or heap profilers.
     # included here for it to be build conveniently upon need
-    
+
     # memory_test
     )
 

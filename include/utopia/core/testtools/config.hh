@@ -200,8 +200,9 @@ void test_config_callable(Callable&& func,
             func(case_cfg["params"]);
         }
         catch (std::exception& e) {
-            BOOST_ERROR(loc << "Unexpectedly threw an error: "
-                        << boost::core::demangle(typeid(e).name()));
+            BOOST_ERROR(loc << "Unexpectedly threw an error ("
+                        << boost::core::demangle(typeid(e).name())
+                        << ") with message: " << e.what());
         }
         catch (...) {
             BOOST_ERROR(loc << "Unexpectedly threw a non-std error!");
