@@ -15,9 +15,7 @@ parameter_space:
     values: [23, 42, 665, 667]
 
   # Load the model config
-  SimpleEG: !model
-    model_name: SimpleEG
-
+  SimpleEG:
     # Choose a lower resolution than default
     cell_manager:
       grid:

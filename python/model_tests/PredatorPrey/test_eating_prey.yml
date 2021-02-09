@@ -3,9 +3,7 @@ parameter_space:
   # Do a number of steps
   num_steps: 2
 
-  PredatorPrey: !model
-    model_name: PredatorPrey
-
+  PredatorPrey:
     cell_manager:
       grid:
         structure: square

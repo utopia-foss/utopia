@@ -5,8 +5,7 @@ parameter_space:
   num_steps: 2
 
   # Load the model config
-  ForestFire: !model
-    model_name: ForestFire
+  ForestFire:
 
     cell_manager:
       # Work with lower resolution

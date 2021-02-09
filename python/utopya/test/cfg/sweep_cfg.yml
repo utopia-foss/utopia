@@ -8,5 +8,3 @@ parameter_space:
     default: 1337
     values: [23, 42, 665, 667]
     
-  dummy: !model
-    model_name: dummy  

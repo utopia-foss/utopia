@@ -13,9 +13,7 @@ parameter_space:
   num_steps: 10 # FIXME should test for higher number of time steps
 
   # Load the default model config
-  SimpleEG: !model
-    model_name: SimpleEG
-
+  SimpleEG:
     # Choose a lower resolution
     cell_manager:
       grid:

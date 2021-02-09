@@ -8,8 +8,3 @@ parameter_space:
   seed: !sweep
     default: 42
     values: [23, 42, 665, 667]
-
-  vegetation: !model  
-    model_name: Vegetation
-
-    # NOTE Below, entries from the model config can be changed or added

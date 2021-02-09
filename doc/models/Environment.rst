@@ -313,9 +313,7 @@ the ``Environment`` model inherits the full CellManager configuration.
 
 .. code-block:: yaml
 
-    YourModel: !model
-      model_name: YourModel
-
+    YourModel:
       some_global_parameter: 3.14
 
       cell_manager:
@@ -329,7 +327,7 @@ model, e.g. initialize a spatial gradient within ``some_heterogeneous_parameter`
 
 .. code-block:: yaml
 
-    YourModel: !model
+    YourModel:
       # ...
 
       # Environment configuration

@@ -12,9 +12,7 @@ parameter_space:
   num_steps: 80
 
   # Load the default model config
-  PredatorPreyPlant: !model
-    model_name: PredatorPreyPlant
-
+  PredatorPreyPlant:
     space:
       extent: [10, 10]
       periodic: !sweep

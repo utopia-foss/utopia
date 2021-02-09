@@ -7,8 +7,7 @@ parameter_space:
   num_steps: 10
   write_every: 2
 
-  ForestFire: !model
-    model_name: ForestFire
+  ForestFire:
 
     p_lightning: 0.5
     p_growth: 0

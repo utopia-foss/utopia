@@ -3,9 +3,7 @@
 parameter_space:
   num_steps: 3
 
-  Environment: !model  
-    model_name: Environment
-
+  Environment:
     cell_manager:
       grid:
         resolution: 4

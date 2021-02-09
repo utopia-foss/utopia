@@ -7,5 +7,4 @@ parameter_space:
     default: 42
     range: [4]
 
-  dummy: !model
-    model_name: dummy
+  dummy: {}

@@ -5,9 +5,7 @@ parameter_space:
   num_steps: 0
 
   # Load the model config
-  SimpleEG: !model
-    model_name: SimpleEG
-
+  SimpleEG:
     # Use a lower resolution
     cell_manager:
       grid:

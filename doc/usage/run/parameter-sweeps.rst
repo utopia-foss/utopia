@@ -50,9 +50,7 @@ The run configuration should specify the parameters over which to sweep. Sweep p
                       # name within the parameter space is generated, in this case: seed
 
      # Now, load the configuration for your specific model
-     MyFancyModel: !model
-       model_name: MyFancyModel
-       # The above two lines import the _default_ configuration, i.e. MyFancyModel_cfg.yml
+     MyFancyModel:
        # Below, you can make updates to these values
        some_parameter: 42
 

@@ -3,9 +3,7 @@
 parameter_space:
   num_steps: 10
 
-  HdfBench: !model
-    model_name: HdfBench
-
+  HdfBench:
     benchmarks:
       - write_const
 

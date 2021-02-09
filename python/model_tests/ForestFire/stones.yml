@@ -10,8 +10,7 @@ parameter_space:
     default: 42
     range: [4]
 
-  ForestFire: !model
-    model_name: ForestFire
+  ForestFire:
 
     # Work with lower resolution and no tree cells at time zero
     cell_manager:

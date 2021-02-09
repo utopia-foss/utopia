@@ -11,9 +11,7 @@ parameter_space:
   num_steps: 100000
   write_every: 500
 
-  SavannaHomogeneous: !model
-    model_name: SavannaHomogeneous
-
+  SavannaHomogeneous: 
     initial_state: random
 
     alpha: !sweep
