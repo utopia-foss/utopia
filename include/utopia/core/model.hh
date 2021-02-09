@@ -147,11 +147,14 @@ protected:
     /// Name of the model instance
     const std::string _name;
 
+    /// The full name within the model hierarchy
+    const std::string _full_name;
+
+    /// The level within the model hierarchy
+    const Level _level;
+
     /// Config node belonging to this model instance
     const Config _cfg;
-
-    /// The hierarchical level
-    const Level _level;
 
     /// The space this model resides in
     std::shared_ptr<Space> _space;
@@ -207,42 +210,47 @@ public:
     // -- Constructor ---------------------------------------------------------
 
     /// Constructs a Model instance
-  /** Uses information from a parent model to create an instance of this
-   *  model.
-   *
-   *  \tparam ParentModel The parent model's type
-   *
-   *  \param name         The name of this model instance, ideally used only
-   *                      once on the current hierarchical level
-   *  \param parent_model The parent model object from which the
-   *                      corresponding config node, the group, the RNG,
-   *                      and the parent log level are extracted.
-   *  \param custom_cfg   If given, will use this configuration node instead
-   *                      of trying to extract one from the parent model's
-   *                      configuration.
-   *  \param w_args       Passed on to DataManager constructor. If not given,
-   *                      the DataManager will still be constructed. Take
-   *                      care to also set the WriteMode accordingly.
-   * \param w_deciders    Map which associates names with factory functions for
-   *                      deciders of signature factory()::shared_ptr<Decider<Derived>>
-   * \param w_triggers    Map which associates names with factory functions for
-   *                      deciders of signature factory()::shared_ptr<Trigger<Derived>>
-   */
-  template < class ParentModel, class... WriterArgs >
-  Model(const std::string&                           name,
-        const ParentModel&                           parent_model,
-        const Config&                                custom_cfg = {},
-        std::tuple< WriterArgs... > w_args     = {},
+    /** Uses information from a parent model to create a model instance.
+     *
+     *  \tparam ParentModel The parent model's type
+     *
+     *  \param name         The name of this model instance, ideally used only
+     *                      once on the current hierarchical level
+     *  \param parent_model The parent model object from which the
+     *                      corresponding config node, the group, the RNG,
+     *                      and the parent log level are extracted.
+     *  \param custom_cfg   If given, will use this configuration node instead
+     *                      of trying to extract one from the parent model's
+     *                      configuration.
+     *  \param w_args       Passed on to DataManager constructor. If not given,
+     *                      the DataManager will still be constructed. Take
+     *                      care to also set the WriteMode accordingly.
+     *  \param w_deciders   Map which associates names with factory functions
+     *                      for deciders of signature
+     *                      factory()::shared_ptr<Decider<Derived>>
+     *  \param w_triggers   Map which associates names with factory functions
+     *                      for triggers of signature
+     *                      factory()::shared_ptr<Trigger<Derived>>
+     */
+    template < class ParentModel, class... WriterArgs >
+    Model(const std::string& name,
+        const ParentModel& parent_model,
+        const Config& custom_cfg = {},
+        std::tuple< WriterArgs... > w_args = {},
         const DataIO::Default::DefaultDecidermap< Derived >&
             w_deciders = DataIO::Default::default_deciders< Derived >,
         const DataIO::Default::DefaultTriggermap< Derived >&
             w_triggers = DataIO::Default::default_triggers< Derived >
-        ):
-        // First thing: setup name, configuration, and level in hierarchy
+        )
+    :
+        // First thing: setup name and position within model hierarchy
         _name(name),
+        _full_name(parent_model.get_full_name() + "." + name),
+        _level(parent_model.get_level() + 1),
+
+        // Retrieve the appropriate configuration entry from the parent model
         _cfg(custom_cfg.size() ? custom_cfg
              : get_as<Config>(_name, parent_model.get_cfg())),
-        _level(parent_model.get_level() + 1),
 
         // Determine space and time
         _space(this->setup_space()),
@@ -258,7 +266,9 @@ public:
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        _monitor(Monitor(name, parent_model.get_monitor_manager())),
+        // Set up the monitor, omitting the leading "." in the full name
+        _monitor(Monitor(_full_name.substr(1),
+                         parent_model.get_monitor_manager())),
 
         // Default-construct the data maanger; only used if needed, see below.
         _datamanager()
@@ -276,7 +286,9 @@ public:
         }
 
         // Provide some information, also depending on write mode
-        _log->info("Model base constructor finished.");
+        _log->info("Model base constructor for '{}' finished.", _name);
+        _log->info("  full_name:   {}", _full_name);
+        _log->info("  level:       {}", _level);
         _log->info("  time_max:    {:7d}", _time_max);
 
         if constexpr (_write_mode == WriteMode::basic) {
@@ -368,6 +380,11 @@ public:
     /// Return the name of this model instance
     std::string get_name() const {
         return _name;
+    }
+
+    /// Return the full name of this model within the model hierarchy
+    std::string get_full_name() const {
+        return _full_name;
     }
 
     /// Return a pointer to the HDF group this model stores data in
@@ -972,6 +989,11 @@ public:
     /// Return the hierarchical level within the model hierarchy
     Level get_level() const {
         return _level;
+    }
+
+    /// Return the full name of the PseudoParent: an empty string
+    std::string get_full_name() const {
+        return "";
     }
 
     /// Return the config node of the Pseudo model, i.e. the root node

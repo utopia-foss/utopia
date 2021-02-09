@@ -7,9 +7,11 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
-namespace Utopia
-{
-namespace DataIO
+#include "../core/string.hh"
+#include "cfg_utils.hh"
+
+
+namespace Utopia::DataIO
 {
 
 /*!
@@ -86,9 +88,11 @@ class MonitorTimer
     /// Constructor
     /** Construct a new Monitor Timer object. The _last_emit time is set to the
      * time of construction.
-     * @param emit_interval The time interval that defines whether the time has
-     * come to emit data. If more time than the _emit_interval has passed
-     * the time_has_come function returns true.
+     *
+     * @param emit_interval     The time interval that defines whether the
+     *                          time has come to emit data. If more time than
+     *                          the _emit_interval has passed the
+     *                          time_has_come function returns true.
      */
     MonitorTimer(const double emit_interval) :
         // Store the emit interval
@@ -154,11 +158,10 @@ class MonitorTimer
 class MonitorManager
 {
   private:
-    // -- Type definitions -- //
     /// Type of the timer
     using Timer = std::shared_ptr< MonitorTimer >;
 
-    // -- Member declaration -- //
+    // -- Members -------------------------------------------------------------
     /// The monitor timer
     Timer _timer;
 
@@ -188,13 +191,16 @@ class MonitorManager
      */
     MonitorManager(const double      emit_interval,
                    const std::string emit_prefix = "!!map ",
-                   const std::string emit_suffix = "") :
+                   const std::string emit_suffix = "")
+    :
         // Create a new MonitorTimer object
         _timer(std::make_shared< MonitorTimer >(emit_interval)),
         // Create an empty MonitorEntries object for the data to be emitted
         _entries(YAML::Node()),
         // Initialially set the collect data flag to true
-        _emit_enabled(true), _emit_counter(0), _emit_prefix(emit_prefix),
+        _emit_enabled(true),
+        _emit_counter(0),
+        _emit_prefix(emit_prefix),
         _emit_suffix(emit_suffix)
     {
         _entries.SetStyle(YAML::EmitterStyle::Flow);
@@ -204,16 +210,16 @@ class MonitorManager
     void
     emit_if_enabled()
     {
-        if (_emit_enabled)
-        {
-            // Emit the monitor entries to the terminal, adding a prefix
-            std::cout << _emit_prefix << _entries << _emit_suffix << std::endl;
+        if (not _emit_enabled) return;
 
-            // Take care of the counter, reset the timer and the emit flag
-            _emit_counter++;
-            _timer->reset();
-            _emit_enabled = false;
-        }
+        std::cout << _emit_prefix
+                  << _entries
+                  << _emit_suffix
+                  << std::endl;
+
+        _emit_counter++;
+        _timer->reset();
+        _emit_enabled = false;
     }
 
     /// Checks with the timer whether the time to emit has come.
@@ -227,10 +233,10 @@ class MonitorManager
     }
 
     /// Returns true if the emission is enabled
-    /* @details This function can be used as a more performative way to checking
-     *         whether it makes sense to collect monitor entries; it makes only
-     *         sense to collect entries, if the emission will actually performed
-     *         in the current time step.
+    /* This function can be used as a more performative way to checking whether
+     * it makes sense to collect monitor entries; it makes only sense to
+     * collect entries, if the emission will actually performed in the current
+     * time step.
      */
     bool
     emit_enabled() const
@@ -238,25 +244,32 @@ class MonitorManager
         return _emit_enabled;
     }
 
-    /// Set an entry in the monitor entries
-    /**
-     * @tparam Value The type of the value that should be monitored
-     * @param model_name The model name which will be prefixed to the key
-     * @param key The key of the new entry
-     * @param value The value of the new entry
+    /// Set an entry in the tree of monitor entries
+    /** Sets an element at `<path>.<key>` to `value`, creating intermediate
+     *  nodes within the monitor entries tree.
+     *
+     * @tparam Value    The type of the value that should be monitored
+     *
+     * @param path      The path at which to add the key. This can be used to
+     *                  traverse the entries tree. To separate the path
+     *                  segments, the `.` character is used.
+     * @param key       The key of the new entry. It is suffixed onto the path
+     *                  with the `.` delimiter in between, becoming the last
+     *                  segment of the path.
+     * @param value     The value of the new entry
      */
     template < typename Value >
     void
-    set_entry(const std::string model_name,
-              const std::string key,
-              const Value       value)
+    set_entry(const std::string& path,
+              const std::string& key,
+              const Value        value)
     {
-        _entries[model_name + "." + key] = value;
+        recursive_setitem(_entries, path + "." + key, value, ".");
     }
 
     /// Set time- and progress-related top level entries
-    /** @brief Using the given parameters, this method sets the top-level
-     *          entries 'time' and 'progress'
+    /** Using the given parameters, this method sets the top-level entries
+     * 'time' and 'progress'
      *
      *  @tparam Time The data type of the time
      *  @param time     The current time
@@ -306,6 +319,8 @@ class Monitor
 {
   private:
     /// The name of the monitor
+    /** Used when setting entries via MonitorManager::set_entry
+      */
     const std::string _name;
 
     /// The monitor manager
@@ -318,8 +333,9 @@ class Monitor
      * @param name The name of the monitor
      * @param root_mtr_mgr The root monitor manager
      */
-    Monitor(const std::string                 name,
-            std::shared_ptr< MonitorManager > root_mtr_mgr) :
+    Monitor(const std::string&                name,
+            std::shared_ptr< MonitorManager > root_mtr_mgr)
+    :
         _name(name),
         _mtr_mgr(root_mtr_mgr){};
 
@@ -330,7 +346,8 @@ class Monitor
      * @param name The name of the monitor
      * @param parent_mtr The parent monitor
      */
-    Monitor(const std::string name, Monitor& parent_mtr) :
+    Monitor(const std::string name, Monitor& parent_mtr)
+    :
         _name(parent_mtr.get_name() + "." + name),
         _mtr_mgr(parent_mtr.get_monitor_manager()){};
 
@@ -402,7 +419,6 @@ class Monitor
 /*! \} */ // end of group Monitor
 /*! \} */ // end of group DataIO
 
-} // namespace DataIO
-} // namespace Utopia
+} // namespace Utopia::DataIO
 
 #endif // UTOPIA_DATAIO_MONITOR_HH

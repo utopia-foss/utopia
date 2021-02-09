@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(test_exceptions) {
         [&](){
             get_as<bool>("invalid_key2", cfg["invalid_key1"]);
         },
-        "invalid node; first invalid key: \"invalid_key1\""
+        "invalid node"  // rest of the message may vary between versions
     );
 
     // Conversion error is still thrown, not intercepted
