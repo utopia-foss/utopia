@@ -5,6 +5,9 @@ file(COPY
         "datamanager_test.yml"
         "datamanager_test_anchors.yml"
         "datamanager_test_factory.yml"
+        "graph_load_test.yml"
+        "graph_load_test.gv"
+        "graph_load_test.graphml"
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
@@ -13,6 +16,7 @@ set(TESTS_DATAIO
     cfg_utils_test
     filesystem_test
     graph_utils_test
+    graph_load_test
     hdfbufferfactory_test
     hdfchunking_test
     hdftype_test

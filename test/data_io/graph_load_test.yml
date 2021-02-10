@@ -1,0 +1,35 @@
+
+# Documentation
+---
+
+Graphviz:
+  model: load_from_file
+  load_from_file:
+    filename: graph_load_test.gv
+    format: graphviz
+
+GraphML:
+  model: load_from_file
+  load_from_file:
+    filename: graph_load_test.graphml
+    format: graphml
+
+Graphviz_with_base_dir:
+  model: load_from_file
+  load_from_file:
+    base_dir: "."
+    filename: graph_load_test.gv
+    format: graphviz
+
+GraphML_with_base_dir:
+  model: load_from_file
+  load_from_file:
+    base_dir: "."
+    filename: graph_load_test.graphml
+    format: graphml
+
+# Fail:
+#   model: load_from_file
+#   load_from_file:
+#     filename: graph_load_test.yml
+#     format: graphml

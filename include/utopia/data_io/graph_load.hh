@@ -36,17 +36,18 @@ Graph load_graph(const std::string& abs_file_path, const std::string& format)
 
     // Load file into file stream
     std::ifstream ifs(abs_file_path.c_str());
-    if (!ifs.is_open())
-    {
-        throw "Could not load file into ifstream.";
+    if (not ifs.is_open()) {
+        throw std::invalid_argument(
+            "Failed opening file for loading graph! Make sure there "
+            "exists a file at " + abs_file_path + "!"
+        );
     }
 
     // Load the data from the file stream
-    if (format == "graphviz" || format == "gv"
-                             || format == "dot" || format == "DOT") {
+    if (format == "graphviz" or format == "dot") {
         boost::read_graphviz(ifs, g, dyn_prop);
 
-    } else if (format == "graphml" || format == "gml") {
+    } else if (format == "graphml") {
         boost::read_graphml(ifs, g, dyn_prop);
 
     } else {

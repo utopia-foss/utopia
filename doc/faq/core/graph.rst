@@ -101,6 +101,8 @@ YAML file looks like this:
       #                     model (for undirected graphs)
       # "BollobasRiordan"   Create a scale-free graph using the Bollobas-Riordan
       #                     model (for directed graphs)
+      # "load_from_file"    Create a graph from a given graphml or dot file
+      #                     model (for directed graphs)
       model: "ErdosRenyi"
 
       # The number of vertices
@@ -133,6 +135,11 @@ YAML file looks like this:
         gamma: 0.
         del_in: 0.
         del_out: 0.5
+
+      load_from_file:
+        base_dir: "~/Utopia/network-files"
+        filename: "my_airlines_network.xml"
+        format:"graphml" # or "graphviz"/"dot" (the same)
 
 
 
@@ -271,3 +278,61 @@ of ``save_graph_properties``. Thus, if you want to be able to associate a
 property with another one (e.g. saved edges and their corresponding weight),
 make sure to call ``save_graph_properties`` only once, as the order is conserved
 in a single call.
+
+Loading a Graph from a File 
+-----------------------------
+Can I also use real-world networks as a basis for the graph?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Yes you can! Via the ``create_graph`` config interface you can access the graph loading mechanism and do your simulations on airline networks, social networks, and anything that you are able to find out there. The usage is as simple as the following example:
+
+.. code-block:: YAML
+
+    create_graph:
+      model: "load_from_file"
+      load_from_file:
+        base_dir: "~/Utopia/network-files"
+        filename: "my_airlines_network.xml"
+        format: "graphml" # or "graphviz"/"dot"
+
+.. warning::
+
+    Currently, the loader only supports loading to ``boost``'s ``adjacency_list``, not to an ``adjacency_matrix``.
+
+    A workaround could be to copy the graph via `boost's copy graph functionality <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/copy_graph.html>`_ .
+
+The data that you load may need some curation before it works, though. As we are only loading the **graph's topology, without node/edge/graph attributes**, you might have to get rid of some data attributes, that can cause the loader to crash.
+
+As far as we experienced it, attributes of the type ``vector_float`` or ``vector_string`` will cause the loader to break down. To avoid that, delete the declaration and every occurrence of the malicious attribute in your GraphML file. To make it illustrative, in the following GraphML file, you could use the regex ``^      <data key="key2.*\n`` to do a find and replace (by nothing) to remove the entire lines of the problematic ``key2``:
+
+
+.. code-block:: XML
+
+  <?xml version="1.0" encoding="UTF-8"?>
+
+  <graphml>
+    <key id="key1" for="node" attr.name="user_name" attr.type="string" />
+    <key id="key2" for="node" attr.name="full_name" attr.type="vector_string" />
+
+    <graph id="G" edgedefault="undirected" parse.nodeids="canonical" parse.edgeids="canonical" parse.order="nodesfirst">
+
+      <node id="n1">
+        <data key="key1">pia</data>
+        <data key="key2">Iuto, Pia</data>
+      </node>
+
+      <node id="n2">
+        <data key="key1">tro</data>
+        <data key="key2">Dan, Tro</data>
+      </node>
+      ...
+    </graph>
+  </graphml>
+
+
+.. note::
+
+    If you encounter a format other than GraphML or Graphviz/DOT, consider passing it to python's networkx (writing your own script), and then storing it in one of the two formats from there.
+
+.. hint::
+    One large database of real-world networks, that are available for download in the GraphML format, is `Netzschleuder <https://networks.skewed.de/>`_, another database, that uses the *MatrixMarket (``mtx``)* format is `Network Repository <http://networkrepository.com>`_.
