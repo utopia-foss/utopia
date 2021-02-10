@@ -7,6 +7,8 @@
 #include <boost/graph/random.hpp>
 
 #include "utopia/data_io/cfg_utils.hh"
+#include "utopia/data_io/filesystem.hh"
+#include "utopia/data_io/graph_load.hh"
 #include "utopia/core/types.hh"
 
 namespace Utopia {
@@ -620,12 +622,23 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
                     get_as<double>("del_out", cfg_BR),
                     rng);
     }
+    else if (model == "load_from_file")
+    {
+        // Get the model-specific configuration options
+        const auto& cfg_lff = get_as<DataIO::Config>("load_from_file", cfg);
+
+        // Load and return the Graph via DataIO's loader
+        return Utopia::DataIO::GraphLoad::load_graph<Graph>(
+                    Utopia::DataIO::get_abs_filepath(cfg_lff),
+                    get_as<std::string>("format", cfg_lff));
+
+    }
     else {
         throw std::invalid_argument("The given graph model '" + model +
                                     "'does not exist! Valid options are: "
                                     "'regular', 'ErdosRenyi', "
                                     "'WattsStrogatz', 'BarabasiAlbert', "
-                                    "'BollobasRiordan'.");
+                                    "'BollobasRiordan', 'load_from_file'.");
     }
 }
 

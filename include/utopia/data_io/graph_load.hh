@@ -5,7 +5,7 @@
 #include <string>
 #include <fstream>
 #include <boost/graph/graphml.hpp>
-// #include <boost/graph/graphviz.hpp>
+#include <boost/graph/graphviz.hpp>
 
 
 namespace Utopia {
@@ -15,10 +15,9 @@ namespace DataIO {
  * \{
  */
 
-namespace GraphLoad{
+namespace GraphLoad {
 /// Load a graph
 /** \details This function loads a graph
- *  \warning Not tested yet
  *
  * /tparam Graph        The graph type
  *
@@ -27,7 +26,7 @@ namespace GraphLoad{
  * /return Graph        The loaded graph
  */
 template <typename Graph>
-Graph load_graphml(std::string file_name)
+Graph load_graph(const std::string& abs_file_path, const std::string& format)
 {
 
     // Create an empty graph
@@ -35,20 +34,32 @@ Graph load_graphml(std::string file_name)
 
     boost::dynamic_properties dyn_prop(boost::ignore_other_properties);
 
-    std::ifstream ifs(file_name.c_str());
+    // Load file into file stream
+    std::ifstream ifs(abs_file_path.c_str());
     if (!ifs.is_open())
     {
-        std::cout << "loading file failed." << std::endl;
-        throw "Could not load file.";
+        throw "Could not load file into ifstream.";
     }
 
     // Load the data from the file stream
-    boost::read_graphml(ifs, g, dyn_prop);
+    if (format == "graphviz" || format == "gv"
+                             || format == "dot" || format == "DOT") {
+        boost::read_graphviz(ifs, g, dyn_prop);
+
+    } else if (format == "graphml" || format == "gml") {
+        boost::read_graphml(ifs, g, dyn_prop);
+
+    } else {
+        throw std::invalid_argument(
+            "The given file format is not supported. The file format needs "
+            "to be one of 'graphviz', 'gv', 'dot', 'DOT', 'graphml' or 'gml', "
+            "and needs to be specified in the config's format node, e.g. "
+            "load_from_file: { format: gml }.");
+    }
 
     // Return the graph
     return g;
 }
-
 
 } // namespace GraphLoad
 
