@@ -1,4 +1,4 @@
-# Test configuration for utils_test
+# Configuration keys for cfg_utils_test
 ---
 foo: bar
 spam: eggs
@@ -17,3 +17,25 @@ an_array:
   - [3, 4]
 
 empty_map: {}
+
+# -- Entries for recursive_getitem and recursive_setitem tests ----------------
+
+recursive_getitem:
+  basics:
+    lvl: 0
+    deeper:
+      lvl: 1
+      deeper:
+        lvl: 2
+        deeper:
+          lvl: 3
+
+recursive_setitem:
+  basics:
+    val: 0
+    deeper:
+      val: 1
+      deeper:
+        val: 2
+        deeper:
+          val: 3
