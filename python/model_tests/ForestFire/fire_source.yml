@@ -11,9 +11,7 @@ parameter_space:
     range: [4]
 
   # Load the model config
-  ForestFire: !model
-    model_name: ForestFire
-
+  ForestFire:
     # Need non-periodic space
     space:
       periodic: false

@@ -11,9 +11,7 @@ parameter_space:
     values: [23, 42, 665, 667]
 
   # Load the model config
-  PredatorPreyPlant: !model
-    model_name: PredatorPreyPlant
-
+  PredatorPreyPlant:
     space: 
       periodic: !sweep
         default: true

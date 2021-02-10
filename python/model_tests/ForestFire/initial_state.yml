@@ -12,8 +12,7 @@ parameter_space:
     range: [4]
 
   # Load the model config
-  ForestFire: !model
-    model_name: ForestFire
+  ForestFire:
 
     cell_manager:
       # Work with lower resolution

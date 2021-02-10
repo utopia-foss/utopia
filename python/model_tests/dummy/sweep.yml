@@ -10,7 +10,3 @@ parameter_space:
   seed: !sweep
     default: 1337
     values: [23, 42, 665, 667]
-
-  # Load the default configuration via the yaml tag
-  dummy: !model
-    model_name: dummy

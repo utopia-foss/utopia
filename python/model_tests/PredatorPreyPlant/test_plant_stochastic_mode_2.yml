@@ -4,9 +4,7 @@ perform_sweep: true
 parameter_space:
   num_steps: 20
 
-  PredatorPreyPlant: !model
-    model_name: PredatorPreyPlant
-
+  PredatorPreyPlant:
     space:
       extent: [10, 10]
       periodic: !sweep

@@ -1,13 +1,14 @@
-// just include dependencies
-#include "utopia/core/logging.hh"
-#include <yaml-cpp/yaml.h>
-#include <hdf5.h>
-#include <boost/serialization/list.hpp>
+// Just include dependencies ...
 #include <armadillo>
+#include <boost/graph/adjacency_list.hpp>
+#include <hdf5.h>
+#include <yaml-cpp/yaml.h>
 
-class Serial {
+#include "utopia/core/logging.hh"
+
+class GraphTest {
 public:
-    friend class boost::serialization::access;
+    friend class boost::adjacency_list<>;
 };
 
 void armadillo_test () {

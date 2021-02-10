@@ -8,8 +8,3 @@ parameter_space:
   seed: !sweep
     default: 42
     values: [23, 42, 665, 667]
-
-  GameOfLife: !model  
-    model_name: GameOfLife  # imports the model config for the GameOfLife model
-
-    # NOTE Below, entries from the model config can be changed or added

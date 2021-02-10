@@ -5,8 +5,7 @@ parameter_space:
   num_steps: 20
 
 # Load the model config
-  SEIRD: !model
-    model_name: SEIRD  # imports the model config for the CopyMe model
+  SEIRD:
     cell_manager:
       grid:
         resolution: 32

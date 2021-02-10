@@ -3,9 +3,7 @@
 parameter_space:
   num_steps: 3
 
-  CopyMeGraph: !model
-    model_name: CopyMeGraph
-
+  CopyMeGraph:
     create_graph:
       model: regular
       num_vertices: 10

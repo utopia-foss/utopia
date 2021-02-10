@@ -1,9 +1,7 @@
 ---
 parameter_space:
 # Load the model config
-  ContDisease: !model
-    model_name: ContDisease
-
+  ContDisease:
     space:
       extent: [2., 1.]
 

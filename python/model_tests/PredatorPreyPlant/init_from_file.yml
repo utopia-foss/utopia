@@ -5,9 +5,7 @@ parameter_space:
   num_steps: 0
 
   # Load the model config
-  PredatorPreyPlant: !model
-    model_name: PredatorPreyPlant
-
+  PredatorPreyPlant:
     cell_manager:
       grid:
         structure: square

@@ -4,8 +4,7 @@ parameter_space:
   # Make a few steps
   num_steps: 10
 
-  ForestFire: !model
-    model_name: ForestFire
+  ForestFire:
 
     # Work with lower resolution and no tree cells at time zero
     cell_manager:

@@ -10,9 +10,7 @@ parameter_space:
   num_steps: 100
 
   # Load the default model config
-  SimpleEG: !model
-    model_name: SimpleEG
-
+  SimpleEG:
     initial_state: single_s1
 
     # Use specific ia_matrix in which all parameters have different values

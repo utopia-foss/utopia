@@ -8,9 +8,7 @@ parameter_space:
     default: 42
     values: [23, 42, 665, 667]
 
-  PredatorPrey: !model
-    model_name: PredatorPrey
-
+  PredatorPrey:
     cell_manager:
       grid:
         structure: square

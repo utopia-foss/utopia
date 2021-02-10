@@ -5,8 +5,7 @@ parameter_space:
   num_steps: 20
 
 # Load the model config
-  ContDisease: !model
-    model_name: ContDisease  # imports the model config for the CopyMe model
+  ContDisease:
     cell_manager:
       grid:
         resolution: 32

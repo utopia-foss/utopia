@@ -13,7 +13,7 @@ parameter_space:
     values: [23, 42, 665, 667]
 
   # TODO change "CopyMeGraph" to the name of your model instance
-  CopyMeGraph: !model  
-    model_name: CopyMeGraph  # imports the model config for the CopyMeGraph model
+  CopyMeGraph: {}
+    # NOTE Below, entries from the model config can be changed or added.
+    #      Remember to remove the `{}` in the line above if you add entries.
 
-    # NOTE Below, entries from the model config can be changed or added

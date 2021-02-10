@@ -15,8 +15,3 @@ parameter_space:
   seed: !sweep
     default: 42
     values: [23, 42, 665, 667]
-
-  Geomorphology: !model  
-    model_name: Geomorphology
-
-    # NOTE Below, entries from the model config can be changed or added

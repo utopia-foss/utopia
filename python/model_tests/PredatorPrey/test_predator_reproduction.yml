@@ -2,9 +2,7 @@
 parameter_space:
   num_steps: 50
 
-  PredatorPrey: !model
-    model_name: PredatorPrey
-
+  PredatorPrey:
     space:
       extent: [10, 10]
 

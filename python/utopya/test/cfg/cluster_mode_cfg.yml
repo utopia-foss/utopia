@@ -56,5 +56,3 @@ parameter_space:
     default: 0
     range: [12]
 
-  dummy: !model
-    model_name: dummy

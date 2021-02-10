@@ -13,7 +13,6 @@ parameter_space:
     values: [23, 42, 665, 667]
 
   # TODO change "CopyMeGrid" to the name of your model instance
-  CopyMeGrid: !model  
-    model_name: CopyMeGrid  # imports the model config for the CopyMeGrid model
-
-    # NOTE Below, entries from the model config can be changed or added
+  CopyMeGrid: {}
+    # NOTE Below, entries from the model config can be changed or added.
+    #      Remember to remove the `{}` in the line above if you add entries.

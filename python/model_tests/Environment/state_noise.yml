@@ -9,9 +9,7 @@ parameter_space:
     default: 42
     range: [4]
 
-  Environment: !model  
-    model_name: Environment
-
+  Environment:  
     cell_manager:
       grid:
         # Increase resolution to have a better mean
