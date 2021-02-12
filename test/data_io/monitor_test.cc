@@ -23,6 +23,44 @@ using namespace Utopia::DataIO;
 using namespace Utopia::TestTools;
 
 
+// -- Fixture -----------------------------------------------------------------
+
+
+/// The specialized infrastructure fixture, allowing to replace the cout buffer
+struct Infrastructure : public BaseInfrastructure<> {
+    /// The regular standard output buffer
+    std::streambuf* regular_coutbuf;
+
+    Infrastructure () : BaseInfrastructure<>() {
+        // Always store the originally used output buffer
+        regular_coutbuf = std::cout.rdbuf();
+
+        // Test it's working
+        auto sbuf = replace_cout();
+        std::cout << "stream buffer test 1 2 1 2" << std::endl;
+        BOOST_TEST(sbuf.str() == "stream buffer test 1 2 1 2\n");
+        reinstate_cout();
+    }
+
+    /// Replaces cout stream with a custom stream-saving buffer
+    Savebuf replace_cout () const {
+        auto sbuf = Savebuf(regular_coutbuf);
+        std::cout.rdbuf(&sbuf);
+        return sbuf;
+    }
+
+    /// Reinstates the originally used cout buffer
+    void reinstate_cout () const {
+        std::cout.rdbuf(regular_coutbuf);
+    }
+
+    /// Upon destruction, take care of resetting the stream buffer
+    ~Infrastructure () {
+        reinstate_cout();
+    }
+};
+
+
 // -- Tests -------------------------------------------------------------------
 
 /// Test the MonitorTimer class
@@ -52,16 +90,64 @@ BOOST_AUTO_TEST_CASE(test_MonitorTimer) {
 }
 
 
-BOOST_AUTO_TEST_CASE(test_MonitorManager_and_Monitor) {
-    // Create a MonitorManager object
-    MonitorManager rm(0.002);
+/// Test a simple monitoring setup: single manager and single monitor
+BOOST_FIXTURE_TEST_CASE(test_monitoring, Infrastructure) {
+    using namespace std::chrono_literals;
 
-    // Create a Monitor object from a MonitorManager and other Monitors
-    Monitor m("m", std::make_shared<MonitorManager>(rm));
-    Monitor mm("m.mm", m);
-    Monitor mn("m.mn", m);
-    Monitor mmm("m.mm.mmm", mm);
-    Monitor n("m.n", std::make_shared<MonitorManager>(rm));
+    auto rm = std::make_shared<MonitorManager>(0.002);
+    Monitor m("m", rm);
+
+    m.set_entry("some_int", 1);
+    m.set_entry("some_array", std::vector<int>({1, 2, 3}));
+
+    // Keep track of output to cout, then trigger first emit (should fire)
+    {
+        auto sbuf = replace_cout();
+        rm->emit_if_enabled();
+        BOOST_TEST(sbuf.str() ==
+            "!!map {m: {some_int: 1, some_array: [1, 2, 3]}}\n"
+        );
+        reinstate_cout();
+    }
+
+    // Set some more entries
+    m.set_entry("some_array", std::vector<int>({3, 4}));
+    m.set_entry("some_string", "foo");
+
+    // Subsequent emit should not fire (too soon)
+    rm->check_timer();
+    {
+        auto sbuf = replace_cout();
+        rm->emit_if_enabled();
+        BOOST_TEST(sbuf.str() == "");
+        reinstate_cout();
+    }
+
+    // ... but should fire after a sufficiently large delay
+    std::this_thread::sleep_for(20ms);
+    rm->check_timer();
+    {
+        auto sbuf = replace_cout();
+        rm->emit_if_enabled();
+        BOOST_TEST(sbuf.str() ==
+            "!!map {m: {some_int: 1, some_array: [3, 4], some_string: foo}}\n"
+        );
+        reinstate_cout();
+    }
+}
+
+
+/// Test monitoring when having nested monitors
+BOOST_FIXTURE_TEST_CASE(test_monitoring_nested, Infrastructure) {
+    using namespace std::chrono_literals;
+
+    // Create monitor hierarchy
+    auto rm = std::make_shared<MonitorManager>(0.002);
+    Monitor m("m", rm);
+    Monitor mm("mm", m);
+    Monitor mn("mn", m);
+    Monitor mmm("mmm", mm);
+    Monitor n("n", rm);
 
     // Define floats
     const double a_double = 3.578;
@@ -74,64 +160,41 @@ BOOST_AUTO_TEST_CASE(test_MonitorManager_and_Monitor) {
     mn.set_entry("an_array", an_array);
     mmm.set_entry("a_string", [](){return "string";});
 
-    // Check that the data is emitted in the desired form by tracking the
-    // buffer of std::cout
-    std::streambuf* coutbuf = std::cout.rdbuf();
-    Savebuf sbuf(coutbuf);
-    std::cout.rdbuf(&sbuf);
-
-    // After 10ms enough time has passed such that the needed_info
-    // should be written and the whole information should be emitted.
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(10ms);
-
-    m.set_entry("hopefully_written", [](){return "needed_info";});
-    m.set_entry("hopefully_again_written", [](){return "additional_info";});
 
     // Overwrite a previously set value
     m.set_entry("an_int", [](){return 3;});
 
-    // Emit should work now
-    rm.emit_if_enabled();
+    // Now emit. Because it is the first one, this should always fire.
+    auto sbuf = replace_cout();
+    rm->emit_if_enabled();
 
-    // Setting an entry should work, but it will not be emitted as not enough
-    // time will have passed.
-    m.set_entry("hopefully_not_written!", "undesired_info");
-    rm.emit_if_enabled();
-
-    // Prepare expected output for floats
+    // Prepare expected output for floats, which may differ depending on the
+    // supported precision of the yaml-cpp library
     constexpr auto prec_float = std::numeric_limits<float>::max_digits10;
     constexpr auto prec_double = std::numeric_limits<double>::max_digits10;
+
     std::stringstream double_sstr;
     double_sstr << std::setprecision(prec_double) <<  a_double;
-    std::stringstream float_sstr;
-    float_sstr << std::setprecision(prec_float)
+
+    std::stringstream arr_sstr;
+    arr_sstr << std::setprecision(prec_float)
                << "[" << an_array[0] << ", "
                << an_array[1] << ", "
                << an_array[2] << "]";
 
-    // Assert that the std::cout buffer only contains content from the first
-    // emit operation
+    // Now check output
     std::string expected_output = (
     #ifdef PRECISION_OUTPUT
-        "!!map {m: {an_int: 3, mm: {a_double: " + double_sstr.str() + "} "
-        "mn: {a_vector: [1, 2, 3], an_array: " + float_sstr.str() + ","
-        "m.mm.mmm.a_string: string, "
-        "m.hopefully_written: needed_info, "
-        "m.hopefully_again_written: additional_info}"
+        "!!map {m: {an_int: 3, mm: {a_double: " + double_sstr.str() + ", "
+        "mmm: {a_string: string}}, mn: {a_vector: [1, 2, 3], "
+        "an_array: " + arr_sstr.str() + "}}}\n"
     #else
-        "!!map {m: {an_int: 3, mm: {a_double: 3.578} "
-        "mn: {a_vector: [1, 2, 3], an_array: [0.1, 0.2, 0.3],"
-        "m.mm.mmm.a_string: string, "
-        "m.hopefully_written: needed_info, "
-        "m.hopefully_again_written: additional_info}"
+        "!!map {m: {an_int: 3, mm: {a_double: 3.578, "
+        "mmm: {a_string: string}}, mn: {a_vector: [1, 2, 3], "
+        "an_array: [0.1, 0.2, 0.3]}}}\n"
     #endif
     );
 
-    const auto terminal_output = sbuf.str();
-    std::cout << terminal_output << std::endl;
-    BOOST_TEST(terminal_output == expected_output);
-
-    // restore the original stream buffer
-    std::cout.rdbuf(coutbuf);
+    const auto output = sbuf.str();
+    BOOST_TEST(output == expected_output);
 }

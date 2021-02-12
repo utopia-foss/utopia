@@ -143,6 +143,22 @@ BOOST_AUTO_TEST_CASE (test_recursive_setitem) {
 
     recursive_setitem(b, "some.new.val", 6.4);
     BOOST_TEST(b["some"]["new"]["val"].as<double>() == 6.4);
+
+    // Empty segments are ignored
+    recursive_setitem(b, ".some..new.val", 23.4);
+    BOOST_TEST(b["some"]["new"]["val"].as<double>() == 23.4);
+
+    // ... unless in the end
+    check_exception<std::invalid_argument>([&](){
+        recursive_setitem(b, ".some..new.val.", "will not work");
+    }, "failed to retrieve a valid key");
+
+    // Can overwrite a scalar with a mapping
+    recursive_setitem(b, ".foo", "foo");
+    BOOST_TEST(b["foo"].as<std::string>() == "foo");
+
+    recursive_setitem(b, ".foo.bar", "foobar");
+    BOOST_TEST(b["foo"]["bar"].as<std::string>() == "foobar");
 }
 
 

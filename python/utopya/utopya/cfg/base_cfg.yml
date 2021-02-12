@@ -464,6 +464,9 @@ parameter_space:
   # NOTE This entry is always added by the frontend. Depending on which
   #      universe is to be simulated, the <#> is set.
 
+  # In which mode the output file is to be created, can be: w, r+, a, x
+  output_file_mode: w
+
   # Below here, the model configuration starts, i.e. the config that is used by
   # a model instance. To add it
   # <model_name>: !model

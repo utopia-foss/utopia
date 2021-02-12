@@ -284,25 +284,46 @@ namespace _details {
 /// Helper function for recursive_setitem
 /** Expects an (already deep-copied) node that is then recursively iterated
   * through along the key sequence. For the last key in the sequence, the
-  * value is being set.
+  * value is being set. Empty path segments in the key sequence are skipped.
+  *
+  * \throws     std::invalid_argument upon *trailing* empty path segments in
+  *             the key sequence.
   */
-template<class T>
+template<class T, class Keys = std::list<std::string> >
 Config __recursive_setitem (Config d,
-                            std::list<std::string> key_sequence,
+                            Keys&& key_sequence,
                             const T& val)
 {
-    const auto key = key_sequence.front();
-    key_sequence.pop_front();
+    // Get the next key
+    std::string key;
+    while (key.empty() and not key_sequence.empty()) {
+        key = key_sequence.front();
+        key_sequence.pop_front();
+    }
+    if (key.empty()) {
+        throw std::invalid_argument(
+            "During recursive_setitem, failed to retrieve a valid key for "
+            "continuing recursion. Make sure the given key sequence ("
+            + join(key_sequence, " -> ") + ") contains no empty elements!"
+        );
+    }
 
+    // Check for end of recursion
     if (key_sequence.empty()) {
+        if (d.IsScalar()) {
+            // Discard the scalar and replace it with an empty mapping
+            d = Config{};
+        }
         d[key] = val;
         return d;
     }
 
+    // Continue recursion, creating the intermediate node if it does not exist
     if (not d[key]) {
         d[key] = Config{};
     }
-    d[key] = __recursive_setitem(d[key], key_sequence, val);
+    d[key] = __recursive_setitem(d[key], std::forward<Keys>(key_sequence),
+                                 val);
     return d;
 }
 
@@ -323,6 +344,12 @@ Config __recursive_setitem (Config d,
   * \warning    Due to yaml-cpp quirks, creates a deep copy of the given config
   *             to keep clear of any mutability side effects. Subsequently,
   *             this function should not be used in performance-critical code.
+  *
+  * \param  d               The configuration tree to retrieve the element from
+  * \param  key_sequence    A key sequence denoting the path within the tree
+  *                         to get the item from.
+  *
+  * \returns    Config      The configuration tree element at the given path.
   */
 Config recursive_getitem (const Config& d,
                           const std::vector<std::string>& key_sequence)
@@ -346,11 +373,25 @@ Config recursive_getitem (const Config& d,
     return rv;
 }
 
-/// Overload for recursive_getitem that splits a string into a key sequence
-/** Uses *any* of the given characters in `delims` to split.
+/// Overload for recursive_getitem, accepting a string-like key sequence
+/** Returns the configuration node at the path specified by the key sequence.
+  *
+  * \param  d               The configuration tree to retrieve the element from
+  * \param  key_sequence    A string denoting the path within the tree to get
+  *                         the item from. The path is split into segments
+  *                         using Utopia::split
+  * \param  delims          Delimiters (plural!) that split the string into a
+  *                         key sequence.
+  *
+  * \returns    Config      The configuration tree element at the given path.
+  *
+  * \warning    *Any* character in the `delims` sequence acts as separator.
+  *             See Utopia::split for more information on behaviour of the
+  *             `delims` argument.
   */
-auto recursive_getitem (const Config& d, const std::string& key_sequence,
-                        const std::string& delims = ".")
+Config recursive_getitem (const Config& d,
+                          const std::string& key_sequence,
+                          const std::string& delims = ".")
 {
     return recursive_getitem(d, split(key_sequence, delims));
 }
@@ -364,27 +405,46 @@ auto recursive_getitem (const Config& d, const std::string& key_sequence,
   * it and setting the value, it will finally assign to the `d` reference.
   *
   * \note   Only works with string-like keys, i.e. can't access sequences.
+  *
+  * \param  d             The configuration tree to set the entry in.
+  * \param  key_sequence  A container with a sequence of keys to walk along
+  *                       inside the tree.
+  * \param  val           The value to assign to the element of the tree
+  *                       specified by the key sequence.
   */
 template<class T>
 void recursive_setitem (Config& d,
-                        const std::list<std::string>& key_sequence,
-                        const T& val)
+                        std::list<std::string> key_sequence,
+                        const T val)
 {
+    using _details::__recursive_setitem;
+
     if (key_sequence.empty()) {
         throw std::invalid_argument(
             "Key sequence for recursive_setitem may not be empty!"
         );
     }
-    d = _details::__recursive_setitem(YAML::Clone(d), key_sequence, val);
+    d = __recursive_setitem(YAML::Clone(d), std::move(key_sequence), val);
 }
 
 /// Overload for recursive_setitem that splits a string into a key sequence
-/** Uses *any* of the given characters in `delims` to split.
+/**
+  * \param  d             The configuration tree to set the entry in.
+  * \param  key_sequence  A string to split into a sequence of keys to walk
+  *                       along inside the tree.
+  * \param  val           The value to assign to the element of the tree
+  *                       specified by the key sequence.
+  * \param  delims        Delimiters to generate a key sequence from the given
+  *                       string `key_sequence`.
+  *
+  * \warning     *Any* character in the `delims` sequence acts as separator.
+  *              See Utopia::split for more information on behaviour of the
+  *              `delims` argument.
   */
 template<class T>
 void recursive_setitem (Config& d,
                         const std::string& key_sequence,
-                        const T& val,
+                        const T val,
                         const std::string& delims = ".")
 {
     recursive_setitem(

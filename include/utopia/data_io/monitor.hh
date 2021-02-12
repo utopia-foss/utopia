@@ -202,15 +202,15 @@ class MonitorManager
         _emit_counter(0),
         _emit_prefix(emit_prefix),
         _emit_suffix(emit_suffix)
-    {
-        _entries.SetStyle(YAML::EmitterStyle::Flow);
-    };
+    {};
 
     /// Perform an emission of the data to the terminal, if the flag was set
     void
     emit_if_enabled()
     {
         if (not _emit_enabled) return;
+
+        _entries.SetStyle(YAML::EmitterStyle::Flow);
 
         std::cout << _emit_prefix
                   << _entries
@@ -327,32 +327,35 @@ class Monitor
     std::shared_ptr< MonitorManager > _mtr_mgr;
 
   public:
-    /// Constructor
-    /** Construct a new Monitor object.
+    /// Constructs a root monitor object
+    /** A root monitor has no name and writes to the root level of the monitor
+     *  entries tree.
      *
-     * @param name The name of the monitor
-     * @param root_mtr_mgr The root monitor manager
+     * @param root_mtr_mgr  The monitor manager to associate this monitor with
      */
-    Monitor(const std::string&                name,
-            std::shared_ptr< MonitorManager > root_mtr_mgr)
+    Monitor(std::shared_ptr< MonitorManager > root_mtr_mgr)
     :
-        _name(name),
+        _name(""),
         _mtr_mgr(root_mtr_mgr){};
 
-    /// Constructor
-    /** Construct a new Monitor object. The shared pointer to the MonitorManager
-     * points at the same MonitorManager as in the parent monitor object.
+    /// Construct a monitor object within a hierarchy
+    /** Construct a new Monitor object and names it such that it fits into the
+     *  monitor hierarchy
      *
-     * @param name The name of the monitor
-     * @param parent_mtr The parent monitor
+     * @param name          The name of this monitor; to place it into the
+     *                      monitor hierarchy the parent's name is prepended to
+     *                      this given name, separated by the `.` character.
+     * @param parent_mtr    The parent monitor
      */
-    Monitor(const std::string name, Monitor& parent_mtr)
+    Monitor(const std::string name, const Monitor& parent_mtr)
     :
         _name(parent_mtr.get_name() + "." + name),
         _mtr_mgr(parent_mtr.get_monitor_manager()){};
 
     /// Provide a new entry to the monitor manager.
-    /** This entry is set regardless of whether the emission is enabled!
+    /**
+     * @note An entry is set regardless of whether the emission is enabled.
+     *
      * @tparam Func The type of the function (rvalue reference)
      * @param key The key of the new entry
      * @param value The value of the new entry
@@ -365,10 +368,13 @@ class Monitor
     }
 
     /// Provide a new entry to the monitor manager.
-    /** This entry is set regardless of whether the emission is enabled!
-     * @tparam Value The type of the value (lvalue reference)
-     * @param key The key of the new entry
-     * @param value The value of the new entry
+    /**
+     * @note An entry is set regardless of whether the emission is enabled.
+     *
+     * @tparam Value    The type of the value (lvalue reference)
+     *
+     * @param key       The key of the new entry
+     * @param value     The value of the new entry
      */
     template < typename Value >
     void
@@ -378,14 +384,20 @@ class Monitor
     }
 
     /// Provide a new entry to the monitor manager.
-    /** This entry is set regardless of whether the emission is enabled!
-     * This function tests whether the argument is callable like a std::function
-     * or a lambda excluding the operator(). Without this exclusion, types such
-     * as int or double would also be classified callable.
-     * @tparam Arg The type of the argument
-     * @param key The key of the new entry
-     * @param arg The argument (value or function) that determines the value of
-     * the new entry
+    /** This function tests whether the argument is callable like a
+     *  std::function or a lambda excluding the operator(). If so, they are
+     *  called and the return value is used for setting the entry.
+     *
+     *  (Without the exclusion of operator(), types such as int or double
+     *  would also be classified callable.)
+     *
+     * @note An entry is set regardless of whether the emission is enabled!
+     *
+     * @tparam Arg      The type of the argument
+     *
+     * @param key       The key of the new entry
+     * @param arg       The argument (value or function) that determines the
+     *                  value of the new entry
      */
     template < typename Arg >
     void
@@ -408,7 +420,7 @@ class Monitor
         return _mtr_mgr;
     }
 
-    /// get the name of the monitor.
+    /// Get the name of the monitor.
     std::string
     get_name() const
     {

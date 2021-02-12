@@ -266,9 +266,10 @@ public:
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        // Set up the monitor, omitting the leading "." in the full name
-        _monitor(Monitor(_full_name.substr(1),
-                         parent_model.get_monitor_manager())),
+
+        // Set up the monitor, using the parent model's monitor to place it in
+        // a hierarchy equivalent to the model hierarchy
+        _monitor(_name, parent_model.get_monitor()),
 
         // Default-construct the data maanger; only used if needed, see below.
         _datamanager()
@@ -463,14 +464,14 @@ public:
 
 
     // -- Simulation control --------------------------------------------------
-    /// A function that is to be called before starting the iteration of a model
+    /// A function that is called before starting model iteration
     /** See __prolog() for default tasks
      */
     virtual void prolog () {
         __prolog();
     }
 
-    /// A function that is to be called after the last iteration of a model
+    /// A function that is called after the last iteration of a model
     /** See __epilog() for default tasks
      */
     virtual void epilog () {
@@ -875,12 +876,15 @@ template<typename RNG=DefaultRNG>
 class PseudoParent
 {
 protected:
-    // Convenience type definitions
     using Config = Utopia::DataIO::Config;
+
     using HDFFile = Utopia::DataIO::HDFFile;
     using HDFGroup = Utopia::DataIO::HDFGroup;
-    using Time = std::size_t;
+
     using MonitorManager = Utopia::DataIO::MonitorManager;
+    using Monitor = Utopia::DataIO::Monitor;
+
+    using Time = std::size_t;
     using Level = std::size_t;
 
     /// The hierarchical level
@@ -902,7 +906,10 @@ protected:
     const std::shared_ptr<spdlog::logger> _log;
 
     /// The monitor manager
-    MonitorManager _monitor_mgr;
+    const std::shared_ptr<MonitorManager> _monitor_mgr;
+
+    /// The monitor instance of this root model
+    Monitor _monitor;
 
 public:
     /// Constructor that only requires path to a config file
@@ -920,14 +927,19 @@ public:
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
-    _hdffile(std::make_shared<HDFFile>(get_as<std::string>("output_path",
-                                                           _cfg), "w")),
+    _hdffile(std::make_shared<HDFFile>(
+        get_as<std::string>("output_path", _cfg),
+        get_as<std::string>("output_file_mode", _cfg, "w")
+    )),
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(get_as<int>("seed", _cfg))),
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
-    // Create a monitor manager
-    _monitor_mgr(get_as<double>("monitor_emit_interval", _cfg))
+    // Create a monitor manager and a root monitor
+    _monitor_mgr(std::make_shared<MonitorManager>(
+        get_as<double>("monitor_emit_interval", _cfg))
+    ),
+    _monitor(_monitor_mgr)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -967,8 +979,9 @@ public:
     _rng(std::make_shared<RNG>(seed)),
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
-    // Create a monitor manager
-    _monitor_mgr(emit_interval)
+    // Create a monitor manager and a "root" monitor
+    _monitor_mgr(std::make_shared<MonitorManager>(emit_interval)),
+    _monitor(_monitor_mgr)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -1041,7 +1054,12 @@ public:
 
     /// Return the monitor manager of this model
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
-        return std::make_shared<MonitorManager>(_monitor_mgr);
+        return _monitor_mgr;
+    }
+
+    /// Return the monitor of this model
+    const Monitor& get_monitor() const {
+        return _monitor;
     }
 
 

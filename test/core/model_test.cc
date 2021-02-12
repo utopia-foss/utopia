@@ -156,7 +156,10 @@ BOOST_AUTO_TEST_CASE (test_model_run) {
     // Create the model
     auto model = TestModel("test", pp, initial_state);
 
+    // Some basic checks
     BOOST_TEST(model.get_time() == 0);
+    BOOST_TEST(model.get_name() == "test");
+    BOOST_TEST(model.get_full_name() == ".test");
 
     // Get the number of steps and check it matches the internally accessible
     const auto cfg = YAML::LoadFile("model_test.yml");
