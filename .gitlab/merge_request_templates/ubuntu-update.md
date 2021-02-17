@@ -6,8 +6,7 @@
 We're incrementing the supported Ubuntu version to `X.Y`! :tada:
 
 **Note:** This will drop support for all older Ubuntu versions in the `master`
-branch. Support for selected Ubuntu versions might continue in maintained
-`support/TAG` branches.
+branch.
 
 ### Tasks
 
@@ -25,8 +24,8 @@ branch. Support for selected Ubuntu versions might continue in maintained
 - [ ] New Docker base image correctly built
 - [ ] Reasonably up-to-date with current master
 - [ ] Pipeline passing without warnings
-- [ ] Squash option set <!-- unless there's a good reason not to squash -->
-- [ ] Approved by @ ...
+- [ ] History cleaned-up or squash option set
+- [ ] Reviewed and approved  <!-- Assign a reviewer via the GitLab sidebar -->
 
 ### Notes and help
 

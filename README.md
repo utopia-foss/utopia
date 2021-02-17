@@ -622,8 +622,6 @@ To get Utopia running on a system with an earlier Ubuntu version, the above depe
 You can use the [Ubuntu Package Search][Ubuntu-packages] to find the versions available on your system.
 If a required version is not available, private package repositories may help to install a more recent version of a dependency.
 
-If you cannot achieve these dependencies on your current installation, there is the option to use the Utopia [support branches](#support-branches), which provide compatibility with earlier versions of selected dependencies.
-
 If you encounter difficulties with the installation procedure for any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
 
 
@@ -649,26 +647,6 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 | [ffmpeg][ffmpeg]      | >= 4.1  | Used for creating videos |
 | [ParallelSTL][pstl]   |         | Parallelization of STL algorithms (included in GCC >= 9) |
 | [TBB][tbb]            | >= 2018.5  | Intel parallelization library required by ParallelSTL |
-
-
-### Support Branches
-To retain compatibility with older releases of the dependencies, we maintain a selected set of [support branches](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/-/branches/all?utf8=✓&search=support%2F).
-These branches all start with the `support/*` prefix and are associated with a specific Ubuntu version.
-They are maintained with features from the `master` branch as long as it is feasible to do so.
-
-To use a support branch, simply checkout the respective branch locally and rebuild Utopia:
-
-```bash
-# Checkout the branch
-git checkout support/bionic
-git pull
-
-# Use a new build directory, then reconfigure and build Utopia
-rm -rf build
-mkdir build && cd build
-cmake ..
-make all -j4
-```
 
 
 
