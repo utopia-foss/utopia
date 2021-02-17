@@ -220,6 +220,7 @@ def test_workertask_streams_stderr(tmpdir):
 
     # Add additional sleep to avoid any form of race condition
     sleep(0.2)
+    assert t.worker_status == 0
 
     # Read the stream's content until empty
     t.read_streams(max_num_reads=-1)
@@ -232,6 +233,11 @@ def test_workertask_streams_stderr(tmpdir):
     assert "err2" in out_log
     assert "start" in out_log
     assert "end" in out_log
+
+    # All streams should be closed
+    for stream_name in t.streams:
+        with pytest.raises(ValueError, match="I/O operation on closed file"):
+            t.streams[stream_name]["stream"].read()
 
 # TaskList tests --------------------------------------------------------------
 
@@ -379,10 +385,14 @@ def test_MPProcessTask():
     sleep(.1)
     assert not t.streams['out']['thread'].is_alive()
 
-    # Manually get the output from the streams and the queue
+    # All streams should be closed
+    for stream_name in t.streams:
+        with pytest.raises(ValueError, match="I/O operation on closed file"):
+            t.streams[stream_name]["stream"].read()
+
+    # Manually get the output from the (closed!) streams and its queue
     s = t.worker.stdout
     print("stdout object", s)
-    print("from stream object:\n" + "".join(s.readlines()))
     print("\nfrom file:\n" + "".join(open(s.name).readlines()))
 
     q = t.streams['out']['queue']
