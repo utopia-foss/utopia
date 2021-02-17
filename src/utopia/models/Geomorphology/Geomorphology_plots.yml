@@ -12,12 +12,16 @@ map_animation:
   to_plot:
     height:
       title: Rock height
-      cmap: copper
+      cmap: gist_earth
       
     drainage_area:
-      title: Drainage Area
+      title: Drainage Area (log.)
       cmap: Blues
       
     watercolumn:
       title: Water column
       cmap: Blues
+
+  transform_data:
+    drainage_area:
+      log: ~
