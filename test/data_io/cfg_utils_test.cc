@@ -107,6 +107,8 @@ BOOST_AUTO_TEST_CASE(test_exceptions) {
 
 /// Tests recursive_getitem
 BOOST_AUTO_TEST_CASE (test_recursive_getitem) {
+    using _internal::recursive_getitem;
+
     const Config b = YAML::Clone(cfg["recursive_getitem"]["basics"]);
 
     BOOST_TEST(recursive_getitem(b, "lvl").as<int>() == 0);
@@ -125,6 +127,8 @@ BOOST_AUTO_TEST_CASE (test_recursive_getitem) {
 
 /// Tests recursive_setitem
 BOOST_AUTO_TEST_CASE (test_recursive_setitem) {
+    using _internal::recursive_setitem;
+
     Config b = YAML::Clone(cfg["recursive_setitem"]["basics"]);
 
     BOOST_TEST(b["val"].as<int>() == 0);

@@ -277,9 +277,9 @@ get_as_MultiIndex(const std::string& key, const DataIO::Config& node)
  *  \}
  */
 
-// -- Functions to work with Config trees -------------------------------------
+// -- INTERNALLY USED Functions to work with Config trees ---------------------
 
-namespace _details {
+namespace _internal {
 
 /// Helper function for recursive_setitem
 /** Expects an (already deep-copied) node that is then recursively iterated
@@ -327,13 +327,6 @@ Config __recursive_setitem (Config d,
     return d;
 }
 
-} // namespace _details
-
-
-/*!
- * \addtogroup ConfigUtilities
- * \{
- */
 
 /// Recursively retrieve an element from the configuration tree
 /**
@@ -344,6 +337,10 @@ Config __recursive_setitem (Config d,
   * \warning    Due to yaml-cpp quirks, creates a deep copy of the given config
   *             to keep clear of any mutability side effects. Subsequently,
   *             this function should not be used in performance-critical code.
+  *             Furthermore, to *set* an element in the configuration tree, the
+  *             `recursive_setitem` functionality should be used -- assigning a
+  *             value to the returned Config object will **not** lead to a
+  *             change in the tree provided via the `d` argument.
   *
   * \param  d               The configuration tree to retrieve the element from
   * \param  key_sequence    A key sequence denoting the path within the tree
@@ -417,8 +414,6 @@ void recursive_setitem (Config& d,
                         std::list<std::string> key_sequence,
                         const T val)
 {
-    using _details::__recursive_setitem;
-
     if (key_sequence.empty()) {
         throw std::invalid_argument(
             "Key sequence for recursive_setitem may not be empty!"
@@ -452,9 +447,7 @@ void recursive_setitem (Config& d,
     );
 }
 
-
-/*! \} */ // end of group DataIO
-
+} // namespace _internal
 } // namespace Utopia
 
 #endif // DATAIO_CFG_UTILS_HH

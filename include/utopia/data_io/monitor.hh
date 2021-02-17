@@ -210,6 +210,9 @@ class MonitorManager
     {
         if (not _emit_enabled) return;
 
+        // Calling recursive_setitem may remove the emitter style, requiring
+        // to reset it here each time. This will only set some flags in the
+        // to-be-created YAML::Emitter and has negligible performance impact.
         _entries.SetStyle(YAML::EmitterStyle::Flow);
 
         std::cout << _emit_prefix
@@ -264,6 +267,7 @@ class MonitorManager
               const std::string& key,
               const Value        value)
     {
+        using _internal::recursive_setitem;
         recursive_setitem(_entries, path + "." + key, value, ".");
     }
 
@@ -347,7 +351,7 @@ class Monitor
      *                      this given name, separated by the `.` character.
      * @param parent_mtr    The parent monitor
      */
-    Monitor(const std::string name, const Monitor& parent_mtr)
+    Monitor(const std::string& name, const Monitor& parent_mtr)
     :
         _name(parent_mtr.get_name() + "." + name),
         _mtr_mgr(parent_mtr.get_monitor_manager()){};
