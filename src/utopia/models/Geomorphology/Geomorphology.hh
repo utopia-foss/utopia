@@ -97,26 +97,50 @@ private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor
 
     // -- Members -------------------------------------------------------------
+    
     /// The cell manager for the forest fire model
     GeomorphologyCellManager _cm;
 
-    // The boundary conditions (aka parameters) of the model
+    
+    // -- The boundary conditions (aka parameters) of the model
+    
     /// The random uplift as normal distribution
     std::normal_distribution<> _uplift;
-    std::uniform_real_distribution<> _prob_dist;
-    double _stream_power_coef; /// The stream power coefficient
+     
+    /// The stream power coefficient
+    double _stream_power_coef;
+    
     /// The frequency of possible toppling events per cell
     double _toppling_frequency;
-    double _toppling_critical_height; /// The critical height for toppling
-    double _toppling_slope_reduction_factor; /// The factor shaping the new
-
-    const double _float_precission; /// precission when comparing floats
+     
+    /// The critical height difference to trigget a toppling event
+    /** The probability of a toppling event is given as 
+     *  \f$ p = \Delta h / h_{crit} \f$, where \f$ \Delta h \f$ is the
+     *  difference in height between a target cell and its highest neighbor.
+     */
+    double _toppling_critical_height;
+    
+    /// The factor by which to reduce the slope in a toppling event
+    /** The difference in height between the source and target cell of the
+     *  toppling event is divided by this factor.
+     *  This amount of rock is removed from the source and added to the target
+     *  site.
+     * 
+     *  default value: 3.
+     */
+    double _toppling_slope_reduction_factor;
 
     // A map of lowest neighbors
     std::unordered_map<GeomorphologyCellIndexType,
              std::shared_ptr<GeomorphologyCellType>> _lowest_neighbors;
 
-    // ** Datasets
+
+    const double _float_precision; /// precision when comparing floats
+
+    /// A re-usable uniform real distribution to evaluate probabilities
+    std::uniform_real_distribution<> _prob_dist;
+
+    // -- Datasets ------------------------------------------------------------
     std::shared_ptr<DataSet> _dset_height;          /// Dataset of rock height
     std::shared_ptr<DataSet> _dset_drainage_area;   /// Dataset of drainage area
     std::shared_ptr<DataSet> _dset_watercolumn;     /// Dataset of watercolumn
@@ -148,14 +172,15 @@ public:
 
         _uplift{get_as<double>("uplift_mean", this->_cfg),
                 get_as<double>("uplift_var", this->_cfg)},
-        _prob_dist(0., 1.),
         _stream_power_coef(get_as<double>("stream_power_coef", this->_cfg)),
         _toppling_frequency(get_as<double>("toppling_frequency", this->_cfg)),
-        _toppling_critical_height(get_as<double>("toppling_critical_height", this->_cfg)),
+        _toppling_critical_height(get_as<double>("toppling_critical_height",
+                                  this->_cfg)),
         _toppling_slope_reduction_factor(
-            get_as<double>("toppling_slope_reduction_factor", this->_cfg)),
+            get_as<double>("toppling_slope_reduction_factor", this->_cfg, 3.)),
 
-        _float_precission(1e-10),
+        _float_precision(1e-10),
+        _prob_dist(0., 1.),
 
         // Create datasets using the helper functions for CellManager-data
         _dset_height(this->create_cm_dset("height", _cm)),
@@ -164,7 +189,7 @@ public:
     {
         if (get_as<double>("uplift_var", this->_cfg) <= 1e-10) {
             throw std::invalid_argument("Invalid argument: uplift_var must be "
-                "> _float_precission (1e-10)!");
+                "> _float_precision (1e-10)!");
         }
         // Update initial cell states
         _initialize_cells();
@@ -190,7 +215,8 @@ public:
         apply_rule<Update::async, Shuffle::off>(build_lake, _cm.cells());
 
         // get drainage area
-        apply_rule<Update::async, Shuffle::off>(pass_drainage_area, _cm.cells());
+        apply_rule<Update::async, Shuffle::off>(pass_drainage_area,
+                                                _cm.cells());
     }
 
     /// Perform step
@@ -213,8 +239,9 @@ public:
     void monitor () { return; }
 
     /// Write the cell states (aka water content)
-    /** The cell height is currently not written out as in the current implementation
-     *  it does not change over time (erosion is not yet included).
+    /** The cell height is currently not written out as in the current
+     *  implementation it does not change over time
+     *  (erosion is not yet included).
      */
     void write_data () {
         _dset_height->write(_cm.cells().begin(), _cm.cells().end(),
@@ -234,7 +261,7 @@ private:
     // -- Helper functions ----------------------------------------------------
     /// Compare two floats for equality
     bool check_eq(const double& a, const double& b) {
-        return (a-b < _float_precission) && (b-a < _float_precission);
+        return (a-b < _float_precision) && (b-a < _float_precision);
     }
 
     /// Compare the waterline of two cells
@@ -254,14 +281,15 @@ private:
     void _initialize_cells() {
         this->_log->debug("Initializing cells ..");
 
-        // Initialize altitude as an inclined plane (by making use of coordinates)
+        // Initialize altitude as an inclined plane
+        // (by making use of coordinates)
         RuleFunc set_inclined_plane = [this](const auto& cell) {
             auto state = cell->state;
             auto pos = _cm.barycenter_of(cell);
             double slope = get_as<double>("initial_slope",
                                 this->_cfg["cell_manager"]["cell_params"]);
             state.rock += slope*pos[1];
-            if (state.rock < _float_precission) {
+            if (state.rock < _float_precision) {
                 std::uniform_real_distribution<> dist(0.,1e-5);
                 state.rock = dist(*this->_rng);
                 this->_log->warn("Received negative initial height. Was set "
@@ -317,7 +345,7 @@ private:
 
         // If there is more than one lowest neighbor, select one randomly.
         if (lowest_neighbors.size() > 1) {
-            std::uniform_int_distribution<> dist(0, lowest_neighbors.size() - 1);
+            std::uniform_int_distribution<> dist(0, lowest_neighbors.size() -1);
             lowest_neighbor = lowest_neighbors[dist(*(this->_rng))];
         }
         return lowest_neighbor;
@@ -341,10 +369,14 @@ private:
             if (check_eq_waterline(*it, lake[0])) {
                 lake.push_back(*it);
                 auto nb = _cm.neighbors_of(*it);
-                for (auto it_lake : lake)
-                    nb.erase( std::remove(nb.begin(), nb.end(), it_lake), nb.end() );
-                for (auto it_shore : shore)
-                    nb.erase( std::remove(nb.begin(), nb.end(), it_shore), nb.end() );
+                for (auto it_lake : lake) {
+                    nb.erase(std::remove(nb.begin(), nb.end(), it_lake),
+                             nb.end());
+                }
+                for (auto it_shore : shore) {
+                    nb.erase(std::remove(nb.begin(), nb.end(), it_shore),
+                             nb.end());
+                }
 
                 auto next_it = it;
                 auto next = *next_it;
@@ -387,7 +419,8 @@ private:
         }
         // else: slope = state->waterline - 0.
 
-        double stream_power = _stream_power_coef * slope * std::sqrt(state.drainage_area);
+        double stream_power = (  _stream_power_coef * slope
+                               * std::sqrt(state.drainage_area));
         state.rock -= std::min(stream_power, state.rock);
 
         return state;
@@ -417,11 +450,13 @@ private:
                 heighest_neighbor = nb;
             }
         }
-        double relief = heighest_neighbor->state.waterline() - state.waterline();
+        double relief = (  heighest_neighbor->state.waterline()
+                         - state.waterline());
         double failure_prob = relief / _toppling_critical_height;
         if (this->_prob_dist(*(this->_rng)) < failure_prob) {
-            heighest_neighbor->state.rock -= relief / _toppling_slope_reduction_factor;
-            state.rock += relief / _toppling_slope_reduction_factor;
+            double factor = _toppling_slope_reduction_factor;
+            heighest_neighbor->state.rock -= relief / factor;
+            state.rock += relief / factor;
         }
 
         return state;
@@ -537,7 +572,9 @@ private:
                 if (not check_eq((*it_nb)->state.waterline(), waterline)) {
                     it_nb = nbs.erase(it_nb);
                 }
-                else if (lake.end() == std::find(lake.begin(), lake.end(), (*it_nb))) {
+                else if (lake.end() == std::find(lake.begin(), lake.end(),
+                                                 *it_nb))
+                {
                     it_nb = nbs.erase(it_nb);
                 }
                 else { ++it_nb; }
@@ -576,8 +613,7 @@ private:
         state.was_drained = true;
 
         if (not state.is_outflow and _lowest_neighbors[cell->id()] == cell) {
-            throw std::runtime_error("RUNTIME ERROR: no recipiant assigned to "
-                                     "a cell!");
+            throw std::runtime_error("No recipient assigned to a cell!");
         }
         // nothing to do here
         if (state.is_outflow) {
@@ -594,9 +630,9 @@ private:
         {
             downstream_cell = _lowest_neighbors[downstream_cell->id()];
             downstream_cell->state.drainage_area += state.drainage_area;
-            if (downstream_cell->state.drainage_area > size(this->_cm.cells())) {
-                throw std::runtime_error("RUNTIME ERROR: Drainage network has "
-                                         "loop!");
+            if (downstream_cell->state.drainage_area > size(this->_cm.cells()))
+            {
+                throw std::runtime_error("Drainage network has loop!");
             }
         }
 
