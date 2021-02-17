@@ -147,11 +147,14 @@ protected:
     /// Name of the model instance
     const std::string _name;
 
+    /// The full name within the model hierarchy
+    const std::string _full_name;
+
+    /// The level within the model hierarchy
+    const Level _level;
+
     /// Config node belonging to this model instance
     const Config _cfg;
-
-    /// The hierarchical level
-    const Level _level;
 
     /// The space this model resides in
     std::shared_ptr<Space> _space;
@@ -207,42 +210,47 @@ public:
     // -- Constructor ---------------------------------------------------------
 
     /// Constructs a Model instance
-  /** Uses information from a parent model to create an instance of this
-   *  model.
-   *
-   *  \tparam ParentModel The parent model's type
-   *
-   *  \param name         The name of this model instance, ideally used only
-   *                      once on the current hierarchical level
-   *  \param parent_model The parent model object from which the
-   *                      corresponding config node, the group, the RNG,
-   *                      and the parent log level are extracted.
-   *  \param custom_cfg   If given, will use this configuration node instead
-   *                      of trying to extract one from the parent model's
-   *                      configuration.
-   *  \param w_args       Passed on to DataManager constructor. If not given,
-   *                      the DataManager will still be constructed. Take
-   *                      care to also set the WriteMode accordingly.
-   * \param w_deciders    Map which associates names with factory functions for
-   *                      deciders of signature factory()::shared_ptr<Decider<Derived>>
-   * \param w_triggers    Map which associates names with factory functions for
-   *                      deciders of signature factory()::shared_ptr<Trigger<Derived>>
-   */
-  template < class ParentModel, class... WriterArgs >
-  Model(const std::string&                           name,
-        const ParentModel&                           parent_model,
-        const Config&                                custom_cfg = {},
-        std::tuple< WriterArgs... > w_args     = {},
+    /** Uses information from a parent model to create a model instance.
+     *
+     *  \tparam ParentModel The parent model's type
+     *
+     *  \param name         The name of this model instance, ideally used only
+     *                      once on the current hierarchical level
+     *  \param parent_model The parent model object from which the
+     *                      corresponding config node, the group, the RNG,
+     *                      and the parent log level are extracted.
+     *  \param custom_cfg   If given, will use this configuration node instead
+     *                      of trying to extract one from the parent model's
+     *                      configuration.
+     *  \param w_args       Passed on to DataManager constructor. If not given,
+     *                      the DataManager will still be constructed. Take
+     *                      care to also set the WriteMode accordingly.
+     *  \param w_deciders   Map which associates names with factory functions
+     *                      for deciders of signature
+     *                      factory()::shared_ptr<Decider<Derived>>
+     *  \param w_triggers   Map which associates names with factory functions
+     *                      for triggers of signature
+     *                      factory()::shared_ptr<Trigger<Derived>>
+     */
+    template < class ParentModel, class... WriterArgs >
+    Model(const std::string& name,
+        const ParentModel& parent_model,
+        const Config& custom_cfg = {},
+        std::tuple< WriterArgs... > w_args = {},
         const DataIO::Default::DefaultDecidermap< Derived >&
             w_deciders = DataIO::Default::default_deciders< Derived >,
         const DataIO::Default::DefaultTriggermap< Derived >&
             w_triggers = DataIO::Default::default_triggers< Derived >
-        ):
-        // First thing: setup name, configuration, and level in hierarchy
+        )
+    :
+        // First thing: setup name and position within model hierarchy
         _name(name),
+        _full_name(parent_model.get_full_name() + "." + name),
+        _level(parent_model.get_level() + 1),
+
+        // Retrieve the appropriate configuration entry from the parent model
         _cfg(custom_cfg.size() ? custom_cfg
              : get_as<Config>(_name, parent_model.get_cfg())),
-        _level(parent_model.get_level() + 1),
 
         // Determine space and time
         _space(this->setup_space()),
@@ -258,7 +266,10 @@ public:
         _rng(parent_model.get_rng()),
         _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
                                      + _name)),
-        _monitor(Monitor(name, parent_model.get_monitor_manager())),
+
+        // Set up the monitor, using the parent model's monitor to place it in
+        // a hierarchy equivalent to the model hierarchy
+        _monitor(_name, parent_model.get_monitor()),
 
         // Default-construct the data maanger; only used if needed, see below.
         _datamanager()
@@ -276,7 +287,9 @@ public:
         }
 
         // Provide some information, also depending on write mode
-        _log->info("Model base constructor finished.");
+        _log->info("Model base constructor for '{}' finished.", _name);
+        _log->info("  full_name:   {}", _full_name);
+        _log->info("  level:       {}", _level);
         _log->info("  time_max:    {:7d}", _time_max);
 
         if constexpr (_write_mode == WriteMode::basic) {
@@ -370,6 +383,11 @@ public:
         return _name;
     }
 
+    /// Return the full name of this model within the model hierarchy
+    std::string get_full_name() const {
+        return _full_name;
+    }
+
     /// Return a pointer to the HDF group this model stores data in
     std::shared_ptr<DataGroup> get_hdfgrp() const {
         return _hdfgrp;
@@ -446,14 +464,14 @@ public:
 
 
     // -- Simulation control --------------------------------------------------
-    /// A function that is to be called before starting the iteration of a model
+    /// A function that is called before starting model iteration
     /** See __prolog() for default tasks
      */
     virtual void prolog () {
         __prolog();
     }
 
-    /// A function that is to be called after the last iteration of a model
+    /// A function that is called after the last iteration of a model
     /** See __epilog() for default tasks
      */
     virtual void epilog () {
@@ -858,12 +876,15 @@ template<typename RNG=DefaultRNG>
 class PseudoParent
 {
 protected:
-    // Convenience type definitions
     using Config = Utopia::DataIO::Config;
+
     using HDFFile = Utopia::DataIO::HDFFile;
     using HDFGroup = Utopia::DataIO::HDFGroup;
-    using Time = std::size_t;
+
     using MonitorManager = Utopia::DataIO::MonitorManager;
+    using Monitor = Utopia::DataIO::Monitor;
+
+    using Time = std::size_t;
     using Level = std::size_t;
 
     /// The hierarchical level
@@ -885,7 +906,10 @@ protected:
     const std::shared_ptr<spdlog::logger> _log;
 
     /// The monitor manager
-    MonitorManager _monitor_mgr;
+    const std::shared_ptr<MonitorManager> _monitor_mgr;
+
+    /// The monitor instance of this root model
+    Monitor _monitor;
 
 public:
     /// Constructor that only requires path to a config file
@@ -903,14 +927,19 @@ public:
     // Initialize the config node from the path to the config file
     _cfg(YAML::LoadFile(cfg_path)),
     // Create a file at the specified output path and store the shared pointer
-    _hdffile(std::make_shared<HDFFile>(get_as<std::string>("output_path",
-                                                           _cfg), "w")),
+    _hdffile(std::make_shared<HDFFile>(
+        get_as<std::string>("output_path", _cfg),
+        get_as<std::string>("output_file_mode", _cfg, "w")
+    )),
     // Initialize the RNG from a seed
     _rng(std::make_shared<RNG>(get_as<int>("seed", _cfg))),
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
-    // Create a monitor manager
-    _monitor_mgr(get_as<double>("monitor_emit_interval", _cfg))
+    // Create a monitor manager and a root monitor
+    _monitor_mgr(std::make_shared<MonitorManager>(
+        get_as<double>("monitor_emit_interval", _cfg))
+    ),
+    _monitor(_monitor_mgr)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -950,8 +979,9 @@ public:
     _rng(std::make_shared<RNG>(seed)),
     // And initialize the root logger at warning level
     _log(Utopia::init_logger("root", spdlog::level::warn, false)),
-    // Create a monitor manager
-    _monitor_mgr(emit_interval)
+    // Create a monitor manager and a "root" monitor
+    _monitor_mgr(std::make_shared<MonitorManager>(emit_interval)),
+    _monitor(_monitor_mgr)
     {
         setup_loggers(); // global loggers
         set_log_level(); // this log level
@@ -972,6 +1002,11 @@ public:
     /// Return the hierarchical level within the model hierarchy
     Level get_level() const {
         return _level;
+    }
+
+    /// Return the full name of the PseudoParent: an empty string
+    std::string get_full_name() const {
+        return "";
     }
 
     /// Return the config node of the Pseudo model, i.e. the root node
@@ -1019,7 +1054,12 @@ public:
 
     /// Return the monitor manager of this model
     std::shared_ptr<MonitorManager> get_monitor_manager() const {
-        return std::make_shared<MonitorManager>(_monitor_mgr);
+        return _monitor_mgr;
+    }
+
+    /// Return the monitor of this model
+    const Monitor& get_monitor() const {
+        return _monitor;
     }
 
 

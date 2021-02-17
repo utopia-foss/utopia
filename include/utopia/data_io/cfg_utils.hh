@@ -1,12 +1,16 @@
 #ifndef DATAIO_CFG_UTILS_HH
 #define DATAIO_CFG_UTILS_HH
 
+#include <list>
 #include <sstream>
 
 #include <boost/core/demangle.hpp>
+#include <armadillo>
+#include <yaml-cpp/yaml.h>
 
 #include "../core/exceptions.hh"
-#include "../core/types.hh" // NOTE: DataIO::Config type declared there
+#include "../core/string.hh"
+#include "../core/types.hh"
 
 namespace Utopia
 {
@@ -93,7 +97,7 @@ improve_yaml_exception(const Exc&    e,
     }
 
     // Give some information on the node's content:
-    e_msg << "The content of the node is:  " << YAML::Dump(node);
+    e_msg << "The content of the node is:" << std::endl << YAML::Dump(node);
 
     // Return the custom exception object; can be thrown on other side
     return YAML::Exception(node.Mark(), e_msg.str());
@@ -164,17 +168,16 @@ get_as(const std::string& key, const DataIO::Config& node)
             throw KeyError(key, node);
         }
         // else: throw an improved error message
-        throw DataIO::improve_yaml_exception(e,
-                                             node,
+        throw DataIO::improve_yaml_exception(e, node,
                                              "Could not read key '" + key +
-                                                 "' from given config node!");
+                                             "' from given config node!");
     }
     catch (std::exception& e)
     {
         // Some other exception; provide at least some info and context
         std::cerr << boost::core::demangle(typeid(e).name())
-                  << " occurred during reading key '" << key << "' from config!"
-                  << std::endl;
+                  << " occurred during reading key '" << key
+                  << "' from config!" << std::endl;
 
         // Re-throw the original exception
         throw;
@@ -182,8 +185,7 @@ get_as(const std::string& key, const DataIO::Config& node)
     catch (...)
     {
         throw std::runtime_error("Unexpected exception occurred during "
-                                 "reading key '" +
-                                 key + "'' from config!");
+                                 "reading key '" + key + "'' from config!");
     }
 }
 
@@ -268,13 +270,184 @@ get_as_MultiIndex(const std::string& key, const DataIO::Config& node)
     return DataIO::get_as_arma_vec< MultiIndexType< dim >, dim >(key, node);
 }
 
+
+
 // end group ConfigUtilities
 /**
  *  \}
  */
 
-/*! \} */ // end of group DataIO
+// -- INTERNALLY USED Functions to work with Config trees ---------------------
 
+namespace _internal {
+
+/// Helper function for recursive_setitem
+/** Expects an (already deep-copied) node that is then recursively iterated
+  * through along the key sequence. For the last key in the sequence, the
+  * value is being set. Empty path segments in the key sequence are skipped.
+  *
+  * \throws     std::invalid_argument upon *trailing* empty path segments in
+  *             the key sequence.
+  */
+template<class T, class Keys = std::list<std::string> >
+Config __recursive_setitem (Config d,
+                            Keys&& key_sequence,
+                            const T& val)
+{
+    // Get the next key
+    std::string key;
+    while (key.empty() and not key_sequence.empty()) {
+        key = key_sequence.front();
+        key_sequence.pop_front();
+    }
+    if (key.empty()) {
+        throw std::invalid_argument(
+            "During recursive_setitem, failed to retrieve a valid key for "
+            "continuing recursion. Make sure the given key sequence ("
+            + join(key_sequence, " -> ") + ") contains no empty elements!"
+        );
+    }
+
+    // Check for end of recursion
+    if (key_sequence.empty()) {
+        if (d.IsScalar()) {
+            // Discard the scalar and replace it with an empty mapping
+            d = Config{};
+        }
+        d[key] = val;
+        return d;
+    }
+
+    // Continue recursion, creating the intermediate node if it does not exist
+    if (not d[key]) {
+        d[key] = Config{};
+    }
+    d[key] = __recursive_setitem(d[key], std::forward<Keys>(key_sequence),
+                                 val);
+    return d;
+}
+
+
+/// Recursively retrieve an element from the configuration tree
+/**
+  * Actually uses a loop internally to avoid recursion... ¯\_(ツ)_/¯
+  *
+  * \note       Only works with string-like keys, i.e. can't access sequences.
+  *
+  * \warning    Due to yaml-cpp quirks, creates a deep copy of the given config
+  *             to keep clear of any mutability side effects. Subsequently,
+  *             this function should not be used in performance-critical code.
+  *             Furthermore, to *set* an element in the configuration tree, the
+  *             `recursive_setitem` functionality should be used -- assigning a
+  *             value to the returned Config object will **not** lead to a
+  *             change in the tree provided via the `d` argument.
+  *
+  * \param  d               The configuration tree to retrieve the element from
+  * \param  key_sequence    A key sequence denoting the path within the tree
+  *                         to get the item from.
+  *
+  * \returns    Config      The configuration tree element at the given path.
+  */
+Config recursive_getitem (const Config& d,
+                          const std::vector<std::string>& key_sequence)
+{
+    using Utopia::KeyError;
+    using Utopia::join;
+
+    Config rv = YAML::Clone(d);
+    for (const auto& key : key_sequence ) {
+        try {
+            rv = get_as<Config>(key, rv);
+        }
+        catch (KeyError& err) {
+            throw KeyError(
+                key, rv,
+                "recursive_getitem failed for key or key sequence '"
+                + join(key_sequence, " -> ") + "'!"
+            );
+        }
+    }
+    return rv;
+}
+
+/// Overload for recursive_getitem, accepting a string-like key sequence
+/** Returns the configuration node at the path specified by the key sequence.
+  *
+  * \param  d               The configuration tree to retrieve the element from
+  * \param  key_sequence    A string denoting the path within the tree to get
+  *                         the item from. The path is split into segments
+  *                         using Utopia::split
+  * \param  delims          Delimiters (plural!) that split the string into a
+  *                         key sequence.
+  *
+  * \returns    Config      The configuration tree element at the given path.
+  *
+  * \warning    *Any* character in the `delims` sequence acts as separator.
+  *             See Utopia::split for more information on behaviour of the
+  *             `delims` argument.
+  */
+Config recursive_getitem (const Config& d,
+                          const std::string& key_sequence,
+                          const std::string& delims = ".")
+{
+    return recursive_getitem(d, split(key_sequence, delims));
+}
+
+
+/// Recursively sets an element in a configuration tree
+/** This also creates all intermediate segments that may be missing.
+  *
+  * As the YAML::Node::operator[] does not return references, this internally
+  * has to create a (deep) copy of the given node `d`. After recursing through
+  * it and setting the value, it will finally assign to the `d` reference.
+  *
+  * \note   Only works with string-like keys, i.e. can't access sequences.
+  *
+  * \param  d             The configuration tree to set the entry in.
+  * \param  key_sequence  A container with a sequence of keys to walk along
+  *                       inside the tree.
+  * \param  val           The value to assign to the element of the tree
+  *                       specified by the key sequence.
+  */
+template<class T>
+void recursive_setitem (Config& d,
+                        std::list<std::string> key_sequence,
+                        const T val)
+{
+    if (key_sequence.empty()) {
+        throw std::invalid_argument(
+            "Key sequence for recursive_setitem may not be empty!"
+        );
+    }
+    d = __recursive_setitem(YAML::Clone(d), std::move(key_sequence), val);
+}
+
+/// Overload for recursive_setitem that splits a string into a key sequence
+/**
+  * \param  d             The configuration tree to set the entry in.
+  * \param  key_sequence  A string to split into a sequence of keys to walk
+  *                       along inside the tree.
+  * \param  val           The value to assign to the element of the tree
+  *                       specified by the key sequence.
+  * \param  delims        Delimiters to generate a key sequence from the given
+  *                       string `key_sequence`.
+  *
+  * \warning     *Any* character in the `delims` sequence acts as separator.
+  *              See Utopia::split for more information on behaviour of the
+  *              `delims` argument.
+  */
+template<class T>
+void recursive_setitem (Config& d,
+                        const std::string& key_sequence,
+                        const T val,
+                        const std::string& delims = ".")
+{
+    recursive_setitem(
+        d, split<std::list<std::string>>(key_sequence, delims), val
+    );
+}
+
+} // namespace _internal
 } // namespace Utopia
 
 #endif // DATAIO_CFG_UTILS_HH

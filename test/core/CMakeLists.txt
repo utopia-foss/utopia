@@ -47,6 +47,7 @@ set(TESTS_CORE
     signal_test
     space_test
     state_test
+    string_test
     tags_test
     testtools_test
     utils_test

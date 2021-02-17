@@ -75,6 +75,11 @@ using Config = YAML::Node;
  *  \}
  */
 } // namespace DataIO
+
+/// Type of a variadic dictionary-like data structure used throughout Utopia
+using Config = DataIO::Config;
+
+
 } // namespace Utopia
 
 #endif // UTOPIA_CORE_TYPES_HH

@@ -19,6 +19,9 @@ run_kwargs:
       operator: ">="
       value: 1234.
 
+worker_kwargs:
+  forward_streams: true
+
 parameter_space:
   num_steps: 10000
   write_every: 1000
