@@ -99,7 +99,10 @@ This will automatically create a separate file for each plot and include the val
 Plot Configuration Inheritance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 New plot configurations can be based on existing ones.
-This makes it very easy to define various plot functions without copy-pasting the plot configurations. To do so, add the ``based_on`` key to your plot configuration. As arguments, you can provide either a string or a sequence of strings, where the strings have to refer to names of so-called "base plot configuration entries". These are configuration entries that utopya and the models already provide.
+This makes it very easy to define various plot functions without copy-pasting the plot configurations.
+To do so, add the ``based_on`` key to your plot configuration.
+As arguments, you can provide either a string or a sequence of strings, where the strings have to refer to names of so-called "base plot configuration entries".
+These are configuration entries that utopya and the models already provide.
 
 For example, the following lines suffice to generate a simple line plot based on the plot function configured as ``.basic_uni.lineplot``:
 
@@ -115,6 +118,12 @@ Here, the configuration for ``.basic_uni.lineplot`` is first loaded and then rec
 When providing a sequence, e.g. ``based_on: [foo, bar, baz]``, the first configuration is used as the base and is subsequently recursively updated with those that follow.
 
 For a list of all base plot configurations provided by utopya, see :ref:`utopya_base_cfg`.
+
+This feature is completely implemented in dantro; see the `plot configuration inheritance <https://dantro.readthedocs.io/en/latest/plotting/plot_manager.html#plot-configuration-inheritance>`_ entry in the linked documentation for details.
+For Utopia, the following base configuration pools are made available:
+
+* The ``utopya`` base configuration pool, see :ref:`utopya_base_cfg`
+* The ``{model_name}_base`` configuration pool for the currently selected model, if available
 
 
 .. _external_plot_creator:

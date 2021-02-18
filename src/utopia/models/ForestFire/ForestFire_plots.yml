@@ -23,13 +23,13 @@ tree_density_over_p_lightning:
 
 # ... Tree density facet-grid example: 1D line plots ..........................
 tree_density_facet_grid_lineplots:
-  based_on: tree_density_facet_grids
+  based_on: tree_density_facet_grid
   enabled: false  # Can enable this when sweeping over any dimension
   col: p_lightning
 
 # ... Tree density facet-grid example: 2D imshow plot .........................
 tree_density_facet_grid_imshow:
-  based_on: tree_density_facet_grids
+  based_on: tree_density_facet_grid
   enabled: false  # Can enable this when sweeping over any dimension
   col: p_lightning
   row: seed
