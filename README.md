@@ -60,6 +60,9 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 ### Step-by-step Instructions
 These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (20.04 or newer) setups.
 
+Since __Windows__ supports the installation of Ubuntu via [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), Utopia can also be used on Windows.
+Follow the [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to install Ubuntu, then follow the instructions for Ubuntu in this README.
+
 _Note:_ Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
