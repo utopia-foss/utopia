@@ -952,7 +952,7 @@ class WorkerTask(Task):
         # This includes two counters for the number of lines saved and
         # forwarded, which are used by the save_/forward_streams methods
         self.streams[stream_name] = dict(
-            queue=q, thread=t,
+            queue=q, thread=t, stream=stream,
             log=[], log_raw=[], log_parsed=[],
             save=save_streams, save_path=None,
             save_raw=save_raw, remove_ansi=remove_ansi,
@@ -977,8 +977,10 @@ class WorkerTask(Task):
             self.streams[stream_name]['save_path'] = save_path
 
     def _stop_stream_reader(self, name: str):
-        """Stops the stream reader with the given name."""
-        pass
+        """Stops the stream reader with the given name by closing the
+        associated stream's file handle.
+        """
+        self.streams[name]["stream"].close()
 
     def _finished(self) -> None:
         """Is called once the worker has finished working on this task.
@@ -1310,6 +1312,7 @@ class MPProcessTask(WorkerTask):
         """Stops the stream reader thread with the given name by telling its
         follow function to stop, thus ending iteration."""
         self.streams[name].get('thread').stop_follow = True
+        super()._stop_stream_reader(name)
 
 
 # -----------------------------------------------------------------------------
