@@ -48,6 +48,7 @@ class WorkerManager:
     def __init__(self,
                  num_workers: Union[int, str]='auto',
                  poll_delay: float=0.05,
+                 lines_per_poll: int=20,
                  periodic_task_callback: int=None,
                  QueueCls=queue.Queue,
                  reporter: WorkerManagerReporter=None,
@@ -67,6 +68,10 @@ class WorkerManager:
             poll_delay (float, optional): How long (in seconds) the delay
                 between worker polls should be. For too small delays (<0.01),
                 the CPU load will become significant.
+            lines_per_poll (int, optional): How many lines to read from
+                each stream during polling of the tasks. This value should not
+                be too large, otherwise the polling is delayed by too much.
+                By setting it to -1, all available lines are read.
             periodic_task_callback (int, optional): If given, an additional
                 task callback will be invoked after every
                 ``periodic_task_callback`` poll events.
@@ -145,6 +150,7 @@ class WorkerManager:
 
         # Hand over arguments
         self.poll_delay = poll_delay
+        self.lines_per_poll = lines_per_poll
         self.nonzero_exit_handling = nonzero_exit_handling
         self._cluster_mode = cluster_mode
         self._resolved_cluster_params = resolved_cluster_params
@@ -558,7 +564,10 @@ class WorkerManager:
                 for task in self.active_tasks:
                     # Read the streams and forward them (if the tasks were
                     # configured to do so)
-                    task.read_streams(forward_directly=True)
+                    task.read_streams(
+                        forward_directly=True,
+                        max_num_reads=self.lines_per_poll,
+                    )
                     task.forward_streams()
 
                 # Invoke a report

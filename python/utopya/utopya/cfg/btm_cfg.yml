@@ -88,6 +88,12 @@ worker_manager:
   #       If this value is too high, the log output from simulations is not
   #       read from the line buffer frequently enough.
 
+  # Maximum number of lines to read from each task's stream per poll cycle.
+  # Choosing a value that is too large may affect poll performance in cases
+  # where the task generates many lines of output.
+  # Set to -1 to read *all* available lines from the stream upon each poll.
+  lines_per_poll: 20
+
   # Periodic task callback (in units of poll events). Set None to deactivate.
   periodic_task_callback: 20
 
