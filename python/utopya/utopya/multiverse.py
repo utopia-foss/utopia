@@ -580,13 +580,20 @@ class Multiverse:
             pm_kwargs = recursive_update(pm_kwargs, update_kwargs)
 
         log.info("Initializing PlotManager ...")
-        pm = PlotManager(dm=self.dm, _model_info_bundle=self.info_bundle,
-                         base_cfg=self.UTOPYA_BASE_PLOTS_PATH,
-                         update_base_cfg=paths.get('base_plots'),
-                         plots_cfg=paths.get('default_plots'),
-                         **pm_kwargs)
+        pm = PlotManager(
+            dm=self.dm,
+            _model_info_bundle=self.info_bundle,
+            base_cfg_pools=[
+                ("utopya", self.UTOPYA_BASE_PLOTS_PATH),
+                (f"{self.model_name}_base", paths.get('base_plots', {})),
+            ],
+            default_plots_cfg=paths.get('default_plots'),
+            **pm_kwargs,
+        )
 
         log.progress("Initialized PlotManager.")
+        log.note("Available base configuration pools:  %s",
+                 ", ".join(pm.base_cfg_pools.keys()))
         log.note("Output directory:  %s",
                  pm._out_dir if pm._out_dir else "\n  " + self.dm.dirs['out'])
 

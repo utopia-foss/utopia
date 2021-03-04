@@ -148,6 +148,23 @@ def parse_update_args(args: argparse.Namespace, *,
 
     return update_dict, update_plots_cfg
 
+def handle_interactive_plotting_exception(
+    exc: Exception, *, args, context: str, remark: str = None
+):
+    """Helper function to handle exceptions during interactive plotting"""
+    if args.debug:
+        log.error("An exception occured during %s!", context)
+        traceback.print_exc()
+        log.note("Remove --debug flag to hide traceback.")
+    else:
+        log.error("An exception occured during %s! %s: %s",
+                  context, exc.__class__.__name__, str(exc))
+        log.note("Add --debug flag to show traceback.")
+
+    if remark:
+        log.remark("%s", remark)
+    log.warning("Remaining in interactive plotting mode ...")
+
 
 # -----------------------------------------------------------------------------
 # Define the CLI --------------------------------------------------------------
@@ -807,6 +824,11 @@ if __name__ == '__main__':
 
         # Unless this is the very first session, need to prompt for new args.
         if iap_session > 0:
+            # Provide some information on where the data is from; which is
+            # useful if this is a very long session
+            log.remark("Currently selected data directory:\n  %s",
+                       mv.dm.dirs["data"])
+
             log.note("Use Control+C to exit.")
 
             try:
@@ -834,10 +856,23 @@ if __name__ == '__main__':
         # Create a new PlotManager and increment the session counter. Use a
         # custom output directory (inside the regular eval directory) and
         # include the session number into it.
-        mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
-                              raise_exc=args.debug)
-        iap_session += 1
-        print("")
+        try:
+            mv.renew_plot_manager(out_dir="session{:03d}/".format(iap_session),
+                                  raise_exc=args.debug)
+
+        except Exception as exc:
+            handle_interactive_plotting_exception(
+                exc, args=args, context="PlotManager renewal",
+                remark=(
+                    "Inspect the traceback for details and check that all "
+                    "involved plot configuration files are using valid YAML."
+                )
+            )
+            continue
+
+        finally:
+            iap_session += 1
+            print("")
 
         # Now, try to plot:
         try:
@@ -852,18 +887,9 @@ if __name__ == '__main__':
             continue
 
         except Exception as exc:
-            if args.debug:
-                log.error("An exception occured during interactive plotting!")
-                traceback.print_exc()
-                log.note("Remove --debug flag to hide traceback.")
-            else:
-                log.error("An exception occured during interactive plotting! "
-                          "%s: %s",
-                          exc.__class__.__name__, str(exc))
-                log.note("Add --debug flag to show traceback.")
-
-            log.warning("Remaining in interactive plotting mode ...")
-
+            handle_interactive_plotting_exception(
+                exc, args=args, context="interactive plotting"
+            )
             continue
 
         # Done plotting, allow to show the output

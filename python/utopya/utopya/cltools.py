@@ -47,7 +47,7 @@ def add_from_kv_pairs(*pairs, add_to: dict,
 
     Note that this happens directly on the object, i.e. making use of the
     mutability of the given dict. This function has no return value!
-    
+
     Args:
         *pairs: Sequence of key=value strings
         add_to (dict): The dict to add the pairs to
@@ -66,7 +66,7 @@ def add_from_kv_pairs(*pairs, add_to: dict,
         # Boolean
         if val.lower() in ["true", "false"]:
             return bool(val.lower() == "true")
-        
+
         # None
         if val.lower() in ["null"]:
             return None
@@ -218,13 +218,13 @@ def register_models(args, *, registry):
 def register_project(args, *, arg_prefix: str='') -> dict:
     """Register or update information of an Utopia project, i.e. a repository
     that implements models.
-    
+
     Args:
         args (TYPE): The CLI arguments object
         arg_prefix (str, optional): The prefix to use when using attribute
             access to these arguments. Useful if the names as defined in the
             CLI are different depending on the invocation
-    
+
     Returns:
         dict: Information on the newly added or updated project
     """
@@ -271,15 +271,15 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
                     ) -> None:
     """Deploys a copy of the full config to the specified location (usually
     the user config search path of the Multiverse class)
-    
+
     Instead of just copying the full config, it is written line by line,
     commenting out lines that are not already commented out, and changing the
     header.
-    
+
     Args:
         user_cfg_path (str, optional): The path the file is expected at. Is an
             argument in order to make testing easier.
-    
+
     Returns:
         None
     """
@@ -296,7 +296,7 @@ def deploy_user_cfg(user_cfg_path: str=Multiverse.USER_CFG_SEARCH_PATH
             # Abort here
             print("Not deploying user config.")
             return
-    
+
     # At this point, can assume that it is desired to write the file and there
     # is no other file there
     # Make sure that the folder exists
@@ -350,7 +350,7 @@ def copy_model_files(*, model_name: str,
                      dry_run: bool=False) -> None:
     """A helper function to conveniently copy model-related files, rename them,
     and adjust their content to the new name as well.
-    
+
     Args:
         model_name (str): The name of the model to copy
         new_name (str, optional): The new name of the model. This may not
@@ -364,10 +364,10 @@ def copy_model_files(*, model_name: str,
             confirmation or missing arguments.
         dry_run (bool, optional): If given, no write or copy operations will be
             carried out.
-    
+
     Raises:
         ValueError: Upon bad arguments
-    
+
     Returns:
         None
     """
@@ -387,7 +387,7 @@ def copy_model_files(*, model_name: str,
         changes into the returned dict.
 
         The file name is changed according to the specified replacements.
-        
+
         Args:
             source_dir (str): The source directory to look for files in using
                 glob and the ``glob_args``. Note that directories are not
@@ -401,7 +401,7 @@ def copy_model_files(*, model_name: str,
                 files within the source directory. By default, this matches
                 all files, also down the source directory tree. The glob
                 ``recursive`` option is enabled.
-        
+
         Returns:
             dict: The file map relative to source and target dir.
         """
@@ -444,15 +444,15 @@ def copy_model_files(*, model_name: str,
     def add_model_to_cmakelists(*, fpath: str, new_name: str, write: bool):
         """Adds the relevant add_subdirectory command to the CMakeLists file
         at the specified path.
-        
+
         Assumes an ascending alphabetical list of add_subdirectory commands
         and adds the new command at a suitable place.
-        
+
         Args:
             fpath (str): The absolute path of the CMakeLists.txt file
             new_name (str): The new model name to add to it
             write (bool): If false, will not write.
-        
+
         Raises:
             ValueError: On missing ``add_subdirectory`` command in the given
                 file. In this case, the line has to be added manually.
@@ -488,7 +488,7 @@ def copy_model_files(*, model_name: str,
         if write:
             with open(fpath, 'w') as f:
                 f.writelines(lines)
-            
+
             print("Subdirectory for model '{}' added to\n\t{}"
                   "".format(new_name, fpath))
 
@@ -555,7 +555,7 @@ def copy_model_files(*, model_name: str,
                          "project name is case-sensitive.\n"
                          "Available projects: {}."
                          "".format(target_project, ", ".join(projects)))
-    
+
     # Generate the file maps . . . . . . . . . . . . . . . . . . . . . . . . .
     # The mapping of all files that are to be copied and in which the content
     # is to be replaced. It maps absolute source file paths to absolute target
@@ -590,7 +590,7 @@ def copy_model_files(*, model_name: str,
                                         abs_file_map=file_map,
                                         replacements=replacements,
                                         skip_exts=skip_exts)
-    
+
     if target_py_p_dir and info_bundle.paths.get('python_model_plots_dir'):
         py_p_source_dir = info_bundle.paths['python_model_plots_dir']
         py_p_target_dir = os.path.join(target_py_p_dir, new_name)
@@ -609,7 +609,7 @@ def copy_model_files(*, model_name: str,
     if py_t_file_map:
         print_file_map(file_map=py_t_file_map, label="python model test",
                        source_dir=py_t_source_dir, target_dir=py_t_target_dir)
-    
+
     if py_p_file_map:
         print_file_map(file_map=py_p_file_map, label="python model plot",
                        source_dir=py_p_source_dir, target_dir=py_p_target_dir)
@@ -668,7 +668,7 @@ def copy_model_files(*, model_name: str,
     # Prepare for CMakeLists.txt adjustments
     cmakelists_fpath = os.path.abspath(os.path.join(impl_target_dir,
                                                     "../CMakeLists.txt"))
-    
+
     if not add_to_cmakelists:
         print("Not extending CMakeLists.txt automatically.")
         print("Remember to register the new model in the relevant "
@@ -690,17 +690,17 @@ def prompt_for_new_plot_args(*, old_argv: List[str],
                              ) -> Tuple[dict, argparse.Namespace]:
     """Given some old arguments, prompts for new ones and returns a new
     list of argument values and the parsed argparse namespace result.
-    
+
     Args:
         old_argv (List[str]): The old argument value list
         old_args (argparse.Namespace): The old set of parsed arguments
         parser (argparse.ArgumentParser): The parser to use for evaluating the
             newly specified argument value list
-    
+
     Returns:
         Tuple[dict, argparse.Namespace]: The new argument values list and the
             parsed argument namespace.
-    
+
     Raises:
         ValueError: Upon error in parsing the new arguments.
     """
@@ -734,7 +734,7 @@ def prompt_for_new_plot_args(*, old_argv: List[str],
     # Prepare the new list of argument values.
     add_argv = input_res.split(' ') if input_res else []
     new_argv = list(prefix_argv) + add_argv
-    
+
     # ... and parse it to the eval subparser.
     new_args = parser.parse_args(new_argv)
     # NOTE This may raise SystemExit upon the --help argument or other
@@ -750,7 +750,7 @@ def prompt_for_new_plot_args(*, old_argv: List[str],
         print("{ansi.DIM}Remove the offending argument{} ({}) and try again. "
               "Consult --help to find out the available plotting-related "
               "arguments."
-              "{ansi.RESET}".format("s" if len(bad_args) != 1 else "", 
+              "{ansi.RESET}".format("s" if len(bad_args) != 1 else "",
                                     ", ".join(bad_args), ansi=ANSIesc))
         raise ValueError("Cannot specify arguments that are used for updating "
                          "the (already-in-use) meta-configuration of the "
