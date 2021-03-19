@@ -47,6 +47,40 @@ To load HDF5 data as proxy, use the ``hdf5_proxy`` loader in the :ref:`data_mana
 
 These proxy objects already make handling large amounts of data much easier, because the data is only loaded if needed.
 
+
+.. _data_handling_load_parallel:
+
+Loading files in parallel
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Despite data being loaded into proxy objects, this process can take a considerable amount of time if there are many groups or datasets in the to-be-loaded HDF5 files.
+In such a case, the ``DataManager`` will be busy mostly with creating the corresponding Python objects, and less so with loading the actual data from the files.
+(In other words, this would be a task that is CPU-limited, not I/O limited.)
+
+Subsequently, there is a benefit in using multiple CPUs to build the data tree in such scenarios.
+The dantro data loading interface supports parallel loading and Utopia allows to control this behavior directly via the CLI:
+
+.. code-block:: bash
+
+    utopia eval MyModel --load-parallel
+
+The above command will enable parallel loading and it will use all available CPUs for that; see the CLI ``--help`` for details.
+
+If you want more control, you can also directly configure it via the :ref:`meta-configuration <feature_meta_config>`.
+Have a look at the corresponding section in the :ref:`utopya_base_cfg` for available options, e.g. for using parallel loading depending on the number of files or their total file size:
+
+.. literalinclude:: ../../../python/utopya/utopya/cfg/base_cfg.yml
+    :language: yaml
+    :start-after: # Options for loading data in parallel
+    :end-before: # The resulting data tree
+    :dedent: 6
+
+.. hint::
+
+    The ``parallel`` option is basically available for every entry in the ``data_manager.load_cfg``.
+    However, given the constant overhead of starting new loader processes, it makes most sense for the ``data`` entry, where the HDF5 files' content is loaded.
+
+
+
 .. _data_handling_dask:
 
 How about *huge* amounts of data?
@@ -95,7 +129,7 @@ There are two other ways to set this entry (following Utopia's :ref:`configurati
 
         utopia config user --get --set data_manager.load_cfg.data.proxy_kwargs.resolve_as_dask=true
 
-    This then applies to *all* models you work with. As dask does slow down some operations, it only makes sense to set this if you are mostly working with large data and tend to forget enabling dask! 
+    This then applies to *all* models you work with. As dask does slow down some operations, it only makes sense to set this if you are mostly working with large data and tend to forget enabling dask!
 
 
 

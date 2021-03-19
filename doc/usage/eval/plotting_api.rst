@@ -16,7 +16,7 @@ This is an excerpt of the relevant API references for the plotting framework.
 
 
 :py:class:`utopya.plotting.PlotManager`
---------------------------------------
+---------------------------------------
 
 .. autoclass:: utopya.plotting.PlotManager
     :noindex:

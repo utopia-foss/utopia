@@ -39,8 +39,7 @@ def parse_update_args(args: argparse.Namespace, *,
         add_item('raise', add_to=update_dict,
                  key_path=['worker_manager', 'nonzero_exit_handling'])
 
-
-    # Additional arguments relevant in run mode
+    # Arguments relevant only in run mode
     if mode == 'run':
         # If a model_note was given, add it to the paths
         if args.note:
@@ -121,32 +120,34 @@ def parse_update_args(args: argparse.Namespace, *,
             add_from_kv_pairs(*args.set_params,
                               add_to=update_dict['parameter_space'])
 
-        if args.set_cfg:
-            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-
-        if args.update_plots_cfg:
-            try:
-                add_from_kv_pairs(*args.update_plots_cfg,
-                                  add_to=update_plots_cfg)
-            except ValueError:
-                update_plots_cfg = load_yml(*args.update_plots_cfg)
-
-
-    # Adjustments in eval mode
+    # Adjustments relevant only in eval mode
     elif mode == 'eval':
-        if args.set_cfg:
-            add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
-
-        if args.update_plots_cfg:
-            add_from_kv_pairs(*args.update_plots_cfg, add_to=update_plots_cfg)
-
-        if args.cluster_mode:
-            add_item(True, add_to=update_dict, key_path=['cluster_mode'])
+        # Can add eval-specific arugments here
+        pass
 
     else:
         raise ValueError("Bad mode '{}'! Needs be: run or eval".format(mode))
 
+    # Evaluate arguments that apply to both run and eval modes
+    if args.load_parallel is not None:
+        add_item(args.load_parallel, add_to=update_dict,
+                 key_path=['data_manager', 'load_cfg', 'data', 'parallel'])
+
+    if args.cluster_mode:
+        add_item(True, add_to=update_dict, key_path=['cluster_mode'])
+
+    if args.set_cfg:
+        add_from_kv_pairs(*args.set_cfg, add_to=update_dict)
+
+    if args.update_plots_cfg:
+        try:
+            add_from_kv_pairs(*args.update_plots_cfg,
+                              add_to=update_plots_cfg)
+        except ValueError:
+            update_plots_cfg = load_yml(*args.update_plots_cfg)
+
     return update_dict, update_plots_cfg
+
 
 def handle_interactive_plotting_exception(
     exc: Exception, *, args, context: str, remark: str = None
@@ -467,6 +468,13 @@ p_run_plt.add_argument('--plots-cfg',
     default=None, nargs='?',
     help="If given, uses the plots configuration file found at this path "
          "instead of the defaults of the model.")
+p_run_plt.add_argument('-P', '--load-parallel',
+    default=None, const=True, nargs='?', type=int,
+    help="If given, will force loading data in parallel. If an integer is "
+         "given, will use that many processes for loading. Can also be used "
+         "to enforce non-parallel loading by setting to 1. Regardless of the "
+         "argument value, this will overwrite any potentially existing "
+         "data_manager.load_cfg.data.parallel entry in the meta-config.")
 p_run_plt.add_argument('--update-plots-cfg',
     default=None, nargs='+',
     help="Sets key-value pairs in the `plots_cfg` entry of the plots meta "
@@ -478,7 +486,7 @@ p_run_plt.add_argument('--no-plot',
     action='store_true',
     help="If set, no plots will be created. To perform plots a later point, "
          "use the `utopia eval` subcommand.")
-p_run_plt.add_argument('--plot-only',
+p_run_plt.add_argument('--plot-only', '--po',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
@@ -530,7 +538,7 @@ p_eval_plt.add_argument('--update-plots-cfg',
          "the 'plot_foo' dict to 42. Note that multiple parameter can be set "
          "at once by separating them with a space; if a space needs to be in "
          "the argument value, put the strings into '...' or \"...\".")
-p_eval_plt.add_argument('--plot-only',
+p_eval_plt.add_argument('--plot-only', '--po',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
          "that match the names given here. This can also be used to activate "
@@ -550,6 +558,13 @@ p_eval_plt.add_argument('-d', '--debug',
          "plotting mode is _not_ quit.")
 
 # misc
+p_eval.add_argument('-P', '--load-parallel',
+    default=None, const=True, nargs='?', type=int,
+    help="If given, will force loading data in parallel. If an integer is "
+         "given, will use that many processes for loading. Can also be used "
+         "to enforce non-parallel loading by setting to 1. Regardless of the "
+         "argument value, this will overwrite any potentially existing "
+         "data_manager.load_cfg.data.parallel entry in the meta-config.")
 p_eval.add_argument('--run-cfg-path',
     default=None, nargs='?',
     help="Path to the run configuration. Can be used to change the "

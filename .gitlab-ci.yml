@@ -460,6 +460,7 @@ test:cli:
         --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
     - utopia run dummy --note plt5
         --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml
+    - utopia run dummy --note plt6 --load-parallel --num-seeds 3 --po states
 
     # Test the interactive plotting mode, piping mock input to it
     # None of these should lead to an exit code other than 0

@@ -365,6 +365,18 @@ data_manager:
       target_path: multiverse/{match:}/data
       enable_mapping: true   # see DataManager for content -> type mapping
 
+      # Options for loading data in parallel (speeds up CPU-limited loading)
+      parallel:
+        enabled: false
+
+        # Number of processes to use; negative is deduced from os.cpu_count()
+        processes: -1
+
+        # Threshold values for parallel loading; if any is below these
+        # numbers, loading will *not* be in parallel.
+        min_files: 5
+        min_total_size: 104857600  # 100 MiB
+
     # The resulting data tree is then:
     #  └┬ cfg
     #     └┬ base
