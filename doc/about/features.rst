@@ -676,12 +676,14 @@ Data handling with the :py:class:`~utopya.DataManager`
 * Makes use of `xarray <http://xarray.pydata.org/>`_ to provide **labelled dimensions and coordinates**. This information is extracted from the HDF5 attributes.
 * Supports **lazy loading**  of data using so-called :ref:`proxies <data_handling_proxy>`; these are only resolved when the data is actually needed (saves you a lot of RAM!).
   When the data is too large for the machine's memory, the :ref:`dask framework <data_handling_dask>` makes it possible to still work with the data.
+* Can load data in parallel, which can speed up loading for data structures that are CPU-limited during loading. See the ``--load-parallel`` CLI option.
 * ⚠️ This should not be confused with the *backend* ``DataManager`` used for *writing data*, see :ref:`above <feature_backend_DataManager>`.
 * 📚
   `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/data_mngr.html>`__,
   :ref:`data_handling`,
   :py:class:`~utopya.DataManager`,
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
+  :ref:`data_handling_load_parallel`
 
 
 .. _feature_plotting:
