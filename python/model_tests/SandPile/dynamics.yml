@@ -1,0 +1,36 @@
+# Configuration to test the dynamic behavior of the SandPile model
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 3
+
+  seed: !sweep
+    default: 42
+    values: [5, 899, 1000, 1487]
+  
+  SandPile:
+    # --- Space parameters ----------------------------------------------------
+    # The physical space this model is embedded in
+    space:
+      periodic: false
+
+    # --- CellManager ---------------------------------------------------------
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 64      # in cells per unit length of physical space
+
+      neighborhood:
+        mode: vonNeumann
+
+      cell_params:
+        # Cells are randomly initialized using a uniform distribution in the 
+        # given closed range.
+        # Choose values such that this is supercritical
+        initial_slope_lower_limit: 5
+        initial_slope_upper_limit: 6
+
+    # --- Dynamics ------------------------------------------------------------
+    # The critical slope; beyond this value, sand topples
+    critical_slope: 4

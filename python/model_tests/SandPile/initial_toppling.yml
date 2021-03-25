@@ -1,0 +1,32 @@
+# Configuration to test initialization of the SandPile model 
+# with critical slopes and all cells are in avalanche.
+---
+perform_sweep: true
+parameter_space:
+  num_steps: 0
+
+  seed: !sweep
+    default: 42
+    values: [23, 42, 665, 667]
+
+  SandPile:
+    # --- Space parameters ----------------------------------------------------
+    # The physical space this model is embedded in
+    space:
+      periodic: false
+    # --- CellManager ---------------------------------------------------------
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 32      # in cells per unit length of physical space
+
+      neighborhood:
+        mode: vonNeumann
+
+      cell_params:
+        initial_slope_lower_limit: 5 
+        initial_slope_upper_limit: 6 
+
+    # --- Dynamics ------------------------------------------------------------
+    # The critical slope; beyond this value, sand topples
+    critical_slope: 4

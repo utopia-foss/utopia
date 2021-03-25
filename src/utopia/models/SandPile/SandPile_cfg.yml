@@ -33,9 +33,9 @@ cell_manager:
     # Cells are randomly initialized using a uniform distribution in the given
     # closed range.
     # Choose values such that this is supercritical
-    initial_slope_lower_limit: 5
-    initial_slope_upper_limit: 6
+    initial_slope_lower_limit: !is-unsigned 5
+    initial_slope_upper_limit: !is-unsigned 6
 
 # --- Dynamics ----------------------------------------------------------------
 # The critical slope; beyond this value, sand topples
-critical_slope: 4
+critical_slope: !is-unsigned 4
