@@ -1,0 +1,10 @@
+# Configuration to test initialization of the SandPile model datasets
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 0
+
+  seed: !sweep
+    default: 42
+    values: [23, 42, 665, 667]
