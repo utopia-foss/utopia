@@ -175,6 +175,7 @@ MultiDiGraph:
     nodes:
       node_size:
         from_property: in_degree
+      edgecolors: r
     node_labels:
       enabled: True
       labels:
@@ -233,7 +234,7 @@ custom_graph_creation:
   transform:
     - nx.: "complete_graph"
       kwargs:
-        n: 10
+        n: 3
       tag: graph
 
   graph: !dag_result graph
@@ -241,77 +242,30 @@ custom_graph_creation:
     positions:
       model: random
 
+custom_graph_arr_creation:
+  <<: *base
+  transform:
+    - nx.: "complete_graph"
+      kwargs:
+        n: 3
+      tag: graph
+    - operation: build_object_array
+      kwargs:
+        objs:
+          [1, 16]: !dag_tag graph
+          [2, 16]: !dag_tag graph
+        dims: [foo, bar]
+      tag: graphs
+  graph: !dag_result graphs
+  graph_drawing: {}
+
 # NOTE If you add test cases here, also register them in test_plotting.py
 
 # -- Single plots that raise Errors or Warnings -------------------------------
-Graphviz:
-  <<: *base
-  graph_creation:
-    <<: *graph_creation
-  graph_drawing:
-    <<: *graph_drawing
-    positions:
-      model: graphviz_dot
-
-wrong_edge_label_kwarg:
-  <<: *base
-  graph_creation:
-    <<: *graph_creation
-  graph_drawing:
-    <<: *graph_drawing
-    edge_labels:
-      enabled: True
-      labels:
-        [0,1]: foo
-
-BoundaryNorm_for_directed_edges:
-  <<: *base
-  graph_creation:
-    <<: *graph_creation
-    directed: True
-    parallel_edges: False
-  graph_drawing:
-    <<: *graph_drawing
-    edges:
-      edge_color:
-        from_property: weights
-      edge_cmap:
-        from_values:
-          0: r
-          1: g
-
-colorbar_for_directed_edges:
-  <<: *base
-  graph_creation:
-    <<: *graph_creation
-    directed: True
-    parallel_edges: False
-  graph_drawing:
-    <<: *graph_drawing
-    edges:
-      edge_color:
-        from_property: weights
 
 invalid_ext_prop:
   <<: *ext_prop
   compute_only: ['graph_group']
-
-invalid_interval:
-  <<: *base
-  graph_drawing:
-    <<: *graph_drawing
-    nodes:
-      node_size:
-        from_property: some_state
-        scale_to_interval: [200, 400, 333]
-
-invalid_layout_property:
-  <<: *base
-  graph_drawing:
-    <<: *graph_drawing
-    nodes:
-      invalid_entry:
-        from_property: some_state
 
 # -- Animation configurations -------------------------------------------------
 graph_anim1: &graph_anim
@@ -320,35 +274,36 @@ graph_anim1: &graph_anim
     enabled: True
     writer: frames
   suptitle_kwargs:
-    title: 'time: {value}'
-  graph_creation:
-    <<: *graph_creation
-  graph_drawing:
-    <<: *graph_drawing
+    title: 'time: {time:d}'
   graph_animation:
     times:
       from_property: weights
 
 graph_anim2:
   <<: *base
+  graph_drawing:
+    <<: *graph_drawing
+    nodes:
+      node_color:
+        from_property: some_state
+      vmin: 0
+    edges:
+      edge_color:
+        from_property: weights
+      edge_vmin: 0
   animation:
     enabled: True
     writer: frames
-  graph_creation:
-    <<: *graph_creation
-  graph_drawing:
-    <<: *graph_drawing
   graph_animation:
     times:
-      isel: [0, -1]
+      isel: [-1]
+    update_colormapping: True
 
 graph_anim3:
   <<: *base
   animation:
     enabled: True
     writer: frames
-  graph_creation:
-    <<: *graph_creation
   graph_drawing:
     <<: *graph_drawing
     node_labels:
@@ -357,7 +312,19 @@ graph_anim3:
       enabled: True
   graph_animation:
     times:
-      sel: [0, 1, 2]
+      sel: [0, 1]
+    update_colormapping: False
+
+graph_anim4:
+  <<: *base
+  animation:
+    enabled: True
+    writer: frames
+  graph_animation:
+    sel:
+      time:
+        from_property: weights
+    update_positions: True
 
 graph_anim_external:
   <<: *ext_prop
@@ -368,13 +335,39 @@ graph_anim_external:
     times:
       from_property: some_state_transformed
 
-# -- Animations that raise Errors or Warnings ---------------------------------
-
-anim_invalid_time_spec:
-  <<: *graph_anim
+graph_anim_custom_graph_creation:
+  <<: *base
+  transform:
+    - nx.: "complete_graph"
+      kwargs:
+        n: 3
+      tag: graph
+    - import: [ numpy, nan ]
+      tag: nan
+    - operation: build_object_array
+      kwargs:
+        objs:
+          [1, 16]: !dag_tag graph
+          [2, 16]: !dag_tag nan
+          [3, 16]: !dag_tag graph
+          [4, 16]: !dag_tag nan
+        dims: [foo, bar]
+      tag: graphs
+  graph: !dag_result graphs
+  animation:
+    enabled: True
+    writer: frames
+  graph_drawing:
+    positions:
+      model: random
   graph_animation:
-    times:
-      invalid_entry: foo
+    sel:
+      foo: [2, 3, 4]
+    isel:
+      bar: -1
+    skip_empty_frames: True
+
+# -- Animations that raise Errors or Warnings ---------------------------------
 
 anim_amgiguous_time_spec:
   <<: *graph_anim
@@ -383,10 +376,21 @@ anim_amgiguous_time_spec:
       sel: [0]
       isel: [0]
 
-anim_missing_time_spec:
-  <<: *graph_anim
-  graph_animation:
-    times: {}
+anim_not_dataarray:
+  <<: *base
+  transform:
+    - nx.: "complete_graph"
+      kwargs:
+        n: 10
+      tag: graph
+
+  graph: !dag_result graph
+  graph_drawing:
+    positions:
+      model: random
+  animation:
+    enabled: True
+    writer: frames
 
 # -- Documentation example ----------------------------------------------------
 ### Start -- graph_plot_cfg

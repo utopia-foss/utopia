@@ -20,6 +20,8 @@ from_intervals:
       [-.5,0.5]: r
       [0.5,1.5]: ~ # None entry, use placeholder color here
       [1.5,4.5]: b
+  norm:
+    foo: bar # will be overwritten
 
 simple_syntax:
   cmap: Greys
