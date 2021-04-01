@@ -99,3 +99,10 @@ def test_ColorManager():
 
         if name == "shortcut_categorical":
             assert cmap(0) == mpl.colors.to_rgba("g")
+
+    # Test ColorManager when passing norm and cmap (as mpl object) directly
+    colormanager = ColorManager(
+        cmap=mpl.colors.ListedColormap(["r", "b"]),
+        norm=mpl.colors.BoundaryNorm([-2, 1, 2], ncolors=2),
+    )
+    assert colormanager.cmap(0) == mpl.colors.to_rgba("r")

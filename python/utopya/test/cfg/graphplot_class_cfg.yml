@@ -1,0 +1,116 @@
+# Test configurations for the GraphPlot class
+---
+# -- Configurations that should work ------------------------------------------
+
+cfg_1:
+  nodes:
+    node_color: red
+    node_size:
+      from_property: out_degree
+    node_shape: ^
+    alpha: 0.8
+    edgecolors: [2.5, 1., 1.]
+    linewidths: [1., 2., 3.]
+  edges:
+    width: 3
+  mark_nodes:
+    colors:
+      0: b
+
+# -- Configurations that raise Errors or Warnings -----------------------------
+graphviz:
+  positions:
+    model: graphviz_dot
+
+wrong_edge_label_kwarg:
+  _raises: ValueError
+  _match: use the key 'edge_labels'
+  edge_labels:
+    enabled: True
+    labels:
+      [0, 1]: foo
+
+boundary_norm_for_directed_edges:
+  _raises: TypeError
+  _match: only the matplotlib.colors.Normalize base class is supported
+  edges:
+    edge_cmap:
+      from_values:
+        0: r
+        1: g
+
+colorbar_for_directed_edges:
+  _warns: UserWarning
+  _match: No colorbar can be shown
+  edges:
+    colorbar:
+      enabled: True
+
+invalid_rescale_interval:
+  _raises: ValueError
+  _match: "'interval' must be a 2-tuple"
+  nodes:
+    node_size:
+      from_property: degree
+      scale_to_interval: [1, 2, 3]
+
+invalid_node_size_prop:
+  _raises: ValueError
+  _match: Make sure the property exists for all nodes to draw
+  nodes:
+    node_size:
+      from_property: invalid
+
+invalid_norm_for_directed_edges:
+  _raises: TypeError
+  _match: Received invalid norm type
+  edges:
+    cmap_norm: LogNorm
+
+provide_positions_dict_and_model:
+  _warns: UserWarning
+  _match: The specified model will be ignored
+  positions:
+    model: random
+    from_dict:
+      0: [0, 0]
+      1: [1, 0]
+      2: [0, 1]
+
+provide_nodelist_argument:
+  _warns: UserWarning
+  _match: The 'nodelist' argument will be ignored
+  nodes:
+    nodelist: foo
+
+provide_edgelist_argument:
+  _warns: UserWarning
+  _match: The 'edgelist' argument will be ignored
+  edges:
+    edgelist: bar
+
+invalid_mark_nodes_kwargs:
+  _raises: ValueError
+  _match: Received invalid 'mark_nodes' kwargs
+  mark_nodes:
+    nodelist: foo
+    colors: bar
+
+missing_mark_nodes_kwargs:
+  _raises: ValueError
+  _match: Missing argument 'nodelist' in 'mark_nodes' kwargs
+  mark_nodes:
+    color: r
+
+invalid_mark_edges_kwargs:
+  _raises: ValueError
+  _match: Received invalid 'mark_edges' kwargs
+  mark_edges:
+    edgelist: foo
+    colors: bar
+
+missing_mark_edges_kwargs:
+  _raises: ValueError
+  _match: Missing argument 'edgelist' in 'mark_edges' kwargs
+  mark_edges:
+    color: r

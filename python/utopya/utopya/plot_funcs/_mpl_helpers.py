@@ -43,18 +43,23 @@ class ColorManager:
     """Custom color manager which provides an interface to the
     matplotlib.colors module.
     """
-    def __init__(self, *, cmap: Union[str, dict]=None,
-                          norm: Union[str, dict]=None,
-                          labels: Union[dict, list]=None,
-                          vmin: float=None,
-                          vmax: float=None):
+    def __init__(
+        self,
+        *,
+        cmap: Union[str, dict, mpl.colors.Colormap]=None,
+        norm: Union[str, dict, mpl.colors.Normalize]=None,
+        labels: dict=None,
+        vmin: float=None,
+        vmax: float=None
+    ):
         """Initializes the ``ColorManager`` by building the colormap, the norm,
         and the colorbar labels.
         
         Args:
-            cmap (Union[str, dict], optional): The colormap. If it is a string,
-                it must name a registered colormap. If it is a dict, the
-                following arguments are available:
+            cmap (Union[str, dict, mpl.colors.Colormap], optional):
+                The colormap. If it is a string, it must name a registered 
+                colormap. If it is a dict, the following arguments are
+                available:
 
                 name (str, optional):
                     Name of a registered colormap.
@@ -85,13 +90,13 @@ class ColorManager:
                     ``from_values`` are replaced with this color
                     (default: white).
 
-            norm (Union[str, dict], optional): The norm that is applied for the
-                color-mapping. If it is a string, the matching norm in
-                `matplotlib.colors <https://matplotlib.org/api/colors_api.html>`_
+            norm (Union[str, dict, mpl.colors.Normalize], optional):
+                The norm that is applied for the color-mapping. If it is a
+                string, the matching norm in `matplotlib.colors <https://matplotlib.org/api/colors_api.html>`_
                 is created with default values. If it is a dict, the ``name``
                 entry specifies the norm and all further entries are passed to
-                its constructor. May be overwritten if a discrete colormap is
-                specified in ``cmap``.
+                its constructor. Overwritten if a discrete colormap is
+                specified via ``cmap.from_values``.
             labels (Union[dict, list], optional): Colorbar tick-labels keyed by
                 tick position. If a list of labels is passed they are
                 automatically assigned to the positions [0, 1, 2, ...].
@@ -100,14 +105,30 @@ class ColorManager:
             vmax (float, optional): The upper bound of the color-mapping.
                 Ignored if norm is *BoundaryNorm*.
         """
-        if isinstance(cmap, str) or cmap is None:
-            cmap = dict(name=cmap)
+        cmap_kwargs = {}
+        norm_kwargs = {}
 
-        if isinstance(norm, str) or norm is None:
-            norm = dict(name=norm)
+        # If Colormap instance is given, set it directly. Otherwise parse the
+        # cmap_kwargs below.
+        if isinstance(cmap, mpl.colors.Colormap):
+            self._cmap = cmap
 
-        cmap_kwargs = copy.deepcopy(cmap)
-        norm_kwargs = copy.deepcopy(norm)
+        elif isinstance(cmap, str) or cmap is None:
+            cmap_kwargs = dict(name=cmap)
+
+        else:
+            cmap_kwargs = copy.deepcopy(cmap)
+
+        # If Normalize instance is given, set it directly. Otherwise parse the
+        # norm_kwargs below.
+        if isinstance(norm, mpl.colors.Normalize):
+            self._norm = norm
+          
+        elif isinstance(norm, str) or norm is None:
+            norm_kwargs = dict(name=norm)
+
+        else:
+            norm_kwargs = copy.deepcopy(norm)
 
         # Parse configuration for custom discrete colormapping
         if 'from_values' in cmap_kwargs:
@@ -126,18 +147,21 @@ class ColorManager:
             }
             
             cmap_kwargs['name'] = 'ListedColormap'
-            cmap_kwargs['colors'] = mapping.values()
+            cmap_kwargs['colors'] = list(mapping.values())
 
-            norm_kwargs['name'] = 'BoundaryNorm'
-            norm_kwargs['ncolors'] = len(mapping)
-            norm_kwargs['boundaries'] = self._parse_boundaries(
-                                                list(mapping.keys()))
+            # Overwrite the norm configuration
+            norm_kwargs = {
+                'name': 'BoundaryNorm',
+                'ncolors': len(mapping),
+                'boundaries': self._parse_boundaries(list(mapping.keys()))
+            }
 
             log.remark("Configuring a discrete colormap 'from values'. "
                        "Overwriting 'norm' to BoundaryNorm with %d colors.",
                        norm_kwargs['ncolors'])
 
-        if not norm_kwargs['name'] == 'BoundaryNorm':
+        # BoundaryNorm has no vmin/vmax argument
+        if not norm_kwargs.get('name', None) == 'BoundaryNorm':
             norm_kwargs['vmin'] = vmin
             norm_kwargs['vmax'] = vmax
 
@@ -147,9 +171,14 @@ class ColorManager:
         if isinstance(labels, list):
             labels = {k: v for k, v in enumerate(labels)}
 
-        self._cmap = self._create_cmap(**cmap_kwargs)
-        self._norm = self._create_norm(**norm_kwargs)
-        self._labels = labels
+        self._labels = copy.deepcopy(labels)
+        
+        # Set cmap and norm if not done already
+        if cmap_kwargs:
+            self._cmap = self._create_cmap(**cmap_kwargs)
+
+        if norm_kwargs:
+            self._norm = self._create_norm(**norm_kwargs)
 
     @property
     def cmap(self):

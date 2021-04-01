@@ -1,1082 +1,442 @@
-"""This module provides a generic function for graph plotting."""
+"""This module provides graph plotting functions."""
 
 import os
 import copy
 import logging
 import warnings
+from itertools import product, chain
 from typing import Sequence, Union, Callable, Dict, Tuple, Any
 
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
+import xarray as xr
 
 from utopya.plotting import is_plot_func, PlotHelper
+from utopya.plot_funcs._graph import GraphPlot
 from utopya.plot_funcs._mpl_helpers import ColorManager
 
 # Get a logger
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
+# Helper Methods
 
-# Available networkx node layout options
-POSITIONING_MODELS_NETWORKX = {
-    'spring': nx.spring_layout,
-    'circular': nx.circular_layout,
-    'shell': nx.shell_layout,
-    'bipartite': nx.bipartite_layout,
-    'kamada_kawai': nx.kamada_kawai_layout,
-    'planar': nx.planar_layout,
-    'random': nx.random_layout,
-    'spectral': nx.spectral_layout,
-    'spiral': nx.spiral_layout,
-}
-
-# -----------------------------------------------------------------------------
-
-
-def select_from_list(g, *, nodelist: list, open_edges: bool=False):
-    """Given a list of nodes, selects all nodes and edges needed for the
-    graph plotting. If ``open_edges=False``, those edges are selected for
-    which both ends are in ``nodes``.
-
-    Args:
-        g (nx.Graph): The graph
-        nodelist (list): The nodes to be selected
-        open_edges (bool, optional): Whether the loose edges (i.e., edges
-            with only source *or* destination in ``nodelist``) are plotted.
-            If True, the 'outer' nodes are shrinked to size zero.
-
-    Returns:
-        Tuple containing a list of selected nodes, a list of selected
-        edges, and the nodes to be shrinked to size zero.
-    """
-    subgraph = nx.induced_subgraph(g, nodelist)
-
-    if open_edges:
-        # Create an outer subgraph from the given nodes and all their
-        # neighbors
-        node_selection = set(nodelist)
-        outer_nodes = set()
-
-        for n in nodelist:
-            outer_nodes.update(nx.all_neighbors(g, n))
-
-        outer_nodes -= node_selection
-        node_selection = node_selection.union(outer_nodes)
-        subgraph_outer = nx.induced_subgraph(g, node_selection)
-
-        # The set of nodes to shrink is the difference of the two node sets
-        nodes_to_shrink = list(subgraph_outer.nodes - set(nodelist))
-
-        # From the outer subgraph remove edges between outer nodes
-        edges_to_plot = (subgraph_outer.edges
-                         - nx.induced_subgraph(g, outer_nodes).edges)
-
-        return (list(subgraph_outer.nodes),
-                list(edges_to_plot),
-                nodes_to_shrink)
-
-    return list(subgraph.nodes), list(subgraph.edges), None
-
-def select_radial(g, *, center: int, radius: int, open_edges: bool=False):
-    """Selects all nodes around a given center within a given radius
-    (measured in numbers of neighborhoods). If ``open_edges=False``, those
-    edges are selected for which both ends are in the set of selected
-    nodes.
-
-    Args:
-        g (nx.Graph): The graph
-        center (int): index of the central node
-        radius (int): selection radius
-        open_edges (bool, optional): Whether the loose edges (i.e., edges
-            with only source *or* destination in ``nodes``) are plotted.
-            If True, the 'outer' nodes are shrinked to size zero.
-
-    Returns:
-        Tuple containing a list of selected nodes, a list of selected
-        edges, and the nodes to be shrinked to size zero.
-    """
-    # After num_nodes-1 iterations (below), all nodes would be selected
-    if radius > g.number_of_nodes()-1:
-        radius = g.number_of_nodes()-1
-
-    # Identify the nodes within the given radius around the central node.
-    # Start by adding the central nodes and all of its neighbors to a set.
-    # Then, iteratively add all neighbors of the previously added nodes to
-    # the set, until the given radius is reached.
-    # TODO It might be worth testing the computational efficiency of this
-    #      (also for large subgraphs) as each node is tried to be added to
-    #      the set at least two times.
-    # Store the current node selection
-    node_selection = set([center])
-    # Store the nodes added to the selection in the previous step
-    nbs_prev = set([center])
-    # Store the new nodes to be selected
-    nbs_new = set()
-
-    for i in range(radius):
-        for n in nbs_prev:
-            nbs_new.update(nx.all_neighbors(g, n))
-
-        nbs_prev = nbs_new - node_selection
-        node_selection = node_selection.union(nbs_new)
-        nbs_new.clear()
-
-    if open_edges:
-        # Create an inner subgraph from all nodes within the given radius
-        subgraph_inner = nx.induced_subgraph(g, node_selection)
-
-        # Create an outer subgraph from all nodes within radius=radius+1
-        for n in nbs_prev:
-            nbs_new.update(nx.all_neighbors(g, n))
-
-        outer_nodes = nbs_new - node_selection
-        node_selection = node_selection.union(nbs_new)
-        subgraph_outer = nx.induced_subgraph(g, node_selection)
-
-        # The set of nodes to shrink is the difference of the two node sets
-        nodes_to_shrink = list(subgraph_outer.nodes - subgraph_inner.nodes)
-
-        # From the outer subgraph remove edges between outer nodes
-        edges_to_plot = (subgraph_outer.edges
-                         - nx.induced_subgraph(g, outer_nodes).edges)
-
-        # Return the inner subgraph nodes and the outer subgraph edges
-        return (list(subgraph_outer.nodes),
-                list(edges_to_plot),
-                nodes_to_shrink)
-
-    subgraph = nx.induced_subgraph(g, node_selection)
-
-    return list(subgraph.nodes), list(subgraph.edges), None
-
-def scale_to_interval(data: list, interval=None):
-    """Rescales the data linearly to the given interval. If not interval is
-    given the data is returned as it is.
-
-    Args:
-        data (list): data that is rescaled linearly to the given interval
-        interval (Sequence, optional): The target interval
-
-    Returns:
-        list: rescaled data
-
-    Raises:
-        TypeError: On invalid interval specification
-    """
-    if not interval:
-        return data
-
-    if len(interval) != 2:
-        raise TypeError(
-            "'interval' must be a 2-tuple or list of length 2! Was: "
-            f"{interval}"
-        )
-
-    data = np.array(data)
-    max_val = np.max(data)
-    min_val = np.min(data)
-
-    if max_val > min_val:
-        rescaled_data = ((data - min_val) / (max_val - min_val)
-                         * (interval[1] - interval[0]) + interval[0])
-    else:
-        # If all values are equal, set them to the mean of the interval
-        rescaled_data = np.zeros_like(data) + (interval[1]-interval[0])/2.
-
-    return list(rescaled_data)
-
-def parse_positions(g, *,
-                    from_dict: Dict[Any, Tuple[float, float]]=None,
-                    model: Union[str, Callable]=None,
-                    **kwargs) -> dict:
-    """Assigns a position to each node in graph g.
-
-    Args:
-        g (networkx graph or list of nodes): The graph
-        from_dict (dict, optional): Explicit node positions. If given, the
-            ``model`` argument will be ignored.
-        model (Union[str, Callable], optional): The model used for node
-            positioning. If it is a string, it is looked up from the
-            available networkx positioning models.
-            If it is callable, it will be called with the graph as first
-            positional argument.
-        **kwargs: Passed to the node positioning routine
-
-    Returns:
-        dict: A dictionary of positions keyed by node
-
-    Raises:
-        ModuleNotFoundError: If a graphviz model was chosen but pygraphviz
-            was not importable (via networkx)
-    """
-    if from_dict:
-        if model is not None:
-            warnings.warn(
-                "Node positions were specified *both* via a positioning "
-                "model and explicitly via the `from_dict` argument. The "
-                "specified model will be ignored. To remove this warning, "
-                "set the graph_drawing.positions.model entry to None.",
-                UserWarning
-            )
-
-        return copy.deepcopy(from_dict)
-
-
-    if callable(model):
-        return model(g, **kwargs)
-
-    if model.startswith('graphviz_'):
-        try:
-            # graphviz models
-            model = model[9:]
-            return nx.nx_pydot.graphviz_layout(g, prog=model, **kwargs)
-
-        except ModuleNotFoundError as err:
-            raise ModuleNotFoundError("When trying to use the graphviz "
-                                      "node positioning model '{}': '{}'"
-                                      "".format(model, err)) from err
-
-    # else: is a networkx positioning model
-    return POSITIONING_MODELS_NETWORKX[model](g, **kwargs)
-
-def parse_node_kwargs(g, *, nodelist: list, node_kwargs: dict,
-                      mark: dict=None, shrink_to_zero: list=None):
-    """Parses node kwargs which are then passed to draw_networkx_nodes.
-
-    Args:
-        g (networkx graph): The graph
-        nodelist (list): List of nodes for which property mapping is done
-        node_kwargs (dict): node layout configuration
-        mark (dict, optional): Configuration for node highlighting
-        shrink_to_zero (list, optional): List of nodes for which the node
-            size is set to zero. If given, this takes precendence over the
-            entry in ``node_kwargs``.
-
-    Returns:
-        (dict, dict, ColorManager): (parsed node configuration, parsed node
-            colorbar configuration, color manager)
-    """
-    # Update the list of nodes to be shown
-    node_kwargs['nodelist'] = nodelist
-
-    cbar_kwargs = node_kwargs.pop('colorbar', {})
-
-    if shrink_to_zero is None:
-        shrink_to_zero = []
-
-    # Do the property mapping
-    for plt_prop, g_prop in node_kwargs.items():
-
-        if isinstance(g_prop, dict) and g_prop.get('from_property', False):
-
-            prop = g_prop['from_property']
-            interval = g_prop.get('scale_to_interval', None)
-
-            if plt_prop == 'node_size':
-
-                if prop == 'degree':
-                    node_sizes = np.array([g.degree[n] for n in nodelist])
-
-                elif prop == 'in_degree':
-                    node_sizes = np.array([g.in_degree[n]
-                                           for n in nodelist])
-
-                elif prop == 'out_degree':
-                    node_sizes = np.array([g.out_degree[n]
-                                           for n in nodelist])
-
-                else:
-                    node_sizes = np.array([g.nodes[n][prop]
-                                           for n in nodelist])
-
-                to_shrink = np.isin(nodelist, shrink_to_zero)
-
-                node_sizes[to_shrink] = 0
-
-                node_sizes[~to_shrink] = scale_to_interval(
-                                        node_sizes[~to_shrink], interval)
-
-                node_kwargs['node_size'] = list(node_sizes)
-
-            elif plt_prop == 'node_color':
-                node_colors = scale_to_interval(
-                        [g.nodes[n][prop] for n in nodelist], interval)
-
-                if 'map_to_scalar' in g_prop:
-                    map_to_scalar = np.vectorize(
-                                            g_prop['map_to_scalar'].get)
-                    node_colors = list(map_to_scalar(node_colors))
-
-                node_kwargs['node_color'] = node_colors
-
-                cbar_kwargs['enabled'] = cbar_kwargs.get('enabled', True)
-
-            elif plt_prop == 'alpha':
-                node_kwargs['alpha'] = scale_to_interval(
-                        [g.nodes[n][prop] for n in nodelist], interval)
-
-            else:
-                raise TypeError("'{}' can not be mapped to the '{}' "
-                                "property!".format(prop, plt_prop))
-
-    # If no property mapping done for the node size, set it to zero for
-    # nodes to be shrinked and set it to the default value (=300) else.
-    if (shrink_to_zero
-        and not isinstance(node_kwargs.get('node_size', None), list)):
-
-        node_kwargs['node_size'] = [0 if n in shrink_to_zero else 300
-                                    for n in nodelist]
-
-    # Set up ColorManager
-    vmin = node_kwargs.get('vmin', None)
-    vmax = node_kwargs.get('vmax', None)
-    cmap = node_kwargs.get('cmap', 'viridis')
-    cmap_norm = node_kwargs.pop('cmap_norm', 'Normalize')
-    cbar_labels = cbar_kwargs.pop('labels', None)
-
-    colormanager = ColorManager(cmap=cmap, norm=cmap_norm,
-                                labels=cbar_labels, vmin=vmin, vmax=vmax)
-
-    node_kwargs['cmap'] = colormanager.cmap
-
-    # Prepare the node highlighting
-    if mark:
-        # First, create dict of colors keyed by node from 'node_color'
-        node_color = node_kwargs.get('node_color', '#1f78b4')
-
-        if not mpl.colors.is_color_like(node_color):
-            # If 'node_color' contains numeric values, they need to be
-            # transformed via the specified colormap.
-            if not mpl.colors.is_color_like(node_color[0]):
-                node_color = colormanager.map_to_color(node_color)
-
-            colors = {n: node_color[i] for i, n in enumerate(nodelist)}
-
-        else:
-            colors = {n: node_color for n in nodelist}
-
-        # Update the color dict with the values from the mark configuration
-        if 'nodelist' in mark:
-            for n in mark['nodelist']:
-                colors[n] = mark['color']
-
-        else:
-            for n in mark['colors']:
-                colors[n] = mark['colors'][n]
-
-        # The color values are aligned with 'nodelist' since dicts don't
-        # change their ordering.
-        node_kwargs['edgecolors'] = list(colors.values())
-
-    return node_kwargs, cbar_kwargs, colormanager
-
-def parse_edge_kwargs(g, *, edgelist: list, edge_kwargs: dict,
-                      mark: dict=None):
-    """Parses edge kwargs which are then passed to draw_networkx_edges.
-
-    Args:
-        g (networkx graph): The graph
-        edgelist (list): List of edges for which to do the property mapping
-        edge_kwargs (dict): edge layout configuration
-        mark (dict, optional): Configuration for edge highlighting
-
-    Returns:
-        (dict, dict, ColorManager): (parsed edge configuration, parsed edge
-            colorbar configuration, color manager)
-    """
-    # Update the list of edges to be shown
-    edge_kwargs['edgelist'] = edgelist
-
-    cbar_kwargs = edge_kwargs.pop('colorbar', {})
-
-    # Do the property mapping
-    for plt_prop, g_prop in edge_kwargs.items():
-        if isinstance(g_prop, dict) and g_prop.get('from_property', False):
-            prop = g_prop['from_property']
-            interval = g_prop.get('scale_to_interval', None)
-
-            if plt_prop == 'edge_color':
-                edge_colors = scale_to_interval(
-                        [g.edges[e][prop] for e in edgelist], interval)
-
-                if 'map_to_scalar' in g_prop:
-                    map_to_scalar = np.vectorize(
-                                            g_prop['map_to_scalar'].get)
-                    edge_colors = list(map_to_scalar(edge_colors))
-
-                edge_kwargs['edge_color'] = edge_colors
-
-                cbar_kwargs['enabled'] = cbar_kwargs.get('enabled', True)
-
-            elif plt_prop == 'width':
-                edge_kwargs['width'] = scale_to_interval(
-                        [g.edges[e][prop] for e in edgelist], interval)
-
-            else:
-                raise TypeError("'{}' can not be mapped to the '{}' "
-                                "property!".format(prop, plt_prop))
-
-    # Set up ColorManager
-    vmin = edge_kwargs.get('edge_vmin', None)
-    vmax = edge_kwargs.get('edge_vmax', None)
-    cmap = edge_kwargs.get('edge_cmap', 'viridis')
-    cmap_norm = edge_kwargs.pop('cmap_norm', 'Normalize')
-    cbar_labels = cbar_kwargs.pop('labels', None)
-
-    colormanager = ColorManager(cmap=cmap, norm=cmap_norm,
-                                labels=cbar_labels, vmin=vmin, vmax=vmax)
-
-    edge_kwargs['edge_cmap'] = colormanager.cmap
-
-    if isinstance(g, nx.DiGraph) and edge_kwargs.get('arrows', True):
-        if type(colormanager.norm) != mpl.colors.Normalize:
-            # NOTE In `draw_networkx_edges`, the `Normalize` norm is
-            #      applied explicitly. Since the norm can't be updated
-            #      later (as edges with arrows are `FancyArrowPatch`es),
-            #      other norms than `Normalize` are forbidden here.
-            raise TypeError("Received invalid norm type: "
-                            f"{type(colormanager.norm)}. For directed "
-                            "edges with `arrows = True`, only the "
-                            "matplotlib.colors.Normalize base class is "
-                            "supported.")
-
-    # Prepare the edge highlighting
-    if mark:
-        # First, create dict of colors keyed by edge from 'edge_color'
-        edge_color = edge_kwargs.get('edge_color', 'k')
-
-        if not mpl.colors.is_color_like(edge_color):
-            # Transform to color-like if needed
-            if not mpl.colors.is_color_like(edge_color[0]):
-                edge_color = colormanager.map_to_color(edge_color)
-
-            colors = {e[:2]: edge_color[i] for i, e in enumerate(edgelist)}
-
-        else:
-            colors = {e[:2]: edge_color for e in edgelist}
-
-        # Update the color dict with the values from the mark configuration
-        if 'edgelist' in mark:
-            for e in mark['edgelist']:
-                e = tuple(e)
-                if not isinstance(g, nx.DiGraph) and e not in colors:
-                    e = e[::-1]
-                colors[e] = mark['color']
-
-        else:
-            for e in mark['colors']:
-                if not isinstance(g, nx.DiGraph) and e not in colors:
-                    e = e[::-1]
-                colors[e] = mark['colors'][e]
-
-        edge_kwargs['edge_color'] = list(colors.values())
-
-    return edge_kwargs, cbar_kwargs, colormanager
-
-def parse_node_label_kwargs(g, *, nodelist: list, label_kwargs: dict,
-                            shrink_to_zero: list=None):
-    """Parses node label kwargs which are then passed to
-    draw_networkx_lables.
-
-    Args:
-        g (networkx graph or list of nodes): The graph
-        nodelist (list): List of nodes that will be drawn
-        label_kwargs (dict): label layout configuration
-        shrink_to_zero (list, optional): List of nodes for which to hide
-            the node label. If given, this takes precendence over the
-            entry in ``label_kwargs``.
-
-    Returns:
-        (dict, bool): (parsed label_kwargs, whether to show labels)
-    """
-    # Labels are disabled by default.
-    if not label_kwargs.pop('enabled', False):
-        return {}, False
-
-    if shrink_to_zero is None:
-        shrink_to_zero = []
-
-    show_only_given = 'show_only' in label_kwargs
-    show_only = label_kwargs.pop('show_only', nodelist)
-    decode = label_kwargs.pop('decode', None)
-
-    if label_kwargs.get('labels', False):
-        if label_kwargs['labels'].get('from_property', False):
-            prop = label_kwargs['labels']['from_property']
-            label_template = label_kwargs['labels'].pop('format',"{label}")
-            label_kwargs['labels'] = {
-                    n: label_template.format(
-                            label=(g.nodes[n][prop] if decode is None
-                                   else g.nodes[n][prop].decode(decode))
-                        )
-                    for n in nodelist
-                    if n in show_only and n not in shrink_to_zero
-            }
-
-        else:
-            # show_only takes precedence over the provided node labels
-            if show_only_given:
-                # If some labels are given, keep only those that are in
-                # show_only. nodes in show_only for which no label was
-                # given are labeled with their index.
-                for n in list(label_kwargs['labels'].keys()):
-                    if n not in show_only or n in shrink_to_zero:
-                        del label_kwargs['labels'][n]
-
-                for n in show_only:
-                    if (n not in label_kwargs['labels'].keys()
-                        and n not in shrink_to_zero
-                    ):
-                        label_kwargs['labels'][n] = n
-
-    else:
-        # If enabled but no labels given, label nodes with their index.
-        label_kwargs['labels'] = {n:n for n in show_only if n in nodelist
-                                  and n not in shrink_to_zero}
-
-    return label_kwargs, True
-
-def parse_edge_label_kwargs(g, *, edgelist: list, label_kwargs: dict):
-    """Parses edge label kwargs which are then passed to
-    draw_networkx_edge_lables.
-
-    Args:
-        g (networkx graph or list of nodes): The graph
-        edgelist (list): List of edges that will be drawn
-        label_kwargs (dict): label layout configuration
-
-    Returns:
-        (dict, bool): (parsed label_kwargs, whether to show labels)
-    """
-    # Labels are disabled by default.
-    if not label_kwargs.pop('enabled', False):
-        return {}, False
-
-    # Catch a dangerous pitfall: There is no 'labels' argument for the edge
-    # labels (as there is for the node labels), here it is named
-    # 'edge_labels'.
-    if label_kwargs.get('labels', False):
-        raise ValueError("Received 'labels' key in edge label "
-                         "configuration. This is not a valid kwarg! "
-                         "For specifying an edge label dict, use the key "
-                         "'edge_labels'.")
-
-    show_only_given = 'show_only' in label_kwargs
-    show_only = label_kwargs.pop('show_only', edgelist)
-    decode = label_kwargs.pop('decode', None)
-
-    # Convert edges to tuples
-    show_only = [tuple(e) for e in show_only]
-
-    if label_kwargs.get('edge_labels', False):
-        if label_kwargs['edge_labels'].get('from_property', False):
-            prop = label_kwargs['edge_labels']['from_property']
-            label_template = label_kwargs['edge_labels'].pop('format',
-                                                             "{label}")
-            label_kwargs['edge_labels'] = {
-                    e[:2]: label_template.format(
-                            label=(g.edges[e][prop] if decode is None
-                                   else g.edges[e][prop].decode(decode))
-                        )
-                    for e in edgelist
-                    if e in show_only or e[:2] in show_only
-            }
-
-        else:
-            # show_only takes precedence over the provided edge_labels
-            if show_only_given:
-                # If some labels are given, keep only those that are in
-                # show_only. edges in show_only for which no label was
-                # given are labeled with their (source, destination) pair.
-                for e in list(label_kwargs['edge_labels'].keys()):
-                    # Delete edge label entries that are not in show_only
-                    if (all([e[:2]!=edge[:2] for edge in edgelist])
-                        or all([e[:2]!=edge[:2] for edge in show_only])
-                    ):
-                        del label_kwargs['edge_labels'][e]
-
-                for e in show_only:
-                    if (any([e[:2]==edge[:2] for edge in edgelist])
-                        and e[:2] not in label_kwargs['edge_labels'].keys()
-                    ):
-                        label_kwargs['edge_labels'][e[:2]] = e[:2]
-
-    else:
-        # If enabled but no labels given, label edges with the respective
-        # (source, destination) pairs.
-        label_kwargs['edge_labels'] = {e[:2]: e[:2] for e in edgelist
-                                       if e in show_only
-                                       or e[:2] in show_only}
-
-    return label_kwargs, True
-
-def create_graph_from_group(
+def graph_array_from_group(
     graph_group,
     *,
     graph_creation: dict=None,
-    data: dict=None,
-    register_property_maps: Sequence[str]=None,
+    register_property_maps: dict=None,
     clear_existing_property_maps: bool=True,
-) -> nx.Graph:
-    """Creates a ``networkx.Graph`` from a ``GraphGroup``. Additional property
-    maps may be added to the group beforehand.
-
+    times: dict=None,
+    sel: dict=None,
+    isel: dict=None
+) -> xr.DataArray:
+    """From a ``GraphGroup`` creates a DataArray containing the networkx graphs
+    created from the graph group at the specified points in the group's
+    coordinate space.
+    
+    From all coordinates provided via the selection kwargs the cartesian
+    product is taken. Each of those points represents one entry in the returned
+    DataArray. The selection kwargs in ``graph_creation`` are ignored silently.
+    
     Args:
-        graph_group: The ``GraphGroup``.
-        graph_creation (dict, optional): Configuration of the graph creation.
-            Passed on to ``GraphGroup.create_graph``.
-        data (dict, optional): Data from TransformationDAG selection. Required
-            if register_property_maps is not None.
-        register_property_maps (Sequence[str], optional): Names of properties
-            to be registered in the graph group before the graph creation.
-        clear_existing_property_maps (bool, optional): Whether to clear any
-            existing property maps from the selected ``GraphGroup``.
-
+        graph_group: The graph group
+        graph_creation (dict, optional): Graph creation configuration
+        register_property_maps (dict, optional): Property maps to be registered
+            before graph creation
+        clear_existing_property_maps (bool, optional): Whether to remove any
+            existing property map at first
+        times (dict, optional): *Deprecated*: Equivalent to a sel.time entry
+        sel (dict, optional): Select by value
+        isel (dict, optional): Select by index
+    
     Returns:
-        nx.Graph: The created ``networkx.Graph`` object.
-
-    Raises:
-        ValueError: On invalid register_property_maps argument.
+        xr.DataArray: networkx graphs with the respective graph group coordinates
     """
-    if graph_creation is None:
-        graph_creation = {}
-
-    # Register external property data
-    if register_property_maps:
-        # Clear existing property maps in order to not have side effects if
-        # plotting multiple times, e.g. in interactive mode. This is important
-        # because the graph_group most probably is a reference.
-        if clear_existing_property_maps:
-            graph_group.property_maps.clear()
-
-        # Can register now
-        for tag in register_property_maps:
-            try:
-                pmap = data[tag]
-            except KeyError as err:
-                _available_tags = ', '.join(data.keys())
-                raise ValueError(
-                    f"No tag '{tag}' found in the data selected by the DAG! "
-                    "Make sure the tag is named correctly and is selected to "
-                    "be computed; adjust the 'compute_only' argument if "
-                    "needed.\nThe following tags are available in the DAG "
-                    f"results:  {_available_tags}"
-                ) from err
-
-            graph_group.register_property_map(tag, pmap)
-
-    g = graph_group.create_graph(**graph_creation)
-    return g
-
-def draw_single_graph(
-    g: nx.Graph,
-    *,
-    hlpr: PlotHelper,
-    graph_drawing: dict,
-    positions: dict=None,
-    suppress_cbars=False,
-):
-    """Draws a ``networkx.Graph``.
-
-    Args:
-        g (nx.Graph): The networkx graph.
-        hlpr (PlotHelper): The PlotHelper instance for this plot.
-        graph_drawing (dict): The configuration of the graph layout.
-        positions (dict, optional): dict assigning a position to each node.
-            If given, the graph_drawing.positions entry is ignored.
-        suppress_cbars (bool, optional): Whether to suppress colorbars.
-
-    Returns:
-        (dict): Dict containing node positions, PatchCollections of drawn
-            nodes, edges, and labels, and drawn colorbars.
-    """
-    # Work on a copy such that the original configuration is not modified
-    graph_drawing = copy.deepcopy(graph_drawing)
-
-    # Get the sub-configurations for the drawing of the graph
-    select = graph_drawing.get('select', {})
-    pos_kwargs = graph_drawing.get('positions', dict(model='spring'))
-    node_kwargs = graph_drawing.get('nodes', {})
-    edge_kwargs = graph_drawing.get('edges', {})
-    node_label_kwargs = graph_drawing.get('node_labels', {})
-    edge_label_kwargs = graph_drawing.get('edge_labels', {})
-    mark_nodes_kwargs = graph_drawing.get('mark_nodes', {})
-    mark_edges_kwargs = graph_drawing.get('mark_edges', {})
-
-    # Whether to remove the non-selected nodes and edges from the graph
-    drop = select.pop('drop', True)
-
-    # Select the nodes and edges to be shown
-    if 'nodelist' in select:
-        # Selection from a list of nodes
-        (nodes_to_plot,
-         edges_to_plot,
-         nodes_to_shrink) = select_from_list(g, **select)
-
-    elif select:
-        # Radial selection
-        (nodes_to_plot,
-         edges_to_plot,
-         nodes_to_shrink) = select_radial(g, **select)
-
-    else:
-        # If no selection was specified, select all nodes and edges in g
-        (nodes_to_plot,
-         edges_to_plot,
-         nodes_to_shrink) = list(g.nodes), list(g.edges), None
-
-    if drop:
-        # Remove the nodes that are not selected. This automatically
-        # removes all edges for which the source or destination was removed.
-        nodes_to_remove = g.nodes - set(nodes_to_plot)
-        g.remove_nodes_from(nodes_to_remove)
-
-    # Do the node positioning
-    pos = positions if positions else parse_positions(g, **pos_kwargs)
-
-    # Now, parse all configuration dictionaries, e.g., do property mapping.
-    node_kwargs, node_cbar_kwargs, node_colormanager = parse_node_kwargs(
-        g,
-        nodelist=nodes_to_plot,
-        node_kwargs=node_kwargs,
-        mark=mark_nodes_kwargs,
-        shrink_to_zero=nodes_to_shrink
+    # Remove all selection kwargs from the configuration
+    graph_creation = (
+        copy.deepcopy(graph_creation) if graph_creation is not None else {}
     )
-    edge_kwargs, edge_cbar_kwargs, edge_colormanager = parse_edge_kwargs(
-        g,
-        edgelist=edges_to_plot,
-        edge_kwargs=edge_kwargs,
-        mark=mark_edges_kwargs
-    )
-    node_label_kwargs, show_node_labels = parse_node_label_kwargs(
-        g,
-        nodelist=nodes_to_plot,
-        label_kwargs=node_label_kwargs,
-        shrink_to_zero=nodes_to_shrink
-    )
-    edge_label_kwargs, show_edge_labels = parse_edge_label_kwargs(
-        g, edgelist=edges_to_plot, label_kwargs=edge_label_kwargs
-    )
+    graph_creation.pop("at_time", None)
+    graph_creation.pop("at_time_idx", None)
+    graph_creation.pop("sel", None)
+    graph_creation.pop("isel", None)
 
-    # Make sure that, in the case of a directed graph, the arrows end
-    # exactly at the node boundaries.
-    # NOTE This also means that edges can only be drawn if both their
-    #      source and destination are drawn.
-    if 'node_size' in node_kwargs:
-        edge_kwargs['nodelist'] = nodes_to_plot
-        edge_kwargs['node_size'] = node_kwargs['node_size']
+    # Parse the selectors
+    sel = sel if sel else {}
+    isel = isel if isel else {}
 
-    # Call the networkx plot functions with the parsed configurations
-    nodes = nx.draw_networkx_nodes(g, pos=pos, ax=hlpr.ax, **node_kwargs)
-    edges = nx.draw_networkx_edges(g, pos=pos, ax=hlpr.ax, **edge_kwargs)
-
-    # NOTE networkx does not pass on the norms to the respective matplotlib
-    #      functions. Hence, they need to be set manually. For the edges,
-    #      the cmap also needs to be set manually. Can only be set for the
-    #      edges if graph is undirected or `arrows=False`.
-    nodes.set_norm(node_colormanager.norm)
-
-    if not isinstance(edges, list):
-        edges.set_norm(edge_colormanager.norm)
-        edges.set_cmap(edge_colormanager.cmap)
-
-    node_labels = None
-    edge_labels = None
-
-    if show_node_labels:
-        node_labels = nx.draw_networkx_labels(
-            g, pos=pos, ax=hlpr.ax, **node_label_kwargs
-        )
-    if show_edge_labels:
-        edge_labels = nx.draw_networkx_edge_labels(
-            g, pos=pos, ax=hlpr.ax, **edge_label_kwargs
+    # Any ``times`` entry is transformed into the respective sel/isel entry.
+    # TODO The ``times`` argument is deprecated. Remove it eventually.
+    if times is not None:
+        warnings.warn(
+            "The 'times' argument is deprecated and will be removed. Use the "
+            "'sel' and 'isel' arguments instead to specify a time selection.",
+            DeprecationWarning
         )
 
-    # Add colorbars
-    cb_n = None
-    cb_e = None
-
-    if not suppress_cbars:
-        show_node_cbar = node_cbar_kwargs.pop('enabled', False)
-        show_edge_cbar = edge_cbar_kwargs.pop('enabled', False)
-
-        if show_node_cbar:
-            cb_n = node_colormanager.create_cbar(
-                nodes, fig=hlpr.fig, ax=hlpr.ax, **node_cbar_kwargs
+        if len(times) > 1:
+            raise TypeError(
+                "Received ambiguous animation time specifications. Need "
+                "_one_ of: from_property, sel , isel"
             )
 
-        if show_edge_cbar:
-            # When drawing arrows, draw_networkx_edges returns a list of
-            # FancyArrowPatches which can not be used in fig.colorbar.
-            if isinstance(edges, list):
-                warnings.warn(
-                    "No colorbar can be shown for directed edges! To show the "
-                    "colorbar, hide the arrows by setting 'arrows=False' in "
-                    "the edge configuration.",
-                    UserWarning
-                )
-            else:
-                cb_e = edge_colormanager.create_cbar(
-                    edges, fig=hlpr.fig, ax=hlpr.ax, **edge_cbar_kwargs
-                )
+        if "from_property" in times:
+            sel["time"] = list(
+                graph_group._get_item_or_pmap(times["from_property"])
+                .coords["time"].values
+            )
 
-    return {
-        'pos': pos,
-        'nodes': nodes,
-        'edges': edges,
-        'node_labels': node_labels,
-        'edge_labels': edge_labels,
-        'cb_n': cb_n,
-        'cb_e': cb_e,
-        'attrs': g.graph,
-    }
+        elif "sel" in times:
+            sel["time"] = times["sel"]
 
+        elif "isel" in times:
+            isel["time"] = times["isel"]
+
+    # If needed, extract coordinates from property data
+    for dim in sel:
+        if isinstance(sel[dim], dict) and "from_property" in sel[dim]:
+            sel[dim] = list(
+                graph_group._get_item_or_pmap(sel[dim]["from_property"])
+                .coords[dim].values
+            )
+
+    # With the given selectors, can now set up the graph-DataArray and create
+    # a graph from each coordinate combination.
+    # In order to take the cartesion product of all (sel and isel) selectors,
+    # collect them all and separate them again afterwards.
+    dims = list(sel.keys()) + list(isel.keys())
+    coords = {d: [] for d in dims}
+    
+    all_selectors = [
+        c if isinstance(c, (list, tuple, np.ndarray)) else [c]
+        for c in chain(sel.values(), isel.values())
+    ]
+
+    graphs = np.empty(tuple(len(c) for c in all_selectors), dtype="object")
+    
+    indices = [[i for i in range(len(c))] for c in all_selectors]
+
+    for idxs, selector in zip(product(*indices), product(*all_selectors)):
+        sel_coords = selector[:len(sel)]
+        isel_coords = selector[len(sel):]
+
+        # Prepare the selectors for the single points in coordinate space
+        select = {d: c for d, c in zip(sel.keys(), sel_coords)}
+        iselect = {d: c for d, c in zip(isel.keys(), isel_coords)}
+
+        g = GraphPlot.create_graph_from_group(
+            graph_group=graph_group,
+            register_property_maps=register_property_maps,
+            clear_existing_property_maps=clear_existing_property_maps,
+            sel=select,
+            isel=iselect,
+            **graph_creation,
+        )
+
+        graphs[idxs] = g
+
+        # Extract the coordinate values from the networkx graph attributes
+        for d, c in g.graph.items():
+            if coords[d] == [] or coords[d][-1] != c:
+                coords[d].append(c)
+
+    coords = {d: coords[d] for d in dims}
+
+    # Combine the data and coordinate information in a DataArray
+    graphs = xr.DataArray(graphs, dims=dims, coords=coords)
+
+    return graphs
+
+def graph_animation_update(
+    *,
+    hlpr: PlotHelper,
+    graphs: xr.DataArray=None,
+    graph_group=None,
+    graph_creation: dict=None,
+    register_property_maps: dict=None,
+    clear_existing_property_maps: bool=True,
+    positions: dict=None,
+    animation_kwargs: dict=None,
+    suptitle_kwargs: dict=None,
+    **drawing_kwargs
+):
+    """Graph animation frame generator. Yields whenever the plot helper may
+    grab the current frame.
+
+    If ``graphs`` is given, the networkx graphs in the array are used to create
+    the frames.
+
+    Otherwise, use a graph group. The frames are defined via the selectors in
+    ``animation_kwargs``. From all provided coordinates the cartesian product
+    is taken. Each of those points defines one graph and thus one frame.
+    The selection kwargs in ``graph_creation`` are ignored silently.
+
+    Args:
+        hlpr (PlotHelper): The plot helper
+        graphs (xr.DataArray, optional): Networkx graphs to draw. The array
+            will be flattened beforehand.
+        graph_group (None, optional): Required if ``graphs`` is None. The
+            GraphGroup from which to generate the animation frames as specified
+            via sel and isel in ``animation_kwargs``.
+        graph_creation (dict, optional): Graph creation configuration. Passed
+            to :py:meth:`~utopya.plot_funcs._graph.GraphPlot.create_graph_from_group`
+            if ``graph_group`` is given.
+        register_property_maps (dict, optional): Passed to
+            :py:meth:`~utopya.plot_funcs._graph.GraphPlot.create_graph_from_group`
+            if ``graph_group`` is given.
+        clear_existing_property_maps (bool, optional): Passed to
+            :py:meth:`~utopya.plot_funcs._graph.GraphPlot.create_graph_from_group`
+            if ``graph_group`` is given.
+        positions (dict, optional): The node position configuration.
+            If ``update_positions`` is True the positions are reconfigured for
+            each frame.
+        animation_kwargs (dict, optional): Animation configuration. The
+            following arguments are allowed:
+
+            times (dict, optional):
+                *Deprecated*: Equivaluent to a sel.time entry.
+            sel (dict, optional):
+                Select by value. Coordinate values (or ``from_property`` entry)
+                keyed by dimension name.
+            isel (dict, optional):
+                Select by index. Coordinate indices keyed by dimension. May be
+                given together with ``sel`` if no key appears in both.
+            update_positions (bool, optional):
+                Whether to reconfigure the node positions for each frame
+                (default=False).
+            update_colormapping (bool, optional):
+                Whether to reconfigure the nodes' and edges'
+                :py:class:`~utopya.plot_funcs._mpl_helpers.ColorManager` for
+                each frame (default=False). If False, the colormapping (and the
+                colorbar) is configured with the first frame and then fixed.
+            skip_empty_frames (bool, optional):
+                Whether to skip the frames where the selected graph is missing
+                or of a type different than ``nx.Graph`` (default=False).
+                If False, such frames are empty.
+
+        suptitle_kwargs (dict, optional): Passed on to the PlotHelper's
+            ``set_suptitle`` helper function. Only used in animation mode.
+            The ``title`` can be a format string containing a placeholder with
+            the dimension name as key for each dimension along which selection
+            is done. The format string is updated for each frame of the
+            animation. The default is ``<dim-name> = {<dim-name>}`` for each
+            dimension.
+        **drawing_kwargs: Passed to :py:class:`~utopya.plot_funcs._graph.GraphPlot`
+    """
+    suptitle_kwargs = (
+        copy.deepcopy(suptitle_kwargs) if suptitle_kwargs is not None else {}
+    )
+    animation_kwargs = (
+        copy.deepcopy(animation_kwargs) if animation_kwargs is not None else {}
+    )
+    update_positions = animation_kwargs.pop("update_positions", False)
+    update_colormapping = animation_kwargs.pop("update_colormapping", False)
+    skip_empty_frames = animation_kwargs.pop("skip_empty_frames", False)
+    sel = animation_kwargs.pop("sel", None)
+    isel = animation_kwargs.pop("isel", None)
+
+    if graphs is None:
+        graphs = graph_array_from_group(
+            graph_group=graph_group,
+            graph_creation=graph_creation,
+            register_property_maps=register_property_maps,
+            clear_existing_property_maps=clear_existing_property_maps,
+            sel=sel,
+            isel=isel,
+            **animation_kwargs,
+        )
+
+    else:
+        # Apply selectors to the graphs DataArray
+        if sel is not None:
+            graphs = graphs.sel(**sel)
+        if isel is not None:
+            graphs = graphs.isel(**isel)
+
+    # Prepare the suptitle format string once for all frames
+    if "title" not in suptitle_kwargs:
+        suptitle_kwargs["title"] = "; ".join(
+            [f"{dim}" + " = {" + dim + "}" for dim in graphs.coords]
+        )
+ 
+    def get_graph_and_coords(graphs: xr.DataArray):
+        """Generator that yields the (graph, coordinates) pairs"""
+        dims = graphs.dims
+        if dims:
+            # Stack all dimensions of the xr.DataArray
+            graphs = graphs.stack(_flat=dims)
+
+            # For each entry, yield the graph and the coords
+            for el in graphs:
+                g = el.item()
+                coords = {
+                    d: c for d, c in zip(dims, el.coords["_flat"].item())
+                }
+                # Also get the scalar coordinates which were not stacked
+                coords.update(
+                    {
+                        d: c.item()
+                        for d, c in el.coords.items()
+                        if d != "_flat"
+                    }
+                )
+                yield g, coords
+
+        else:
+            # zero-dimensional: extract single graph item
+            g = graphs.item()
+            coords = {d: c.item() for d, c in graphs.coords.items()}
+            yield g, coords
+
+    # Don't show the axis. This is also done in GraphPlot.draw but need to do
+    # it here in case the first frame is empty.
+    hlpr.ax.axis("off")
+
+    # Indicator for things to be done only once after the first GraphPlot.draw
+    # call.
+    _first_graph = True
+
+    # Always configure the colormanagers on the first GraphPlot.draw call.
+    # Overwritten by the update_colormapping kwarg afterwards.
+    _update_colormapping = True
+
+    # Loop over all remaining graphs
+    for g, coords in get_graph_and_coords(graphs):
+
+        _missing_val = not isinstance(g, nx.Graph)
+
+        # On missing entries, skip the frame if skip_empty_frames=True.
+        # If skip_empty_frames=False, the suptitle helper is applied but no
+        # graph is drawn.
+        if _missing_val and skip_empty_frames:
+            continue
+
+        if not _missing_val:
+            # Use a new GraphPlot for the next frame such that the `select`
+            # kwargs are re-evaluated.
+            gp = GraphPlot(
+                g=g,
+                fig=hlpr.fig,
+                ax=hlpr.ax,
+                positions=positions,
+                **drawing_kwargs,
+            )
+            gp.draw(
+                suppress_cbar=not _update_colormapping,
+                update_colormapping=_update_colormapping,
+            )
+
+        # Update the suptitle format string and invoke the helper
+        st_kwargs = copy.deepcopy(suptitle_kwargs)
+        st_kwargs["title"] = st_kwargs["title"].format(**coords)
+        hlpr.invoke_helper("set_suptitle", **st_kwargs)
+
+        if _first_graph:
+            # Fix the y-position of the suptitle after the first invocation
+            # since repetitive invocations of the set-suptitle helper would
+            # re-adjust the subplots size each time. Use the matplotlib default
+            # if not given.
+            if "y" not in suptitle_kwargs:
+                suptitle_kwargs["y"] = 0.98
+
+            _update_colormapping = update_colormapping
+
+        # Let the writer grab the current frame
+        yield
+        
+        if not _missing_val:
+            # Clean up the frame
+            gp.clear_plot(keep_colorbars=not _update_colormapping)
+            
+            if _first_graph:
+                # If the positions should be fixed, overwrite the positions arg
+                if not update_positions:
+                    positions = dict(from_dict=gp.positions)
+
+                # Done handling the first GraphPlot.draw call
+                _first_graph = False
+
+# -----------------------------------------------------------------------------
+# Plot functions
 
 @is_plot_func(use_dag=True, supports_animation=True)
 def draw_graph(
     *,
     hlpr: PlotHelper,
     data: dict,
-    graph_drawing: dict,
-    graph: nx.Graph=None,
+    graph_group_tag: str="graph_group",
+    graph: Union[nx.Graph, xr.DataArray]=None,
     graph_creation: dict=None,
+    graph_drawing: dict=None,
     graph_animation: dict=None,
     register_property_maps: Sequence[str]=None,
     clear_existing_property_maps: bool=True,
     suptitle_kwargs: dict=None
 ):
-    """Draws a graph either from a ``GraphGroup`` or directly from a 
-    ``networkx.Graph``.
+    """Draws a graph either from a :py:class:`~utopya.datagroup.GraphGroup` or
+    directly from a ``networkx.Graph`` using the
+    :py:class:`~utopya.plot_funcs._graph.GraphPlot` class.
 
     If the graph object is to be created from a graph group the latter needs to
-    be selected via the DAG and tagged ``graph_group``. Additional property
-    maps can also be made available for plotting, see ``register_property_map``
-    argument. Animations can only be created from a graph group.
-
-    If the ``networkx.Graph`` is passed directly via the ``graph`` argument
-    the ``data`` as well as the ``graph_creation`` argument are ignored.
+    be selected via the TransformationDAG. Additional property maps can also be
+    made available for plotting, see ``register_property_map`` argument.
+    Animations can be created either from a graph group by using the select
+    interface in ``graph_animation`` or by passing a DataArray of networkx
+    graphs via the ``graph`` argument.
 
     For more information on how to use the transformation framework, refer to
     the `dantro documentation <https://dantro.readthedocs.io/en/stable/plotting/plot_data_selection.html>`_.
 
-    .. note::
-
-        For some graph layout properties it is possible to configure an
-        automatized mapping from node/edge properties. The *property mapping*
-        has the following syntax:
-
-        .. code-block:: yaml
-
-            some_layout_property:
-              from_property: my_node_or_edge_property
-              scale_to_interval: [low_lim, up_lim]
-
-        The ``from_property`` specifies the node or edge property to be mapped
-        from. If ``scale_to_interval`` is given, the layout property values are
-        rescaled linearly the specified interval.
-
-        When property mapping is done, its configuration is replaced by the
-        created sequence of layout property values.
+    For more information on how to configure the graph layout refer to the
+    :py:class:`~utopya.plot_funcs._graph.GraphPlot` documentation.
 
     Args:
         hlpr (PlotHelper): The PlotHelper instance for this plot
         data (dict): Data from TransformationDAG selection
+        graph_group_tag (str, optional): The TransformationDAG tag of the graph
+            group
+        graph (Union[nx.Graph, xr.DataArray], optional): If given, the ``data``
+            and ``graph_creation`` arguments are ignored and this graph is
+            drawn directly.
+            If a DataArray of graphs is given, the first graph is drawn for a
+            single graph plot. In animation mode the (flattened) array
+            represents the animation frames.
+        graph_creation (dict, optional): Configuration of the graph creation.
+            Passed to ``GraphGroup.create_graph``.
+        graph_drawing (dict, optional): Configuration of the graph layout.
+            Passed to :py:class:`~utopya.plot_funcs._graph.GraphPlot`.
+        graph_animation (dict, optional): Animation configuration. The
+            following arguments are allowed:
 
-        graph_creation (dict):
-            Configuration of the graph creation. Passed to
-            :py:meth:`~dantro.groups.graph.GraphGroup.create_graph`.
-
-        graph (nx.Graph):
-            If given, the ``data`` and ``graph_creation`` arguments are ignored
-            and this graph is drawn directly.
-
-        graph_drawing (dict):
-            Configuration of the graph layout. The following keys are
-            available:
-
-            positions (dict):
-                Configuration for the node positioning. The following arguments
-                are available:
-
-                from_dict (dict, optional): A dictionary with nodes as keys and
-                    positions as values. Positions should be sequences of
-                    length 2. If given, the layouting algorithm given by the
-                    ``model`` argument will be ignored. For animated graphs,
-                    ``update_positions`` will overwrite the positions given
-                    via this argument.
-
-                model (Union[str, Callable], optional):
-                    The layout model that is used to calculate the node
-                    positions (default: ``spring``). Available
-                    `networkx layout models <https://networkx.github.io/documentation/stable/reference/drawing.html#module-networkx.drawing.layout>`_
-                    are: ``spring``, ``circular``, ``shell``, ``bipartite``,
-                    ``kamada_kawai``, ``planar``, ``random``, ``spectral``,
-                    ``spiral``.
-
-                    If installed, `GraphViz <https://pypi.org/project/graphviz/>`_
-                    models can be selected with a prepended ``graphviz_``.
-                    Options depend on the ``GraphViz`` version but may include:
-                    ``dot``, ``neato``, ``fdp``, ``sfdp``, ``twopi``,
-                    ``circo``. (Passed as ``prog`` to
-                    `networkx.graphviz_layout <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pydot.graphviz_layout.html>`_).
-
-                    If the argument is a callable, it is invoked with the graph
-                    as the first positional argument and is expected to return
-                    networkx-compatible node positions, i.e. a mapping from
-                    nodes to a 2-tuple denoting the position.
-                further kwargs:
-                    Passed on to the chosen layout model.
-
-            select (dict, optional):
-                Plot only a subgraph induced by a selection of nodes. Either
-                select a list of nodes by passing the ``nodelist`` argument or
-                do a radial node selection by specifying a ``center`` node and
-                the ``radius``. The following arguments can be passed
-                additionally:
-
-                open_edges (bool, optional):
-                    Whether to plot the edges for which only one of source and
-                    destination is in the set of selected nodes. Disabled by
-                    default.
-                drop (bool, optional):
-                    Whether to remove the non-selected nodes from the graph.
-                    If False, *all* nodes are passed to the node positioning
-                    model. Enabled by default.
-
-            nodes (dict, optional):
-                Configuration for the node plotting. The following arguments
-                are allowed:
-
-                node_size (scalar or sequence of scalars, optional):
-                    The node size (default: 300). Available for property
-                    mapping. Can be mapped directly from the nodes' ``degree``,
-                    ``in_degree``, or ``out_degree`` by setting the
-                    ``from_property`` argument accordingly.
-                node_color (color or sequene of colors, optional):
-                    Single color (string or RGB(A) tuple or numeric value)
-                    or sequence of colors (default: '#1f78b4'). If numeric
-                    values are specified they will be mapped to colors using
-                    the cmap and vmin, vmax parameters. Available for property
-                    mapping.
-
-                    If the ``node_color`` is mapped from categorical property
-                    data, it can be mapped to scalar values by providing
-                    a ``map_to_scalar`` dict of scalar target values keyed by
-                    (categorical) source value.
-                cmap (Union[str, dict], optional):
-                    The colormap. Passed as ``cmap`` to
-                    :py:class:`~utopya.plot_funcs._mpl_helpers.ColorManager`.
-                cmap_norm (Union[str, dict], optional):
-                    The norm used for the color-mapping. Passed as ``norm``
-                    to :py:class:`~utopya.plot_funcs._mpl_helpers.ColorManager`.
-                    May be overwritten, if a discrete colormap is specified in
-                    ``cmap``.
-                colorbar (dict, optional):
-                    Configuration of the colorbar. The following arguments are
-                    allowed:
-
-                    enabled (bool, optional):
-                        Whether to plot a colorbar. Enabled by default, if
-                        property mapping was done for ``node_color``.
-                    labels (dict, optional):
-                        Colorbar tick-labels keyed by tick position (see
-                        :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`).
-                    further kwargs:
-                        Passed on to :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`.
-
-                further kwargs:
-                    After applying property mapping, passed on to
-                    `draw_networkx_nodes <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_nodes.html>`_.
-
-                The following arguments are available for property mapping:
-                ``node_size``, ``node_color``, ``alpha``.
-
-            edges (dict, optional):
-                Configuration for the edge plotting. The ``edge_color``,
-                ``edge_cmap``, and ``colorbar`` argument behave analogously for
-                the edges as nodes.node_color, nodes.cmap, and nodes.colorbar
-                for the nodes. Any further kwargs are, after applying property
-                mapping, passed on to
-                `draw_networkx_edges <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_edges.html>`_.
-
-                The following arguments are available for property mapping:
-                ``edge_color``, ``width``.
-
-            node_labels (dict, optional):
-                Configuration for the plotting of node labels. The following
-                arguments are allowed:
-
-                enabled (bool, optional):
-                    Whether to plot node labels. Disabled by default. If
-                    enabled, nodes are labeled by their index by default.
-                show_only (list, optional):
-                    If given, labels are plotted only for the nodes in this
-                    list.
-                labels (dict, optional):
-                    Dictionary of custom text labels keyed by node.
-                    Available for property mapping. If mapped from property,
-                    a format string ``format`` with a ``label`` key can be
-                    specified, which is used for all node labels.
-                further kwargs:
-                    Passed on to
-                    `draw_networkx_labels <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_labels.html>`_.
-
-            edge_labels (dict, optional):
-                Configuration for the plotting of edge labels. The following
-                arguments are allowed:
-
-                enabled (bool, optional):
-                    Whether to plot edge labels. Disabled by default. If
-                    enabled, edges are labeled by their
-                    (source, destination) pair by default.
-                show_only (list, optional):
-                    If given, labels are plotted only for the edges (2-tuples)
-                    in this list.
-                edge_labels (dict, optional):
-                    Dictionary of custom text labels keyed by edge (2-tuples).
-                    Available for property mapping. If mapped from property,
-                    a format string ``format`` with a ``label`` key can be
-                    specified, which is used for all edge labels.
-                further kwargs:
-                    Passed on to
-                    `draw_networkx_edge_labels <https://networkx.github.io/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx_edge_labels.html>`_.
-
-            mark_nodes (dict, optional):
-                Configuration for highlighting nodes by their edge-color.
-                Either specify a ``color`` (str) for a list of nodes
-                (``nodelist``), or specify a ``colors`` dictionary of
-                colors (str) keyed by node. Creates or updates an existing
-                ``nodes.edgecolors`` entry.
-
-            mark_edges(dict, optional):
-                Configuration for highlighting edges by their color. Either
-                specify a ``color`` (str) for a list of edges (``edgelist``),
-                or specify a ``colors`` dictionary of colors (str) keyed by
-                edge (2-tuples). Creates or updates an existing
-                ``edges.edge_color`` entry.
-
-        graph_animation (dict, optional):
-            Only taken into account if an animation is done. Non-optional
-            when doing an animation. The animation frames need to be
-            specified by passing a ``times`` dictionary which may contain
-            the following arguments:
-
-            from_property (str, optional):
-                Extract the animation times from the ``time`` coordinates of
-                a container within the ``GraphGroup`` or from registered
-                external data.
-            sel (list, optional):
-                Select the times by value.
-            isel (list, optional):
-                Select the times by index.
+            times (dict, optional):
+                *Deprecated*: Equivaluent to a sel.time entry.
+            sel (dict, optional):
+                Select by value. Dictionary with dimension names as keys. The
+                values may either be coordinate values or a dict with a single
+                ``from_property`` (str) entry which specifies a container
+                withing the GraphGroup or registered external data from which
+                the coordinates are extracted.
+            isel (dict, optional):
+                Select by index. Coordinate indices keyed by dimension. May be
+                given together with ``sel`` if no key appears in both.
             update_positions (bool, optional):
-                Update the node positions for each frame by recalculating the
-                layout with the parameters specified in
-                graph_drawing['positions']. If this parameter is not given or
+                Whether to update the node positions for each frame by
+                recalculating the layout with the parameters specified in
+                graph_drawing.positions. If this parameter is not given or
                 false, the positions are calculated once initially and then
                 fixed.
+            update_colormapping (bool, optional):
+                Whether to reconfigure the nodes' and edges'
+                :py:class:`~utopya.plot_funcs._mpl_helpers.ColorManager` for
+                each frame (default=False). If False, the colormapping (and the
+                colorbar) is configured with the first frame and then fixed.
+            skip_empty_frames (bool, optional):
+                Whether to skip the frames where the selected graph is missing
+                or of a type different than ``nx.Graph`` (default=False).
+                If False, such frames are empty.
 
         register_property_maps (Sequence[str], optional): Names of properties
             to be registered in the graph group before the graph creation.
@@ -1088,205 +448,124 @@ def draw_graph(
             enabled by default to reduce side effects from previous plots.
             Set this to False if you have property maps registered with the
             GraphGroup that you would like to keep.
-        suptitle_kwargs (dict, optional): Key passed on to the PlotHelper's
-            ``set_suptitle`` helper function. Only used if animations are
-            enabled. The ``title`` entry can be a format string with the
-            ``value`` key, which is updated for each frame of the animation.
-            Default: ``time = {value:d}``.
+        suptitle_kwargs (dict, optional): Passed on to the PlotHelper's
+            ``set_suptitle`` helper function. Only used in animation mode.
+            The ``title`` can be a format string containing a placeholder with
+            the dimension name as key for each dimension along which selection
+            is done. The format string is updated for each frame of the
+            animation. The default is ``<dim-name> = {<dim-name>}`` for each
+            dimension.
 
     Raises:
-        ValueError: On invalid or non-computed dag tags in
-            ``register_property_maps``.
+        ValueError: On invalid or non-computed TransformationDAG tags in
+            ``register_property_maps`` or invalid graph group tag.
     """
-    if graph is None:
-        # Get the GraphGroup
+    # Work on a copy such that the original configuration is not modified
+    graph_drawing = copy.deepcopy(graph_drawing if graph_drawing else {})
+
+    # Get the sub-configurations for the drawing of the graph
+    select = graph_drawing.get("select", {})
+    pos_kwargs = graph_drawing.get("positions", {})
+    node_kwargs = graph_drawing.get("nodes", {})
+    edge_kwargs = graph_drawing.get("edges", {})
+    node_label_kwargs = graph_drawing.get("node_labels", {})
+    edge_label_kwargs = graph_drawing.get("edge_labels", {})
+    mark_nodes_kwargs = graph_drawing.get("mark_nodes", {})
+    mark_edges_kwargs = graph_drawing.get("mark_edges", {})
+
+    def get_dag_data(tag):
         try:
-            graph_group = data['graph_group']
+            return data[tag]
         except KeyError as err:
-            _available_tags = ', '.join(data.keys())
+            _available_tags = ", ".join(data.keys())
             raise ValueError(
-                "The tag 'graph_group' was not found in the data selected by "
-                "the DAG! Make sure the tag is named correctly and is "
-                "selected to be computed.\nThe following tags are available "
-                f"in the DAG results: {_available_tags}"
+                f"No tag '{tag}' found in the data selected by the DAG! Make "
+                "sure the tag is named correctly and is selected to be "
+                "computed; adjust the 'compute_only' argument if needed."
+                "\nThe following tags are available in the DAG results: "
+                f"{_available_tags}"
             ) from err
 
-        graph = create_graph_from_group(
-            graph_group,
-            graph_creation=graph_creation,
-            data=data,
-            register_property_maps=register_property_maps,
-            clear_existing_property_maps=clear_existing_property_maps,
-        )
+    # Prepare graph group and external property data
+    graph_group = get_dag_data(graph_group_tag) if graph is None else None
+    property_maps = None
+    if register_property_maps:
+        property_maps = {}
+        for tag in register_property_maps:
+            property_maps[tag] = get_dag_data(tag)
 
-    elif graph_creation is not None:
-        warnings.warn(
-            "Received both a 'graph' argument and a 'graph_creation' "
-            "configuration. The latter will be ignored. To remove this "
-            "set graph_creation to None.",
-            UserWarning
-        )
+    # If not in animation mode, make a single graph plot
+    if not hlpr.animation_enabled:
+        # Set up a GraphPlot instance
+        if graph_group is not None:
+            # Create GraphPlot from graph group
+            gp = GraphPlot.from_group(
+                graph_group=graph_group,
+                graph_creation=graph_creation,
+                register_property_maps=property_maps,
+                clear_existing_property_maps=clear_existing_property_maps,
+                fig=hlpr.fig,
+                ax=hlpr.ax,
+                **graph_drawing,
+            )
 
-    if isinstance(graph, nx.Graph):
-        # Perform single graph plot
-        rv = draw_single_graph(
-            graph,
-            hlpr=hlpr,
-            graph_drawing=graph_drawing,
-        )
-    else:
-        # TODO Perform animation from array of graphs
-        raise NotImplementedError()
-
-    # Hide the axes
-    hlpr.ax.axis('off')
-
-    # Prepare parameters and kwargs for the update routine
-    suptitle_kwargs = suptitle_kwargs if suptitle_kwargs else {}
-    positions = rv['pos']
-
-    # Determine whether to update the node positions with each time frame.
-    # If yes, store them in the positions parameter.
-    if graph_animation and graph_animation.get('update_positions'):
-        positions = None
-
-    def update():
-        """Animation generator for the draw_graph function.
-
-        When the animation frames are given by different points in time, they
-        can be specified by value (via ``sel``), by index (via ``isel``), or
-        ``from_property``. In the latter case, the time values are extracted
-        from the ``time`` coordinates of the specified property data.
-
-        The animation uses fixed node positions as the positioning models would
-        arange the nodes very differently in each iteration, even for only
-        small changes in the graph structure.
-
-        The node positions and the colorbar(s) are obtained from the basic
-        (single) plot configuration and are then fixed.
-        """
-        def parse_time_kwargs(kwargs):
-            _TIME_KWARGS = ('from_property', 'sel', 'isel')
-
-            # Check for unexpected entries
-            if any([k not in _TIME_KWARGS for k in kwargs.keys()]):
-                _invalid_entries = ", ".join(
-                    [k for k in kwargs if k not in _TIME_KWARGS]
-                )
-                _allowed_entries = ", ".join(_TIME_KWARGS)
-                raise TypeError(
-                    "Received invalid specifications for the animation times: "
-                    f"{_invalid_entries}. Allowed entries: {_allowed_entries}"
-                )
-
-            elif len(kwargs) > 1:
-                _allowed_entries = ", ".join(_TIME_KWARGS)
-                raise TypeError(
-                    "Received ambiguous time specifications. Need _one_ of: "
-                    f"{_allowed_entries}"
-                )
-
-            times = None
-            time_idxs = None
-
-            # Times can be extracted from any container stored in the graph
-            # group or from any registered external data.
-            if 'from_property' in kwargs:
-                times = list(
-                    graph_group._get_item_or_pmap(kwargs['from_property'])
-                    .coords['time'].values
-                )
-
-            elif 'sel' in kwargs:
-                times = kwargs['sel']
-
-            elif 'isel' in kwargs:
-                time_idxs = kwargs['isel']
-
-            else:
-                _allowed_entries = ", ".join(_TIME_KWARGS)
-                raise TypeError(
-                    "Missing time specifications. Need _one_ of: "
-                    f"{_allowed_entries}"
-                )
-
-            return times, time_idxs
-
-        # Clear the axis. Colorbars are *not* removed.
-        hlpr.ax.clear()
-        hlpr.ax.axis('off')
-
-        time_kwargs = graph_animation['times']
-
-        times, time_idxs = parse_time_kwargs(time_kwargs)
-
-        # Prepare graph creation config dict
-        graph_creation_anim = copy.deepcopy(graph_creation)
-        graph_creation_anim.pop('at_time_idx', None)
-        graph_creation_anim.pop('at_time', None)
-
-        # Prepare iterator and other time-dependent settings
-        if times:
-            time_iter = times
-            time_key = 'at_time'
         else:
-            time_iter = time_idxs
-            time_key = 'at_time_idx'
+            if graph_creation is not None:
+                warnings.warn(
+                    "Received both a 'graph' argument and a 'graph_creation' "
+                    "configuration. The latter will be ignored. To remove "
+                    "this warning set graph_creation to None.",
+                    UserWarning
+                )
 
-        # Prepare the suptitle format string
-        if 'title' not in suptitle_kwargs:
-            suptitle_kwargs['title'] = "time = {value:d}"
+            if isinstance(graph, xr.DataArray):
+                # Use the first array element for a single graph plot
+                g = graph.values.flat[0]
 
-        # Iterate over the selected times (can be time value _or_ index)
-        for time in time_iter:
-            graph_creation_anim[time_key] = time
+                if graph.size > 1:
+                    log.caution(
+                        "Received a DataArray of size %d as 'graph' argument, "
+                        "performing a single plot using the first entry. "
+                        "Animations must be enabled by setting "
+                        "animation.enabled to True.",
+                        graph.size,
+                    )
 
-            graph = create_graph_from_group(
-                graph_group,
-                graph_creation=graph_creation_anim,
-            )
-
-            # Perform plot for the current time. Colorbars are suppressed and
-            # the positions of the basic draw_graph function call are used.
-            rv = draw_single_graph(
-                graph,
-                hlpr=hlpr,
-                graph_drawing=graph_drawing,
-                positions=positions,
-                suppress_cbars=True
-            )
-
-            # Apply the suptitle format string, then invoke the helper
-            st_kwargs = copy.deepcopy(suptitle_kwargs)
-            st_kwargs['title'] = st_kwargs['title'].format(
-                value=(rv['attrs']['time'])
-            )
-            hlpr.invoke_helper('set_suptitle', **st_kwargs)
-
-            # Let the writer grab the current frame
-            yield
-
-            # Remove nodes and edges again
-            rv['nodes'].remove()
-
-            # TODO With networkx v2.6 only FancyArrowPatches will be used
-            #      (https://github.com/networkx/networkx/pull/4360). Remove the
-            #      LineCollection case then.
-            if isinstance(rv['edges'], list):
-                # for a list of FancyArrowPatches
-                for i in range(len(rv['edges'])):
-                    rv['edges'][i].remove()
             else:
-                # for a LineCollection
-                rv['edges'].remove()
+                g = graph
+            
+            # Create a GraphPlot from a nx.Graph
+            gp = GraphPlot(g=g, fig=hlpr.fig, ax=hlpr.ax, **graph_drawing)
 
-            # Remove labels
-            if rv['node_labels']:
-                for label in rv['node_labels'].values():
-                    label.remove()
+        # Make the actual plot via the GraphPlot
+        gp.draw()
 
-            if rv['edge_labels']:
-                for label in rv['edge_labels'].values():
-                    label.remove()
+    # In animation mode, register the animation frame generator
+    else:
+        # Prepare animation kwargs for the update routine
+        graph_animation = graph_animation if graph_animation else {}
 
-    hlpr.register_animation_update(update)
+        def update():
+            """The animation frames generator.
+            See :py:meth:`~utopya.plot_funcs.dag.graph.graph_animation_update`.
+            """
+            if graph_group is None and not isinstance(graph, xr.DataArray):
+                raise TypeError(
+                    "Failed to create animation due to invalid type of the "
+                    "'graph' argument. Required: xr.DataArray (filled "
+                    f"with graph objects). Received: {type(graph)}"
+                )
+
+            yield from graph_animation_update(
+                hlpr=hlpr,
+                graphs=graph if isinstance(graph, xr.DataArray) else None,
+                graph_group=graph_group,
+                graph_creation=graph_creation,
+                register_property_maps=property_maps,
+                clear_existing_property_maps=clear_existing_property_maps,
+                suptitle_kwargs=suptitle_kwargs,
+                animation_kwargs=graph_animation,
+                **graph_drawing,
+            )
+
+        hlpr.register_animation_update(update)
