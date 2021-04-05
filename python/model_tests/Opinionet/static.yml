@@ -1,0 +1,18 @@
+# Configuration file used to test the case of static opinions
+---
+parameter_space:
+
+  num_steps: 2
+
+  Opinionet: !model
+    model_name: Opinionet
+
+    network:
+        model: ErdosRenyi
+        num_vertices: 1000
+        mean_degree: 4
+
+
+
+    susceptibility: 0.
+    

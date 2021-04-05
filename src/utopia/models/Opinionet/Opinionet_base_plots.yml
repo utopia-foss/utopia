@@ -1,0 +1,104 @@
+# Base configuration for the Opinionet plots
+---
+graph:
+  based_on: .dag.graph
+
+  dag_options:
+    select_path_prefix: data/Opinionet
+
+
+opinion_animated:
+    creator: universe
+    universes: all
+    module: model_plots.Opinionet
+    plot_func: opinion_animated
+
+    helpers:
+      set_labels:
+          x: User opinion
+          y: Group size
+    num_bins: 100
+    time_idx: # plot one specific time frame
+    animation:
+      enabled: true
+      writer_kwargs:
+        frames:
+          saving:
+            dpi: 300
+        ffmpeg:
+          init:
+            fps: 8
+          saving:
+            dpi: 300
+      animation_update_kwargs:
+        stepsize: 10
+      writer: ffmpeg
+    file_ext: mp4
+
+
+time_series_opinion:
+  creator: universe
+  universes: all
+  module: model_plots.Opinionet
+  plot_func: opinion_time_series
+
+  helpers:
+
+    setup_figure:
+      ncols: 2
+      sharey: True
+      gridspec_kw:
+        width_ratios: [3, 1]
+        wspace: 0.05
+
+    axis_specific:
+      opinion_time_series:
+        axis: [0, 0]
+        set_labels:
+          x: iteration step / N
+          y: opinion
+        set_limits:
+          y: [0, 1]
+      final_opinion_histogram:
+        axis: [1, 0]
+        set_title:
+          title: final
+        set_labels:
+          x: group size
+        set_limits:
+          y: [0, 1]
+
+  densities_kwargs:
+    origin: lower
+    aspect: auto
+    cmap: bone_r
+
+  hist_kwargs:
+    bins: 100
+    range: [0., 1.]
+    color: mediumseagreen
+    orientation: horizontal
+
+
+final_user_distribution:
+  creator: universe
+  universes: all
+  module: model_plots.Opinionet
+  plot_func: scatter
+
+  helpers:
+    set_title:
+      title: final user distribution
+    set_limits:
+      x: [0., 1.]
+      y:
+        lower: 0.
+    set_labels:
+      x: opinion
+      y: users
+
+
+sweep:
+  creator: multiverse
+  module: model_plots.Opinionet
+  plot_func: sweep

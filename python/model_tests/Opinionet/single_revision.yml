@@ -1,0 +1,17 @@
+# Configuration file used to check a single revision step
+---
+parameter_space:
+
+  num_steps: 1
+
+  Opinionet: !model
+    model_name: Opinionet
+
+    network:
+        model: ErdosRenyi
+        num_vertices: 20
+        mean_degree: 10
+
+    tolerance: 0.2
+
+    susceptibility: 1.

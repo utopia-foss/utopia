@@ -1,0 +1,19 @@
+# Configuration file used to test that the dynamics are correct
+---
+parameter_space:
+
+  num_steps: 200
+  write_every: 200
+
+  Opinionet: !model
+    model_name: Opinionet
+
+    network:
+        model: regular
+        num_vertices: 20
+        mean_degree: 20
+
+
+    tolerance:  1
+
+    susceptibility: 0.5
