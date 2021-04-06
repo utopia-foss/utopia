@@ -599,6 +599,14 @@ of it.
 
 
 
+### Setting up a separate repository for models
+Working inside a clone or a fork of this repository is generally *not* a good idea: it makes updating harder, prohibits efficient version control on the models, and makes it more difficult to include additional dependencies or code.
+
+To make setting up such a project repository as easy as possible, we provide a template repository, which can be used to start a new Utopia project!
+Follow the instructions in [the `models_template` project][models_template] for more information.
+
+
+
 <!-- ###################################################################### -->
 
 ## Dependencies
@@ -701,6 +709,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 
 [Utopia]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia
 [Models]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/models
+[models_template]: https://gitlab.com/utopia-project/models_template
 
 [Utopia-issues]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues
 [Utopia-new-issue]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/new?issue

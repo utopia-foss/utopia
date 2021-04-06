@@ -74,12 +74,16 @@ The following will involve a lot of copying and renaming, so make sure to pay sp
         (utopia-env) $ utopia models copy ModelToCopy --new-name MyFancyModel
 
     If you let the CLI do this step for you, most of the steps below are already covered.
-    It still makes sense to go through the individual steps and read the remarks, such that you get an idea of what the CLI tool actually did.
+    It still makes sense to go through the individual steps and read the remarks, such that you get an idea of what the CLI tool actually does.
 
     See ``utopia models copy --help`` for more usage information.
 
     **For CCEES group members:** to copy to the ``utopia/models`` repository, the target project name needs to be ``UtopiaModels``.
     If this does not work, make sure that the ``utopia/models`` repository on your machine is up-to-date with the latest master and you invoked ``cmake ..`` after the update.
+
+.. note::
+
+    If you want your new model in your own models repository, see :ref:`set_up_models_repo`.
 
 
 To avoid problems, go through the following points from top to bottom, and first read the entire instructions for one step before starting to carry it out.

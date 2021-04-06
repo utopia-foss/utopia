@@ -130,10 +130,12 @@ setup:utopia-base:
     - web
   script:
     - docker build -f docker/utopia-base.dockerfile
-                   -t $BASE_IMAGE
+                   -t ${BASE_IMAGE}
+                   -t ${BASE_IMAGE_NAME}:latest
                    --build-arg UBUNTU_VERSION=${BASE_IMAGE_UBUNTU_VERSION}
                    .
-    - docker push $BASE_IMAGE
+    - docker push ${BASE_IMAGE}
+    - docker push ${BASE_IMAGE_NAME}:latest
 
 
 # -- Build stage --------------------------------------------------------------

@@ -875,3 +875,11 @@ Pipelines – Automatic Builds & Test Execution
 
 * Having these tasks being run automatically takes the burden off the developers' shoulders to assert that Utopia is still working as it should.
 * Code changes can be merged into the master only when the pipeline succeeds and a code review has taken place.
+
+
+Separate models repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+* For advanced modelling projects, one typically wants to implement models in their own repository, with their own dependencies and separate version control.
+  We maintain a `template project <https://gitlab.com/utopia-project/models_template>`_ which can be used to quickly generate such a models repository.
+* 📚
+  :ref:`set_up_models_repo`
