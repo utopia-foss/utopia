@@ -5,6 +5,7 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/small_world_generator.hpp>
 #include <boost/graph/random.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
 
 #include "utopia/data_io/cfg_utils.hh"
 #include "utopia/data_io/filesystem.hh"
@@ -50,6 +51,7 @@ namespace Graph {
  *
  * \return Graph            The random graph
  */
+
 template<typename Graph, typename RNG>
 Graph create_ErdosRenyi_graph(std::size_t num_vertices,
                               std::size_t mean_degree,
@@ -555,11 +557,19 @@ Graph create_WattsStrogatz_graph(std::size_t num_vertices,
  *
  * \param cfg           The configuration
  * \param rng           The random number generator
+ * \param pmaps         Property maps that *may* be used by the graph
+ *                      creation algorithms. At this point, only the
+ *                      `load_from_file` model will make use of this,
+ *                      allowing to populate a `weight` property map.
  *
  * \return Graph        The graph
  */
+
 template<typename Graph, typename RNG>
-Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
+Graph create_graph(const Config& cfg,
+                   RNG& rng,
+                   boost::dynamic_properties pmaps
+                        = {boost::ignore_other_properties})
 {
     // Get the graph generating model
     const std::string model = get_as<std::string>("model", cfg);
@@ -577,7 +587,7 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     else if (model == "ErdosRenyi")
     {
         // Get the model-specific configuration options
-        const auto& cfg_ER = get_as<DataIO::Config>("ErdosRenyi", cfg);
+        const auto& cfg_ER = get_as<Config>("ErdosRenyi", cfg);
 
         return create_ErdosRenyi_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
@@ -589,7 +599,7 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     else if (model == "WattsStrogatz")
     {
         // Get the model-specific configuration options
-        const auto& cfg_WS = get_as<DataIO::Config>("WattsStrogatz", cfg);
+        const auto& cfg_WS = get_as<Config>("WattsStrogatz", cfg);
 
         return create_WattsStrogatz_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
@@ -600,7 +610,7 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     else if (model == "BarabasiAlbert")
     {
         // Get the model-specific configuration options
-        const auto& cfg_BA = get_as<DataIO::Config>("BarabasiAlbert", cfg);
+        const auto& cfg_BA = get_as<Config>("BarabasiAlbert", cfg);
 
         return create_BarabasiAlbert_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
@@ -611,7 +621,7 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     else if (model == "BollobasRiordan")
     {
         // Get the model-specific configuration options
-        const auto& cfg_BR = get_as<DataIO::Config>("BollobasRiordan", cfg);
+        const auto& cfg_BR = get_as<Config>("BollobasRiordan", cfg);
 
         return create_BollobasRiordan_graph<Graph>(
                     get_as<std::size_t>("num_vertices", cfg),
@@ -625,12 +635,10 @@ Graph create_graph(const Utopia::DataIO::Config& cfg, RNG& rng)
     else if (model == "load_from_file")
     {
         // Get the model-specific configuration options
-        const auto& cfg_lff = get_as<DataIO::Config>("load_from_file", cfg);
+        const auto& cfg_lff = get_as<Config>("load_from_file", cfg);
 
         // Load and return the Graph via DataIO's loader
-        return Utopia::DataIO::GraphLoad::load_graph<Graph>(
-                    Utopia::DataIO::get_abs_filepath(cfg_lff),
-                    get_as<std::string>("format", cfg_lff));
+        return Utopia::DataIO::GraphLoad::load_graph<Graph>(cfg_lff, pmaps);
 
     }
     else {

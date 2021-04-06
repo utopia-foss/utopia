@@ -96,3 +96,11 @@ BarabasiAlbertZeroDeg:
   BarabasiAlbert:
     parallel: false
   
+
+LoadFromFile:
+  model: load_from_file
+  num_vertices: 10
+  mean_degree: 0
+  load_from_file:
+    base_dir: ../data_io/
+    filename: graph_load_test_undir.gv

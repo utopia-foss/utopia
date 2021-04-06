@@ -279,7 +279,7 @@ property with another one (e.g. saved edges and their corresponding weight),
 make sure to call ``save_graph_properties`` only once, as the order is conserved
 in a single call.
 
-Loading a Graph from a File 
+Loading a Graph from a File
 -----------------------------
 Can I also use real-world networks as a basis for the graph?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -293,13 +293,13 @@ Yes you can! Via the ``create_graph`` config interface you can access the graph 
       load_from_file:
         base_dir: "~/Utopia/network-files"
         filename: "my_airlines_network.xml"
-        format: "graphml" # or "graphviz"/"dot"
+        format: "graphml" # or "graphviz"/"gv"/"dot"
 
 .. warning::
 
-    Currently, the loader only supports loading to ``boost``'s ``adjacency_list``, not to an ``adjacency_matrix``.
+    The loader only supports loading to ``boost``'s ``adjacency_list``, not to an ``adjacency_matrix``, as this is a bit more difficult.
 
-    A workaround could be to copy the graph via `boost's copy graph functionality <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/copy_graph.html>`_ .
+    A workaround could be to copy the graph via `boosts copy graph functionality <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/copy_graph.html>`_ .
 
 The data that you load may need some curation before it works, though. As we are only loading the **graph's topology, without node/edge/graph attributes**, you might have to get rid of some data attributes, that can cause the loader to crash.
 
@@ -332,7 +332,97 @@ As far as we experienced it, attributes of the type ``vector_float`` or ``vector
 
 .. note::
 
-    If you encounter a format other than GraphML or Graphviz/DOT, consider passing it to python's networkx (writing your own script), and then storing it in one of the two formats from there.
+    If you encounter a format other than GraphML or Graphviz/DOT, be aware that there are a number of command line converters that might work right away: Try typing ``mm2gv``, ``gxl2gv``, or ``gml2gv``, to convert from the `MatrixMarket <https://math.nist.gov/MatrixMarket/formats.html#MMformat>`_, `GrapheXchangeLanguage <https://en.wikipedia.org/wiki/GXL>`_, and the `Graph Modeling Language <https://en.wikipedia.org/wiki/Graph_Modelling_Language>`_, respectively. If that doesn't help, check if `the Gephi Graph Exploration software <https://gephi.org/>`_ can maybe read the format, or otherwise pass it to python's `networkx <https://networkx.org/documentation/stable/reference/readwrite/index.html>`_  possibly by writing your own script. Both Gephi and networkx should be able to export to one of the accepted formats.
 
 .. hint::
-    One large database of real-world networks, that are available for download in the GraphML format, is `Netzschleuder <https://networks.skewed.de/>`_, another database, that uses the *MatrixMarket (``mtx``)* format is `Network Repository <http://networkrepository.com>`_.
+
+    One large database of real-world networks, that are available for download in the GraphML format, is `Netzschleuder <https://networks.skewed.de/>`_, another database, that uses the *MatrixMarket* ``.mtx`` format is `Network Repository <http://networkrepository.com>`_.
+
+How do I load edge weights (or some other property) into utopia?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to load edge weights, or some other *edge* property, that is stored in GraphViz like
+
+.. code-block:: DOT
+
+  digraph "Directed Weighted Test GraphViz Graph" {
+    1 -> 0  [weight=1, some_int=5];
+    0 -> 2  [weight=1.5, some_int=5];
+    1 -> 3  [weight=.5, some_int=4];
+    1 -> 3  [weight=2.5];
+    4;
+  }
+
+or in GraphML, similarly
+
+.. code-block:: XML
+
+  ...
+  <graphml>
+
+    <key id="key1" for="edge" attr.name="weight" attr.type="double" />
+    <key id="key2" for="node" attr.name="some_int" attr.type="int" />
+
+    <graph id="G" edgedefault="undirected">
+
+      <node id="n1"> </node>
+      <node id="n2"> </node>
+
+      <edge id="e0" source="n1" target="n0">
+        <data key="key1">2.</data>
+        <data key="key2">5</data>
+      </edge>
+
+    </graph>
+  </graphml>
+
+then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/1_75_0/libs/property_map/doc/dynamic_property_map.html>`_ *to the create graph algorithm*. This can be done in two ways: either to ``boost``'s built-in ``boost:edge_weight``, or to a bundled property, for example a ``struct EdgeState``:
+
+
+.. code-block:: c++
+
+  #include <boost/property_map/dynamic_property_map.hpp>
+  #include <boost/graph/adjacency_list.hpp>
+  #include "utopia/core/graph.hh"
+  #include "utopia/data_io/graph_load.hh"
+
+  struct EdgeState {
+    double weight = 2.;
+    int some_int = 1;
+  };
+  using GraphType = boost::adjacency_list<
+                    boost::vecS,         // edge cont
+                    boost::vecS,         // vertex cont
+                    boost::directedS,
+                    boost::no_property,  // no vertex properties
+                    boost::property<boost::edge_weight_t, double, EdgeState>
+                    >;
+  GraphType g(0);
+
+  // Now you need to define dynamic property maps
+  boost::dynamic_properties pmaps(boost::ignore_other_properties);
+  // Like this, it would simply ignore all properties in the file.
+  // So now add a reference to the built-in or bundled weight as a source
+  // for the weight pmap. To load to the bundle's `weight`, use:
+
+  pmaps.property("weight", boost::get(&EdgeState::weight, g));
+  // To load to boost's built_in `edge_weight`, use:
+  // pmaps.property("weight", boost::get(boost::edge_weight, g));
+  // You can also, if you want, load more edge properties, like:
+
+  pmaps.property("some_int", boost::get(&EdgeState::some_int, g));
+
+  // Now load the graph, either via `create_graph`, or `load_graph`
+  g = Graph::create_graph<GraphType>(_cfg["create_graph"], *_rng, pmaps)
+  // g = GraphLoad::load_graph<GraphType>(_cfg_cg["load_from_file"], pmaps);
+  // where you need to pass the corresponding config nodes.
+
+Now your graph should be loaded with the edge properties of your desire. If you find out how to include *vertex* properties, please let us know.
+
+.. note::
+
+    Make sure you load undirected graphs into undirected boost graphs and directed ones into directed ones. Conversions can be made both on the side of the file, and on boost's side, but for the reading process it must be coherent.
+
+.. warning::
+
+    The loading into bundled edge properties does not work with the typical utopia graph entity specifications as yet, so ``using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;`` ``using Edge = GraphEntity<EdgeTraits>;``, limits you to ``boost``'s built-in properties, `which are quite a few actually <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/property.html>`_.

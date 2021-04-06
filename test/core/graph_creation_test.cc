@@ -3,6 +3,7 @@
 #include <variant>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
 
 #include "utopia/core/graph.hh"
 #include "utopia/core/types.hh"
@@ -67,6 +68,8 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
             BOOST_CHECK_THROW(Utopia::Graph::create_graph<Graph>(model_cfg, rng),
                               std::runtime_error);
         }
+        else if (model == "load_from_file"){ ; // do nothing (treated below)
+        }
         else if (model_cfg["mean_degree"].as<std::size_t>() == 0){
             g_deg0_vec.push_back(Utopia::Graph::create_graph<Graph>(model_cfg,
                                                                     rng));
@@ -124,6 +127,17 @@ BOOST_FIXTURE_TEST_CASE(create_graph, CreateGraphFix)
         else if (model == "BollobasRiordan") {
             auto g = Utopia::Graph::create_graph<DiGraph>(model_cfg, rng);
             BOOST_TEST(boost::num_vertices(g) == 10);
+        }
+        else if (model == "load_from_file") {
+            // First, test without passing a property map
+            auto g = Utopia::Graph::create_graph<Graph>(model_cfg, rng);
+            BOOST_TEST(boost::num_vertices(g) == 5);
+            // Now, test if an empty property map can be passed
+            // Passing properties is tested in data_io/graph_load_test.cc
+            boost::dynamic_properties pmaps(boost::ignore_other_properties);
+            auto g2
+                = Utopia::Graph::create_graph<Graph>(model_cfg, rng, pmaps);
+            BOOST_TEST(boost::num_edges(g2) == 4);
         }
         else if (model_cfg["mean_degree"].as<std::size_t>() == 0){
             g_deg0_vec_dir.push_back(Utopia::Graph::create_graph<DiGraph>(

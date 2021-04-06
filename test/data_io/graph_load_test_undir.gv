@@ -1,0 +1,7 @@
+graph "Undirected Weighted Test GraphViz Graph" {
+  1 -- 0  [weight=1, some_int=5];
+  0 -- 2  [weight=1.5, some_int=5];
+  1 -- 3  [weight=.5, some_int=4];
+  1 -- 3  [weight=2.5];
+  4;
+}

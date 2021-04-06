@@ -1,11 +1,15 @@
 #ifndef UTOPIA_DATAIO_GRAPH_LOAD_HH
 #define UTOPIA_DATAIO_GRAPH_LOAD_HH
 
-#include <boost/graph/adjacency_list.hpp>
 #include <string>
 #include <fstream>
 #include <boost/graph/graphml.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
+
+#include "utopia/core/types.hh"
+#include "utopia/data_io/filesystem.hh"
+#include "utopia/data_io/cfg_utils.hh"
 
 
 namespace Utopia {
@@ -21,18 +25,25 @@ namespace GraphLoad {
  *
  * /tparam Graph        The graph type
  *
- * /param file_name     The name of the .graphml file
+ * /param file_name     The name of the file to load
+ * /param pmaps         Any additional property maps; if this contains
+ *                      a property map named `weight`, the weights will
+ *                      be loaded additionally, if the data file contains
+ *                      that information.
  *
  * /return Graph        The loaded graph
  */
+
+
 template <typename Graph>
-Graph load_graph(const std::string& abs_file_path, const std::string& format)
+Graph load_graph(const Config& cfg,
+                 boost::dynamic_properties pmaps)
 {
+    const auto abs_file_path = get_abs_filepath(cfg);
+    const auto format = get_as<std::string>("format", cfg, "dot");
 
     // Create an empty graph
     Graph g;
-
-    boost::dynamic_properties dyn_prop(boost::ignore_other_properties);
 
     // Load file into file stream
     std::ifstream ifs(abs_file_path.c_str());
@@ -44,18 +55,18 @@ Graph load_graph(const std::string& abs_file_path, const std::string& format)
     }
 
     // Load the data from the file stream
-    if (format == "graphviz" or format == "dot") {
-        boost::read_graphviz(ifs, g, dyn_prop);
+    if (format == "graphviz" or format == "gv" or format == "dot") {
+        boost::read_graphviz(ifs, g, pmaps);
 
     } else if (format == "graphml") {
-        boost::read_graphml(ifs, g, dyn_prop);
+        boost::read_graphml(ifs, g, pmaps);
 
     } else {
         throw std::invalid_argument(
             "The given file format is not supported. The file format needs "
-            "to be one of 'graphviz', 'gv', 'dot', 'DOT', 'graphml' or 'gml', "
+            "to be one of 'graphviz' / 'gv' / 'dot' or 'graphml' "
             "and needs to be specified in the config's format node, e.g. "
-            "load_from_file: { format: gml }.");
+            "load_from_file: { format: graphml }.");
     }
 
     // Return the graph
