@@ -1,4 +1,4 @@
-# # Default plots for the Opinionet model
+# Default plots for the Opinionet model
 graph:
   based_on: graph
 
@@ -36,14 +36,13 @@ graph:
       title: Final Graph
 
 opinion_animated:
-    based_on:
-      opinion_animated
-    animation:
-      animation_update_kwargs:
-        stepsize: 10
-    helpers:
-      set_title:
-        title: Opinion distribution
+  based_on: opinion_animated
+  animation:
+    animation_update_kwargs:
+      stepsize: 10
+  helpers:
+    set_title:
+      title: Opinion distribution
 
 
 # ---

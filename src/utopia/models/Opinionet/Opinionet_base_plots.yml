@@ -8,32 +8,32 @@ graph:
 
 
 opinion_animated:
-    creator: universe
-    universes: all
-    module: model_plots.Opinionet
-    plot_func: opinion_animated
+  creator: universe
+  universes: all
+  module: model_plots.Opinionet
+  plot_func: opinion_animated
 
-    helpers:
-      set_labels:
-          x: User opinion
-          y: Group size
-    num_bins: 100
-    time_idx: # plot one specific time frame
-    animation:
-      enabled: true
-      writer_kwargs:
-        frames:
-          saving:
-            dpi: 300
-        ffmpeg:
-          init:
-            fps: 8
-          saving:
-            dpi: 300
-      animation_update_kwargs:
-        stepsize: 10
-      writer: ffmpeg
-    file_ext: mp4
+  helpers:
+    set_labels:
+        x: User opinion
+        y: Group size
+  num_bins: 100
+  time_idx: # plot one specific time frame
+  animation:
+    enabled: true
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 300
+      ffmpeg:
+        init:
+          fps: 8
+        saving:
+          dpi: 300
+    animation_update_kwargs:
+      stepsize: 10
+    writer: ffmpeg
+  file_ext: mp4
 
 
 time_series_opinion:
