@@ -122,8 +122,8 @@ private:
 
     // Datasets and Datagroups
     std::shared_ptr<DataGroup> _dgrp_nw;
-    std::shared_ptr<DataSet> _dset_edge_weights;
     std::shared_ptr<DataSet> _dset_opinion;
+    std::shared_ptr<DataSet> _dset_edge_weights;
 
 public:
     /// Construct the Opinionet model
@@ -144,11 +144,9 @@ public:
         _uniform_prob_distr(0., 1.),
         // Create datagroups and datasets
         _dgrp_nw(create_graph_group(_nw, this->_hdfgrp, "nw")),
-        // TODO Only if network is directed
-        _dset_edge_weights(this->create_dset("edge_weights", _dgrp_nw,
-                                        {boost::num_edges(_nw)})), //only do this if directed
         _dset_opinion(this->create_dset("opinion", _dgrp_nw,
-                                        {boost::num_vertices(_nw)}))
+                                        {boost::num_vertices(_nw)})),
+        _dset_edge_weights(this->create_edge_weight_dset())
     {
         this->_log->debug("Constructing the Opinionet Model ...");
 
@@ -168,10 +166,11 @@ public:
         _dset_opinion->add_attribute("dim_name__1", "vertex_idx");
         _dset_opinion->add_attribute("coords_mode__vertex_idx", "trivial");
 
-        if constexpr (rewire == Rewiring::RewiringOn) {
+        if constexpr (rewire == Rewiring::RewiringOff) {
             save_graph(_nw, _dgrp_nw);
             this->_log->debug("Network saved.");
         }
+
         else {
             // Write the vertex data once, as it does not change with time
             auto _dset_vertices = _dgrp_nw->open_dataset(
@@ -189,6 +188,7 @@ public:
                 "coords_mode__vertex_idx", "trivial"
             );
         }
+
     }
 
 private:
@@ -217,7 +217,10 @@ private:
 
             for (const auto v : range<IterateOver::vertices>(_nw)) {
                 _nw[v].opinion =
-                    Utils::get_rand<int>(opinion_values, *this->_rng);
+                    Utils::get_rand<int>(
+                        std::make_pair<int, int>(0, opinion_values-1),
+                        *this->_rng
+                    );
             }
         }
 
@@ -237,6 +240,17 @@ private:
 
         return Graph::create_graph<NWType>(this->_cfg["network"], *this->_rng);
     }
+
+    // Only initialise edge weight dataset for directed graphs
+    std::shared_ptr<DataSet> create_edge_weight_dset() {
+        if constexpr (Utils::is_directed<NWType>()) {
+            return this->create_dset("edge_weights", _dgrp_nw, {boost::num_edges(_nw)});
+        }
+        else {
+            return 0;
+        }
+    }
+
 
 public:
 
@@ -282,35 +296,34 @@ public:
             v, v_end, [this](auto vd) { return _nw[vd].opinion; }
         );
 
-        // save_vertex_properties(_nw, _dgrp_nw, std::to_string(this->get_time()),
-        //     std::make_tuple(std::make_tuple("op", [](auto& vd, auto& _nw) { return _nw[vd].opinion; })));
+        //Write edge data
+        if constexpr (rewire == Rewiring::RewiringOn){
+            // Adaptor tuple that allows to save the edge data
+            const auto get_edge_data = std::make_tuple(
+                std::make_tuple("_edges", "type",
+                    std::make_tuple("source", [](auto& ed, auto& _nw) {
+                                return boost::get(  boost::vertex_index_t(),
+                                                    _nw,
+                                                    boost::source(ed, _nw));}),
+                    std::make_tuple("target", [](auto& ed, auto& _nw) {
+                                return boost::get(  boost::vertex_index_t(),
+                                                    _nw,
+                                                    boost::target(ed, _nw));}))
+            );
+            // Save the edge data using the current time as label.
+            save_edge_properties(
+                _nw, _dgrp_nw, std::to_string(this->get_time()), get_edge_data
+            );
+        }
 
-        // auto [e, e_end] = boost::edges(_nw);
-        //
-        // // Write edge data
-        // if constexpr (Utils::is_directed<NWType>()) {
-        //     // Adaptor tuple that allows to save the edge data
-        //     const auto get_edge_data_u = std::make_tuple(
-        //         std::make_tuple("_edges", "type",
-        //             std::make_tuple("source", [](auto& ed, auto& _nw) {
-        //                         return boost::get(  boost::vertex_index_t(),
-        //                                             _nw,
-        //                                             boost::source(ed, _nw));}),
-        //             std::make_tuple("target", [](auto& ed, auto& _nw) {
-        //                         return boost::get(  boost::vertex_index_t(),
-        //                                             _nw,
-        //                                             boost::target(ed, _nw));}))
-        //     );
-        //
-        //     // Save the edge data using the current time as label.
-        //     save_edge_properties(
-        //         _nw, _dgrp_nw, std::to_string(get_time()), get_edge_data_u
-        //     );
-        //
-        //     _dset_edge_weights->write(
-        //         e, e_end, [this](auto ed) { return _nw[ed].weight; }
-        //     );
-        // }
+        if constexpr (Utils::is_directed<NWType>()) {
+
+            auto [e, e_end] = boost::edges(_nw);
+
+            _dset_edge_weights->write(
+                e, e_end, [this](auto ed) { return _nw[ed].weight; }
+            );
+        }
     }
 
     // .. Getters and setters .................................................

@@ -7,140 +7,179 @@
 #include <boost/graph/random.hpp>
 
 #include "../Opinionet.hh"
+#include "../modes.hh"
+#include "../revision.hh"
+#include "../utils.hh"
 
 namespace Utopia::Models::Opinionet::Revision{
 
-using Network = boost::adjacency_list<
-        EdgeContainer,
-        VertexContainer,
-        boost::bidirectionalS,
-        Agent,
-        Edge>;
-
-// Define a random number generator
+/// -- Type definitions ---------------------------------------------------------
 std::mt19937 rng{};
-
-// A uniform probability distribution
-std::uniform_real_distribution<double> uniform_prob_distr(0., 1.);
-
-// -- Type definitions --------------------------------------------------------
-
-// The vertex descriptor type of the user network
-using VertexDesc = typename boost::graph_traits<Network>::vertex_descriptor;
-
-// The edge descriptor type of the user network
-using EdgeDesc = typename boost::graph_traits<Network>::edge_descriptor;
-
+std::uniform_real_distribution<double> prob_distr;
 
 // -- Fixtures ----------------------------------------------------------------
+struct TestNetworkD {
+    using vertex = boost::graph_traits<NetworkDirected>::vertex_descriptor;
+    NetworkDirected nw;
+    vertex v1 = boost::add_vertex(nw);
+    vertex v2 = boost::add_vertex(nw);
+    vertex v3 = boost::add_vertex(nw);
+    vertex v4 = boost::add_vertex(nw);
+    vertex v5 = boost::add_vertex(nw);
+    vertex v6 = boost::add_vertex(nw);
 
-// Test user network and test media network
-struct TestNetworks {
-    Network nw;
-
-    VertexDesc v1 = boost::add_vertex(nw);
-    VertexDesc v2 = boost::add_vertex(nw);
-    VertexDesc v3 = boost::add_vertex(nw);
-    VertexDesc v4 = boost::add_vertex(nw);
-
-    EdgeDesc e12 = std::get<0>(boost::add_edge(v1, v2, {0.5}, nw));
-    EdgeDesc e13 = std::get<0>(boost::add_edge(v1, v3, {0.5}, nw));
-    EdgeDesc e24 = std::get<0>(boost::add_edge(v2, v4, {1.0}, nw));
-    EdgeDesc e34 = std::get<0>(boost::add_edge(v3, v4, {1.0}, nw));
-
-
-    TestNetworks(){
-        // add opinions etc.
+    TestNetworkD(){
+        boost::add_edge(v1, v2, nw);
+        boost::add_edge(v1, v3, nw);
+        boost::add_edge(v1, v4, nw);
+        boost::add_edge(v1, v6, nw);
+        int i = 2;
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            nw[v].opinion = i;
+            ++i;
+        }
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            Utils::set_and_normalize_weights(v, nw);
+        }
     }
 };
 
 
+struct TestNetworkU {
+    using vertex = boost::graph_traits<NetworkUndirected>::vertex_descriptor;
+    NetworkUndirected nw;
+    vertex v1 = boost::add_vertex(nw);
+    vertex v2 = boost::add_vertex(nw);
+    vertex v3 = boost::add_vertex(nw);
+    vertex v4 = boost::add_vertex(nw);
+    vertex v5 = boost::add_vertex(nw);
+    vertex v6 = boost::add_vertex(nw);
+
+    TestNetworkU(){
+        boost::add_edge(v1, v2, nw);
+        boost::add_edge(v1, v3, nw);
+        boost::add_edge(v1, v4, nw);
+        boost::add_edge(v1, v6, nw);
+        int i = 0;
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            nw[v].opinion = i;
+            ++i;
+        }
+    }
+};
+
 // -- Actual test -------------------------------------------------------------
-
-// Test the evaluate_user_char function
-BOOST_AUTO_TEST_CASE(test_evaluate_user_char)
-{
-    BOOST_TEST ( 1 == 1);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::BC,
-    //                                     0.3, 0.49, 0.2, 0.4, rng)) == 1.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::BC,
-    //                                     0.3, 0.49, 0.2, 0.4, rng)) == true);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::BC,
-    //                                     0.3, 0.09, 0.2, 0.4, rng)) == 0.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::BC,
-    //                                     0.3, 0.09, 0.2, 0.4, rng)) == false);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.49, 0.2, 0.4, rng)) == 1.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.49, 0.2, 0.4, rng)) == true);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.09, 0.2, 0.4, rng)) == 0.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.09, 0.2, 0.4, rng)) == false);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.72, 0.2, 0.4, rng)) == 1.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::BC_extended,
-    //                                     0.3, 0.72, 0.2, 0.4, rng)) == false);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::Gaussian,
-    //                                     0.3, 0.3, 0.2, 0.4, rng)) == 1.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::Gaussian,
-    //                                     0.3, 0.3, 0.2, 0.4, rng)) == true);
-    // BOOST_TEST(std::get<0>(evaluate_user_char(UserChar::Gaussian,
-    //                                     0.3, 1., 0.1, 0.4, rng)) == 0.);
-    // BOOST_TEST(std::get<1>(evaluate_user_char(UserChar::Gaussian,
-    //                                     0.3, 1., 0.1, 0.4, rng)) == false);
+// Test HegselmannKrause opinion update function (undirected network)
+BOOST_FIXTURE_TEST_CASE(test_opinion_update_HK_u,
+                        TestNetworkU) {
+    const double tolerance = 4;
+    const double susceptibility = 1;
+    update_opinion_HK(v1, nw, susceptibility, tolerance);
+    BOOST_TEST (nw[v1].opinion==2);
 }
 
-// Test the update_weights function
-BOOST_FIXTURE_TEST_CASE(test_update_weights, TestNetworks)
+// Test HegselmannKrause opinion update function (directed network)
+BOOST_FIXTURE_TEST_CASE(test_opinion_update_HK_d,
+                        TestNetworkD,
+                        * boost::unit_test::tolerance(1e-12))
 {
-    BOOST_TEST(1==1);
-    // update_weights(v1, nw, 0.5, 1., 1., uniform_prob_distr, rng);
-    //
-    // BOOST_TEST(nw[e12].weight == 0.45);
-    // BOOST_TEST(nw[e13].weight == 0.3);
-    //
-    // for (int i = 0; i < 5; ++i)
-    // {
-    //     // Each time edge (v1, v3) is rewired with a probability > 0.5.
-    //     update_weights(v1, nw, 0.2, 1., 1., uniform_prob_distr, rng);
-    // }
-    //
-    // // Check that rewiring was done
-    // BOOST_TEST(std::get<1>(boost::edge(v1, v4, nw)) == true);
+    const double tolerance = 4;
+    const double susceptibility = 1;
+    update_opinion_HK(v1, nw, susceptibility, tolerance);
+    BOOST_TEST (nw[v1].opinion==800./183);
+}
+// Test rewiring (undirected network)
+BOOST_FIXTURE_TEST_CASE(test_rewiring_u,
+                        TestNetworkU) {
+    const double tolerance = 2;
+    rewire_random_edge(nw, tolerance, rng);
+
+    BOOST_TEST(edge(v1, v6, nw).second);
+    BOOST_TEST(!edge(v1, v5, nw).second);
 }
 
-// Test the normalize_weights function
-BOOST_FIXTURE_TEST_CASE(test_normalize_weights, TestNetworks)
-{
-    BOOST_TEST(1==1);
-    // normalize_weights(v1, nw);
-    //
-    // BOOST_TEST(nw[e12].weight == 0.5);
-    // BOOST_TEST(nw[e13].weight == 0.5);
-    //
-    // nw[e13].weight = 1.5;
-    //
-    // normalize_weights(v1, nw);
-    //
-    // BOOST_TEST(nw[e12].weight == 0.25);
-    // BOOST_TEST(nw[e13].weight == 0.75);
+// Test rewiring (directed network)
+BOOST_FIXTURE_TEST_CASE(test_rewiring_d,
+                        TestNetworkD) {
+    const double tolerance = 2;
+    rewire_random_edge(nw, tolerance, rng);
+    // Test rewiring
+    BOOST_TEST(edge(v1, v6, nw).second);
+    BOOST_TEST(!edge(v1, v5, nw).second);
 }
 
-// Test the user_revision function
-BOOST_FIXTURE_TEST_CASE(test_user_revision, TestNetworks)
+// Test Deffuant opinion update function (continuous opinion space)
+BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_c,
+                        TestNetworkD,
+                        * boost::unit_test::tolerance(0.05))
 {
-    BOOST_TEST(1==1);
-    // EdgeDesc e14 = std::get<0>(boost::add_edge(v1, v4, {0.}, nw));
-    // for (int i = 0; i < 10; ++i)
-    // {
-    //     user_revision(nw, 0.3, 0.5, 1., 0., uniform_prob_distr, rng);
-    // }
-    //
-    // // Check that v1 interacted with v2 or v3, but not with v4
-    // BOOST_TEST(nw[e12].weight + nw[e13].weight == 1.);
-    // BOOST_TEST(nw[e14].weight == 0.);
-    // BOOST_TEST(nw[v1].opinion < 0.5);
+    using modes::Opinion_space_type;
+
+    TestNetworkD();
+    const double tolerance = 2;
+    const double susceptibility = 0.5;
+    const int num_steps = 10000;
+    const double init_opinion = nw[v1].opinion;
+
+    //Check interaction probabilities equal to ratio of opinion differences
+    int v2_selected = 0;
+    int v3_selected = 0;
+
+    for (int i = 0; i<num_steps; ++i) {
+        update_opinion_Deffuant<Opinion_space_type::continuous>(
+            v1, nw, susceptibility, tolerance, prob_distr, rng
+        );
+        if (nw[v1].opinion
+          == init_opinion+susceptibility*(nw[v2].opinion-init_opinion)
+        ) {
+                ++v2_selected;
+        }
+        else if (nw[v1].opinion
+               == init_opinion +susceptibility*(nw[v3].opinion-init_opinion)
+        ) {
+                ++v3_selected;
+        }
+        nw[v1].opinion = init_opinion;
+    }
+
+    BOOST_TEST((1. * v2_selected)/v3_selected
+            == fabs((nw[v3].opinion-nw[v1].opinion)
+                    /(nw[v2].opinion-nw[v1].opinion)));
+}
+// Test Deffuant opinion update function (discrete opinion space)
+BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_d,
+                        TestNetworkU,
+                        * boost::unit_test::tolerance(0.01))
+{
+    using modes::Opinion_space_type;
+
+    TestNetworkU();
+    const double tolerance = 5;
+    const double susceptibility = 0.5;
+    const int num_steps = 100000;
+    const double init_opinion = nw[v1].opinion;
+
+    // Check ratio of opinion flips is equal to susceptibility
+    // Check ratio of flips to opinion of v2 is proportional to 1/out_degree
+    int total_opinion_flips = 0;
+    int opinion_flipped_to_v2 = 0;
+    for (int i = 0; i<num_steps; ++i) {
+        update_opinion_Deffuant<Opinion_space_type::discrete>(
+            v1, nw, susceptibility, tolerance, prob_distr, rng
+        );
+        if (nw[v1].opinion == nw[v2].opinion) {
+            ++opinion_flipped_to_v2;
+        }
+        if (nw[v1].opinion != init_opinion) {
+            ++total_opinion_flips;
+        }
+        nw[v1].opinion = init_opinion;
+    }
+
+    BOOST_TEST(1.*total_opinion_flips == num_steps * susceptibility);
+    BOOST_TEST(1.*opinion_flipped_to_v2
+            == num_steps * susceptibility/boost::degree(v1, nw)
+    );
 }
 
 } // namespace Utopia::Models::Opinionet::Revision

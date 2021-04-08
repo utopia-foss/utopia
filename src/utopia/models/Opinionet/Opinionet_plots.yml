@@ -18,7 +18,7 @@ graph:
                                       # such that edge lengths are reduced.
       k: 1                            # Tweaking the spring model by adjusting
                                       # the optimal edge length (k) and the
-      iterations: 100                 # maximum number of iterations done.
+      iterations: 2                 # maximum number of iterations done.
     nodes:
       node_color:
         from_property: opinion     # Map the 'some_state' data to the color
@@ -27,7 +27,7 @@ graph:
         scale_to_interval: [10, 200]  # Scale the (degree-)data to the given
                                       # interval (the default size is 300).
     edges:
-      width: 0.5
+      width: 0.2
         #from_property: edge_weights        # Map the 'weights' data to the edge
         #scale_to_interval: [0, 1] # width and scale the data accordingly.
 

@@ -23,7 +23,7 @@ void update_opinion_HK (
     const double tolerance)
 {
 
-    double new_opinion = nw[v].opinion;
+    double new_opinion = 0;
     size_t number_of_interaction_partners = 0;
 
     if constexpr (Utils::is_directed<NWType>()) {
@@ -38,7 +38,7 @@ void update_opinion_HK (
 
         // Normalize weighted opinion average to number of interaction partners
         // participating in interaction
-        new_opinion *= out_degree(v, nw) / number_of_interaction_partners;
+        new_opinion *= (1.0*out_degree(v, nw)) / number_of_interaction_partners;
     }
 
     else {
@@ -52,7 +52,9 @@ void update_opinion_HK (
 
         // Normalize weighted opinion average to number of interaction partners
         // participating in interaction
-        new_opinion /= number_of_interaction_partners;
+        if (number_of_interaction_partners != 0) {
+            new_opinion /= number_of_interaction_partners;
+        }
     }
 
     // Update opinion
@@ -74,7 +76,7 @@ void update_opinion_Deffuant (
     // Get neighbor
     auto nb = Utils::select_neighbor(v, nw, prob_distr, rng);
 
-    // Discrete case: flip to nb opinion if probability = susceptibility
+    // Discrete case: adopt nb opinion with probability = susceptibility
     if constexpr (op_space == Opinion_space_type::discrete) {
         if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
             const double interaction_probability = prob_distr(rng);
