@@ -889,21 +889,18 @@ class GraphPlot:
                 for n in self._nodes_to_draw
             ]
 
-        # Update the edgecolors of the nodes
+        # Update the edgecolors of the nodes. Set the edgecolor to 'none'
+        # (=transparent) if it has not been set yet.
         if edgecolors is not None:
             self._node_kwargs["edgecolors"] = edgecolors
 
-            # For directed graphs (with arrows enabled) individual
-            # FancyArrowPatches are drawn. Make sure that the arrows end right
-            # at the node borders.
-            # The path size configuration only has to be if 'edgecolors' is
-            # changed, because its default is 'none' (=no patch boundary).
-            if self._g.is_directed():
-                self._configure_node_patch_sizes()
-
-        # Set the edgecolor to 'none' (transparent) if it has not been set yet
         elif "edgecolors" not in self._node_kwargs:
             self._node_kwargs["edgecolors"] = "none"
+
+        # For directed graphs (arrows enabled) individual FancyArrowPatches are
+        # drawn. Make sure that the arrows end right at the node borders.
+        if self._g.is_directed():
+            self._configure_node_patch_sizes()
 
         # Get colorbar configuration and update the existing kwargs
         colorbar = colorbar if colorbar is not None else {}
@@ -1470,6 +1467,8 @@ class GraphPlot:
 
         # If node boundaries are drawn the size of the node patch increases
         # depending on the boundary width. Adjust the patch size accordingly.
+        # Only do the patch size configuration if 'edgecolors' is not 'none'
+        # (=no patch boundary).
         if edgecolors != "none":
             lw = self._node_kwargs.get(
                 "linewidths", mpl.rcParams['lines.linewidth']
