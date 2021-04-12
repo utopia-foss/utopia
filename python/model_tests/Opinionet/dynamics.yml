@@ -1,5 +1,4 @@
-# Configuration file used to test a single revision step
-# Check different opinion spaces and network types are initialised correctly
+# Configuration file used to test the general model dynamics
 ---
 parameter_space:
 

@@ -94,33 +94,33 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_HK_d,
 // Test rewiring (undirected network)
 BOOST_FIXTURE_TEST_CASE(test_rewiring_u,
                         TestNetworkU) {
-    const double tolerance = 2;
+    const double tolerance = 3;
     const double weighting = 1;
-    for (size_t i = 0; i<boost::num_edges(nw); ++i) {
+    for (size_t i = 0; i<20; ++i) {
         rewire_random_edge(nw, tolerance, weighting, rng);
     }
 
-    BOOST_TEST(edge(v1, v6, nw).second);
-    BOOST_TEST(!edge(v1, v5, nw).second);
+    BOOST_TEST(edge(v1, v5, nw).second);
+    BOOST_TEST(!edge(v1, v6, nw).second);
 }
 
 // Test rewiring (directed network)
 BOOST_FIXTURE_TEST_CASE(test_rewiring_d,
                         TestNetworkD) {
-    const double tolerance = 2;
-    for (size_t i = 0; i<boost::num_edges(nw); ++i) {
+    const double tolerance = 3;
+    for (size_t i = 0; i<20; ++i) {
         rewire_random_edge(nw, tolerance, weighting, rng);
     }
 
     // Test rewiring
-    BOOST_TEST(edge(v1, v6, nw).second);
-    BOOST_TEST(!edge(v1, v5, nw).second);
+    BOOST_TEST(edge(v1, v5, nw).second);
+    BOOST_TEST(!edge(v1, v6, nw).second);
 }
 
 // Test Deffuant opinion update function (continuous opinion space)
 BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_c,
                         TestNetworkD,
-                        * boost::unit_test::tolerance(0.01))
+                        * boost::unit_test::tolerance(0.05))
 {
     using modes::Opinion_space_type;
 
@@ -161,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_c,
 // Test Deffuant opinion update function (discrete opinion space)
 BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_d,
                         TestNetworkU,
-                        * boost::unit_test::tolerance(0.01))
+                        * boost::unit_test::tolerance(0.05))
 {
     using modes::Opinion_space_type;
 

@@ -1,5 +1,5 @@
 # Configuration file used to test the case of static opinions
-# Check different opinion spaces and network types are initialised correctly
+# Checks different opinion spaces and network types are initialised correctly
 ---
 parameter_space:
 
