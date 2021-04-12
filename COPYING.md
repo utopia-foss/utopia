@@ -58,6 +58,7 @@ to as "Utopia Developers" in the respective copyright notices.
 * Lukas Siebert
 * Jeremias Traub
 * Josephine Westermann
+* Paul Wiesemeyer
 
 [GNU General Public License Version 3]: https://www.gnu.org/licenses/gpl-3.0.en.html
 [GNU Lesser General Public License Version 3]: https://www.gnu.org/licenses/lgpl-3.0.en.html

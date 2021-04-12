@@ -103,9 +103,9 @@ Have a look at the [troubleshooting](#troubleshooting) section to see how to add
 ##### On Ubuntu (20.04)
 ```bash
 apt update
-apt install cmake doxygen gcc g++ gfortran git libarmadillo-dev \
-            libboost-dev libboost-test-dev libhdf5-dev libspdlog-dev \
-            libyaml-cpp-dev pkg-config python3-dev python3-pip python3-venv
+apt install cmake gcc g++ gfortran git libarmadillo-dev libboost-all-dev \
+            libhdf5-dev libspdlog-dev libyaml-cpp-dev pkg-config \
+            python3-dev python3-pip python3-venv
 ```
 
 Further, we recommend to install the following optional packages:
@@ -116,6 +116,11 @@ apt install ffmpeg graphviz doxygen
 ```
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
+
+*Note:* For simplicity, we suggest to install the meta-package `libboost-all-dev` which includes the whole [Boost][Boost] library.
+If you want a minimal installation (only the [strictly required components](#dependencies)), use the following packages instead:
+`libboost-dev libboost-test-dev libboost-graph-dev libboost-regex-dev`.
+
 
 ##### On macOS
 First, install the Apple Command Line Tools:
@@ -619,7 +624,7 @@ Follow the instructions in [the `models_template` project][models_template] for 
 | [CMake][cmake]       | >= 3.13             | 3.16            | |
 | pkg-config           | >= 0.29             | 0.29            | |
 | [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
-| [Boost][Boost]       | >= 1.67             | 1.71            | |
+| [Boost][Boost]       | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
 | [Armadillo][arma]    | >= 9.600            | 9.800           | |
 | [yaml-cpp][yaml-cpp] | >= 0.6.2            | 0.6.2           | |
 | [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |

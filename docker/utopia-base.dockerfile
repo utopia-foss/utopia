@@ -34,6 +34,8 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
         libarmadillo-dev \
         libboost-dev \
         libboost-test-dev \
+        libboost-graph-dev \
+        libboost-regex-dev \
         libhdf5-dev \
         libspdlog-dev \
         # NOTE: Clang package currently depends on wrong lib version

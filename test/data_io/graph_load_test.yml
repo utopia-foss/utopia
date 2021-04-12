@@ -1,0 +1,133 @@
+# Loads undirected and directed adjacency lists, with and without weights
+---
+directed_cases:
+
+  graphviz:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_dir.gv
+        format: graphviz
+      params_for_test:
+        store_weights: built-in
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.
+        sum_built_in_weights: 5.5
+
+  graphml:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_dir.graphml
+        format: graphml
+      params_for_test:
+        store_weights: bundle
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 5.5
+        sum_built_in_weights: 0.
+
+  graphml_no_weights:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_dir.graphml
+        format: graphml
+      params_for_test:
+        store_weights: discard
+        store_some_int: bundle
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.
+        sum_built_in_weights: 0.
+        sum_bundle_some_int: 15
+
+undirected_cases:
+
+  graphml:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_undir.graphml
+        format: graphml
+      params_for_test:
+        store_weights: built-in
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.
+        sum_built_in_weights: 5.5
+
+  graphviz:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_undir.gv
+        format: graphviz
+      params_for_test:
+        store_weights: bundle
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 5.5
+        sum_built_in_weights: 0.
+
+  graphviz_no_weights:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_undir.gv
+        format: graphviz
+      params_for_test:
+        store_weights: discard
+        store_some_int: bundle
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.0
+        sum_built_in_weights: 0.0
+        sum_bundle_some_int: 15
+
+  fail1:
+    params: 
+      model: load_from_file
+      params_for_test:
+        store_weights: discard
+    throws: Utopia::KeyError
+    match: load_from_file
+
+  fail2:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: graph_load_test_undir.gv
+        format: not-a-format
+      params_for_test:
+        store_weights: discard
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.0
+        sum_built_in_weights: 0.0
+    throws: std::invalid_argument
+
+  fail3:
+    params:
+      model: load_from_file
+      load_from_file:
+        filename: non-existent.gv
+        format: graphviz
+      params_for_test:
+        store_weights: discard
+      expected:
+        num_vertices: 5
+        num_edges: 4
+        sum_bundle_weights: 8.0
+        sum_built_in_weights: 0.0
+    throws: std::invalid_argument
+
+# TODO maybe add some failing cases here

@@ -1,0 +1,64 @@
+# Configuration for some filesystem test cases
+---
+get_abs_filepath:
+  abs1:
+    params:
+      input:
+        filename: /foo
+      expected: /foo
+
+  abs2:
+    params:
+      input:
+        filename: /foo.bar
+      expected: /foo.bar
+
+  abs3:
+    params:
+      input:
+        base_dir: /foo/bar
+        filename: baz
+      expected: /foo/bar/baz
+
+  abs4:
+    params:
+      input:
+        base_dir: /foo/bar/
+        filename: baz
+      expected: /foo/bar/baz
+
+  home1:
+    params:
+      input:
+        filename: ~/foo/bar
+      expected: ~/foo/bar  # NOTE Uses expanduser to make platform-independent
+
+  home2:
+    params:
+      input:
+        base_dir: ~/foo
+        filename: bar
+      expected: ~/foo/bar
+
+  reldir1:
+    params:
+      input:
+        filename: foo/bar.baz
+      expected: foo/bar.baz
+      relative_to_cwd: true
+
+  reldir2:
+    params:
+      input:
+        base_dir: some/rel/dir
+        filename: foo/bar.baz
+      expected: some/rel/dir/foo/bar.baz
+      relative_to_cwd: true
+
+  # failing cases
+  fail1:
+    params:
+      input: {}
+    throws: Utopia::KeyError
+    match: filename
+

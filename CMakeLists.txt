@@ -65,6 +65,8 @@ target_link_libraries(utopia INTERFACE
     Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
     armadillo
     Boost::boost
+    Boost::graph
+    Boost::regex
     hdf5
     $<$<BOOL:${ParallelSTL_FOUND}>:pstl::ParallelSTL>
     $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:TBB::tbb>

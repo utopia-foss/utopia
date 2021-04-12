@@ -2,7 +2,7 @@
 
 # --- BOOST ---
 find_package(Boost 1.67 REQUIRED
-             COMPONENTS unit_test_framework)
+             COMPONENTS unit_test_framework graph regex)
 
 # --- HDF5 ---
 find_package(HDF5 1.10 REQUIRED COMPONENTS C HL)
@@ -13,10 +13,12 @@ include(RegisterHDF5)
 # NOTE: Do not check version here because an incompatible version would lead to
 #       CMake trying again in MODULE mode below!
 find_package(Armadillo CONFIG QUIET)
+
 # If found, check again with version specified
 if (TARGET armadillo)
     find_package(Armadillo 9.600 CONFIG REQUIRED)
     message (STATUS "Found Armadillo from CMake config at: ${Armadillo_DIR}")
+
 # Fall back to our module if no target is defined
 else ()
     find_package(Armadillo MODULE REQUIRED)
