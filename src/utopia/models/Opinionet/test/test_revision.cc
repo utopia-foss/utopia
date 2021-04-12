@@ -13,7 +13,7 @@
 
 namespace Utopia::Models::Opinionet::Revision{
 
-/// -- Type definitions --------------------------------------------------------
+/// -- Type definitions -------------------------------------------------------
 std::mt19937 rng{};
 std::uniform_real_distribution<double> prob_distr;
 

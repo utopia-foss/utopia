@@ -11,7 +11,10 @@
 
 namespace Utopia::Models::Opinionet::NetworkAnalysis {
 
-// HELPER FUNCTIONS ............................................................
+// TODO Should these analysis functions be included? If so, should they just
+//      lie around in this file, or should there be ready-to-use writer tasks?
+
+// HELPER FUNCTIONS ...........................................................
 
 
 // Starting from a given vertex, iteratively collect all vertices in tolerance
@@ -43,8 +46,8 @@ void fill_opinion_cluster(
 
 
 // Starting from a given vertex, iteratively collect all vertices in tolerance
-// rangethat are connected through an in edge or out edge that have a weight
-// larger than a certain threshold.
+// range which are connected through an in edge or out edge and have a weight
+// larger than the given threshold `min_weight`.
 template<typename NWType>
 void fill_weighted_opinion_cluster(
             const size_t v,
@@ -92,7 +95,7 @@ void fill_community(
 }
 
 
-// STRUCTURE ANALYSIS FUNCTIONS ................................................
+// STRUCTURE ANALYSIS FUNCTIONS ...............................................
 
 
 // Calculate the reciprocity for a single node (= fraction of outgoing
@@ -269,6 +272,7 @@ std::vector<std::vector<size_t>> weighted_opinion_clusters(
     std::vector<size_t> temp_c;
     bool next;
 
+    // TODO ?
     if (min_weight < 0.) {
         min_weight = 0.1;
     }
@@ -306,6 +310,11 @@ std::vector<std::vector<size_t>> weighted_opinion_clusters(
 // Identify groups of agents that are connected via out-edges.
 // NOTE that completely isolated vertices are also identified
 //      as closed community.
+// TODO This is equivalent to
+//      - adding the reverse edges and then applying boost::strong_components
+//      - making an undirected copy, then applying boost::connected_components
+//      Check which one is the fastest solution. Also make the function
+//      available for different graph types.
 template<typename NWType>
 std::vector<std::vector<size_t>> closed_communities(NWType& nw) {
     

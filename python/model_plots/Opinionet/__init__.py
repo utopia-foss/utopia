@@ -4,5 +4,3 @@
 from .data_ops import *
 from .opinion_animated import *
 from .opinion_time_series import *
-from .scatter import *
-from .sweep import *

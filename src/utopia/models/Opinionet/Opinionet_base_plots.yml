@@ -2,7 +2,6 @@
 ---
 graph:
   based_on: .dag.graph
-
   dag_options:
     select_path_prefix: data/Opinionet
 
@@ -41,64 +40,41 @@ time_series_opinion:
   universes: all
   module: model_plots.Opinionet
   plot_func: opinion_time_series
+  dag_options:
+    select_path_prefix: data/Opinionet
 
   helpers:
-
     setup_figure:
       ncols: 2
       sharey: True
       gridspec_kw:
         width_ratios: [3, 1]
-        wspace: 0.05
+        wspace: 0.1
 
     axis_specific:
-      opinion_time_series:
+      density_development:
         axis: [0, 0]
         set_labels:
-          x: iteration step / N
+          x: time
           y: opinion
-        set_limits:
-          y: [0, 1]
-      final_opinion_histogram:
+      final_histogram:
         axis: [1, 0]
         set_title:
           title: final
         set_labels:
           x: group size
-        set_limits:
-          y: [0, 1]
 
-  densities_kwargs:
+  density_kwargs:
     origin: lower
     aspect: auto
     cmap: bone_r
 
   hist_kwargs:
-    bins: 100
-    range: [0., 1.]
     color: mediumseagreen
     orientation: horizontal
 
 
-final_user_distribution:
-  creator: universe
-  universes: all
-  module: model_plots.Opinionet
-  plot_func: scatter
-
-  helpers:
-    set_title:
-      title: final user distribution
-    set_limits:
-      x: [0., 1.]
-      y:
-        lower: 0.
-    set_labels:
-      x: opinion
-      y: users
-
-
 sweep:
   creator: multiverse
-  module: model_plots.Opinionet
-  plot_func: sweep
+  module: dantro.plot_creators.ext_funcs.generic
+  plot_func: errorbars

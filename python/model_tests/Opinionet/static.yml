@@ -10,25 +10,25 @@ parameter_space:
     model_name: Opinionet
 
     opinion_space:
-        type: !sweep
-            default: continuous
-            values: [continuous, discrete]
+      type: !sweep
+        default: continuous
+        values: [continuous, discrete]
 
-        interval: [-1, 1]
+      interval: [-1, 1]
 
-        num_opinions: 6
+      num_opinions: 6
 
     network:
-        model: ErdosRenyi
-        num_vertices: 200
-        mean_degree: 10
+      model: ErdosRenyi
+      num_vertices: 200
+      mean_degree: 10
 
-        directed: !sweep
-            default: false
-            values: [false, true]
+      directed: !sweep
+        default: false
+        values: [false, true]
 
-        edges:
-            rewiring: false
+      edges:
+        rewiring: false
 
     susceptibility: 0.
 

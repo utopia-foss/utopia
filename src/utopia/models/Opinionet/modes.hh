@@ -14,7 +14,6 @@ enum Interaction_type {
     HegselmannKrause
 };
 
-
 enum Opinion_space_type {
     continuous,
     discrete

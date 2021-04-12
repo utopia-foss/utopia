@@ -1,3 +1,5 @@
+# The model configuration for the Opinionet model
+---
 opinion_space:
     type: !param
         default: continuous

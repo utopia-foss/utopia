@@ -1,39 +1,33 @@
 # Default plots for the Opinionet model
+---
 graph:
   based_on: graph
 
   select:
     graph_group: nw
 
-  # Configure the created networkx graph object
   graph_creation:
-    at_time_idx: -1                           # Select the last timestep
-    node_props: ['opinion']  # Select node and edge
-    #edge_props: ['edge_weights']              # properties from the GraphGroup
+    at_time_idx: -1
+    node_props: ['opinion']
 
-  # Configure the graph layout
   graph_drawing:
     positions:
-      model: spring                   # The spring model positions the nodes
-                                      # such that edge lengths are reduced.
-      k: 1                            # Tweaking the spring model by adjusting
-                                      # the optimal edge length (k) and the
-      iterations: 2                 # maximum number of iterations done.
+      model: spring
+      k: 1
+      iterations: 2
     nodes:
       node_color:
-        from_property: opinion     # Map the 'some_state' data to the color
+        from_property: opinion
       node_size:
-        from_property: degree         # Map the node degree to the node size
-        scale_to_interval: [10, 200]  # Scale the (degree-)data to the given
-                                      # interval (the default size is 300).
+        from_property: degree
+        scale_to_interval: [10, 200]
     edges:
       width: 0.2
-        #from_property: edge_weights        # Map the 'weights' data to the edge
-        #scale_to_interval: [0, 1] # width and scale the data accordingly.
 
   helpers:
     set_title:
       title: Final Graph
+
 
 opinion_animated:
   based_on: opinion_animated
@@ -45,51 +39,55 @@ opinion_animated:
       title: Opinion distribution
 
 
-# ---
-# opinion_time_series:
-#   based_on: time_series_opinion
-#   file_ext: pdf
-#
-#   select:
-#     opinion_u: data/Opinionet/nw_users/opinion_u
-#
-#   rep_kwargs:
-#     enabled: True
-#     max_reps: 5
-#     rep_threshold: 10
-#
-#   densities_kwargs:
-#     vmin: 0
-#     vmax: 25
-#
-#
-# final_user_distribution:
-#   based_on: final_user_distribution
-#
-#   select:
-#     x_data:
-#       path: data/Opinionet/nw_media/opinion_m
-#       with_previous_result: True
-#       transform:
-#         - .isel: {time: -1}
-#     y_data:
-#       path: data/Opinionet/nw_media/users
-#       with_previous_result: true
-#       transform:
-#         - .isel: {time: -1}
-#
-#   s: 2
-#
-#
-# sweep:
-#   based_on: sweep
-#
-#   select:
-#     field:
-#       path: data/Opinionet/nw_users/opinion_u
-#       dims: [time, vertex_idx]
-#     idx_as_label: True
-#
-#   plot_prop: localization
-#
-#   enabled: False
+opinion_time_series:
+  based_on: time_series_opinion
+  select:
+    opinion: nw/opinion
+
+  opinion_range: [0., 1.]
+
+  representatives:
+    enabled: True
+    max_reps: 5
+    rep_threshold: 10
+
+  density_kwargs:
+    vmin: 0
+    vmax: 25
+
+
+localization_over_tolerance:
+  based_on: sweep
+
+  select_and_combine:
+    base_path: data/Opinionet
+    fields:
+      tolerance:
+        path: nw/opinion
+        transform:
+          - .coords: [ !dag_prev , tolerance]
+      localization:
+        path: nw/opinion
+        transform:
+          - operation: op_localization
+            args: [ !dag_prev ]
+            kwargs:
+              bins: 100
+              range: [0., 1.]
+
+  transform:
+    - xr.Dataset:
+        - x: !dag_tag tolerance
+          y: !dag_tag localization
+          yerr: 0
+      tag: data
+
+  ds: data
+  x: x
+  y: y
+  y_err: y_err
+
+  capsize: 2
+  marker: o
+
+  enabled: False

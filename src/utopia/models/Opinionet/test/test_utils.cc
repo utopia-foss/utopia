@@ -11,7 +11,7 @@
 
 namespace Utopia::Models::Opinionet::Utils{
 
-// -- Type definitions ---------------------------------------------------------
+// -- Type definitions --------------------------------------------------------
 using Config = Utopia::DataIO::Config;
 
 std::mt19937 rng{};
@@ -28,9 +28,13 @@ struct TestNetworkU {
     :
     nw{}
     {
-        const unsigned num_vertices = get_as<int>("num_users", cfg["nw_params"]);
+        const unsigned num_vertices = get_as<int>(
+            "num_users", cfg["nw_params"]
+        );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
-        boost::generate_random_graph(nw, num_vertices, num_edges, rng, false, false);
+        boost::generate_random_graph(
+            nw, num_vertices, num_edges, rng, false, false
+        );
     }
 };
 
@@ -41,9 +45,13 @@ struct TestNetworkD {
     :
     nw{}
     {
-        const unsigned num_vertices = get_as<int>("num_users", cfg["nw_params"]);
+        const unsigned num_vertices = get_as<int>(
+            "num_users", cfg["nw_params"]
+        );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
-        boost::generate_random_graph(nw, num_vertices, num_edges, rng, false, false);
+        boost::generate_random_graph(
+            nw, num_vertices, num_edges, rng, false, false
+        );
     }
 };
 

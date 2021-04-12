@@ -84,7 +84,6 @@ using OpinionetTypes = Utopia::ModelTypes<>;
  *  This is a 1d opinion dynamics model with interactions based on
  *  bounded confidence.
  */
-// TODO Find better argument names (?) Perhaps make capitalization consistent.
 template<Interaction_type interaction_type=Deffuant,
          Opinion_space_type opinion_space=continuous,
          typename NWType=NetworkUndirected,
@@ -227,8 +226,8 @@ private:
             }
         }
 
-        // For directed network: set the initial edge weights to 1/distance
-        // in opinion space. In the undirected case, weights are not required.
+        // For directed network: Initialize weights depending on the opinion
+        // distances. In the undirected case, weights are not required.
         if constexpr (Utils::is_directed<NWType>()) {
             for (const auto v : range<IterateOver::vertices>(_nw)) {
                 if (boost::out_degree(v, _nw) != 0) {
@@ -244,10 +243,12 @@ private:
         return Graph::create_graph<NWType>(this->_cfg["network"], *this->_rng);
     }
 
-    // Only initialise edge weight dataset for directed graphs
+    // Only initialize edge weight dataset for directed graphs
     std::shared_ptr<DataSet> create_edge_weight_dset() {
         if constexpr (Utils::is_directed<NWType>()) {
-            return this->create_dset("edge_weights", _dgrp_nw, {boost::num_edges(_nw)});
+            return this->create_dset(
+                "edge_weights", _dgrp_nw, {boost::num_edges(_nw)}
+            );
         }
         else {
             return 0;
@@ -260,11 +261,14 @@ public:
     // .. Runtime functions ...................................................
 
     /** @brief Iterate a single step
-     *  @detail Each step consists of ... TODO fill in
+     *  @detail Each step consists of an opinion update and edge rewiring.
+     *          Opinion update: Apply the interaction function to a randomly
+     *              chosen vertex.
+     *          Rewiring (if enabled): Rewire a random edge based on
+     *              selective exposure.
      */
     void perform_step ()
     {
-        // TODO template for interaction function
         Revision::revision<interaction_type, opinion_space, rewire>(
             _nw,
             _susceptibility,
@@ -288,10 +292,6 @@ public:
     /// Write data
     void write_data ()
     {
-        // TODO Find out the best solution for writing data: Datamanager and
-        //      deciders to configure in the run-cfg? Need flexible writing
-        //      of edge data if topology changes?
-
         // Get the vertex iterators
         auto [v, v_end] = boost::vertices(_nw);
 
@@ -300,19 +300,26 @@ public:
             v, v_end, [this](auto vd) { return _nw[vd].opinion; }
         );
 
-        //Write edge data
+        // Write edges
         if constexpr (rewire == Rewiring::RewiringOn){
             // Adaptor tuple that allows to save the edge data
             const auto get_edge_data = std::make_tuple(
                 std::make_tuple("_edges", "type",
-                    std::make_tuple("source", [](auto& ed, auto& _nw) {
-                                return boost::get(  boost::vertex_index_t(),
-                                                    _nw,
-                                                    boost::source(ed, _nw));}),
-                    std::make_tuple("target", [](auto& ed, auto& _nw) {
-                                return boost::get(  boost::vertex_index_t(),
-                                                    _nw,
-                                                    boost::target(ed, _nw));}))
+                    std::make_tuple("source",
+                        [](auto& ed, auto& _nw) {
+                            return boost::get(
+                                boost::vertex_index_t(), _nw,
+                                boost::source(ed, _nw));
+                        }
+                    ),
+                    std::make_tuple("target",
+                        [](auto& ed, auto& _nw) {
+                            return boost::get(
+                                boost::vertex_index_t(), _nw,
+                                boost::target(ed, _nw));
+                        }
+                    )
+                )
             );
             // Save the edge data using the current time as label.
             save_edge_properties(
@@ -320,6 +327,7 @@ public:
             );
         }
 
+        // Write edge weights
         if constexpr (Utils::is_directed<NWType>()) {
 
             auto [e, e_end] = boost::edges(_nw);

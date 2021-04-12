@@ -26,23 +26,16 @@ RT get_rand(std::pair<T, T> range, RNGType& rng) {
     }
 
     if constexpr (std::is_floating_point<RT>()) {
-        return std::uniform_real_distribution<RT>(range.first, range.second)(rng);
+        return
+            std::uniform_real_distribution<RT>(range.first, range.second)(rng);
     }
     else {
-        return std::uniform_int_distribution<RT>(range.first, range.second)(rng);
+        return
+            std::uniform_int_distribution<RT>(range.first, range.second)(rng);
     }
 }
 
-// Generate a random normally-distributed double
-template<typename RNGType>
-double get_rand_double_from_gaussian(double mu, double sigma, RNGType& rng) {
-
-    std::normal_distribution<double> distribution(mu, sigma);
-    return (double)distribution(rng);
-}
-
-
-// .. Network utility functions ................................................
+// .. Network utility functions ...............................................
 
 // Check whether the network type allows for directed edges
 template<typename NWType>

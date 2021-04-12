@@ -1,7 +1,8 @@
 #ifndef UTOPIA_MODELS_OPINIONET_REVISION
 #define UTOPIA_MODELS_OPINIONET_REVISION
 
-#include <math.h>
+#include <cmath>
+
 #include "modes.hh"
 #include "utils.hh"
 
@@ -12,7 +13,7 @@ using modes::Interaction_type;
 using modes::Opinion_space_type;
 using modes::Rewiring;
 
-// .. Opinion update functions .................................................
+// .. Opinion update functions ................................................
 
 // Hegselmann-Krause opinion update function
 template<typename NWType, typename VertexDescType>
@@ -22,47 +23,44 @@ void update_opinion_HK (
     const double susceptibility,
     const double tolerance)
 {
-
-    double new_opinion = 0;
+    double expectation = 0;
     size_t number_of_interaction_partners = 0;
 
+    // Directed case: Calculate the expectation based on the probability
+    // distribution given by the weights.
     if constexpr (Utils::is_directed<NWType>()) {
-        // Calculate weighted average opinion
         for (const auto e : range<IterateOver::out_edges>(v, nw)) {
             auto nb = target(e, nw);
             if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
-                new_opinion += nw[nb].opinion * nw[e].weight;
+                expectation += nw[nb].opinion * nw[e].weight;
                 ++number_of_interaction_partners;
             }
         }
 
         // Normalize weighted opinion average to number of interaction partners
-        // participating in interaction
-        new_opinion *= (1.0*out_degree(v, nw)) / number_of_interaction_partners;
+        // participating in interaction.
+        expectation *= (1.*out_degree(v, nw)) / number_of_interaction_partners;
     }
 
+    // Undirected case: Calculate the opinion average
     else {
         for (const auto e : range<IterateOver::out_edges>(v, nw)) {
             auto nb = target(e, nw);
             if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
-                new_opinion += nw[nb].opinion;
+                expectation += nw[nb].opinion;
                 ++number_of_interaction_partners;
             }
         }
 
-        // Normalize weighted opinion average to number of interaction partners
-        // participating in interaction
-        if (number_of_interaction_partners != 0) {
-            new_opinion /= number_of_interaction_partners;
-        }
+        // Normalize opinion average to number of interaction partners
+        expectation /= number_of_interaction_partners;
     }
 
     // Update opinion
-    nw[v].opinion += susceptibility * (new_opinion - nw[v].opinion);
-
+    nw[v].opinion += susceptibility * (expectation - nw[v].opinion);
 }
 
-// Deffuant update function
+// Deffuant opinion update function
 template<Opinion_space_type op_space,
          typename NWType, typename RNGType, typename VertexDescType>
 void update_opinion_Deffuant (
@@ -86,59 +84,59 @@ void update_opinion_Deffuant (
         }
     }
 
-    // Continuous case: move towards nb opinion proportionally to susceptibility
+    // Continuous case: move towards nb opinion proportional to susceptibility
     else {
         if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
             nw[v].opinion += susceptibility * (nw[nb].opinion - nw[v].opinion);
         }
     }
-
 }
 
-// .. Rewiring .................................................................
+// .. Rewiring ................................................................
 
 // Selects a random edge. If the opinion distance of the source and target
 // exceeds the tolerance, the edge is rewired to a random target.
 template<typename NWType, typename RNGType>
 void rewire_random_edge(
-        NWType& nw,
-        const double tolerance,
-        const double weighting,
-        RNGType& rng)
+    NWType& nw,
+    const double tolerance,
+    const double weighting,
+    RNGType& rng)
 {
     // Choose random edge for rewiring
     auto e = random_edge(nw, rng);
     auto s = source(e, nw);
 
     if (fabs(nw[s].opinion - nw[target(e, nw)].opinion) > tolerance) {
-          auto new_target = boost::random_vertex(nw, rng);
+        auto new_target = boost::random_vertex(nw, rng);
 
-          if (new_target != s and not boost::edge(s, new_target, nw).second)
+        if (new_target != s and not boost::edge(s, new_target, nw).second)
           {
-              boost::remove_edge(e, nw);
-              boost::add_edge(s, new_target, nw);
+            boost::remove_edge(e, nw);
+            boost::add_edge(s, new_target, nw);
 
-              if constexpr (Utils::is_directed<NWType>()) {
-                  Utils::set_and_normalize_weights(s, nw, weighting);
-              }
-          }
-      }
+            if constexpr (Utils::is_directed<NWType>()) {
+                Utils::set_and_normalize_weights(s, nw, weighting);
+            }
+        }
+    }
 }
 
-// .. Revision .................................................................
+// .. Revision ................................................................
 
+// Performs an opinion update and edge rewiring (if enabled).
 template<Interaction_type interaction_type,
          Opinion_space_type op_space,
          Rewiring rewire,
          typename NWType,
          typename RNGType>
 void revision(
-        NWType& nw,
-        const double susceptibility,
-        const double tolerance,
-        const double weighting,
-        std::uniform_real_distribution<double> prob_distr,
-        RNGType& rng)
+    NWType& nw,
+    const double susceptibility,
+    const double tolerance,
+    const double weighting,
+    std::uniform_real_distribution<double> prob_distr,
+    RNGType& rng)
 {
     // Choose random vertex for revision
     auto v = random_vertex(nw, rng);
@@ -164,10 +162,10 @@ void revision(
         if constexpr (Utils::is_directed<NWType>()) {
             Utils::set_and_normalize_weights(v, nw, weighting);
         }
+    }
 
-        if constexpr (rewire == Rewiring::RewiringOn) {
-            rewire_random_edge(nw, tolerance, weighting, rng);
-        }
+    if constexpr (rewire == Rewiring::RewiringOn) {
+        rewire_random_edge(nw, tolerance, weighting, rng);
     }
 }
 
