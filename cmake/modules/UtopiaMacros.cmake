@@ -64,8 +64,19 @@ find_package(yaml-cpp 0.6.2 REQUIRED)
 # - INTERNAL_PSTL_WITH_TBB: If TRUE, INTERNAL_PSTL is TRUE and the native
 #                           definitions are used with the external TBB library.
 #
+# NOTE: Multithreading will only be enabled if MULTITHREADING is ON.
+#       But dependencies are always checked. This must be reflected in the
+#       UtopiaConfig.cmake.in file!
+#
 
-if (DEFINED ENV{ParallelSTL_ROOT} OR DEFINED CACHE{ParallelSTL_ROOT})
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(SYSTEM_IS_MACOS TRUE)
+endif()
+
+if (SYSTEM_IS_MACOS
+    OR DEFINED ENV{ParallelSTL_ROOT}
+    OR DEFINED CACHE{ParallelSTL_ROOT}
+)
     set(PRIORITIZE_ParallelSTL TRUE)
 endif()
 
@@ -103,16 +114,29 @@ endif()
 
 # --- Thread Building Blocks (TBB) ---
 # Required for parallel policies if execution header is natively available
-if (INTERNAL_PSTL AND NOT ParallelSTL_FOUND)
-    find_package(TBB 2018.5)
+if (MULTITHREADING)
+    set(MAYBE_REQUIRED REQUIRED)
 endif()
+find_package(TBB 2018.5 ${MAYBE_REQUIRED})
 
 # Multithreading summary variables
-if (INTERNAL_PSTL AND TBB_FOUND AND NOT ParallelSTL_FOUND)
-    set(INTERNAL_PSTL_WITH_TBB TRUE)
-endif()
-if (INTERNAL_PSTL_WITH_TBB OR ParallelSTL_FOUND)
-    set(HAVE_PSTL TRUE)
+if (MULTITHREADING)
+    if (INTERNAL_PSTL AND TBB_FOUND AND NOT ParallelSTL_FOUND)
+        # NOTE: Disallow TBB with internal PSTL on macOS because it does not
+        #       seem to work (macOS 11 "Big Sur", AppleClang 11)
+        if (SYSTEM_IS_MACOS)
+            message(WARNING "Please install 'parallelstl' via Homebrew to use "
+                            "multithreading!")
+        else ()
+            set(INTERNAL_PSTL_WITH_TBB TRUE)
+        endif()
+    endif()
+    if (INTERNAL_PSTL_WITH_TBB OR ParallelSTL_FOUND)
+        set(HAVE_PSTL TRUE)
+    else ()
+        message(SEND_ERROR "Multithreading is ON but dependencies could not "
+                           "be found!")
+    endif()
 endif()
 
 # Add Multithreading as listed feature

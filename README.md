@@ -256,25 +256,26 @@ The following instructions will enable additional, *optional* features of Utopia
         brew update && brew install parallelstl
         ```
 
-1. Enter the Utopia build directory, and call CMake again.
+1. Enter the Utopia build directory, and call CMake again. This time, enable the use of multithreading with the `MULTITHREADING` option:
 
     ```bash
     cd build
-    cmake ..
+    cmake -DMULTITHREADING=On ..
     ```
 
-    **Note:** If you installed ParallelSTL on **macOS** via **Homebrew**, specify the path to the installation in `/usr/local/Cellar/`:
+    **Note:** If you installed ParallelSTL on **macOS** via **Homebrew**, additionally specify the path to the installation in `/usr/local/Cellar/`:
 
     ```bash
-    cmake -DParallelSTL_ROOT=/usr/local/Cellar/parallelstl/<version>/ ..
+    cmake -DMULTITHREADING=On -DParallelSTL_ROOT=/usr/local/Cellar/parallelstl/<version>/ ..
     ```
 
     Make sure to replace `<version>` with the version installed on your machine; use `brew list parallelstl` to find the correct path.
 
-    You will only have to add this path to the CMake call **once**.
-    It will be stored until you delete the contents of the build directory.
+    You will only have to add the additional options to the CMake call **once**.
+    They will be stored until you delete the contents of the build directory.
 
     At the end of its output, CMake should now report that the "Multithreading" feature has been enabled.
+    If the requirements for multithreading are not met, however, the build will fail.
 
 1. Re-compile the models. Inside the build directory, call
 
