@@ -162,7 +162,7 @@ build:tests_core:
   extends: .default_artifacts
   script:
     - mkdir build && cd build
-    - cmake -DCPP_COVERAGE=On ..
+    - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
     - make $MAKE_FLAGS_BUILD build_tests_core
 
 
@@ -181,7 +181,7 @@ build:models:
   extends: .default_artifacts
   script:
     - mkdir build && cd build
-    - cmake -DCPP_COVERAGE=On ..
+    - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
     - make $MAKE_FLAGS_BUILD all
     - make $MAKE_FLAGS_BUILD build_tests_models
   after_script:
@@ -249,6 +249,7 @@ build:install:
     - cmake
         -DCMAKE_INSTALL_PREFIX=$CI_PROJECT_DIR/install
         -DCMAKE_BUILD_TYPE=Release
+        -DMULTITHREADING=On
         ..
     - make $MAKE_FLAGS_BUILD install
     - cp -r ~/.cmake . # copy the packgage registry

@@ -17,10 +17,15 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
     set (CMAKE_BUILD_TYPE None)
 endif()
 
-# Parse CMake options
+# --- Parse CMake options ---
+
+# Multithreading
+option(MULTITHREADING "Enable multithreading through optional dependencies")
+
+# C++ coverage reports
+# NOTE: Option is only presented if CMAKE_BUILD_TYPE is not set to 'Release'.
+#       It always defaults to OFF and will always be OFF for 'Release' builds.
 include(CMakeDependentOption)
-# Option is only presented if CMAKE_BUILD_TYPE is not set to 'Release'.
-# It always defaults to OFF and will always be OFF for 'Release' builds.
 cmake_dependent_option(CPP_COVERAGE "Compile C++ code with coverage flags" OFF
                        "NOT CMAKE_BUILD_TYPE STREQUAL Release" OFF)
 
@@ -68,19 +73,27 @@ target_link_libraries(utopia INTERFACE
     Boost::graph
     Boost::regex
     hdf5
-    $<$<BOOL:${ParallelSTL_FOUND}>:pstl::ParallelSTL>
-    $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:TBB::tbb>
 )
 
 # Set preprocessor definitions
 target_compile_definitions(utopia INTERFACE
     # Enable HDF5 functions of Armadillo
     ARMA_USE_HDF5
-    # Propagate availability of PSTL definitions
-    $<$<BOOL:${ParallelSTL_FOUND}>:HAVE_EXTERNAL_PSTL>
-    $<$<BOOL:${INTERNAL_PSTL}>:HAVE_INTERNAL_PSTL>
-    $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:USE_INTERNAL_PSTL>
 )
+
+# Multithreading dependencies
+if (MULTITHREADING)
+    target_link_libraries(utopia INTERFACE
+        $<$<BOOL:${ParallelSTL_FOUND}>:pstl::ParallelSTL>
+        $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:TBB::tbb>
+    )
+    # Propagate availability of PSTL definitions
+    target_compile_definitions(utopia INTERFACE
+        $<$<BOOL:${ParallelSTL_FOUND}>:HAVE_EXTERNAL_PSTL>
+        $<$<BOOL:${INTERNAL_PSTL}>:HAVE_INTERNAL_PSTL>
+        $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:USE_INTERNAL_PSTL>
+    )
+endif()
 
 # --- Include Config Tree ---
 
