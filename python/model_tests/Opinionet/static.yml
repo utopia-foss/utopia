@@ -1,18 +1,35 @@
 # Configuration file used to test the case of static opinions
+# Check different opinion spaces and network types are initialised correctly
 ---
 parameter_space:
 
+  perform_sweep: true
   num_steps: 2
 
   Opinionet: !model
     model_name: Opinionet
 
+    opinion_space:
+        type: !sweep
+            default: continuous
+            values: [continuous, discrete]
+
+        interval: [-1, 1]
+
+        num_opinions: 6
+
     network:
         model: ErdosRenyi
-        num_vertices: 1000
-        mean_degree: 4
+        num_vertices: 200
+        mean_degree: 10
 
+        directed: !sweep
+            default: false
+            values: [false, true]
 
+        edges:
+            rewiring: false
 
     susceptibility: 0.
-    
+
+    tolerance: 10

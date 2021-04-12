@@ -49,4 +49,5 @@ network:
     del_out: 0.
 
   edges:
+    weighting: 1
     rewiring: !is-bool true

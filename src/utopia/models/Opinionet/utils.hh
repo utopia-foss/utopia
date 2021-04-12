@@ -1,6 +1,8 @@
 #ifndef UTOPIA_MODELS_OPINIONET_UTILS
 #define UTOPIA_MODELS_OPINIONET_UTILS
 
+#include <cmath>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 
@@ -95,20 +97,21 @@ VertexDescType select_neighbor(
 }
 
 // Iterate over a vertex' out-edges and set the weights to
-// 1/(opinion difference), then normalize them.
+// exp(- weighting * abs(opinion difference)), then normalize them (softmax)
 template<typename NWType, typename VertexDescType>
-void set_and_normalize_weights(const VertexDescType v, NWType& nw)
+void set_and_normalize_weights(
+        const VertexDescType v,
+        NWType& nw,
+        const double weighting)
 {
     double weight_norm = 0.;
     for (const auto e : range<IterateOver::out_edges>(v, nw)) {
         double op_diff = fabs(nw[target(e, nw)].opinion-nw[v].opinion);
-        nw[e].weight = 1./op_diff;
+        nw[e].weight = exp(-(weighting*op_diff));
         weight_norm += nw[e].weight;
     }
-    if (weight_norm != 0.) {
-        for (const auto e : range<IterateOver::out_edges>(v, nw)) {
-            nw[e].weight /= weight_norm;
-        }
+    for (const auto e : range<IterateOver::out_edges>(v, nw)) {
+        nw[e].weight /= weight_norm;
     }
 }
 

@@ -1,19 +1,39 @@
-# Configuration file used to test that the dynamics are correct
+# Configuration file used to test a single revision step
+# Check different opinion spaces and network types are initialised correctly
 ---
 parameter_space:
 
-  num_steps: 200
-  write_every: 200
+  perform_sweep: true
+  num_steps: 300
+  write_every: 300
 
   Opinionet: !model
     model_name: Opinionet
 
+    opinion_space:
+        type: !sweep
+            default: continuous
+            values: [continuous, discrete]
+
+        interval: [-1, 1]
+
+        num_opinions: 6
+
     network:
-        model: regular
-        num_vertices: 20
-        mean_degree: 20
+        model: ErdosRenyi
+        num_vertices: 30
+        mean_degree: 5
 
+        directed: !sweep
+            default: false
+            values: [false, true]
 
-    tolerance:  1
+        edges:
+            rewiring: false
 
-    susceptibility: 0.5
+    susceptibility: 0.3
+
+    tolerance: !coupled-sweep
+        target_name: type
+        default: 0.3
+        values: [0.3, 3]

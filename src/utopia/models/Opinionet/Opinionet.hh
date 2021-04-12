@@ -116,6 +116,7 @@ private:
     NWType _nw;
     const double _tolerance;
     const double _susceptibility;
+    const double _weighting;
 
     /// A uniform probability distribution
     std::uniform_real_distribution<double> _uniform_prob_distr;
@@ -141,6 +142,8 @@ public:
         // Initialize the model parameters
         _tolerance(get_as<double>("tolerance", this->_cfg)),
         _susceptibility(get_as<double>("susceptibility", this->_cfg)),
+        _weighting(get_as<double>(
+            "weighting", this->_cfg["network"]["edges"])),
         _uniform_prob_distr(0., 1.),
         // Create datagroups and datasets
         _dgrp_nw(create_graph_group(_nw, this->_hdfgrp, "nw")),
@@ -229,7 +232,7 @@ private:
         if constexpr (Utils::is_directed<NWType>()) {
             for (const auto v : range<IterateOver::vertices>(_nw)) {
                 if (boost::out_degree(v, _nw) != 0) {
-                    Utils::set_and_normalize_weights(v, _nw);
+                    Utils::set_and_normalize_weights(v, _nw, _weighting);
                 }
             }
         }
@@ -266,6 +269,7 @@ public:
             _nw,
             _susceptibility,
             _tolerance,
+            _weighting,
             _uniform_prob_distr,
             *this->_rng
         );

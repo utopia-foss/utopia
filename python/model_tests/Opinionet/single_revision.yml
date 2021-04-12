@@ -1,17 +1,42 @@
-# Configuration file used to check a single revision step
+# Configuration file used to test a single revision step
+# Check different opinion spaces and network types are initialised correctly
 ---
 parameter_space:
 
+  perform_sweep: true
   num_steps: 1
 
   Opinionet: !model
     model_name: Opinionet
 
+    opinion_space:
+        type: !sweep
+            default: continuous
+            values: [continuous, discrete]
+
+        interval: [-1, 1]
+
+        num_opinions: 6
+
     network:
         model: ErdosRenyi
-        num_vertices: 20
+        num_vertices: 200
         mean_degree: 10
 
-    tolerance: 0.2
+        directed: !sweep
+            default: false
+            values: [false, true]
 
-    susceptibility: 1.
+        edges:
+            rewiring: false
+
+    interaction_function: !sweep
+        default: Deffuant
+        values: [HegselmannKrause, Deffuant]
+
+    susceptibility: 0.3
+
+    tolerance: !coupled-sweep
+        target_name: type
+        default: 0.3
+        values: [0.3, 3]

@@ -141,70 +141,82 @@ BOOST_FIXTURE_TEST_CASE(test_set_and_normalize_weights,
                         TestNetworkD,
                         * boost::unit_test::tolerance(1e-12))
 {
-    for (const auto v : range<IterateOver::vertices>(nw)) {
-        nw[v].opinion = get_rand_double_from_gaussian(0., 10., rng);
-        set_and_normalize_weights(v, nw);
-    }
-    for (const auto v : range<IterateOver::vertices>(nw)) {
-        double sum_of_weights = 0;
-        for (const auto e : range<IterateOver::out_edges>(v, nw)) {
-            BOOST_TEST(nw[e].weight >= 0);
-            sum_of_weights += nw[e].weight;
+    const std::vector<double> weighting =
+        get_as<std::vector<double>>("weighting",
+            cfg["test_funcs"]["test_set_and_normalize_weights"]);
+
+    for(const auto& w: weighting) {
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            nw[v].opinion = get_rand_double_from_gaussian(0., 10., rng);
+            set_and_normalize_weights(v, nw, w);
         }
-        if (boost::out_degree(v, nw) != 0) {
-            BOOST_TEST(sum_of_weights == 1.);
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            double sum_of_weights = 0;
+            for (const auto e : range<IterateOver::out_edges>(v, nw)) {
+                BOOST_TEST(nw[e].weight >= 0);
+                sum_of_weights += nw[e].weight;
+            }
+            if (boost::out_degree(v, nw) != 0) {
+                BOOST_TEST(sum_of_weights == 1.);
+            }
         }
     }
 }
 
 BOOST_FIXTURE_TEST_CASE(test_select_neighbour,
                         TestNetworkD_small,
-                        * boost::unit_test::tolerance(0.01))
+                        * boost::unit_test::tolerance(1.0))
 {
-    std::vector<double> init_opinions =
+    const std::vector<double> init_opinions =
         get_as<std::vector<double>>(
             "init_opinions",
             cfg["test_funcs"]["test_select_neighbour"]
         );
 
-    for (size_t i = 0; i<boost::num_vertices(nw); ++i) {
-        nw[i].opinion = init_opinions.at(i);
+    const std::vector<double> weighting =
+        get_as<std::vector<double>>("weighting",
+            cfg["test_funcs"]["test_select_neighbour"]);
+
+    for(const auto& w: weighting) {
+
+        for (size_t i = 0; i<boost::num_vertices(nw); ++i) {
+            nw[i].opinion = init_opinions.at(i);
+        }
+
+        for (const auto v : range<IterateOver::vertices>(nw)) {
+            set_and_normalize_weights(v, nw, w);
+        }
+
+        const int num_steps = 100000;
+
+        // Check interaction partner selection probability is same as ratio of
+        // opinions
+        int v2_selected = 0;
+        int v3_selected = 0;
+        for (int i=0; i<num_steps; ++i) {
+            vertex w = select_neighbor(v1, nw, uniform_prob_distr, rng);
+            if (w == v2) { ++v2_selected; }
+            else if (w == v3) { ++v3_selected; }
+        }
+
+        BOOST_TEST((1.0*v2_selected)/v3_selected
+                 == exp(-w*(fabs(nw[v2].opinion-nw[v1].opinion)
+                         -fabs(nw[v3].opinion-nw[v1].opinion)))
+        );
+
+        // Repeat for vertex 4
+        int v1_selected = 0;
+        v2_selected = 0;
+        for (int i=0; i<num_steps; ++i) {
+            vertex w = select_neighbor(v4, nw, uniform_prob_distr, rng);
+            if (w == v1) { ++v1_selected; }
+            else if (w == v2) { ++v2_selected; }
+        }
+
+        BOOST_TEST((1.0*v1_selected)/v2_selected
+                 == exp(-w*(fabs(nw[v1].opinion-nw[v4].opinion)
+                         -fabs(nw[v2].opinion-nw[v4].opinion)))
+        );
     }
-
-    for (const auto v : range<IterateOver::vertices>(nw)) {
-        set_and_normalize_weights(v, nw);
-    }
-
-    const int num_steps = 100000;
-
-    // Check interaction partner selection probability is same as ratio of
-    // opinions
-    int v2_selected = 0;
-    int v3_selected = 0;
-    for (int i=0; i<num_steps; ++i) {
-        vertex w = select_neighbor(v1, nw, uniform_prob_distr, rng);
-        if (w == v2) { ++v2_selected; }
-        else if (w == v3) { ++v3_selected; }
-    }
-
-    BOOST_TEST((1.0*v2_selected)/v3_selected
-             == fabs((nw[v3].opinion-nw[v1].opinion)
-                     /(nw[v2].opinion-nw[v1].opinion))
-    );
-
-    // Repeat for vertex 4
-    int v1_selected = 0;
-    v2_selected = 0;
-    for (int i=0; i<num_steps; ++i) {
-        vertex w = select_neighbor(v4, nw, uniform_prob_distr, rng);
-        if (w == v1) { ++v1_selected; }
-        else if (w == v2) { ++v2_selected; }
-    }
-
-    BOOST_TEST((1.0*v1_selected)/v2_selected
-             == fabs((nw[v2].opinion-nw[v4].opinion)
-                     /(nw[v1].opinion-nw[v4].opinion))
-    );
-
 }
 } // namespace Utopia::Models::Opinionet::Utils

@@ -98,9 +98,13 @@ void update_opinion_Deffuant (
 // .. Rewiring .................................................................
 
 // Selects a random edge. If the opinion distance of the source and target
-// exceed the tolerance, the edge is rewired to a random target.
+// exceeds the tolerance, the edge is rewired to a random target.
 template<typename NWType, typename RNGType>
-void rewire_random_edge(NWType& nw, const double tolerance, RNGType& rng)
+void rewire_random_edge(
+        NWType& nw,
+        const double tolerance,
+        const double weighting,
+        RNGType& rng)
 {
     // Choose random edge for rewiring
     auto e = random_edge(nw, rng);
@@ -115,7 +119,7 @@ void rewire_random_edge(NWType& nw, const double tolerance, RNGType& rng)
               boost::add_edge(s, new_target, nw);
 
               if constexpr (Utils::is_directed<NWType>()) {
-                  Utils::set_and_normalize_weights(s, nw);
+                  Utils::set_and_normalize_weights(s, nw, weighting);
               }
           }
       }
@@ -132,10 +136,10 @@ void revision(
         NWType& nw,
         const double susceptibility,
         const double tolerance,
+        const double weighting,
         std::uniform_real_distribution<double> prob_distr,
         RNGType& rng)
 {
-
     // Choose random vertex for revision
     auto v = random_vertex(nw, rng);
 
@@ -158,11 +162,11 @@ void revision(
         }
 
         if constexpr (Utils::is_directed<NWType>()) {
-            Utils::set_and_normalize_weights(v, nw);
+            Utils::set_and_normalize_weights(v, nw, weighting);
         }
 
         if constexpr (rewire == Rewiring::RewiringOn) {
-            rewire_random_edge(nw, tolerance, rng);
+            rewire_random_edge(nw, tolerance, weighting, rng);
         }
     }
 }

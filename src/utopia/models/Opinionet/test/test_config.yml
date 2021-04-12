@@ -13,5 +13,9 @@ test_utils:
         vals_double: [[-1.2, 3.], [4.5, 10.2], [0., 0.], [-10., -9.]]
         assert_fail: [[-2, -4], [0, -0.0001]]
 
+    test_set_and_normalize_weights:
+        weighting: [0., 0.1, 1., 1.5]
+
     test_select_neighbour:
         init_opinions: [0, -1, 5, 0.5]
+        weighting: [0., 0.1, 1., 1.5]
