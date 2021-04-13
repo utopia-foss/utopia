@@ -11,10 +11,12 @@
 
 namespace Utopia::Models::Opinionet::NetworkAnalysis {
 
-// TODO Should these analysis functions be included? If so, should they just
-//      lie around in this file, or should there be ready-to-use writer tasks?
+// TODO Add tests for the network analysis functions
+// TODO The algorithms can be improved, e.g. by using a union-find data
+//      structure (there is a boost implementation:
+//      https://www.boost.org/doc/libs/1_75_0/boost/pending/disjoint_sets.hpp).
 
-// HELPER FUNCTIONS ...........................................................
+// .. Helper functions ........................................................
 
 
 // Starting from a given vertex, iteratively collect all vertices in tolerance
@@ -47,7 +49,8 @@ void fill_opinion_cluster(
 
 // Starting from a given vertex, iteratively collect all vertices in tolerance
 // range which are connected through an in edge or out edge and have a weight
-// larger than the given threshold `min_weight`.
+// larger than the given threshold `min_weight`. Requires edge properties
+// containing a `weight` member.
 template<typename NWType>
 void fill_weighted_opinion_cluster(
             const size_t v,
@@ -60,7 +63,7 @@ void fill_weighted_opinion_cluster(
         c.push_back(v);
         for (const auto w : range<IterateOver::neighbors>(v, nw)) {
             if ((fabs(nw[v].opinion - nw[w].opinion) <= tolerance)
-                and (nw[boost::edge(v, w, nw).first].attr
+                and (nw[boost::edge(v, w, nw).first].weight
                      * boost::out_degree(v, nw) >= min_weight))
             {
                 fill_weighted_opinion_cluster(w, c, tolerance, min_weight, nw);
@@ -69,7 +72,7 @@ void fill_weighted_opinion_cluster(
         for (const auto e : range<IterateOver::in_edges>(v, nw)) {
             if ((fabs(nw[v].opinion - nw[boost::source(e, nw)].opinion)
                  <= tolerance)
-                and (nw[e].attr * out_degree(source(e, nw), nw) >= min_weight))
+                and (nw[e].weight * out_degree(source(e, nw), nw) >= min_weight))
             {
                 fill_weighted_opinion_cluster(boost::source(e, nw), c,
                                               tolerance, min_weight, nw);
@@ -95,7 +98,7 @@ void fill_community(
 }
 
 
-// STRUCTURE ANALYSIS FUNCTIONS ...............................................
+// .. Network topology analysis functions .....................................
 
 
 // Calculate the reciprocity for a single node (= fraction of outgoing
@@ -173,6 +176,63 @@ std::vector<double> relative_betweenness_centrality(NWType& nw)
 
     return centrality;
 }
+
+
+// Identify groups of agents that are connected via out-edges.
+// NOTE that completely isolated vertices are also identified
+//      as closed community.
+template<typename NWType>
+std::vector<std::vector<size_t>> closed_communities(NWType& nw) {
+    
+    std::vector<std::vector<size_t>> cc;
+    std::vector<size_t> temp_c;
+    bool next;
+
+    // Find all communities through a loop over all vertices as the
+    // source of the community.
+    for (const auto v : range<IterateOver::vertices>(nw)) {
+
+        next = false;
+
+        // If vertex is part of an already discovered community
+        // its community has to be the same (if out-degree > 0).
+        for (auto& c: cc) {
+            if (std::find(c.begin(), c.end(), v) != c.end()) {
+                next = true;
+            }
+        }
+
+        if (next) {
+            continue;
+        }
+        
+        else {
+            if (boost::in_degree(v, nw) < 2) {
+                // This is the case of a 'loner'.
+                for (auto& c: cc) {
+                    for (auto& w: c) {
+                        if (boost::edge(v, w, nw).second) {
+                            c.push_back(v);
+                            next = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            else {
+                // Else get the community originating from the vertex.
+                temp_c.clear();
+                fill_community(v, temp_c, nw);
+                cc.push_back(temp_c);
+            }
+        }
+    }
+
+    return cc;
+}
+
+
+// .. Opinion analysis functions ..............................................
 
 
 // Identify groups of agents with similar (within tolerance range) opinions.
@@ -261,21 +321,17 @@ std::vector<std::vector<size_t>> opinion_clusters(NWType& nw,
 
 // Identify groups of agents with similar (within tolerance range) opinions
 // that are connected on the network (with in or out edges that have a weight
-// larger than a certain threshold).
+// larger than a certain threshold). Requires edge properties containing a
+// `weight` member.
 template<typename NWType>
 std::vector<std::vector<size_t>> weighted_opinion_clusters( 
                                                 NWType& nw,
                                                 const double tolerance,
-                                                double min_weight = -1.)
+                                                double min_weight)
 {
     std::vector<std::vector<size_t>> opinion_clusters;
     std::vector<size_t> temp_c;
     bool next;
-
-    // TODO ?
-    if (min_weight < 0.) {
-        min_weight = 0.1;
-    }
 
     // Find all opinion clusters through a loop over all vertices as the
     // source of the cluster.
@@ -304,65 +360,6 @@ std::vector<std::vector<size_t>> weighted_opinion_clusters(
     }
 
     return opinion_clusters;
-}
-
-
-// Identify groups of agents that are connected via out-edges.
-// NOTE that completely isolated vertices are also identified
-//      as closed community.
-// TODO This is equivalent to
-//      - adding the reverse edges and then applying boost::strong_components
-//      - making an undirected copy, then applying boost::connected_components
-//      Check which one is the fastest solution. Also make the function
-//      available for different graph types.
-template<typename NWType>
-std::vector<std::vector<size_t>> closed_communities(NWType& nw) {
-    
-    std::vector<std::vector<size_t>> cc;
-    std::vector<size_t> temp_c;
-    bool next;
-
-    // Find all communities through a loop over all vertices as the
-    // source of the community.
-    for (const auto v : range<IterateOver::vertices>(nw)) {
-
-        next = false;
-
-        // If vertex is part of an already discovered community
-        // its community has to be the same (if out-degree > 0).
-        for (auto& c: cc) {
-            if (std::find(c.begin(), c.end(), v) != c.end()) {
-                next = true;
-            }
-        }
-
-        if (next) {
-            continue;
-        }
-        
-        else {
-            if (boost::in_degree(v, nw) < 2) {
-                // This is the case of a 'loner'.
-                for (auto& c: cc) {
-                    for (auto& w: c) {
-                        if (boost::edge(v, w, nw).second) {
-                            c.push_back(*v);
-                            next = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            else {
-                // Else get the community originating from the vertex.
-                temp_c.clear();
-                fill_community(v, temp_c, nw);
-                cc.push_back(temp_c);
-            }
-        }
-    }
-
-    return cc;
 }
 
 } // namespace Utopia::Models::Opinionet::NetworkAnalysis

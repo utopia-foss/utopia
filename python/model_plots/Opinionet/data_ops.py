@@ -3,14 +3,33 @@ from scipy.signal import find_peaks
 
 from utopya.plotting import register_operation
 
+# .. Helper functions .........................................................
+
+def apply_along_dim(func):
+    """Decorator which allows for applying a function, which acts on an
+    array-like, along a dimension of a xarray.DataArray.
+    """
+    def _apply_along_axis(data, along_dim: str = None, *args, **kwargs):
+        if along_dim is not None:
+            ax = data.get_axis_num(along_dim)
+            return np.apply_along_axis(
+                func, axis=ax, arr=data, *args, **kwargs
+            )
+        else:
+            return func(data, *args, **kwargs)
+
+    return _apply_along_axis
+
 # .. Statistics on opinion data ...............................................
 
-def op_number_of_peaks(data, bins: int, range=None, **find_peaks_kwargs):
+@apply_along_dim
+def op_number_of_peaks(data, *, bins: int, range = None, **find_peaks_kwargs):
     hist, _ = np.histogram(data, range=range, bins=bins)
     peak_number = len(find_peaks(hist, **find_peaks_kwargs)[0])
     return peak_number
 
-def op_localization(data, bins: int, range=None):
+@apply_along_dim
+def op_localization(data, *, bins: int, range=None):
     hist, _ = np.histogram(data, range=range, bins=bins, density=True)
     hist /= bins
 
@@ -19,6 +38,7 @@ def op_localization(data, bins: int, range=None):
     l = norm / np.sum(hist_squared)**2
     return l
 
+@apply_along_dim
 def op_polarization(data):
     return sum(
         (data[i] - data[j])**2

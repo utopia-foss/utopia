@@ -9,6 +9,7 @@ These models are shipped alongside Utopia:
 * :ref:`model_ContDisease`
 * :ref:`model_ForestFire`
 * :ref:`model_GameOfLife`
+* :ref:`model_Opinionet`
 * :ref:`model_PredatorPrey`
 * :ref:`model_SandPile`
 * :ref:`model_SEIRD`

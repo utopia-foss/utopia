@@ -55,39 +55,60 @@ opinion_time_series:
     vmin: 0
     vmax: 25
 
-
+# evaluating a parameter sweep over the tolerance and the seed
 localization_over_tolerance:
-  based_on: sweep
+  based_on: multiverse.errorbars
+
+  enabled: False
 
   select_and_combine:
-    base_path: data/Opinionet
     fields:
-      tolerance:
-        path: nw/opinion
+      tolerances:
+        path: cfg/Opinionet
         transform:
-          - .coords: [ !dag_prev , tolerance]
+          - getitem: [!dag_prev , tolerance]
       localization:
-        path: nw/opinion
+        path: data/Opinionet/nw/opinion
         transform:
-          - operation: op_localization
-            args: [ !dag_prev ]
+          - operation: .isel
+            args: [!dag_prev ]
             kwargs:
+              time: -1
+          - operation: op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
               bins: 100
               range: [0., 1.]
 
   transform:
-    - xr.Dataset:
-        - x: !dag_tag tolerance
-          y: !dag_tag localization
-          yerr: 0
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        seed: 0
+      tag: tolerance
+    - operation: .mean
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+      tag: localization_mean
+    - operation: .std
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+        ddof: 1
+      tag: localization_std
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          L: !dag_tag localization_mean
+          dL: !dag_tag localization_std
       tag: data
 
-  ds: data
-  x: x
-  y: y
-  y_err: y_err
+  x: tolerance
+  y: L
+  yerr: dL
 
   capsize: 2
   marker: o
-
-  enabled: False

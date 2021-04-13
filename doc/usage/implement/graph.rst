@@ -318,6 +318,8 @@ For example, if you write a graph at every time step the ``label`` should encode
 
 .. _loading_a_graph_from_a_file:
 
+.. _loading_a_graph_from_a_file:
+
 Loading a Graph from a File
 -----------------------------
 Using real-world networks as a basis for the graph

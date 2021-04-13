@@ -114,12 +114,6 @@ BOOST_AUTO_TEST_CASE(test_get_rand)
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_get_rand_from_gaussian)
-{
-    const double rand = get_rand_double_from_gaussian(0., 0.5, rng);
-    BOOST_TEST( rand == rand);
-}
-
 // -- Test network utility functions -------------------------------------------
 // Network type check
 BOOST_AUTO_TEST_CASE(test_is_directed)
@@ -153,9 +147,10 @@ BOOST_FIXTURE_TEST_CASE(test_set_and_normalize_weights,
         get_as<std::vector<double>>("weighting",
             cfg["test_funcs"]["test_set_and_normalize_weights"]);
 
+    std::pair<double, double> opinion_range = {-5., 5.};
     for(const auto& w: weighting) {
         for (const auto v : range<IterateOver::vertices>(nw)) {
-            nw[v].opinion = get_rand_double_from_gaussian(0., 10., rng);
+            nw[v].opinion = get_rand<double>(opinion_range, rng);
             set_and_normalize_weights(v, nw, w);
         }
         for (const auto v : range<IterateOver::vertices>(nw)) {
