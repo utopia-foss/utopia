@@ -99,12 +99,12 @@ using VertexContainer = boost::vecS;
 // -- Edge --------------------------------------------------------------------
 /// The edge state
 /** Here you should add your edge properties as in the examples below.
- *  And again do not forget to delete this comment otherwise everyone will now
+ *  And again: do not forget to delete this comment otherwise everyone will know
  *  that you do not read commments. ;)
  */
 struct EdgeState
 {
-    /// Every parameter should have useful document :)
+    /// Every parameter should be usefully documented :)
     double weight;
 
     // Add your edge parameters here.
@@ -118,7 +118,7 @@ using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;
 using Edge = GraphEntity<EdgeTraits>;
 
 /// The edge container type
-/** Here, you select in which container your edges should be stored in.
+/** Here, you can select into which container your edges should be stored in.
  *  Common choices are `boost::vecS` or `boost::listS`.
  */
 using EdgeContainer = boost::listS;
@@ -135,13 +135,13 @@ using EdgeContainer = boost::listS;
  *           container type of the edges and then the container type of the
  *           vertices. However, when you specify the structs containing the
  *           properties of graph entities the order is vise versa. Why is this
- *           the case? We don't now...
- *           But take care that you have the correct order...
+ *           the case? We don't know; but take care that you have the
+ *           correct order!
  */
 using GraphType =
     boost::adjacency_list<EdgeContainer,
                           VertexContainer,
-                          boost::undirectedS,  // -> undirected graph
+                          boost::bidirectionalS,  // -> undirected graph
                           Vertex,
                           Edge>;
 
@@ -152,8 +152,8 @@ using ModelTypes = Utopia::ModelTypes<>;
 
 /// The CopyMeGraph Model; a good start for a graph-based model
 /** TODO Add your model description here.
- *  This model's only right to exist is to be a template for new models.
- *  That means its functionality is based on nonsense but it shows how
+ *  This model's sole purpose of existing is to be a template for new models.
+ *  That means its functionality is only meant to show how
  *  actually useful functionality could be implemented.
  */
 class CopyMeGraph : public Model<CopyMeGraph, ModelTypes>

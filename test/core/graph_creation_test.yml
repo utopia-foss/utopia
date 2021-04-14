@@ -5,6 +5,22 @@ regular:
   model: regular
   num_vertices: 10
   mean_degree: 2
+  regular:
+    oriented: false
+
+regularO:
+  model: regular
+  num_vertices: 10
+  mean_degree: 2
+  regular:
+    oriented: true
+
+regularOD:
+  model: regular
+  num_vertices: 10
+  mean_degree: 3
+  regular:
+    oriented: true
 
 ErdosRenyi:
   model: ErdosRenyi
@@ -44,6 +60,15 @@ WattsStrogatz:
   mean_degree: 2
   WattsStrogatz:
     p_rewire: 0.2
+    oriented: false
+
+WattsStrogatzO:
+  model: WattsStrogatz
+  num_vertices: 10
+  mean_degree: 2
+  WattsStrogatz:
+    p_rewire: 0.2
+    oriented: true
 
 BarabasiAlbert:
   model: BarabasiAlbert
@@ -73,6 +98,8 @@ regularZeroDeg:
   model: regular
   num_vertices: 10
   mean_degree: 0
+  regular:
+    oriented: true
 
 ErdosRenyiZeroDeg:
   model: ErdosRenyi
@@ -88,6 +115,7 @@ WattsStrogatzZeroDeg:
   mean_degree: 0
   WattsStrogatz:
     p_rewire: 0.2
+    oriented: true
 
 BarabasiAlbertZeroDeg:
   model: BarabasiAlbert
@@ -95,7 +123,7 @@ BarabasiAlbertZeroDeg:
   mean_degree: 0
   BarabasiAlbert:
     parallel: false
-  
+
 
 LoadFromFile:
   model: load_from_file

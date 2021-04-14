@@ -54,8 +54,8 @@ struct ErdosRenyiGraphFixture {
     unsigned mean_degree = 2;
 
     // Create test graphs
-    G g = create_ErdosRenyi_graph<G>(num_vertices, mean_degree, 
-                                        false, false, rng); 
+    G g = create_ErdosRenyi_graph<G>(num_vertices, mean_degree,
+                                        false, false, rng);
 };
 
 using ErdosRenyiDirGraphsFixtures = boost::mpl::vector<
@@ -69,7 +69,7 @@ using ErdosRenyiUndirGraphsFixtures = boost::mpl::vector<
 >;
 
 // .. Watts-Strogatz graph fixtures -------------------------------------------
-template<class G>
+template<class G, bool oriented>
 struct WattsStrogatzGraphFixture {
     // Create a random number generator together with a copy
     Utopia::DefaultRNG rng;
@@ -84,17 +84,20 @@ struct WattsStrogatzGraphFixture {
     G g = create_WattsStrogatz_graph<G>(num_vertices,
                                            mean_degree,
                                            p_rewire,
-                                           rng); 
+                                           oriented,
+                                           rng);
 };
 
 using WattsStrogatzDirGraphsFixtures = boost::mpl::vector<
-    WattsStrogatzGraphFixture<G_dir_vec>,
-    WattsStrogatzGraphFixture<G_dir_list>
+    WattsStrogatzGraphFixture<G_dir_vec, true>,
+    WattsStrogatzGraphFixture<G_dir_list, true>,
+    WattsStrogatzGraphFixture<G_dir_vec, false>,
+    WattsStrogatzGraphFixture<G_dir_list, false>
 >;
 
 using WattsStrogatzUndirGraphsFixtures = boost::mpl::vector<
-    WattsStrogatzGraphFixture<G_vec>,
-    WattsStrogatzGraphFixture<G_list>
+    WattsStrogatzGraphFixture<G_vec, false>,
+    WattsStrogatzGraphFixture<G_list, false>
 >;
 
 // .. Barabási-Albert graph fixtures ------------------------------------------
@@ -112,7 +115,7 @@ struct BarabasiAlbertGraphFixture {
     G g = create_BarabasiAlbert_graph<G>(num_vertices,
                                            mean_degree,
                                            create_parallel_edges,
-                                           rng); 
+                                           rng);
 };
 
 using BarabasiAlbertUndirGraphsFixtures = boost::mpl::vector<
@@ -183,22 +186,22 @@ using BollobasRiordanDirGraphsFixtures = boost::mpl::vector<
 // -- Tests -------------------------------------------------------------------
 
 /// Test the function that creates a random graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_ErdosRenyi_graph_directed, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_ErdosRenyi_graph_directed, G,
     ErdosRenyiDirGraphsFixtures, G)
 {
     // Assert that the number of vertices and edges is correct
-    // In the undirected case, the number of edges is two times the added 
+    // In the undirected case, the number of edges is two times the added
     // edges because both edge pairs (i,j) and (j,i) count.
     BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
     BOOST_TEST(G::num_vertices * G::mean_degree == boost::num_edges(G::g));
 
     // Assert that the state of the rng has changed.
-    BOOST_TEST(G::rng!=G::rng_copy);    
+    BOOST_TEST(G::rng!=G::rng_copy);
 }
 
 
 /// Test the function that creates a random graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_ErdosRenyi_graph_undirected, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_ErdosRenyi_graph_undirected, G,
     ErdosRenyiUndirGraphsFixtures, G)
 {
     // Assert that the number of vertices and edges is correct
@@ -206,18 +209,18 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_ErdosRenyi_graph_undirected, G,
     BOOST_TEST(G::num_vertices * G::mean_degree /2 == boost::num_edges(G::g));
 
     // Assert that the state of the rng has changed.
-    BOOST_TEST(G::rng!=G::rng_copy);    
+    BOOST_TEST(G::rng!=G::rng_copy);
 }
 
 /// Test the function that creates a small-world graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzUndirected_graph, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzUndirected_graph, G,
     WattsStrogatzUndirGraphsFixtures, G)
 {
     // Assert that the number of vertices and edges is correct
     BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
     BOOST_TEST(G::num_vertices * G::mean_degree /2 == boost::num_edges(G::g));
 
-    // Check that at least one vertex does not have connectivity mean_degree 
+    // Check that at least one vertex does not have connectivity mean_degree
     // any more
     bool at_least_one_rewired = false;
     for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
@@ -233,14 +236,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzUndirected_graph, G,
 }
 
 /// Test the function that creates a small-world graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzDirected_graph, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzDirected_graph, G,
     WattsStrogatzDirGraphsFixtures, G)
 {
     // Assert that the number of vertices and edges is correct
     BOOST_TEST(G::num_vertices == boost::num_vertices(G::g));
     BOOST_TEST(G::num_vertices * G::mean_degree == boost::num_edges(G::g));
 
-    // Check that at least one vertex does not have connectivity mean_degree 
+    // Check that at least one vertex does not have connectivity mean_degree
     // any more
     bool at_least_one_rewired = false;
     for (auto [v, v_end] = boost::vertices(G::g); v!=v_end; ++v){
@@ -256,7 +259,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_WattsStrogatzDirected_graph, G,
 }
 
 /// Test the function that creates a scale-free Barabási-Albert graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BarabasiAlbertUndirected_graph, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BarabasiAlbertUndirected_graph, G,
     BarabasiAlbertUndirGraphsFixtures, G)
 {
     // Assert that the number of vertices and edges is correct
@@ -279,7 +282,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BarabasiAlbertUndirected_graph, G,
 
 BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_high_degree)
 {
-    // Create a random number generator 
+    // Create a random number generator
     Utopia::DefaultRNG rng;
 
     // Set graph properties
@@ -302,7 +305,7 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_high_degree)
 
 BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_odd_mean_degree)
 {
-    // Create a random number generator 
+    // Create a random number generator
     Utopia::DefaultRNG rng;
 
     // Set graph properties
@@ -326,7 +329,7 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_odd_mean_degree)
 
 BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_due_to_directed_graph)
 {
-    // Create a random number generator 
+    // Create a random number generator
     Utopia::DefaultRNG rng;
 
     // Set graph properties
@@ -348,7 +351,7 @@ BOOST_AUTO_TEST_CASE(test_create_BarabasiAlbert_failing_due_to_directed_graph)
 }
 
 /// Test the function that creates a directed scale-free graph
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BollobasRiordan_graph, G, 
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_create_BollobasRiordan_graph, G,
     BollobasRiordanDirGraphsFixtures, G)
 {
     // Assert that the number of vertices is correct
@@ -430,7 +433,7 @@ BOOST_AUTO_TEST_CASE(test_create_BollobasRiordan_failing_due_to_wrong_parameters
     alpha = 0.;
     beta = 1.;
     gamma = 0.;
-    
+
     // Try to create an undirected test graph with beta=1
     BOOST_CHECK_THROW(create_BollobasRiordan_graph<G_dir_vec>(num_vertices,
                                                       alpha,

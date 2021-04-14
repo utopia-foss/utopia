@@ -21,9 +21,9 @@ Utopia provides the ``create_graph`` functionality to easily construct a graph. 
 .. code-block:: c++
 
     #include <utopia/core/graph.hh>
-    
+
     // ...
-    
+
     /// The vertex container type
     using VertexContainer = boost::vecS;
 
@@ -35,18 +35,18 @@ Utopia provides the ``create_graph`` functionality to easily construct a graph. 
         EdgeContainer,
         VertexContainer,
         boost::undirectedS>;
-    
+
     // ..
-    
+
     /// Inside the model class: initialize its graph member
     Graph g = create_graph<Graph>(this->_cfg["my_graph"], *this->_rng);
-    
+
 Here ``cfg["my_graph"]`` points to the relevant configuration entry from the model configuration file. It could look like this:
 
 .. code-block:: yaml
 
     my_graph:
- 
+
       # graph model
       model: ErdosRenyi  # (a random graph)
       num_vertices: 200
@@ -63,7 +63,7 @@ The ``model`` key tells Utopia which graph generation algorithm you wish to use,
     Depending on your needs, you will need to use either ``boost::undirectedS`` or ``boost::directedS``/``boost::bidirectionalS`` in the adjacency matrix of your graph.
 
 .. hint::
-    
+
     Boost allows you to use different container types for vertices and edges, e.g. ``boost::vecS`` or ``boost::listS``, each optimised for different purposes. See `the boost graph documentation entry <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/using_adjacency_list.html#sec:choosing-graph-type>`_ for more details.
 
 .. _vertex_and_edge_propertymaps:
@@ -144,14 +144,17 @@ YAML file looks like this:
 
     create_graph:
       # The model to use for generating the graph. Valid options are:
+      # "complete"          Create a complete graph of N vertices.
       # "regular"           Create a k-regular graph. Vertices are located on a
       #                     circle and connected symmetrically to their nearest
       #                     neighbors until the desired degree is reached.
-      #                     If the degree is uneven, then they are additionally
-      #                     connected to the vertex at the opposite location.
+      #                     The degree must be even.
+      #                     For directed, choose whether a vertex should have
+      #                     both in- and out-edges to every neighbor
+      #                     (oriented = false), or not.
       # "ErdosRenyi"        Create a random graph using the Erdös-Rényi model
       # "WattsStrogatz"     Create a small-world graph using the Watts-Strogatz
-      #                     model (for directed graphs, rewiring of in_edges)
+      #                     model
       # "BarabasiAlbert"    Create a scale-free graph using the Barabási-Albert
       #                     model (for undirected graphs)
       # "BollobasRiordan"   Create a scale-free graph using the Bollobas-Riordan
@@ -168,6 +171,10 @@ YAML file looks like this:
       mean_degree: 4
 
       # Model-specific parameters
+      regular:
+        # Whether or not the graph is oriented (relevant to directed only)
+        oriented: false
+
       ErdosRenyi:
         # Allow parallel edges
         parallel: false
@@ -178,6 +185,8 @@ YAML file looks like this:
       WattsStrogatz:
         # Rewiring probability
         p_rewire: 0.2
+        # Whether or not the underlying lattice is oriented (relevant to directed only)
+        oriented: false
 
       BarabasiAlbert:
         # Allow parallel edges
