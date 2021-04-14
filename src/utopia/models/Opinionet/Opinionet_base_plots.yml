@@ -1,5 +1,22 @@
 # Base configuration for the Opinionet plots
 ---
+# default animation configurations
+animation:
+  animation:
+    enabled: true
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 300
+      ffmpeg:
+        init:
+          fps: 8
+        saving:
+          dpi: 300
+    writer: ffmpeg
+  file_ext: mp4
+
+
 graph:
   based_on: .dag.graph
   dag_options:
@@ -7,6 +24,7 @@ graph:
 
 
 opinion_animated:
+  based_on: animation
   creator: universe
   universes: all
   module: model_plots.Opinionet
@@ -19,20 +37,8 @@ opinion_animated:
   num_bins: 100
   time_idx: # plot one specific time frame
   animation:
-    enabled: true
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 300
-      ffmpeg:
-        init:
-          fps: 8
-        saving:
-          dpi: 300
     animation_update_kwargs:
       stepsize: 10
-    writer: ffmpeg
-  file_ext: mp4
 
 
 time_series_opinion:

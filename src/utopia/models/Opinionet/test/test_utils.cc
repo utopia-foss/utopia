@@ -29,7 +29,7 @@ struct TestNetworkU {
     nw{}
     {
         const unsigned num_vertices = get_as<int>(
-            "num_users", cfg["nw_params"]
+            "num_vertices", cfg["nw_params"]
         );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
         boost::generate_random_graph(
@@ -46,7 +46,7 @@ struct TestNetworkD {
     nw{}
     {
         const unsigned num_vertices = get_as<int>(
-            "num_users", cfg["nw_params"]
+            "num_vertices", cfg["nw_params"]
         );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
         boost::generate_random_graph(
@@ -71,7 +71,7 @@ struct TestNetworkD_small {
     }
 };
 
-// -- Test get_rand functions --------------------------------------------------
+// -- Test get_rand functions -------------------------------------------------
 bool error_message_invalid_arg( std::invalid_argument const& ex ) {
     BOOST_CHECK_EQUAL(
         ex.what(),
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(test_get_rand)
     }
 }
 
-// -- Test network utility functions -------------------------------------------
+// -- Test network utility functions ------------------------------------------
 // Network type check
 BOOST_AUTO_TEST_CASE(test_is_directed)
 {

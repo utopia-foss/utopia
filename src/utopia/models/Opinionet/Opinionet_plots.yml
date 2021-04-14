@@ -2,19 +2,16 @@
 ---
 graph:
   based_on: graph
-
   select:
     graph_group: nw
 
   graph_creation:
     at_time_idx: -1
     node_props: ['opinion']
-
-  graph_drawing:
+  graph_drawing: &graph_drawing
     positions:
       model: spring
       k: 1
-      iterations: 2
     nodes:
       node_color:
         from_property: opinion
@@ -29,11 +26,27 @@ graph:
       title: Final Graph
 
 
+graph_animation:
+  enabled: false
+  based_on: [graph, animation]
+  
+  select:
+    graph_group: nw
+  graph_creation:
+    node_props: ['opinion']
+  graph_drawing:
+    <<: *graph_drawing
+  graph_animation:
+    sel:
+      time:
+        from_property: opinion
+
+
 opinion_animated:
   based_on: opinion_animated
   animation:
     animation_update_kwargs:
-      stepsize: 10
+      stepsize: 1
   helpers:
     set_title:
       title: Opinion distribution
@@ -45,21 +58,18 @@ opinion_time_series:
     opinion: nw/opinion
 
   opinion_range: [0., 1.]
-
   representatives:
     enabled: True
     max_reps: 5
     rep_threshold: 10
-
   density_kwargs:
     vmin: 0
     vmax: 25
 
 # evaluating a parameter sweep over the tolerance and the seed
 localization_over_tolerance:
-  based_on: multiverse.errorbars
-
   enabled: False
+  based_on: multiverse.errorbars
 
   select_and_combine:
     fields:
@@ -80,7 +90,6 @@ localization_over_tolerance:
               along_dim: vertex_idx
               bins: 100
               range: [0., 1.]
-
   transform:
     - operation: .isel
       args: [!dag_tag tolerances]
@@ -109,6 +118,5 @@ localization_over_tolerance:
   x: tolerance
   y: L
   yerr: dL
-
   capsize: 2
   marker: o

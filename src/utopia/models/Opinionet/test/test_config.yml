@@ -4,7 +4,7 @@
 test_utils:
 
   nw_params:
-    num_users: 1000
+    num_vertices: 1000
     num_edges: 5000
 
   test_funcs:
