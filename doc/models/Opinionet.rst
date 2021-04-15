@@ -142,16 +142,46 @@ The following keys in the model configuration allow you to control the model:
 Plotting
 ^^^^^^^^
 
-Future expansions
------------------
+``Opinionet`` comes with several default plots:
+
+**Graph plots:**
+
+- ``graph``: plots a single snapshot of the network at time ``time_idx``. Node and edge properties can be plotted; by default, the node size is the (out-)degree, the node color its opinion. For directed graphs, the edge widths can be configured to match the edge weights.
+
+- ``graph_animation``: animated plot of the network over time.
+
+**Universe plots:**
+
+- ``opinion_animated``: an animated histogram of the opinion distribution over time. The plot can also output the distribution at a single timeframe using the ``time_idx`` key.
+
+- ``opinion_time_series``: plots the temporal development of the opinion density, as well as the final opinion distribution, as well as some representative trajectories of users in the largest opinion groups in the final distribution. This can be controlled from the configuration, e.g. by specifying the number of representatives (``max_reps``).
+
+**Multiverse plots:**
+
+Various data analytical parameters can be plotted for multiverse runs, e.g. as a 1d errorbar, or a 2d heatmap. These plots use the DAG framework. Current parameter options are:
+
+- ``op_number_of_peaks``: calculate the number of opinion peaks
+
+- ``op_localization``: calculate the centre of gravity of the final opinion distribution
+
+- ``op_polarization``: the polarization (in analogy with the physical definition) of the opinion distribution
+
+In each case, the time of the opinion distribution in question can be specified.
 
 Literature
 ----------
-- Carro, A. et al.(2013). *The Role of Noise and Initial Conditions in the Asymptotic Solution of a Bounded Confidence, Continuous-Opinion Model.* J. Stat. Phys. **151**: 131–149.
+- Arendt, D. L. & Blaha, L. M. (2015). *Opinions, influence, and zealotry: a computational study on stubbornness.* Comp. Math. Organization Theory **21** 2: 184–209.
+- Axelrod, R. (1997). *The dissemination of culture: a model with local convergence and global polarization.* J. Conflict Resolution 41: 203–226.
+- Baumann, F. et al. (2020b). *Emergence of polarized ideological opinions in multidimensional topic spaces.* arXiv:2007.00601 [physics.soc-ph].
+- Carro, A. et al. (2013). *The Role of Noise and Initial Conditions in the Asymptotic Solution of a Bounded Confidence, Continuous-Opinion Model.* J. Stat. Phys. **151**: 131–149.
 - Castellano, C. et al. (2009). *Statistical physics of social dynamics*. Reviews of Modern Physics **81** 2: 591–646.
 - Deffuant G. et al: *Mixing beliefs among interating agents.* Adv Complex Syst. (2000) **3**:87-98.
 - Del Vicario, M. et al. (2016). *The spreading of misinformation online.* Proc. Nat. Acad. Sc. USA. **113** 3: 554–559.
 - Flache, A. et al. (2017). *Models of Social Influence: Towards the Next Frontiers.* J. Artifical Societies and Soc. Simulation **20**  4.
+- Guerra, P. H. C. et al. (2013). *A measure of polarization on social media networks based on community boundaries.* Proc. Int. AAAI Conf. Web and Social Media (ICWSM’13).
 - Hegselmann, R. & Krause, U. (2002). *Opinion Dynamics and Bounded Confidence Models, Analysis and Simulation.* J. Artificial Societies and Soc. Simulation **5**  3: 1–33.
 - Kozma, B. & Barrat, A. (2008). *Consensus formation on adaptive networks.* Phys. Rev. E **77**, 016102.
 - Mäs, M., Flache, A., & Helbing, D. (2010) *Individualization as Driving Force of Clustering Phenomena in Humans.* PLoS Comput. Biol. **6** 10: e1000959.
+- Perra, N. & Rocha, L. E. C. (2019). *Modelling opinion dynamics in the age of algorithmic personalisation.* Sci. Rep. **9** 7261.
+- Sobkowicz, P. (2012). *Discrete Model of Opinion Changes Using Knowledge and Emotions as Control Variables.* PLoS ONE **7** 9: e44489.
+- Sznajd-Weron, K. (2005). *Sznajd model and its applications.* Acta Physica Polonica B **36** 8: 2537–2547.

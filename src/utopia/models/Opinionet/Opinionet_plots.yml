@@ -8,6 +8,7 @@ graph:
   graph_creation:
     at_time_idx: -1
     node_props: ['opinion']
+    # edge_props: ['edge_weight']
   graph_drawing: &graph_drawing
     positions:
       model: spring
@@ -29,7 +30,7 @@ graph:
 graph_animation:
   enabled: false
   based_on: [graph, animation]
-  
+
   select:
     graph_group: nw
   graph_creation:
@@ -47,6 +48,7 @@ opinion_animated:
   animation:
     animation_update_kwargs:
       stepsize: 1
+  num_bins: 100
   helpers:
     set_title:
       title: Opinion distribution
@@ -120,3 +122,61 @@ localization_over_tolerance:
   yerr: dL
   capsize: 2
   marker: o
+
+# evaluating a parameter sweep over the tolerance and the seed
+localization_2d:
+  based_on: sweep_2d
+
+  select_and_combine:
+    fields:
+      tolerances:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , tolerance]
+      susceptibilities:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , susceptibility]
+      localization:
+        path: data/Opinionet/nw/opinion
+        transform:
+          - operation: .isel
+            args: [!dag_prev ]
+            kwargs:
+              time: -1
+          - operation: op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
+              bins: 100
+              range: [0., 1.]
+
+  transform:
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        susceptibility: 0
+      tag: tolerance
+    - operation: .isel
+      args: [!dag_tag susceptibilities]
+      kwargs:
+        tolerance: 0
+      tag: susceptibility
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          susceptibility: !dag_tag susceptibility
+          L: !dag_tag localization
+      tag: data
+
+  x: tolerance
+  y: susceptibility
+  z: L
+
+  helpers:
+    set_title:
+      title: Peak localization
+     set_labels:
+       x: Tolerance
+       y: Susceptibility

@@ -1,27 +1,27 @@
 # The model configuration for the Opinionet model
 ---
 opinion_space:
-    type: !param
-        default: continuous
-        is_any_of: [continuous, discrete]
-        dtype: str
+  type: !param
+    default: continuous
+    is_any_of: [continuous, discrete]
+    dtype: str
 
-    # for continuous
-    interval: [0, 1]
+  # for continuous
+  interval: [0, 1]
 
-    # for discrete
-    num_opinions: !is-positive-int 4
+  # for discrete
+  num_opinions: !is-positive-int 4
 
 tolerance: !is-positive 0.3
 
 susceptibility: !param
-    default: 0.3
-    limits: [0, 1]
+  default: 0.3
+  limits: [0, 1]
 
 interaction_function: !param
-    default: Deffuant
-    is_any_of: [Deffuant, HegselmannKrause]
-    dtype: str
+  default: Deffuant
+  is_any_of: [Deffuant, HegselmannKrause]
+  dtype: str
 
 network:
   # if directed, interaction probabilities are given by the edge weights, which
@@ -32,7 +32,8 @@ network:
   # network model
   model: WattsStrogatz # can be: WattsStrogatz (scale-free), ErdosRenyi (random),
                        # BollobasRiordan (small-world, directed),
-                       # BarabasiAlbert (small-world, undirected)
+                       # BarabasiAlbert (small-world, undirected),
+                       # load_from_file (load a custom graph)
   num_vertices: 200
   mean_degree: 4
 
@@ -51,5 +52,8 @@ network:
     del_out: 0.
 
   edges:
-    weighting: 1
+    weighting: !param
+      default: 1
+      limits: [0, 10]
+      dtype: double
     rewiring: !is-bool true

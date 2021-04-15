@@ -84,3 +84,10 @@ multiverse.errorbars:
   creator: multiverse
   module: dantro.plot_creators.ext_funcs.generic
   plot_func: errorbars
+
+
+sweep_2d:
+  creator: multiverse
+  expected_multiverse_ndim: [2,3,4,5]
+  module: model_plots.Opinionet
+  plot_func: sweep2d

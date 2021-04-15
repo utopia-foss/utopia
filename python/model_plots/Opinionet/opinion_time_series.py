@@ -70,7 +70,7 @@ def opinion_time_series(
         max_reps = rep_kwargs.get('max_reps', num_vertices)
         rep_threshold = rep_kwargs.get('rep_threshold', 1)
 
-        reps = [] # store the vertex id's of the representatives here
+        reps = [] # store the vertex ids of the representatives here
 
         hist, bin_edges = np.histogram(
             final_opinions, range=opinion_range, bins=bins

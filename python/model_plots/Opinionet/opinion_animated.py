@@ -13,10 +13,10 @@ logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
               supports_animation=True, helper_defaults=dict(
               set_labels=dict(x="Values", y="Counts")))
 def opinion_animated(dm: DataManager, *,
-                      uni: UniverseGroup,
-                      hlpr: PlotHelper,
-                      num_bins: int=100,
-                      time_idx: int):
+                     uni: UniverseGroup,
+                     hlpr: PlotHelper,
+                     num_bins: int=100,
+                     time_idx: int):
 
     """Plots an animated histogram of the opinion distribution over time.
 

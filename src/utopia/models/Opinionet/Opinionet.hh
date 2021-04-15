@@ -10,7 +10,6 @@
 #include <utopia/core/graph.hh>
 #include <utopia/data_io/graph_utils.hh>
 
-#include "network_analysis.hh"
 #include "modes.hh"
 #include "revision.hh"
 
