@@ -5,6 +5,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <utopia/core/model.hh>
+#include <utopia/core/testtools.hh>
 
 #include "../Opinionet.hh"
 #include "../utils.hh"
@@ -19,6 +20,7 @@ std::uniform_real_distribution<double> uniform_prob_distr;
 Config cfg = YAML::LoadFile("test_config.yml")["test_utils"];
 
 // -- Fixtures ----------------------------------------------------------------
+
 
 // Test networks
 struct TestNetworkU {
@@ -36,6 +38,7 @@ struct TestNetworkU {
             nw, num_vertices, num_edges, rng, false, false
         );
     }
+
 };
 
 struct TestNetworkD {
@@ -72,15 +75,6 @@ struct TestNetworkD_small {
 };
 
 // -- Test get_rand functions -------------------------------------------------
-bool error_message_invalid_arg( std::invalid_argument const& ex ) {
-    BOOST_CHECK_EQUAL(
-        ex.what(),
-        std::string("Error, invalid parameter range! Upper limit has to be "
-                    "higher than the lower limit.")
-    );
-    return true;
-}
-
 BOOST_AUTO_TEST_CASE(test_get_rand)
 {
     Config test_cfg = cfg["test_funcs"]["test_get_rand"];
@@ -106,10 +100,12 @@ BOOST_AUTO_TEST_CASE(test_get_rand)
             = get_as<std::vector<std::pair<double, double>>>("assert_fail",
                                                                 test_cfg);
     for(const auto& val: to_assert_fail) {
-        BOOST_CHECK_EXCEPTION(
-            get_rand<double>(val, rng),
-            std::invalid_argument,
-            error_message_invalid_arg
+        TestTools::check_exception<std::invalid_argument>(
+            [&](){
+            get_rand<double>(val, rng);
+            },
+            "Error, invalid parameter range! Upper limit has to be "
+            "higher than the lower limit."  // expected error message
         );
     }
 }

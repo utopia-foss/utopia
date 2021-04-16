@@ -9,22 +9,15 @@
 namespace Utopia::Models::Opinionet::Utils {
 
 // .. Random distribution utility functions ...................................
-// Generate a random number within the given range
+/// Generate a random number within the given range
 template<typename RT, typename T, typename RNGType>
 RT get_rand(std::pair<T, T> range, RNGType& rng) {
-    //Note T: unnecessary check, already part of e.g. uniform_real_distribution
-    if (!std::is_floating_point<RT>() and !std::is_integral<RT>()) {
-        throw std::invalid_argument(
-            "get_rand supports only integer or floating point return types!"
-        );
-    }
     if (range.first > range.second) {
         throw std::invalid_argument(
             "Error, invalid parameter range! Upper limit has to be higher "
             "than the lower limit."
         );
     }
-
     if constexpr (std::is_floating_point<RT>()) {
         return
             std::uniform_real_distribution<RT>(range.first, range.second)(rng);
@@ -37,7 +30,7 @@ RT get_rand(std::pair<T, T> range, RNGType& rng) {
 
 // .. Network utility functions ...............................................
 
-// Check whether the network type allows for directed edges
+/// Check whether the network type allows for directed edges
 template<typename NWType>
 constexpr bool is_directed() {
     return std::is_convertible<
@@ -45,8 +38,8 @@ constexpr bool is_directed() {
         boost::directed_tag>::value;
 }
 
-// Get random neighbour of vertex v (for directed and undirected graphs).
-// Only appliable to vertices with degree > 0
+/// Get random neighbour of vertex v (for directed and undirected graphs).
+/// Only appliable to vertices with degree > 0
 template<typename NWType, typename VertexDescType, typename RNGType>
 auto get_rand_neighbor(VertexDescType& v, NWType& nw, RNGType& rng) {
 
@@ -58,8 +51,8 @@ auto get_rand_neighbor(VertexDescType& v, NWType& nw, RNGType& rng) {
     return *nb;
 }
 
-// Select random neighbor with probability proportional to edge weight.
-// Only applicable to vertices with degree > 0
+/// Select random neighbor with probability proportional to edge weight.
+/// Only applicable to vertices with degree > 0
 template<typename NWType, typename RNGType, typename VertexDescType>
 VertexDescType select_neighbor(
     const VertexDescType v,
@@ -89,8 +82,8 @@ VertexDescType select_neighbor(
     return nb;
 }
 
-// Iterate over a vertex' out-edges and set the weights to
-// exp(- weighting * abs(opinion difference)), then normalize them (softmax)
+/// Iterate over a vertex' out-edges and set the weights to
+/// exp(- weighting * abs(opinion difference)), then normalize them (softmax)
 template<typename NWType, typename VertexDescType>
 void set_and_normalize_weights(
         const VertexDescType v,

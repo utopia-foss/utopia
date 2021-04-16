@@ -43,8 +43,9 @@ def test_static():
             initial_weights = data['nw']['edge_weights'].isel(time=0)
             final_weights = data['nw']['edge_weights'].isel(time=-1)
 
+            # No rewiring due to large tolerance
             for init, final in zip(initial_weights, final_weights):
-                 assert init == final
+                assert init == final
 
             edge_weights = np.append(initial_weights, final_weights)
 

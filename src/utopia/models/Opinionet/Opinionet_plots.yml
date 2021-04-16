@@ -177,6 +177,6 @@ localization_2d:
   helpers:
     set_title:
       title: Peak localization
-     set_labels:
-       x: Tolerance
-       y: Susceptibility
+    set_labels:
+      x: Tolerance
+      y: Susceptibility

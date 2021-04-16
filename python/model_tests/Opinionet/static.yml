@@ -28,7 +28,9 @@ parameter_space:
         values: [false, true]
 
       edges:
-        rewiring: false
+        rewiring: !sweep
+          default: false
+          values: [true, false]
 
     susceptibility: 0.
 

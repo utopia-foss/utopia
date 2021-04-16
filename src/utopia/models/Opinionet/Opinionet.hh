@@ -206,6 +206,12 @@ private:
                     "interval", this->_cfg["opinion_space"]
                 );
 
+            if (opinion_interval.first >= opinion_interval.second) {
+              throw std::invalid_argument("Error: The given opinion interval"
+              " is invalid! Specify an interval of the kind [a, b], "
+              "with a<b!");
+            }
+
             for (const auto v : range<IterateOver::vertices>(_nw)) {
                 _nw[v].opinion = Utils::get_rand<double>(
                     opinion_interval, *this->_rng);
@@ -243,7 +249,7 @@ private:
     }
 
     // Only initialize edge weight dataset for directed graphs
-    std::shared_ptr<DataSet> create_edge_weight_dset() const {
+    std::shared_ptr<DataSet> create_edge_weight_dset() {
         if constexpr (Utils::is_directed<NWType>()) {
             return this->create_dset(
                 "edge_weights", _dgrp_nw, {boost::num_edges(_nw)}
