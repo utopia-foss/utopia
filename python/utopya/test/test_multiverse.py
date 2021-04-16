@@ -56,19 +56,44 @@ def default_mv(mv_kwargs) -> Multiverse:
     """
     return Multiverse(**mv_kwargs)
 
-@pytest.fixture(params=["node[002-004,011,006]", "node[002,003-004,011,006]"])
+@pytest.fixture(params=[
+    "node[002-004,011,006]",
+    "node[002,003-004,011,006]",
+    "z03s0123,m05s[0204,0409-0410],node006",
+])
 def cluster_env(tmpdir, request) -> dict:
-    return dict(TEST_JOB_ID="123",
-                TEST_JOB_NUM_NODES="5",
-                TEST_JOB_NODELIST=request.param,
-                TEST_NODENAME="node006",
-                TEST_JOB_NAME="testjob",
-                TEST_JOB_ACCOUNT="testaccount",
-                TEST_CPUS_ON_NODE="42",
-                TEST_CLUSTER_NAME="testcluster",
-                TEST_TIMESTAMP=str(int(time.time())),
-                TEST_CUSTOM_OUT_DIR=str(tmpdir.join("my_custom_dir"))
-                )
+    return dict(
+        TEST_JOB_ID="123",
+        TEST_JOB_NUM_NODES="5",
+        TEST_JOB_NODELIST=request.param,
+        TEST_NODENAME="node006",
+        TEST_JOB_NAME="testjob",
+        TEST_JOB_ACCOUNT="testaccount",
+        TEST_CPUS_ON_NODE="42",
+        TEST_CLUSTER_NAME="testcluster",
+        TEST_TIMESTAMP=str(int(time.time())),
+        TEST_CUSTOM_OUT_DIR=str(tmpdir.join("my_custom_dir")),
+    )
+
+@pytest.fixture(params=["node[002-004,011,006]", "node[002,003-004,011,006]"])
+def cluster_env_specific(tmpdir, request) -> dict:
+    """A cluster environment with a fully SPECIFIC node list. The node lists
+    resulting from the given parameters above need to be fully identical and
+    include nodes 2, 3, 4, 6 and 11 and nothing else.
+    """
+    return dict(
+        TEST_JOB_ID="123",
+        TEST_JOB_NUM_NODES="5",
+        TEST_JOB_NODELIST=request.param,
+        TEST_NODENAME="node006",
+        TEST_JOB_NAME="testjob",
+        TEST_JOB_ACCOUNT="testaccount",
+        TEST_CPUS_ON_NODE="42",
+        TEST_CLUSTER_NAME="testcluster",
+        TEST_TIMESTAMP=str(int(time.time())),
+        TEST_CUSTOM_OUT_DIR=str(tmpdir.join("my_custom_dir")),
+    )
+
 
 # Initialisation tests --------------------------------------------------------
 
@@ -331,8 +356,9 @@ def test_cluster_mode(mv_kwargs, cluster_env):
     # Check some values
     assert rcps['node_index'] == 3  # for node006
     assert rcps['timestamp'] > 0
-    assert rcps['node_list'] == ["node002", "node003", "node004",
-                                 "node006", "node011"]
+    assert "node006" in rcps['node_list']
+    assert len(rcps['node_list']) == 5
+    # NOTE Actual parsing of node list is checked in test__cluster.py
 
     # Can add additional info to the run directory
     mv_kwargs['cluster_params']['additional_run_dir_fstrs'] = ["xyz{job_id:}",
@@ -346,16 +372,16 @@ def test_cluster_mode(mv_kwargs, cluster_env):
     mv = Multiverse(**mv_kwargs)
     assert mv.resolved_cluster_params['node_list'] == ["node006"]
 
-    # Test error messages
+    # Test error messages; also see test__cluster.py for more dedicated tests
     # Node name not in node list
     cluster_env['TEST_NODENAME'] = 'node042'
-    with pytest.raises(ValueError, match="`node_name` 'node042' is not part"):
+    with pytest.raises(ValueError, match="Failed parsing node list"):
         Multiverse(**mv_kwargs)
 
     # Wrong number of nodes
     cluster_env['TEST_NODENAME'] = 'node003'
     cluster_env['TEST_JOB_NUM_NODES'] = '3'
-    with pytest.raises(ValueError, match="`node_list` has a different length"):
+    with pytest.raises(ValueError, match="Failed parsing node list"):
         Multiverse(**mv_kwargs)
 
     # Missing environment variables
@@ -364,7 +390,9 @@ def test_cluster_mode(mv_kwargs, cluster_env):
                        match="Missing required environment variable"):
         Multiverse(**mv_kwargs)
 
-def test_cluster_mode_run(mv_kwargs, cluster_env):
+def test_cluster_mode_run(mv_kwargs, cluster_env_specific):
+    cluster_env = cluster_env_specific
+
     # Define a custom test environment
     mv_kwargs['run_cfg_path'] = CLUSTER_MODE_CFG_PATH
     mv_kwargs['cluster_params'] = dict(env=cluster_env)

@@ -24,6 +24,7 @@ from .plotting import PlotManager
 from .reporter import WorkerManagerReporter
 from .yaml import load_yml, write_yml
 from .tools import recursive_update, pformat, parse_num_steps
+from ._cluster import parse_node_list
 
 # Configure and get logger
 log = logging.getLogger(__name__)
@@ -106,9 +107,11 @@ class Multiverse:
         self._resolved_cluster_params = None
 
         # Create meta configuration and list of used config files
-        mcfg, cfg_parts= self._create_meta_cfg(run_cfg_path=run_cfg_path,
-                                               user_cfg_path=user_cfg_path,
-                                               update_meta_cfg=update_meta_cfg)
+        mcfg, cfg_parts = self._create_meta_cfg(
+            run_cfg_path=run_cfg_path,
+            user_cfg_path=user_cfg_path,
+            update_meta_cfg=update_meta_cfg
+        )
         self._meta_cfg = mcfg
         log.info("Loaded meta configuration.")
 
@@ -130,13 +133,14 @@ class Multiverse:
             # _Additional_ arguments to pass to *Manager initializations below
             # ... for DataManager
             timestamp = rcps['timestamp']
-            dm_cluster_kwargs = dict(out_dir_kwargs=dict(timestamp=timestamp,
-                                                         exist_ok=True))
+            dm_cluster_kwargs = dict(
+                out_dir_kwargs=dict(timestamp=timestamp, exist_ok=True)
+            )
 
             # ... for WorkerManager
-            wm_cluster_kwargs = dict(cluster_mode=True,
-                                     resolved_cluster_params=rcps)
-
+            wm_cluster_kwargs = dict(
+                cluster_mode=True, resolved_cluster_params=rcps
+            )
 
         # Create the run directory and write the meta configuration into it.
         self._create_run_dir(**self.meta_cfg['paths'])
@@ -726,68 +730,6 @@ class Multiverse:
         Raises:
             ValueError: If a required environment variable was missing or empty
         """
-        def parse_node_list(node_list: str, *, rcps, manager: str) -> list:
-            """Parses the node list to a list of node names"""
-            mode = self.cluster_params['node_list_parser_params'][manager]
-
-            if mode == 'condensed':
-                # Is in the following form:  node[002,004-011,016] or node042
-                # Try to split off prefix and nodes
-                pattern = r'^(?P<prefix>\w+)\[(?P<nodes>[\d\-\,\s]+)\]$'
-                match = re.match(pattern, node_list)
-
-                if match is None:
-                    # Was only a single node; only list element
-                    node_list = [node_list]
-
-                else:
-                    # Got a match; need to continue parsing it ...
-                    prefix, nodes = match['prefix'], match['nodes']
-
-                    # Remove whitespace and split
-                    segments = nodes.replace(" ", "").split(",")
-                    segments = [seg.split("-") for seg in segments]
-
-                    # Get the string width
-                    digits = len(segments[0][0])
-
-                    # In segments, lists longer than 1 are intervals, the
-                    # others are node numbers of a single node.
-                    # Expand intervals
-                    segments = [[int(seg[0])] if len(seg) == 1
-                                else list(range(int(seg[0]), int(seg[1])+1))
-                                for seg in segments]
-
-                    # Combine to list of individual node numbers
-                    node_nos = []
-                    for seg in segments:
-                        node_nos += seg
-
-                    # Need the numbers as strings
-                    node_nos = ["{val:0{digs:}d}".format(val=no, digs=digits)
-                                for no in node_nos]
-
-                    # Now, finally, parse the list
-                    node_list = [prefix+no for no in node_nos]
-
-            else:
-                raise ValueError("Invalid parser '{}' for manager '{}'!")
-
-            # Have node_list now
-            # Consistency checks
-            if rcps['num_nodes'] != len(node_list):
-                raise ValueError("Cluster parameter `node_list` has a "
-                                 "different length ({}) than specified by "
-                                 "the  `num_nodes` parameter ({})."
-                                 "".format(len(node_list),
-                                           rcps['num_nodes']))
-
-            if rcps['node_name'] not in node_list:
-                raise ValueError("`node_name` '{}' is not part of `node_list` "
-                                 "{}!".format(rcps['node_name'], node_list))
-
-            # All ok. Sort and return
-            return sorted(node_list)
 
         log.debug("Resolving cluster parameters from environment ...")
 
@@ -810,16 +752,14 @@ class Multiverse:
         # Check that all required keys are available
         required = ('job_id', 'num_nodes', 'node_list', 'node_name')
         if any([var not in resolved for var in required]):
-            missing_keys = [k for k in required if k not in resolved]
-            raise ValueError("Missing required environment variable(s):  {} ! "
-                             "Make sure that the corresponding environment "
-                             "variables are set and that the mapping is "
-                             "correct!\n"
-                             "Mapping for manager '{}':\n{}\n\n"
-                             "Full environment:\n{}\n\n"
-                             "".format(", ".join(missing_keys), mngr,
-                                       pformat(var_map),
-                                       pformat(env)))
+            _missing = ", ".join([k for k in required if k not in resolved])
+            raise ValueError(
+                f"Missing required environment variable(s):  {_missing} ! "
+                "Make sure that the corresponding environment variables are "
+                "set and that the mapping is correct!\n"
+                f"  Mapping for manager '{mngr}':\n{pformat(var_map)}\n\n"
+                f"  Full environment:\n{pformat(env)}\n\n"
+            )
 
         # Now do some postprocessing on some of the values
         # Ensure integers
@@ -833,9 +773,22 @@ class Multiverse:
             resolved['timestamp'] = int(resolved['timestamp'])
 
         # Ensure reproducible node list format: ordered list
-        # Achieve this by removing whitespace, then splitting and sorting
-        node_list = parse_node_list(resolved['node_list'],
-                                    rcps=resolved, manager=mngr)
+        parse_mode = self.cluster_params['node_list_parser_params'][mngr]
+        try:
+            node_list = parse_node_list(
+                resolved['node_list'], mode=parse_mode, rcps=resolved
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"Failed parsing node list {resolved['node_list']} into a "
+                f"uniform format using parsing mode '{parse_mode}' and "
+                f"cluster manager '{mngr}'! "
+                "Check the cluster mode configuration, the relevant "
+                "environment variables, and the chained error message.\n"
+                f"Cluster parameters:\n{pformat(self.cluster_params)}\n\n"
+                f"Parameters resolved so far:\n{pformat(resolved)}"
+            ) from exc
+
         resolved['node_list'] = node_list
 
         # Calculated values, needed in Multiverse.run
@@ -1252,7 +1205,10 @@ class FrozenMultiverse(Multiverse):
         """Helper function to find the run directory from arguments given
         to __init__.
 
-        Overwrites the method from the parent Multiverse class.
+        Overwrites the method from the parent Multiverse class, because the
+        FrozenMultiverse does not require setting up a *new* run directory but
+        should instead identify the existing one and create an appropriate
+        output directory.
 
         Args:
             out_dir (str): The output directory
@@ -1263,13 +1219,12 @@ class FrozenMultiverse(Multiverse):
             IOError: No directory found to use as run directory
             TypeError: When run_dir was not a string
         """
-        # Create model directory
+        # Create model directory path
         out_dir = os.path.expanduser(str(out_dir))
         model_dir = os.path.join(out_dir, self.model_name)
 
         # Distinguish different types of values for the run_dir argument
         if run_dir is None:
-            # Is absolute, can leave it as it is
             log.info("Trying to identify most recent run directory ...")
 
             # Create list of _directories_ matching timestamp pattern
@@ -1281,10 +1236,11 @@ class FrozenMultiverse(Multiverse):
             run_dir = os.path.join(model_dir, dirs[-1])
 
         elif isinstance(run_dir, str):
-            # Can now expand the user
             run_dir = os.path.expanduser(run_dir)
 
-            # Distinguish absolute and relative paths and time stamps
+            # Distinguish absolute and relative paths and those starting with
+            # a timestamp-like pattern, which can be looked up from the model
+            # directory.
             if os.path.isabs(run_dir):
                 log.debug("Received absolute run_dir, using that one.")
 
@@ -1295,19 +1251,18 @@ class FrozenMultiverse(Multiverse):
                 run_dir = os.path.join(model_dir, run_dir)
 
             else:
-                # Is not an absolute path and not a timestamp; thus a relative
-                # path to the current working directory
+                # Is not an absolute path and not a timestamp; thus a path
+                # relative to the current working directory
                 run_dir = os.path.join(os.getcwd(), run_dir)
 
         else:
             raise TypeError("Argument run_dir needs to be None, an absolute "
                             "path, or a path relative to the model output "
-                            "directory, but it was: {}".format(run_dir))
+                            f"directory, but it was: {run_dir}")
 
         # Check if the directory exists
         if not os.path.isdir(run_dir):
-            raise IOError("No run directory found at '{}'!"
-                          "".format(run_dir))
+            raise IOError(f"No run directory found at '{run_dir}'!")
 
         # Store the path and associate the subdirectories
         self.dirs['run'] = run_dir
