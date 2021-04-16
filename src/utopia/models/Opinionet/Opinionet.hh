@@ -120,9 +120,9 @@ private:
     std::uniform_real_distribution<double> _uniform_prob_distr;
 
     // Datasets and Datagroups
-    std::shared_ptr<DataGroup> _dgrp_nw;
-    std::shared_ptr<DataSet> _dset_opinion;
-    std::shared_ptr<DataSet> _dset_edge_weights;
+    const std::shared_ptr<DataGroup> _dgrp_nw;
+    const std::shared_ptr<DataSet> _dset_opinion;
+    const std::shared_ptr<DataSet> _dset_edge_weights;
 
 public:
     /// Construct the Opinionet model
@@ -236,14 +236,14 @@ private:
         }
     }
 
-    NWType initialize_nw() {
+    NWType initialize_nw() const {
         this->_log->debug("Creating the network ...");
 
         return Graph::create_graph<NWType>(this->_cfg["network"], *this->_rng);
     }
 
     // Only initialize edge weight dataset for directed graphs
-    std::shared_ptr<DataSet> create_edge_weight_dset() {
+    std::shared_ptr<DataSet> create_edge_weight_dset() const {
         if constexpr (Utils::is_directed<NWType>()) {
             return this->create_dset(
                 "edge_weights", _dgrp_nw, {boost::num_edges(_nw)}
