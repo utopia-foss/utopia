@@ -10,5 +10,5 @@ add_model_tests(# Use consistent capitalization for the model name!
                     "test_utils.cc"
                 # Optional: Files to be copied to the build directory
                 AUX_FILES
-                    "test_config.yml"
+                    "test_utils.yml"
                 )

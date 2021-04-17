@@ -35,3 +35,7 @@ parameter_space:
     susceptibility: 0.
 
     tolerance: 10
+
+    interaction_function: !sweep
+      default: Deffuant
+      values: [HegselmannKrause, Deffuant]

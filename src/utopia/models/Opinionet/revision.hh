@@ -15,7 +15,7 @@ using modes::Rewiring;
 
 // .. Opinion update functions ................................................
 
-// Hegselmann-Krause opinion update function
+/// Hegselmann-Krause opinion update function
 template<typename NWType, typename VertexDescType>
 void update_opinion_HK (
     const VertexDescType v,
@@ -24,22 +24,29 @@ void update_opinion_HK (
     const double tolerance)
 {
     double expectation = 0;
-    size_t number_of_interaction_partners = 0;
+    size_t num_interaction_partners = 0;
 
     // Directed case: Calculate the expectation based on the probability
     // distribution given by the weights.
     if constexpr (Utils::is_directed<NWType>()) {
+        VertexDescType nb;
         for (const auto e : range<IterateOver::out_edges>(v, nw)) {
-            auto nb = target(e, nw);
+            nb = target(e, nw);
             if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
                 expectation += nw[nb].opinion * nw[e].weight;
-                ++number_of_interaction_partners;
+                ++num_interaction_partners;
             }
         }
 
-        // Normalize weighted opinion average to number of interaction partners
-        // participating in interaction.
-        expectation *= (1.*out_degree(v, nw)) / number_of_interaction_partners;
+        // If interaction partners found: normalize weighted opinion average to
+        // number of interaction partners participating in interaction.
+        if (num_interaction_partners != 0) {
+            expectation *= static_cast<double>(boost::out_degree(v, nw)) /
+                  num_interaction_partners;
+        }
+        else {
+            expectation = nw[v].opinion;
+        }
     }
 
     // Undirected case: Calculate the opinion average
@@ -48,19 +55,25 @@ void update_opinion_HK (
             auto nb = target(e, nw);
             if (fabs(nw[v].opinion - nw[nb].opinion) <= tolerance) {
                 expectation += nw[nb].opinion;
-                ++number_of_interaction_partners;
+                ++num_interaction_partners;
             }
         }
 
-        // Normalize opinion average to number of interaction partners
-        expectation /= number_of_interaction_partners;
+        // If interaction partners found: normalize opinion average to
+        // number of interaction partners
+        if (num_interaction_partners != 0) {
+            expectation /= num_interaction_partners;
+        }
+        else {
+            expectation = nw[v].opinion;
+        }
     }
 
     // Update opinion
     nw[v].opinion += susceptibility * (expectation - nw[v].opinion);
 }
 
-// Deffuant opinion update function
+/// Deffuant opinion update function
 template<Opinion_space_type op_space,
          typename NWType, typename RNGType, typename VertexDescType>
 void update_opinion_Deffuant (
@@ -68,11 +81,11 @@ void update_opinion_Deffuant (
     NWType& nw,
     const double susceptibility,
     const double tolerance,
-    std::uniform_real_distribution<double> prob_distr,
+    std::uniform_real_distribution<double>& prob_distr,
     RNGType& rng)
 {
     // Get neighbor
-    auto nb = Utils::select_neighbor(v, nw, prob_distr, rng);
+    const VertexDescType nb = Utils::select_neighbor(v, nw, prob_distr, rng);
 
     // Discrete case: adopt nb opinion with probability = susceptibility
     if constexpr (op_space == Opinion_space_type::discrete) {
@@ -94,8 +107,8 @@ void update_opinion_Deffuant (
 
 // .. Rewiring ................................................................
 
-// Selects a random edge. If the opinion distance of the source and target
-// exceeds the tolerance, the edge is rewired to a random target.
+/// Selects a random edge. If the opinion distance of the source and target
+/// exceeds the tolerance, the edge is rewired to a random target.
 template<typename NWType, typename RNGType>
 void rewire_random_edge(
     NWType& nw,
@@ -103,17 +116,18 @@ void rewire_random_edge(
     const double weighting,
     RNGType& rng)
 {
+    using namespace boost;
     // Choose random edge for rewiring
-    auto e = random_edge(nw, rng);
-    auto s = source(e, nw);
+    const auto e = random_edge(nw, rng);
+    const auto s = source(e, nw);
 
     if (fabs(nw[s].opinion - nw[target(e, nw)].opinion) > tolerance) {
-        auto new_target = boost::random_vertex(nw, rng);
+        const auto new_target = random_vertex(nw, rng);
 
-        if (new_target != s and not boost::edge(s, new_target, nw).second)
+        if (new_target != s and not edge(s, new_target, nw).second)
           {
-            boost::remove_edge(e, nw);
-            boost::add_edge(s, new_target, nw);
+            remove_edge(e, nw);
+            add_edge(s, new_target, nw);
 
             if constexpr (Utils::is_directed<NWType>()) {
                 Utils::set_and_normalize_weights(s, nw, weighting);
@@ -124,7 +138,7 @@ void rewire_random_edge(
 
 // .. Revision ................................................................
 
-// Performs an opinion update and edge rewiring (if enabled).
+/// Performs an opinion update and edge rewiring (if enabled).
 template<Interaction_type interaction_type,
          Opinion_space_type op_space,
          Rewiring rewire,
@@ -135,11 +149,11 @@ void revision(
     const double susceptibility,
     const double tolerance,
     const double weighting,
-    std::uniform_real_distribution<double> prob_distr,
+    std::uniform_real_distribution<double>& prob_distr,
     RNGType& rng)
 {
     // Choose random vertex for revision
-    auto v = random_vertex(nw, rng);
+    const auto v = random_vertex(nw, rng);
 
     if (out_degree(v, nw) != 0) {
 

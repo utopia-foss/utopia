@@ -41,9 +41,9 @@ constexpr bool is_directed() {
 /// Get random neighbour of vertex v (for directed and undirected graphs).
 /// Only appliable to vertices with degree > 0
 template<typename NWType, typename VertexDescType, typename RNGType>
-auto get_rand_neighbor(VertexDescType& v, NWType& nw, RNGType& rng) {
+auto get_rand_neighbor(const VertexDescType v, NWType& nw, RNGType& rng) {
 
-    int nb_shift = get_rand<int>(
+    const int nb_shift = get_rand<int>(
             std::make_pair<int, int>(0, boost::out_degree(v, nw)-1), rng
     );
     auto nb = boost::adjacent_vertices(v, nw).first;
@@ -57,7 +57,7 @@ template<typename NWType, typename RNGType, typename VertexDescType>
 VertexDescType select_neighbor(
     const VertexDescType v,
     NWType& nw,
-    std::uniform_real_distribution<double> prob_distr,
+    std::uniform_real_distribution<double>& prob_distr,
     RNGType& rng)
 {
     auto nb = v;

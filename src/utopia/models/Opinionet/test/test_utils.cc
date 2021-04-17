@@ -13,17 +13,16 @@
 namespace Utopia::Models::Opinionet::Utils{
 
 // -- Type definitions --------------------------------------------------------
-using Config = Utopia::DataIO::Config;
-
-std::mt19937 rng{};
 std::uniform_real_distribution<double> uniform_prob_distr;
-Config cfg = YAML::LoadFile("test_config.yml")["test_utils"];
 
 // -- Fixtures ----------------------------------------------------------------
 
+struct Infrastructure : public TestTools::BaseInfrastructure<> {
+    Infrastructure() : BaseInfrastructure<>("test_utils.yml") {};
+};
 
 // Test networks
-struct TestNetworkU {
+struct TestNetworkU : Infrastructure  {
     using vertex = boost::graph_traits<NetworkUndirected>::vertex_descriptor;
     NetworkUndirected nw;
     TestNetworkU()
@@ -35,13 +34,13 @@ struct TestNetworkU {
         );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
         boost::generate_random_graph(
-            nw, num_vertices, num_edges, rng, false, false
+            nw, num_vertices, num_edges, *rng, false, false
         );
     }
 
 };
 
-struct TestNetworkD {
+struct TestNetworkD : Infrastructure {
     using vertex = boost::graph_traits<NetworkDirected>::vertex_descriptor;
     NetworkDirected nw;
     TestNetworkD()
@@ -53,12 +52,12 @@ struct TestNetworkD {
         );
         const unsigned num_edges = get_as<int>("num_edges", cfg["nw_params"]);
         boost::generate_random_graph(
-            nw, num_vertices, num_edges, rng, false, false
+            nw, num_vertices, num_edges, *rng, false, false
         );
     }
 };
 
-struct TestNetworkD_small {
+struct TestNetworkD_small : Infrastructure {
     using vertex = boost::graph_traits<NetworkDirected>::vertex_descriptor;
     NetworkDirected nw;
     vertex v1 = boost::add_vertex(nw);
@@ -75,14 +74,14 @@ struct TestNetworkD_small {
 };
 
 // -- Test get_rand functions -------------------------------------------------
-BOOST_AUTO_TEST_CASE(test_get_rand)
+BOOST_FIXTURE_TEST_CASE(test_get_rand, Infrastructure)
 {
-    Config test_cfg = cfg["test_funcs"]["test_get_rand"];
+    const auto test_cfg = cfg["test_funcs"]["test_get_rand"];
 
     const std::vector<std::pair<int, int>> to_assert_int
             = get_as<std::vector<std::pair<int, int>>>("vals_int", test_cfg);
     for(const auto& val: to_assert_int) {
-        const int rand = get_rand<int>(val, rng);
+        const int rand = get_rand<int>(val, *rng);
         BOOST_TEST(rand >= val.first);
         BOOST_TEST(rand <= val.second);
     }
@@ -91,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_get_rand)
             = get_as<std::vector<std::pair<double, double>>>("vals_double",
                                                                 test_cfg);
     for(const auto& val: to_assert_int) {
-        const double rand = get_rand<double>(val, rng);
+        const double rand = get_rand<double>(val, *rng);
         BOOST_TEST(rand >= val.first);
         BOOST_TEST(rand <= val.second);
     }
@@ -102,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_get_rand)
     for(const auto& val: to_assert_fail) {
         TestTools::check_exception<std::invalid_argument>(
             [&](){
-            get_rand<double>(val, rng);
+            get_rand<double>(val, *rng);
             },
             "Error, invalid parameter range! Upper limit has to be "
             "higher than the lower limit."  // expected error message
@@ -123,12 +122,12 @@ BOOST_FIXTURE_TEST_CASE(test_get_rand_neighbor, TestNetworkU)
 {
     for (const auto v : range<IterateOver::vertices>(nw)) {
         if (boost::out_degree(v, nw) != 0) {
-            vertex w = get_rand_neighbor(v, nw, rng);
+            vertex w = get_rand_neighbor(v, nw, *rng);
             // Test edge exists
             BOOST_TEST(edge(v, w, nw).second);
 
             // Test edge selection by probability works on undirected networks
-            vertex x = select_neighbor(v, nw, uniform_prob_distr, rng);
+            vertex x = select_neighbor(v, nw, uniform_prob_distr, *rng);
             BOOST_TEST(edge(v, x, nw).second);
         }
     }
@@ -146,7 +145,7 @@ BOOST_FIXTURE_TEST_CASE(test_set_and_normalize_weights,
     std::pair<double, double> opinion_range = {-5., 5.};
     for(const auto& w: weighting) {
         for (const auto v : range<IterateOver::vertices>(nw)) {
-            nw[v].opinion = get_rand<double>(opinion_range, rng);
+            nw[v].opinion = get_rand<double>(opinion_range, *rng);
             set_and_normalize_weights(v, nw, w);
         }
         for (const auto v : range<IterateOver::vertices>(nw)) {
@@ -193,12 +192,12 @@ BOOST_FIXTURE_TEST_CASE(test_select_neighbour,
         int v2_selected = 0;
         int v3_selected = 0;
         for (int i=0; i<num_steps; ++i) {
-            vertex w = select_neighbor(v1, nw, uniform_prob_distr, rng);
+            vertex w = select_neighbor(v1, nw, uniform_prob_distr, *rng);
             if (w == v2) { ++v2_selected; }
             else if (w == v3) { ++v3_selected; }
         }
 
-        BOOST_TEST((1.0*v2_selected)/v3_selected
+        BOOST_TEST((static_cast<double>(v2_selected))/v3_selected
                  == exp(-w*(fabs(nw[v2].opinion-nw[v1].opinion)
                          -fabs(nw[v3].opinion-nw[v1].opinion)))
         );
@@ -207,12 +206,12 @@ BOOST_FIXTURE_TEST_CASE(test_select_neighbour,
         int v1_selected = 0;
         v2_selected = 0;
         for (int i=0; i<num_steps; ++i) {
-            vertex w = select_neighbor(v4, nw, uniform_prob_distr, rng);
+            vertex w = select_neighbor(v4, nw, uniform_prob_distr, *rng);
             if (w == v1) { ++v1_selected; }
             else if (w == v2) { ++v2_selected; }
         }
 
-        BOOST_TEST((1.0*v1_selected)/v2_selected
+        BOOST_TEST((static_cast<double>(v1_selected))/v2_selected
                  == exp(-w*(fabs(nw[v1].opinion-nw[v4].opinion)
                          -fabs(nw[v2].opinion-nw[v4].opinion)))
         );
