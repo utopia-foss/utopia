@@ -539,7 +539,27 @@ test:link_install_tree:
 
 
 # -- Deploy Stage -------------------------------------------------------------
-# Deploy the documentation to a self-hosted web server
+# Deploy the documentation in two ways:
+#   - by triggering a pipeline in gitlab.com/utopia-project/docs (only master)
+#   - by pushing the docs to a documentation server
+
+deploy:docs_gitlab_pages:
+  image: curlimages/curl:latest
+  stage: deploy
+  only:
+    - master@utopia/utopia
+  dependencies: ["build:docs"]
+  needs: ["build:docs"]
+  script:
+    - curl  -X POST \
+            -F token=${DOC_DEPLOYMENT_TRIGGER_TOKEN} \
+            -F ref=master \
+            https://gitlab.com/api/v4/projects/25960923/trigger/pipeline
+  environment:
+    name: docs_gitlab_pages
+    url: https://docs.utopia-project.org/
+
+
 deploy:docs:
   stage: deploy
   extends: .ssh-access
