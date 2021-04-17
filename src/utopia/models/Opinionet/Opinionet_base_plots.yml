@@ -82,6 +82,7 @@ time_series_opinion:
 
 multiverse.errorbars:
   creator: multiverse
+  expected_multiverse_ndim: [1,2,3,4,5]
   module: dantro.plot_creators.ext_funcs.generic
   plot_func: errorbars
 

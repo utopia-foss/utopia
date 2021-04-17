@@ -323,7 +323,39 @@ public:
      *          _only_ called if a certain emit interval has passed; thus, the
      *          performance hit is small.
      */
-    void monitor () {}
+    void monitor () {
+        double mean_opinion = 0.;
+        double opinion_std = 0.;
+        double min_opinion = std::numeric_limits<double>::infinity();
+        double max_opinion = -std::numeric_limits<double>::infinity();
+
+        double temp_op;
+        for (const auto v : range<IterateOver::vertices>(_nw)) {
+            temp_op = _nw[v].opinion;
+            mean_opinion += temp_op;
+
+            if (temp_op < min_opinion) {
+                min_opinion = temp_op;
+            }
+
+            if (temp_op > max_opinion) {
+                max_opinion = temp_op;
+            }
+        }
+
+        mean_opinion /= boost::num_vertices(_nw);
+
+        for (const auto v : range<IterateOver::vertices>(_nw)) {
+            opinion_std += std::pow(_nw[v].opinion - mean_opinion, 2.);
+        }
+
+        opinion_std = std::sqrt(opinion_std / (boost::num_vertices(_nw) - 1.));
+
+        this->_monitor.set_entry("mean_opinion", mean_opinion);
+        this->_monitor.set_entry("opinion_std", opinion_std);
+        this->_monitor.set_entry("min_opinion", min_opinion);
+        this->_monitor.set_entry("max_opinion", max_opinion);
+    }
 
 
     /// Write data

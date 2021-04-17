@@ -70,7 +70,6 @@ opinion_time_series:
 
 # evaluating a parameter sweep over the tolerance and the seed
 localization_over_tolerance:
-  enabled: False
   based_on: multiverse.errorbars
 
   select_and_combine:
@@ -91,7 +90,7 @@ localization_over_tolerance:
             kwargs:
               along_dim: vertex_idx
               bins: 100
-              range: [0., 1.]
+              interval: [0., 1.]
   transform:
     - operation: .isel
       args: [!dag_tag tolerances]
@@ -123,7 +122,7 @@ localization_over_tolerance:
   capsize: 2
   marker: o
 
-# evaluating a parameter sweep over the tolerance and the seed
+# evaluating a parameter sweep over the tolerance and susceptibility
 localization_2d:
   based_on: sweep_2d
 
@@ -149,7 +148,7 @@ localization_2d:
             kwargs:
               along_dim: vertex_idx
               bins: 100
-              range: [0., 1.]
+              interval: [0., 1.]
 
   transform:
     - operation: .isel
