@@ -1,13 +1,9 @@
 #ifndef UTOPIA_MODELS_OPINIONET_MODES
 #define UTOPIA_MODELS_OPINIONET_MODES
 
-namespace Utopia::Models::Opinionet::modes{
+namespace Utopia::Models::Opinionet::Modes{
 
-/** This class defines the various model types.
-  * \tparam Interaction_type
-  * \param ...
-  * ...
-  */
+// This header provides the various model modes
 
 enum Interaction_type {
     Deffuant,
@@ -30,7 +26,6 @@ std::string InteractionTypes[] = {
     "Deffuant",
     "HegselmannKrause"
 };
-
 
 std::string OpinionSpaceTypes[] = {
     "continuous",

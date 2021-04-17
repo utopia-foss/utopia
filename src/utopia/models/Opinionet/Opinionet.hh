@@ -16,16 +16,9 @@
 
 namespace Utopia::Models::Opinionet {
 
-using modes::Interaction_type;
-using modes::Interaction_type::Deffuant;
-using modes::Interaction_type::HegselmannKrause;
-using modes::Opinion_space_type;
-using modes::Opinion_space_type::continuous;
-using modes::Opinion_space_type::discrete;
-using modes::Rewiring;
-using modes::Rewiring::RewiringOn;
-using modes::Rewiring::RewiringOff;
-
+using Modes::Interaction_type;
+using Modes::Opinion_space_type;
+using Modes::Rewiring;
 
 /// Each node in the network accomodates a single agent
 struct Agent {
@@ -83,13 +76,9 @@ using OpinionetTypes = Utopia::ModelTypes<>;
  *  This is a 1d opinion dynamics model with interactions based on
  *  bounded confidence.
  */
-template<Interaction_type interaction_type=Deffuant,
-         Opinion_space_type opinion_space=continuous,
-         typename NWType=NetworkUndirected,
-         Rewiring rewire=RewiringOff>
+template<typename NWType=NetworkUndirected>
 class Opinionet:
-    public Model<Opinionet<interaction_type, opinion_space, NWType, rewire>,
-                 OpinionetTypes>
+    public Model<Opinionet<NWType>, OpinionetTypes>
 {
 public:
     /// The base model type
@@ -109,6 +98,11 @@ public:
 
 private:
     // Base members: _time, _name, _cfg, _hdfgrp, _rng, _monitor, _log, _space
+
+    /// Modes
+    const Interaction_type _interaction;
+    const Opinion_space_type _opinion_space;
+    const Rewiring _rewire;
 
     /// Network and model dynamics parameters
     NWType _nw;
@@ -135,6 +129,10 @@ public:
     :
         // Initialize first via base model
         Base(name, parent),
+        // Initialize modes
+        _interaction(this->initialize_interaction()),
+        _opinion_space(this->initialize_opinion_space()),
+        _rewire(this->initialize_rewiring()),
         // Initialize the network
         _nw(this->initialize_nw()),
         // Initialize the model parameters
@@ -167,7 +165,7 @@ public:
         _dset_opinion->add_attribute("dim_name__1", "vertex_idx");
         _dset_opinion->add_attribute("coords_mode__vertex_idx", "trivial");
 
-        if constexpr (rewire == Rewiring::RewiringOff) {
+        if (_rewire == Rewiring::RewiringOff) {
             save_graph(_nw, _dgrp_nw);
             this->_log->debug("Network saved.");
         }
@@ -196,11 +194,42 @@ private:
 
     // .. Setup functions .....................................................
 
+    Interaction_type initialize_interaction() {
+        if (get_as<std::string>("interaction_function", this->_cfg)
+            == "Deffuant")
+        {
+            return Interaction_type::Deffuant;
+        }
+        else {
+            return Interaction_type::HegselmannKrause;
+        }
+    }
+
+    Opinion_space_type initialize_opinion_space() {
+        if (get_as<std::string>("type", this->_cfg["opinion_space"])
+            == "discrete")
+        {
+            return Opinion_space_type::discrete;
+        }
+        else {
+            return Opinion_space_type::continuous;
+        }
+    }
+
+    Rewiring initialize_rewiring() {
+        if (get_as<bool>("rewiring", this->_cfg["network"]["edges"])) {
+            return Rewiring::RewiringOn;
+        }
+        else {
+            return Rewiring::RewiringOff;
+        }
+    }
+
     void initialize_properties() {
         this->_log->debug("Initializing the properties ...");
 
         // Continuous opinion space: draw opinions from a continuous interval
-        if constexpr (opinion_space == continuous) {
+        if (_opinion_space == Opinion_space_type::continuous) {
             const std::pair<double, double> opinion_interval =
                 get_as<std::pair<double, double>>(
                     "interval", this->_cfg["opinion_space"]
@@ -274,11 +303,14 @@ public:
      */
     void perform_step ()
     {
-        Revision::revision<interaction_type, opinion_space, rewire>(
+        Revision::revision(
             _nw,
             _susceptibility,
             _tolerance,
             _weighting,
+            _interaction,
+            _opinion_space,
+            _rewire,
             _uniform_prob_distr,
             *this->_rng
         );
@@ -306,7 +338,7 @@ public:
         );
 
         // Write edges
-        if constexpr (rewire == Rewiring::RewiringOn){
+        if (_rewire == Rewiring::RewiringOn){
             // Adaptor tuple that allows to save the edge data
             const auto get_edge_data = std::make_tuple(
                 std::make_tuple("_edges", "type",

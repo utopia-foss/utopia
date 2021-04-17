@@ -74,9 +74,13 @@ struct TestNetworkU {
 // Test HegselmannKrause opinion update function (undirected network)
 BOOST_FIXTURE_TEST_CASE(test_opinion_update_HK_u,
                         TestNetworkU) {
+    using Modes::Opinion_space_type;
+
     const double tolerance = 4;
     const double susceptibility = 1;
-    update_opinion_HK(v1, nw, susceptibility, tolerance);
+    update_opinion_HK(
+        v1, nw, susceptibility, tolerance, Opinion_space_type::continuous
+    );
     BOOST_TEST (nw[v1].opinion==2);
 }
 
@@ -85,9 +89,13 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_HK_d,
                         TestNetworkD,
                         * boost::unit_test::tolerance(0.0001))
 {
+    using Modes::Opinion_space_type;
+
     const double tolerance = 4;
     const double susceptibility = 1;
-    update_opinion_HK(v1, nw, susceptibility, tolerance);
+    update_opinion_HK(
+        v1, nw, susceptibility, tolerance, Opinion_space_type::continuous
+    );
     BOOST_TEST (nw[v1].opinion==4.3296);
 }
 
@@ -122,7 +130,7 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_c,
                         TestNetworkD,
                         * boost::unit_test::tolerance(0.05))
 {
-    using modes::Opinion_space_type;
+    using Modes::Opinion_space_type;
 
     TestNetworkD();
     const double tolerance = 2;
@@ -138,8 +146,9 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_c,
                           -fabs(nw[v3].opinion-nw[v1].opinion)));
 
     for (int i = 0; i<num_steps; ++i) {
-        update_opinion_Deffuant<Opinion_space_type::continuous>(
-            v1, nw, susceptibility, tolerance, prob_distr, rng
+        update_opinion_Deffuant(
+            v1, nw, susceptibility, tolerance, Opinion_space_type::continuous,
+            prob_distr, rng
         );
         if (nw[v1].opinion
           == init_opinion+susceptibility*(nw[v2].opinion-init_opinion)
@@ -163,7 +172,7 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_d,
                         TestNetworkU,
                         * boost::unit_test::tolerance(0.05))
 {
-    using modes::Opinion_space_type;
+    using Modes::Opinion_space_type;
 
     TestNetworkU();
     const double tolerance = 5;
@@ -176,8 +185,9 @@ BOOST_FIXTURE_TEST_CASE(test_opinion_update_D_d,
     int total_opinion_flips = 0;
     int opinion_flipped_to_v2 = 0;
     for (int i = 0; i<num_steps; ++i) {
-        update_opinion_Deffuant<Opinion_space_type::discrete>(
-            v1, nw, susceptibility, tolerance, prob_distr, rng
+        update_opinion_Deffuant(
+            v1, nw, susceptibility, tolerance, Opinion_space_type::discrete,
+            prob_distr, rng
         );
         if (nw[v1].opinion == nw[v2].opinion) {
             ++opinion_flipped_to_v2;

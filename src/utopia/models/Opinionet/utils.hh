@@ -82,8 +82,22 @@ VertexDescType select_neighbor(
     return nb;
 }
 
-/// Iterate over a vertex' out-edges and set the weights to
-/// exp(- weighting * abs(opinion difference)), then normalize them (softmax)
+/// Calculate the absolute opinion difference of two vertices
+template<typename NWType, typename VertexDescType>
+double opinion_difference(VertexDescType v, VertexDescType w, NWType& nw) {
+    return fabs(nw[v].opinion - nw[w].opinion);
+}
+
+/// Set and normalize weights according to opinion difference
+/** Iterates over a vertex' out-edges and sets the weights to
+  * exp(- weighting * abs(opinion difference)), then normalizes
+  * them (softmax).
+  *
+  * \warning   This assumes that the vertex has at least one
+  *            out-edge. Make sure to check this in the calling
+  *            scope, otherwise this will lead to a zero division
+  *            error during normalisation.
+  */
 template<typename NWType, typename VertexDescType>
 void set_and_normalize_weights(
         const VertexDescType v,
@@ -92,7 +106,7 @@ void set_and_normalize_weights(
 {
     double weight_norm = 0.;
     for (const auto e : range<IterateOver::out_edges>(v, nw)) {
-        double op_diff = fabs(nw[target(e, nw)].opinion-nw[v].opinion);
+        double op_diff = opinion_difference(boost::target(e, nw), v, nw);
         nw[e].weight = exp(-(weighting*op_diff));
         weight_norm += nw[e].weight;
     }
