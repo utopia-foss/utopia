@@ -54,21 +54,21 @@ time_series_opinion:
       ncols: 2
       sharey: True
       gridspec_kw:
-        width_ratios: [3, 1]
-        wspace: 0.1
+        width_ratios: [4, 1]
+        wspace: 0.05
 
     axis_specific:
       density_development:
         axis: [0, 0]
         set_labels:
-          x: time
-          y: opinion
+          x: Time
+          y: User opinion
       final_histogram:
         axis: [1, 0]
         set_title:
-          title: final
+          title: Final
         set_labels:
-          x: group size
+          x: Group size
 
   density_kwargs:
     origin: lower

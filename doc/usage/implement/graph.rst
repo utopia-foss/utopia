@@ -316,7 +316,6 @@ For example, if you write a graph at every time step the ``label`` should encode
 
     In order to guarantee correct alignment of the data, which is needed if you want to be able to associate properties with one another, the ``save_vertex_properties`` and ``save_edge_properties`` functions must only be called once per model update step.
 
-.. _loading_a_graph_from_a_file:
 
 .. _loading_a_graph_from_a_file:
 

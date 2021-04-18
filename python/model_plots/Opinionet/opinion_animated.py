@@ -62,7 +62,7 @@ def opinion_animated(dm: DataManager, *,
         next_frame_idx = 0
         if time_steps < stepsize:
             log.warn("Stepsize is greater than number of steps. Continue by "
-                     "plotting fist and last frame.")
+                     "plotting first and last frame.")
             stepsize=time_steps-1
         for t in range(time_steps):
             if t < next_frame_idx:

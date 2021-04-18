@@ -60,6 +60,10 @@ def opinion_time_series(
     )
 
     hlpr.provide_defaults("set_limits", y=opinion_range)
+    hlpr.ax.get_yaxis().set_minor_locator(ticker.MultipleLocator(0.1))
+
+    # Add colorbar for the density plot
+    plt.colorbar(density_plot, ax=hlpr.ax)
 
     # Plot representative trajectories ........................................
     # The representative vertices are chosen based on the final opinion groups.
@@ -117,8 +121,6 @@ def opinion_time_series(
         for r in reps:
             hlpr.ax.plot(time, opinions.isel(vertex_idx=r), lw=0.8)
 
-    hlpr.ax.get_yaxis().set_minor_locator(ticker.MultipleLocator(0.1))
-
     # Plot histogram of the final opinions  ...................................
 
     hlpr.select_axis(1, 0)
@@ -126,6 +128,3 @@ def opinion_time_series(
         final_opinions, range=opinion_range, bins=bins, **hist_kwargs
     )
     hlpr.provide_defaults("set_limits", y=opinion_range)
-
-    # Add colorbar for the density plot
-    plt.colorbar(density_plot, ax=hlpr.ax)

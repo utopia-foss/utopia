@@ -24,7 +24,7 @@ graph:
 
   helpers:
     set_title:
-      title: Final Graph
+      title: Graph at time
 
 
 graph_animation:
@@ -121,6 +121,12 @@ localization_over_tolerance:
   yerr: dL
   capsize: 2
   marker: o
+  helpers:
+    set_title:
+      title: Peak localization
+    set_labels:
+      x: Tolerance
+      y: Localization
 
 # evaluating a parameter sweep over the tolerance and susceptibility
 localization_2d:
