@@ -10,5 +10,6 @@ Implementing Models
    step_by_step
    datamanager
    unit-tests
+   running-tests
    nested-models
    setup-models-repo
