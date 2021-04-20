@@ -62,7 +62,7 @@ def state(dm: DataManager, *,
                 - title (str): The title for this sub-plot
                 - limits (2-tuple, list): The fixed heat map limits of this
                     property; if not given, limits will be auto-scaled.
-                - **imshow_kwargs: passed on to imshow invocation
+                - \**imshow_kwargs: passed on to imshow invocation
 
         time_idx (int): Which time index to plot the data of. Is ignored when
             creating an animation.
@@ -132,7 +132,7 @@ def state(dm: DataManager, *,
             no_cbar_markings (bool, optional): Whether to suppress colorbar
                 markings (ticks and tick labels)
             imshow_kwargs (dict, optional): Passed to plt.imshow
-            **cbar_kwargs: Passed to fig.colorbar
+            \**cbar_kwargs: Passed to fig.colorbar
 
         Returns:
             imshow object

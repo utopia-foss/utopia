@@ -19,7 +19,7 @@ To that end, ``HdfBench`` supplies a set of ``setup_funcs`` and ``bench_funcs``\
     If you are writing a ``run`` config, the examples below represent the content of the ``parameter_space -> HdfBench`` mapping.
 
 Getting started
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 .. code-block:: yaml
 
@@ -46,7 +46,7 @@ This will result in the benchmark ``simple`` being carried out:
 .. note:: ``num_steps`` is defined not on this level of the configuration, but on the top-most level of the run configuration.
 
 Multiple benchmarks
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 One can also define multiple configurations and – using YAML anchors – let them share the other benchmarks' configuration:
 
@@ -68,7 +68,7 @@ One can also define multiple configurations and – using YAML anchors – let t
      write_shape: [1048576]  # == 1024^2
 
 Advanced options
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 There are a number of additional configuration flags that change the behaviour of the benchmarks:
 

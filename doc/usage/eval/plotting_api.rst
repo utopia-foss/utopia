@@ -50,11 +50,10 @@ Plot Creators
     :members: _prepare_plot_func_args
 
 
-:py:func:`utopya.plotting.is_plot_func` decorator
--------------------------------------------------
+:py:func:`~utopya.plotting.is_plot_func` decorator
+--------------------------------------------------
 
 .. autodecorator:: utopya.plotting.is_plot_func
-    :noindex:
 
 
 
@@ -65,7 +64,7 @@ Basic :py:class:`~utopya.plotting.PlotHelper` interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utopya.plotting.PlotHelper
-    :members: ax, available_helpers, mark_enabled, provide_defaults
+    :members: ax, available_helpers, mark_enabled, provide_defaults, invoke_enabled, enable_animation, disable_animation, invoke_helper
     :noindex:
 
 Full :py:class:`~utopya.plotting.PlotHelper` interface

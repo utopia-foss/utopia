@@ -331,7 +331,7 @@ class Parameter:
             value: A given value, typically the ``default`` argument.
             mode: A valid shorthand mode, see
                 :py:attr:`~utopya.parameter.Parameter.SHORTHAND_MODES`
-            **kwargs: any further arguments for Parameter ininitialization,
+            \**kwargs: any further arguments for Parameter ininitialization,
                 see :py:meth:`~utopya.parameter.Parameter.__init__`.
 
         Returns:
@@ -409,19 +409,23 @@ class Parameter:
 
 def extract_validation_objects(model_cfg: dict, *,
                                model_name: str) -> Tuple[dict, dict]:
-    """Extracts all Parameter objects from a model configuration (a nested
-    dict), replacing them with their default values. Returns both the modified
-    model configuration well as the Parameter objects (keyed by the key
-    sequence necessary to reach them within the model configuration).
+    """Extracts all :py:class:`~utopya.parameter.Parameter` objects from a
+    model configuration (a nested dict), replacing them with their default
+    values.
+    Returns both the modified model configuration well as the Parameter
+    objects (keyed by the key sequence necessary to reach them within the
+    model configuration).
 
     Args:
         model_cfg (dict): the model configuration to inspect
         model_name (str): the name of the model
 
     Returns:
-        model_cfg (dict): the passed config dict in which all Parameter class
-            elements have been replaced by their default entries
-        parameters_to_validate: a dictionary consisting of the Parameter class
+        Tuple[dict, dict]: a tuple of (model config, parameters to validate).
+            The model config contains the passed config dict in which all
+            Parameter class elements have been replaced by their default
+            entries.
+            The second entry is a dictionary consisting of the Parameter class
             objects (requiring validation) with keys being key sequences to
             those Parameter objects. Note that the key sequence is relative to
             the level *above* the model configuration, with ``model_name`` as

@@ -83,7 +83,8 @@ The following things changed:
 
 
 .. autoclass:: dantro.plot_creators.PlotHelper
-  :members: register_animation_update
+    :members: register_animation_update
+    :noindex:
 
 There are a few things to look out for:
     * In order for the animation update to actually be used, the feature needs

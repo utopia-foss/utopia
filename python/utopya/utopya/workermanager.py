@@ -22,26 +22,20 @@ log = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class WorkerManager:
-    """The WorkerManager class manages WorkerTasks.
+    """The WorkerManager class orchestrates :py:class:`~utopya.task.WorkerTask`
+    objects: setting them up, invoking them, tracking their progress, and
+    starting new workers if previous workers finished.
 
     Attributes:
-        nonzero_exit_handling (str): Stores the WorkerManager's behavior upon
-            a worker exiting with a non-zero exit code. For 'ignore', nothing
-            happens. For 'warn', a warning is printed. For 'raise', the log is
-            shown and the WorkerManager exits with the same exit code as the
-            WorkerTask exited with.
-        num_workers (int): The number of parallel workers
         pending_exceptions (queue.Queue): A (FiFo) queue of Exception objects
             that will be handled by the WorkerManager during working. This is
             the interface that allows for other threads that have access to
             the WorkerManager to add an exception and let it be handled in the
             main thread.
-        poll_delay (float): The delay (in s) after a poll
-        reporter (WorkerManagerReporter): The associated reporter.
         rf_spec (dict): The report format specifications that are used
             throughout the WorkerManager. These are invoked at different points
-            of the operation of the WorkerManager: while_working, after_work,
-            after_abort, task_spawn, task_finished
+            of the operation of the WorkerManager: ``while_working``,
+            ``after_work``, ``after_abort``, ``task_spawn``, ``task_finished``.
         times (dict): Holds profiling information for the WorkerManager
     """
 
@@ -82,10 +76,10 @@ class WorkerManager:
             rf_spec (Dict[str, Union[str, List[str]]], optional): The names of
                 report formats that should be invoked at different points of
                 the WorkerManager's operation.
-                Possible keys:
-                    ``before_working``, ``while_working``, ``after_work``,
-                    ``after_abort``, ``task_spawn``, ``task_finished``.
-                All other keys are ignored.
+                Possible keys: ``before_working``, ``while_working``,
+                ``after_work``, ``after_abort``, ``task_spawn``,
+                ``task_finished``. All other keys are ignored.
+
                 The values of the dict can be either strings or lists of
                 strings, where the strings always refer to report formats
                 registered with the WorkerManagerReporter. This argument
@@ -109,14 +103,16 @@ class WorkerManager:
                 the WorkerManager behaves when receiving KeyboardInterrupts
                 during working.
                 Possible keys:
-                    'send_signal': Which signal to send to the workers. Can be
-                        SIGINT (default), SIGTERM, SIGKILL, or any valid signal
-                        as integer.
-                    'grace_period': how long to wait for the other workers to
+
+                    ``send_signal``: Which signal to send to the workers. Can
+                        be SIGINT (default), SIGTERM, SIGKILL, or any valid
+                        signal as integer.
+                    ``grace_period``: how long to wait for the other workers to
                         gracefully shut down. After this period (in seconds),
-                        the workers will be killed via SIGKILL. Default is 5s
-                    'exit': whether to sys.exit at the end of start_working.
+                        the workers will be killed via SIGKILL. Default is 5s.
+                    ``exit``: whether to sys.exit at the end of start_working.
                         Default is True.
+
             cluster_mode (bool, optional): Whether similar tasks to those that
                 are managed by this WorkerManager are, at the same time, worked
                 on by other WorkerManager. This is relevant because the output
@@ -128,7 +124,7 @@ class WorkerManager:
                 parameters.
 
         Raises:
-            ValueError: For too negative `num_workers` argument
+            ValueError: For too negative ``num_workers`` argument
         """
         log.progress("Initializing WorkerManager ...")
 
@@ -163,12 +159,12 @@ class WorkerManager:
             try:
                 self.num_workers = os.cpu_count() + num_workers
             except ValueError as err:
-                raise ValueError("Received invalid argument `num_workers` of "
-                                 "value {}. If giving a negative value, note "
-                                 "that it needs to sum up with the CPU count "
-                                 "({}) to a positive integer."
-                                 "".format(num_workers, os.cpu_count())
-                                 ) from err
+                raise ValueError(
+                    "Received invalid argument `num_workers` of value "
+                    f"{num_workers}. If giving a negative value, note that it "
+                    f"needs to sum up with the CPU count ({os.cpu_count()}) "
+                    "to a positive integer."
+                ) from err
 
         else:
             self.num_workers = num_workers
@@ -218,7 +214,7 @@ class WorkerManager:
 
     @property
     def num_workers(self) -> int:
-        """The number of workers that can work in parallel."""
+        """The number of workers that may work in parallel"""
         return self._num_workers
 
     @num_workers.setter
@@ -260,13 +256,14 @@ class WorkerManager:
 
     @property
     def poll_delay(self) -> float:
-        """The poll frequency in polls/second. Strictly speaking: the sleep
-        time between two polls, which roughly equals the poll frequency."""
+        """Returns the delay between two polls"""
         return self._poll_delay
 
     @poll_delay.setter
     def poll_delay(self, val) -> None:
-        """Set the poll frequency to a positive value."""
+        """Set the poll delay to any positive value. For low values, a warning
+        will be emitted.
+        """
         if val <= 0.:
             raise ValueError("Poll delay needs to be positive, was "+str(val))
         elif val < 0.01:
@@ -285,12 +282,19 @@ class WorkerManager:
 
     @property
     def nonzero_exit_handling(self) -> str:
-        """The action upon non-zero WorkerTask exit code."""
+        """Behavior upon a worker exiting with a non-zero exit code.
+
+            - with ``ignore``, nothing happens
+            - with ``warn``, a warning is printed
+            - with ``raise``, the log is shown and the WorkerManager exits
+              with the same exit code as the corresponding
+              :py:class:`~utopya.task.WorkerTask` exited with.
+        """
         return self._nonzero_exit_handling
 
     @nonzero_exit_handling.setter
     def nonzero_exit_handling(self, val: str):
-        """Set the nonzero_exit_handling attribute.
+        """Set the ``nonzero_exit_handling`` attribute.
 
         Args:
             val (str): The value to set it to. Can be: ignore, warn, raise
@@ -307,7 +311,9 @@ class WorkerManager:
 
     @property
     def reporter(self) -> Union[WorkerManagerReporter, None]:
-        """Returns the associated Reporter object or None, if none is set."""
+        """The associated :py:class:`~utopya.reporter.WorkerManagerReporter`
+        or None, if no reporter is set.
+        """
         return self._reporter
 
     @reporter.setter
@@ -882,8 +888,8 @@ class WorkerManager:
             None
 
         Raises:
-            exc: The exception that was added first to the queue of pending
-                exceptions
+            Exception: The exception that was added first to the queue of
+                pending exceptions
         """
 
         def log_task_stream(task: WorkerTask, *, num_entries: int,

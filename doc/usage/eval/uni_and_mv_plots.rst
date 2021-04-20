@@ -187,7 +187,7 @@ When using the recommended creator-averse plot function signature, the DAG is au
 
     As above, this is only a glimpse into the full capabilities of data selection via the transformation framework.
 
-    For more details, have a look at the `corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
+    For more details, have a look at `the corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
 
 .. warning::
 
@@ -196,7 +196,7 @@ When using the recommended creator-averse plot function signature, the DAG is au
 
 .. hint::
 
-    The subspace selection happens via :py:meth:`paramspace.ParamSpace.activate_subspace`.
+    The subspace selection happens via :py:meth:`~paramspace.paramspace.ParamSpace.activate_subspace`.
 
 
 Remarks
@@ -257,7 +257,7 @@ Without DAG framework *(legacy approach)*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. deprecated:: 0.6
-    
+
 .. warning::
 
     This approach of selecting data from the multiverse is **deprecated.**

@@ -35,6 +35,7 @@
 !LICENSE
 !LICENSE.LESSER
 !CITATION.cff
+!.nitpick-ignore
 
 # Python and configuration
 !*.py

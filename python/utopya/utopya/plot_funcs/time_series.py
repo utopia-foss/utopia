@@ -37,21 +37,21 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             sizes_from: str=None, size_factor: float=1.,
             **plot_kwargs) -> None:
     """Plot the density of a mask, i.e. of a dataset holding booleans.
-    
+
     This plotting function is useful when creating a plot from data that is
     encoded in a binary fashion, e.g.: arrays containing True to denote the
     existence of some entity or some value and False to denote its absence.
-    
+
     If the dataset chosen via ``path_to_data`` is not already of boolean data
     type, the ``preprocess`` argument is to be used to generate the
     array-like boolean. By means of this argument, a binary operation of form
     ``data <operator> rhs_value`` is carried out, which results in the desired
     mask.
-    
+
     Another feature of this plotting function is that it can include another
     data source to use for the sizes of the plots; in that case, a scatter plot
     rather than a line plot is carried out.
-    
+
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The selected universe data
@@ -72,7 +72,7 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             See :py:func:`utopya.dataprocessing.transform` for more info.
             NOTE The operations are carried out _before_ calculating the
             density over the parameters specified in ``mean_of``.
-            The ``preprocess``ing should not be used for calculating the mean.
+            The ``preprocess`` ing should not be used for calculating the mean.
         transformations_log_level (int, optional): With which log level to
             perform the preprocess. Useful for debugging.
         sizes_from (str, optional): If given, this is expected to be the path
@@ -82,12 +82,12 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             makes configuration via the ``size_factor`` parameter feasible.
         size_factor (float, optional): The factor by which to scale the sizes
             given in the ``sizes_from`` argument.
-        **plot_kwargs: Passed on to plt.plot or plt.scatter
-    
+        \**plot_kwargs: Passed on to plt.plot or plt.scatter
+
     Raises:
         ValueError: If the selected data is not a boolean mask. This error can
             be alleviated by providing the ``preprocess`` argument.
-    
+
     Returns:
         None: Description
     """
@@ -119,7 +119,7 @@ def density(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     if sizes_from is None:
         hlpr.ax.plot(density.coords['time'], density, **plot_kwargs)
         return
-    
+
     # Otherwise, need to get the sizes and performs a scatter plot
     sizes = uni['data'][model_name][sizes_from]
     # Need to normalize the sizes to the maximum value, otherwise it get's
@@ -149,7 +149,7 @@ def densities(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
         to_plot (dict): Which data to plot the densities of. The keys of this
             dict are used as ``path_to_data`` for the ``density`` function. The
             values are unpacked and passed to ``density``
-        **common_plot_kwargs: Passed along to the ``density`` plot function for
+        \**common_plot_kwargs: Passed along to the ``density`` plot function for
             all calls. Note that this may not contain any keys that are given
             within ``to_plot``!
     """
@@ -180,7 +180,7 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
 
         This automatically calculates the mean over all *but* the ``time``
         dimension of the data.
-    
+
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         uni (UniverseGroup): The universe from which to plot the data
@@ -192,7 +192,7 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
             plot on the x axis of the phase space plot
         cmap (str, optional): The cmap which is used to color-code the time
             development. If not given, will not color-code it.
-        **scatter_kwargs: Passed on to plt.scatter
+        \**scatter_kwargs: Passed on to plt.scatter
     """
     x = uni['data'][model_name][x]
     y = uni['data'][model_name][y]
@@ -204,7 +204,7 @@ def phase_space(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
     # If a colormap was given, use it to color-code the time
     cc_kwargs = ({} if cmap is None
                  else dict(c=f_y.coords['time'], cmap=cmap))
-    
+
     # Plot the phase space
     sc = hlpr.ax.scatter(f_x, f_y, **cc_kwargs, **scatter_kwargs)
 

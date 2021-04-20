@@ -22,13 +22,13 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
     """Calculates the positions and sizes of rectangles centered at the given
     coordinates in such a way that they fully cover the 2D space spanned by
     the coordinates.
-    
+
     The exact values of the coordinates are arbitrary, but they should be
     ordered. The resulting rectangles will not necessarily be centered around
     the coordinate, but the distance between rectangle edges is set such that
     it lies halfway to the next coordinate in that dimension; the "halfway" is
     evaluated according to a certain scale.
-    
+
     Args:
         x_coords (np.ndarray): The x coordinates
         y_coords (np.ndarray): The y coordinates
@@ -47,11 +47,12 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
         extend (bool, optional): Whether to extend the rectangles of the points
             at the border of the domain such that the coordinate is _not_ at
             the edge of the rectangle but in the bulk.
-    
+
     Returns:
         Tuple[xr.Dataset, Dict[str, tuple]]: The first tuple element is the
             xr.Dataset of rectangle specifications, each available as a data
-            variable.
+            variable:
+
                 - ``pos_x``, ``pos_y``: position of the lower-value coordinate
                   of the rectangle. Together, this specifies the bottom left-
                   hand corner of the rectangle (in a right-hand coordinate
@@ -61,6 +62,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
                   to the top-right hand corner of the rectangle
                 - ``rect_spec``: A matplotlib-compatible rectangle
                   specification, i.e. (position, width, height)
+
             The second tuple element are the limits in x and y direction, given
             as dict with keys x and y.
     """
@@ -77,24 +79,24 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
         """Given the coordinates and the scale, determine the distances
         between coordinates in one dimension. This is also used to check the
         scale.
-        
+
         Args:
             coords (array-like): Sequence of coordinates
             scale (str): The scale to use
             axis_name (str): The name of the axis; used for error message only
-        
+
         Returns:
             Tuple[np.ndarray, str]: The coordinate distances and the new scale
-        
+
         Raises:
             ValueError: On invalid scale argument
         """
         if scale in LIN_SCALES:
             diffs = np.diff(coords)
-        
+
         elif scale in LOG_SCALES:
             diffs = np.diff(np.log(coords))
-        
+
         elif scale in CATEGORIAL_SCALES:
             # For categorial scale at value, use just some arbitrary integeres
             # for the coordinates; the scale can then be assumed linear.
@@ -102,7 +104,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
                 coords = list(range(len(coords)))
             diffs = np.diff(coords)
             scale = 'lin'
-        
+
         else:
             raise ValueError("Invalid scale argument for {} axis: '{}'! "
                              "Expected one of: {}"
@@ -117,7 +119,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
         if diffs.size < 1:
             # Need to use the default value
             diffs = np.array([default, default])
-        
+
         elif extend:
             # Add the first item to the beginning and the last to the end of
             # the diffs sequences to account for the borders
@@ -138,7 +140,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
         if scale in LIN_SCALES:
             return (float(coords[0])  - sizes[0],
                     float(coords[-1]) + sizes[-1])
-        
+
         elif scale in LOG_SCALES:
             return (np.exp(np.log(float(coords[0]))  - sizes[0]),
                     np.exp(np.log(float(coords[-1])) + sizes[-1]))
@@ -150,7 +152,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
     # positions and the desired sizes.
     # Have 4 explicit functions (one for each scale specification) because it's
     # very tedious to create the rectangle specifier in a general way ... Grml.
-    
+
     def calc_linlin_rect(x: float, y: float,
                          x_sizes: tuple, y_sizes: tuple) -> tuple:
         """
@@ -162,7 +164,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
             y (float): The y-coordinate
             x_sizes (tuple): The distance to the rectangle edges in x direction
             y_sizes (tuple): The distance to the rectangle edges in y direction
-        
+
         Returns:
             tuple: (x pos. bottom left-hand corner,
                     y pos. bottom left-hand corner,
@@ -178,7 +180,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
 
     def calc_linlog_rect(x, y, x_sizes, y_sizes) -> tuple:
         """See calc_linlin_rect"""
-        return ( 
+        return (
             x            - x_sizes[0],
             np.exp(np.log(y) - y_sizes[0]),
             x_sizes[0]   + x_sizes[1],
@@ -235,7 +237,7 @@ def calc_pxmap_rectangles(*, x_coords: np.ndarray, y_coords: np.ndarray,
 
     # Determine rectangle calculation method
     calc_rect = FUNC_MAP[(x_scale in LIN_SCALES, y_scale in LIN_SCALES)]
-    
+
     # Need two additional borders: the lower border of the first rectangle and
     # the upper border of the last rectangle.
     x_diffs = expand_diffs(x_diffs, extend=extend, default=default_distance)

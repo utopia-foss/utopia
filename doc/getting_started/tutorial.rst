@@ -170,7 +170,7 @@ You see how easy it is to run a model? 🙂
 But where are the simulation results?
 
 Navigate to your home folder. You should find a folder named ``utopia_output``.
-Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmmss`` is the timestamp of the simulation, i.e., the date and time the model has been run (more on this `below <#directory-structure>`_.)
+Follow the path ``~/utopia_output/SandPile/YYMMDD-hhmmss/``, where ``YYMMDD-hhmmss`` is the timestamp of the simulation, i.e., the date and time the model has been run (more on this :ref:`below <directory_structure>`.)
 
 .. hint::
 
@@ -218,6 +218,7 @@ Try the following to see how fast calculating the complementary cumulative proba
 
 Alternatively, you can set the ``--write-every`` and ``--write-start`` parameters to decrease the amount of data that is written out. The choice obviously depends on what you want to simulate and investigate with the model.
 
+.. _directory_structure:
 
 Directory structure
 ^^^^^^^^^^^^^^^^^^^

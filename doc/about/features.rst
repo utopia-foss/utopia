@@ -491,7 +491,7 @@ The Utopia *Multiverse* – Parallelization of Simulations
 * For the easy definition of different such configurations, see :ref:`below <feature_parameter_sweeps>`.
 * 📚
   :py:class:`~utopya.multiverse.Multiverse`,
-  :py:class:`~utopya.multiverse.WorkerManager`,
+  :py:class:`~utopya.workermanager.WorkerManager`,
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`
 
 
@@ -520,9 +520,9 @@ Reporter
 
 Defining Parameter Sweeps
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-* The ``parameter_space`` key of the :ref:`meta config <feature_meta_config>` is interpreted as a multidimensional object, a :py:class:`~paramspace.ParamSpace`.
+* The ``parameter_space`` key of the :ref:`meta config <feature_meta_config>` is interpreted as a multidimensional object, a :py:class:`~paramspace.paramspace.ParamSpace`.
   The dimensions of this space are *parameters* that are assigned not a single value, but a set of values, a so-called *parameter dimension* or *sweep dimension*.
-  The :py:class:`~paramspace.ParamSpace` then contains all cartesian combinations of parameters.
+  The :py:class:`~paramspace.paramspace.ParamSpace` then contains all cartesian combinations of parameters.
   The :ref:`Multiverse <feature_multiverse>` can then iterate over all points in parameter space.
 * To define parameter dimensions, simply use the ``!sweep`` and YAML tags in your **run** configuration. In the example below, a :math:`25 \times 4 \times 101`\ -sized parameter space is created.
 
@@ -580,11 +580,11 @@ Defining Parameter Sweeps
 
 YAML and YAML Tags – Configuration files on steroids
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Anchors and inheritance make it easy to re-use definitions; avoid copy-paste at all costs! This is a built-in functionality of YAML:
+* YAML has many benefits as a configuration language, not only for :ref:`feature_parameter_sweeps` or :ref:`stop conditions <feature_stop_conditions>`.
+* **Anchors** and **inheritance** make it easy to re-use definitions; avoid copy-paste at all costs! This is a built-in functionality of YAML:
 
     .. code-block:: yaml
 
-        ---
         # Anchors: define with &, use with *
         some_value: &some_value 42
         some_other_value: *some_value  # ... will also be 42
@@ -597,11 +597,10 @@ YAML and YAML Tags – Configuration files on steroids
           <<: [*some_mapping]          # Can also specify multiple anchors here
           spam: SPAM                   # Overwrite an inherited value
 
-* Additional YAML tags help in creating some entries:
+* Additional YAML tags help in creating configuration entries:
 
     .. code-block:: yaml
 
-        ---
         seconds: !expr 60*60*24 + 1.5  # Evaluate mathematical expressions
         a_slice: !slice [10,100,5]     # Create a python slice object
         a_range: !range [0, 10, 2]     # Invokes python range(*args)
@@ -609,8 +608,10 @@ YAML and YAML Tags – Configuration files on steroids
         bool2: !all [true, true]
 
 * 📚
-  `YAML Tutorial <https://learnxinyminutes.com/docs/yaml/>`_,
-  [more references needed here]
+  :ref:`faq_config_YAML`,
+  `YAML tags implemented by paramspace <https://paramspace.readthedocs.io/en/latest/yaml/supported_tags.html>`_,
+  `YAML Wikipedia entry <https://en.wikipedia.org/wiki/YAML>`_,
+  `YAML Tutorial <https://learnxinyminutes.com/docs/yaml/>`_
 
 
 
@@ -623,11 +624,9 @@ Stop Conditions – Dynamically stop simulations
 * Total timeout is controlled via ``run_kwargs.timeout`` key of :ref:`meta configuration <feature_meta_config>`.
 * Can be configured via meta configuration by passing a list of conditions to the ``run_kwargs.stop_conditions`` key. Example:
 
-    .. literalinclude:: ../../python/utopya/utopya/cfg/base_cfg.yml
+    .. literalinclude:: ../../python/utopya/test/cfg/stop_conds.yml
         :language: yaml
-        :start-after: # Below, an EXAMPLE for two OR-connected stop conditions
-        :end-before: # End of StopCondition example
-        :dedent: 6
+        :start-after: ---
 
 * 📚
   :ref:`stop_conds`
@@ -669,8 +668,8 @@ It interfaces with the `dantro package <https://pypi.org/project/dantro/>`__ to 
 
 .. _feature_frontend_DataManager:
 
-Data handling with the :py:class:`~utopya.DataManager`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Data handling with the :py:class:`~utopya.datamanager.DataManager`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Is used to load all generated simulation data and represent it in a *hierachical* fashion (the "data tree") with a **uniform interface**
 * Is implemented in dantro and specialized for Utopia via the :py:class:`~utopya.datamanager.DataManager` class and the ``data_manager`` key of the meta configuration.
 * Makes use of `xarray <http://xarray.pydata.org/>`_ to provide **labelled dimensions and coordinates**. This information is extracted from the HDF5 attributes.
@@ -681,7 +680,7 @@ Data handling with the :py:class:`~utopya.DataManager`
 * 📚
   `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/data_mngr.html>`__,
   :ref:`data_handling`,
-  :py:class:`~utopya.DataManager`,
+  :py:class:`~utopya.datamanager.DataManager`,
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
   :ref:`data_handling_load_parallel`
 

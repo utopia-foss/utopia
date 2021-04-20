@@ -215,12 +215,12 @@ def register_models(args, *, registry):
     log.info("Model registration finished.\n\n%s\n", registry.info_str)
 
 
-def register_project(args, *, arg_prefix: str='') -> dict:
+def register_project(args: list, *, arg_prefix: str='') -> dict:
     """Register or update information of an Utopia project, i.e. a repository
     that implements models.
 
     Args:
-        args (TYPE): The CLI arguments object
+        args (list): The CLI arguments object
         arg_prefix (str, optional): The prefix to use when using attribute
             access to these arguments. Useful if the names as defined in the
             CLI are different depending on the invocation

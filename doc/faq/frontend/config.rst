@@ -11,6 +11,8 @@ How can I find the available model parameters?
 The base configuration documents a lot of parameters directly in the configuration file; see :ref:`here <utopya_base_cfg>`. For the model configuration, the model documentation usually includes the default configuration; for example, take a look at the :doc:`../../models/ForestFire`.
 
 
+.. _faq_config_YAML:
+
 What's with all these YAML ``!tags``? What can I use them for?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 YAML tags are really cool!

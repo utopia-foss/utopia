@@ -20,8 +20,8 @@ Refer to paramspace's own `documentation <https://paramspace.readthedocs.io/en/l
 ----
 
 
-The :py:class:`ParamSpace`
---------------------------
+The :py:class:`~paramspace.paramspace.ParamSpace` class
+-------------------------------------------------------
 Available YAML tags: ``!pspace``
 
 .. autoclass:: paramspace.paramspace.ParamSpace
@@ -33,14 +33,14 @@ Parameter Dimensions
 The following classes are used to defined parameter dimensions inside the parameter space.
 
 
-The :py:class:`~paramspace.ParamDimBase`: A common base class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :py:class:`~paramspace.paramdim.ParamDimBase`: A common base class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: paramspace.paramdim.ParamDimBase
     :members:
 
 
-The :py:class:`~paramspace.ParamDim`: A proper parameter dimension
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :py:class:`~paramspace.paramdim.ParamDim`: A proper parameter dimension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Available YAML tags: ``!pdim`` and ``!sweep``
 
 .. autoclass:: paramspace.paramdim.ParamDim
@@ -48,8 +48,8 @@ Available YAML tags: ``!pdim`` and ``!sweep``
     :show-inheritance:
 
 
-The :py:class:`~paramspace.CoupledParamDim`: attached to another dimension
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :py:class:`~paramspace.paramdim.CoupledParamDim`: attached to another dimension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Available YAML tags: ``!coupled-pdim`` and ``!coupled-sweep``
 
 .. autoclass:: paramspace.paramdim.CoupledParamDim
@@ -57,3 +57,20 @@ Available YAML tags: ``!coupled-pdim`` and ``!coupled-sweep``
     :show-inheritance:
 
 
+
+The :py:mod:`paramspace.yaml` module
+------------------------------------
+
+.. automodule:: paramspace.yaml
+    :members:
+    :show-inheritance:
+    :undoc-members: yaml
+
+
+
+The :py:mod:`paramspace.tools` module
+-------------------------------------
+
+.. automodule:: paramspace.tools
+    :members:
+    :show-inheritance:

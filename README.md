@@ -1,3 +1,5 @@
+![Utopia Logo](doc/_static/images/logo_blue_full.svg)
+
 # Utopia
 
 Utopia is a comprehensive modelling framework for complex and evolving systems.
@@ -49,6 +51,7 @@ The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation
 
 
 <!-- ###################################################################### -->
+<!-- marker-installation-instructions -->
 
 ## How to install
 The following instructions will install Utopia into a development environment
@@ -488,7 +491,7 @@ If a required version is not available, private package repositories may help to
 If you encounter difficulties with the installation procedure for any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
 
 
-#### Python
+### Python
 Utopia's frontend, `utopya`, uses some additional python packages.
 
 These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#4-configure-and-build)).
@@ -500,7 +503,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | [dantro][dantro]         | >= 0.16    | Handle, transform, and visualize hierarchically organized data |
 
 
-#### Recommended
+### Recommended
 The following depencies are _recommended_ to be installed, but are not strictly required by Utopia:
 
 | Software              | Version | Comments                          |

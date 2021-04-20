@@ -229,7 +229,7 @@ class Reporter:
             write_to (Union[str, Dict[str, dict]], optional): The name of the
                 writer. If this is a dict of dict, the keys will be
                 interpreted as the names of the writers and the nested dict as
-                the **kwargs to the writer function.
+                the \**kwargs to the writer function.
             min_report_intv (float, optional): The minimum report interval (in
                 seconds) for this report format
             rf_kwargs (dict, optional): Further kwargs to ReportFormat.__init__
@@ -540,13 +540,15 @@ class Reporter:
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
-    def __init__(self, wm: 'WorkerManager', *,
-                 mv: 'Multiverse'=None, **reporter_kwargs):
+    def __init__(self, wm: 'utopya.workermanager.WorkerManager', *,
+                 mv: 'utopya.multiverse.Multiverse'=None, **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager.
 
         Args:
-            wm (WorkerManager): The associated WorkerManager
-            mv (Multiverse, optional): The Multiverse this reporter is used in.
+            wm (utopya.workermanager.WorkerManager): The associated
+                WorkerManager instance
+            mv (utopya.multiverse.Multiverse, optional): The Multiverse this
+                reporter is used in.
                 If this is provided, it can be used in report parsers, e.g. to
                 provide additional information on simulations.
             **reporter_kwargs: Passed on to parent method
@@ -665,7 +667,7 @@ class WorkerManagerReporter(Reporter):
 
     # Methods working on data .................................................
 
-    def register_task(self, task: 'Task'):
+    def register_task(self, task: 'utopya.task.WorkerTask'):
         """Given the task object, extracts and stores some information.
 
         The information currently extracted is the run time and the exit code.
@@ -673,7 +675,8 @@ class WorkerManagerReporter(Reporter):
         This can be used as a callback function from a WorkerTask object.
 
         Args:
-            task (WorkerTask): The WorkerTask to extract information from.
+            task (utopya.task.WorkerTask): The WorkerTask to extract
+                information from.
         """
         # Register the runtime
         if 'run_time' in task.profiling:
@@ -1073,7 +1076,7 @@ class WorkerManagerReporter(Reporter):
 
         If there are multiple tasks specified, it is assumed that a sweep is or
         was being carried out and an information string is retrieved from the
-        :py:class:`paramspace.paramspace.Paramspace` object, which is then
+        :py:class:`paramspace.paramspace.ParamSpace` object, which is then
         returned.
         If only a single task was defined, returns an empty string.
 

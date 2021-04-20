@@ -42,13 +42,6 @@ class Multiverse:
     The WorkerManager takes care to perform these simulations in parallel, the
     DataManager allows loading the created data, and the PlotManager handles
     plotting of that data.
-
-    Attributes:
-        BASE_META_CFG_PATH (str): Where the multiverse base configuration is
-            located; defaults to ``utopya/cfg/base_cfg.yml``
-        RUN_DIR_TIME_FSTR (str): The format string to generate timestamps
-        USER_CFG_SEARCH_PATH (str): Where to look for user configuration files
-        UTOPYA_BASE_PLOTS_PATH (str): Where utopya defines base plot configs
     """
 
     # Where the default meta configuration can be found
@@ -330,6 +323,7 @@ class Multiverse:
 
         The final configuration dict is built from up to four components,
         where one is always recursively updating the previous level:
+
             1. base: the default configuration, which is always present
             2. user (optional): configuration of user- and machine-related
                parameters
@@ -467,6 +461,8 @@ class Multiverse:
         will be of form <timestamp>_<model_note> and be part of the following
         directory tree:
 
+        ::
+
             utopia_output
                 model_a
                     180301-125410_my_model_note
@@ -485,9 +481,12 @@ class Multiverse:
         include a timestamp as each node might return not quite the same value.
         Instead, a value from an environment variable is used.
         The resulting path can have different forms, depending on which
-        environment variables were present; required parts are denoted by a *
-        in the following pattern; if the value of the other entries is not
-        available, the connecting underscore will not be used.
+        environment variables were present; required parts are denoted by a
+        ``*`` in the following pattern; if the value of the other entries is
+        not available, the connecting underscore will not be used:
+
+        ::
+
             {timestamp}_{job id*}_{cluster}_{job account}_{job name}_{note}
 
         Args:
@@ -804,7 +803,8 @@ class Multiverse:
         """Helper function that handles task assignment to the WorkerManager.
 
         This function creates a WorkerTask that will perform the following
-        actions __once it is grabbed and worked at__:
+        actions **once it is grabbed and worked at**:
+
           - Create a universe (folder) for the task (simulation)
           - Write that universe's configuration to a yaml file in that folder
           - Create the correct arguments for the call to the model binary
@@ -1203,7 +1203,7 @@ class FrozenMultiverse(Multiverse):
 
     def _create_run_dir(self, *, out_dir: str, run_dir: str, **__):
         """Helper function to find the run directory from arguments given
-        to __init__.
+        to :py:meth:`~utopya.multiverse.Multiverse.__init__`.
 
         Overwrites the method from the parent Multiverse class, because the
         FrozenMultiverse does not require setting up a *new* run directory but
@@ -1213,7 +1213,7 @@ class FrozenMultiverse(Multiverse):
         Args:
             out_dir (str): The output directory
             run_dir (str): The run directory to use
-            **__: ignored
+            ``**__``: ignored
 
         Raises:
             IOError: No directory found to use as run directory
