@@ -16,4 +16,3 @@ Please also refer to the :ref:`C++ documentation <cpp_docs>`.
        config
        manager
        select
-       graph

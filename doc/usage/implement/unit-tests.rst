@@ -137,7 +137,7 @@ inserted. This can be easily achieved by declaring a test function that takes
 several types and is executed for every type seperately. In the function
 signature, specify the test case name, the name of the type used inside the
 function, and the list of all types which should be used.
-For more information, see the Boost Test docs on `template test cases <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/test_cases/test_organization_templates.html>`_.
+For more information, see the Boost Test docs on `template test cases <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/tests_organization/test_cases/test_organization_templates.html>`_.
 
 .. code-block:: c++
 
@@ -166,7 +166,7 @@ typedef for ``int``, and one where it is for ``double``.
 
 Using a Fixture
 ---------------
-Fixtures are standardized objects instantiated for every single test function execution. Use them to avoid repeating the setup of certain objects within multiple test functions. A fixture for Boost Test should be a ``struct`` with public members. These members will be *directly* available within the test function. You can also define fixtures for entire test suites. For more information, see the Boost Test docs on `test fixtures <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html>`_.
+Fixtures are standardized objects instantiated for every single test function execution. Use them to avoid repeating the setup of certain objects within multiple test functions. A fixture for Boost Test should be a ``struct`` with public members. These members will be *directly* available within the test function. You can also define fixtures for entire test suites. For more information, see the Boost Test docs on `test fixtures <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html>`_.
 
 .. code-block:: c++
 
@@ -192,7 +192,7 @@ Fixtures are standardized objects instantiated for every single test function ex
 
 .. hint::
 
-    If you find yourself frequently using the same fixture, have a look at the ``BOOST_FIXTURE_TEST_SUITE`` `documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html#boost_test.tests_organization.fixtures.case.fixture_for_a_complete_subtree>`_.
+    If you find yourself frequently using the same fixture, have a look at the ``BOOST_FIXTURE_TEST_SUITE`` `documentation <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/tests_organization/fixtures/case.html#test_case_fixture_subtree>`_.
     Inside the fixture test suite, you can conveniently use ``BOOST_AUTO_TEST_CASE``.
     This can also be useful if you want to use the templated test cases described above *and* a fixture at the same time.
 
@@ -268,7 +268,7 @@ Comparing floating-point numbers often requires a tolerance in order to be stabl
         BOOST_TEST(x == z, tt::tolerance(0.001));
     }
 
-See `the documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/testing_tools/extended_comparison/floating_point.html>`_ for more information.
+See `the documentation <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/testing_tools/extended_comparison/floating_point.html>`_ for more information.
 
 Collection Comparisons
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -297,7 +297,7 @@ By default, collections are compared via their corresponding comparsion operator
         BOOST_TEST(b != c, tt::per_element()); // nok: size mismatch
     }
 
-Read more about different ways of comparing collections in the `corresponding documentation <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/testing_tools/extended_comparison/collections.html>`_.
+Read more about different ways of comparing collections in the `corresponding documentation <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/testing_tools/extended_comparison/collections.html>`_.
 
 
 
@@ -312,7 +312,7 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
 * **Write small tests** and organize them into logical units, so-called *test suites*:
 
     * Test suites help to provide information on where an error occurred and which test suites belong together. You can regard them as alternative kind of modularization.
-    * Use ``BOOST_AUTO_TEST_SUITE``, as explained `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/tests_organization/test_tree/test_suite.html#boost_test.tests_organization.test_tree.test_suite.automated_registration>`__.
+    * Use ``BOOST_AUTO_TEST_SUITE``, as explained `here <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/tests_organization/test_tree/test_suite.html#boost_test.tests_organization.test_tree.test_suite.automated_registration>`__.
 
 * **Avoid copy-paste** code by ...
 
@@ -326,18 +326,18 @@ Following the motivation of the remarks on :ref:`good_unit_test` above, the list
         * When doing ``BOOST_TEST(some_bool_evaluating_function(a, b))``, the test output will not be insightful, as it will only say ``false``.
         * Note that you can also :ref:`compare custom types <boost_test_compare_custom_types>`.
 
-    * There are a multitude of ways to `control test output <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/utf_reference/testout_reference.html>`_.
+    * There are a multitude of ways to `control test output <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/utf_reference/testout_reference.html>`_.
       For example, with ``BOOST_TEST_CONTEXT``, you can specify a message that is shown when an assertion fails within the context.
 
         * The context message can inform about the set of parameters that are used for the assertions or that were used to set up the object that is tested in that context.
         * Contexts can also be nested.
-        * Read more about contexts `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/contexts.html>`__.
+        * Read more about contexts `here <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/contexts.html>`__.
 
     * ``BOOST_TEST_CHECKPOINT`` and ``BOOST_TEST_PASSPOINT`` help to better locate failure location.
 
         * This can be useful when a failure occurs not within or near a ``BOOST_*`` statement, but elsewhere.
         * Note that every ``BOOST_*`` statement automatically acts as a passpoint.
-        * Read more about failure location `here <https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/checkpoints.html>`__.
+        * Read more about failure location `here <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/test_output/test_tools_support_for_logging/checkpoints.html>`__.
 
 
 
@@ -519,13 +519,13 @@ Again, see `the corresponding doxygen documentation <../../doxygen/html/group___
 
 
 .. _Summary of the API for Writing Tests:
-    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/
     testing_tools/summary.html
 
 .. _Declaring and Organizing Tests:
-    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/
     tests_organization.html
 
 .. _Summary of the API for Declaring and Organizing Tests:
-    https://www.boost.org/doc/libs/1_72_0/libs/test/doc/html/boost_test/
+    https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/
     tests_organization/summary_of_the_api_for_declaring.html

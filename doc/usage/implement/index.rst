@@ -9,6 +9,7 @@ Implementing Models
    overview
    step_by_step
    datamanager
+   graph
    unit-tests
    running-tests
    nested-models

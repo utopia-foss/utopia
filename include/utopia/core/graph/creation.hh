@@ -499,8 +499,12 @@ Graph create_BollobasRiordan_graph(std::size_t num_vertices,
  *           with a given probability.
  *  \warning The graph generating small_world_generator function from the
  *           boost graph library that is used in this function rewires only
- *           in_edges. The out_edge distribution is still constant with the
- *           delta-peak at the mean_degree.
+ *           in_edges. Thus, for directed graphs the out_edge distribution is
+ *           still constant with the delta-peak at the mean_degree.
+ *  \warning For directed graphs, the initial k-regular graph is created with
+ *           the lowest possible reciprocity,
+ *           i.e., for mean_degree < num_vertices / 2 the reciprocity is zero.
+
  *
  * /tparam Graph        The graph type
  * /tparam RNG          The random number generator type

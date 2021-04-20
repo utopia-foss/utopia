@@ -3,8 +3,7 @@
 ``ContDisease`` — Contagious Diseases
 =====================================
 
-This is a simple model of a contagious disease on a 2D grid. It is based
-on the description in the script of the CCEES lecture by Prof. Roth.
+This is a simple model of a contagious disease on a 2D grid. 
 
 Fundamentals
 ------------

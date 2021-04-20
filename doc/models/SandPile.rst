@@ -10,8 +10,7 @@ It is then relaxed (sand topples) such that the model ends the initial iteration
 The borders of the model's grid are fixed at a given (sub-critical) slope value, such that each sand may "fall off" the borders of the grid.
 
 In each timestep, the rearrangement of grains can affect any number of positions. It is possible that the slope only changes in one position, or that a single grain added causes an avalanche that affects almost the entire grid.
-These features of unpredictability and lack of characteristic scale make the model interesting; it is based on the description in the CCEES Lecture Notes by Kurt Roth in chapter 7.2 (Discrete Complex Systems – Sandpile Model). See there for an in-depth theoritcal description and simulation results.
-
+These features of unpredictability and lack of characteristic scale make the model interesting.
 
 Default Model Configuration
 ---------------------------
