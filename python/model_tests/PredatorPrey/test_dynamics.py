@@ -1,10 +1,11 @@
 """Tests of the initialisation of the PredatorPrey model"""
 
 import numpy as np
+import h5py as h5
 import pytest
+import xarray as xr
 
 from utopya.testtools import ModelTest
-
 from .test_init import model_cfg
 
 # Configure the ModelTest class
@@ -12,7 +13,6 @@ mtc = ModelTest("PredatorPrey", test_file=__file__)
 
 # Utility functions -----------------------------------------------------------
 
-# Tests -----------------------------------------------------------------------
 
 # Test all the basic functions that determine the dynamics of the model:
 # - cost_of_living
@@ -21,6 +21,24 @@ mtc = ModelTest("PredatorPrey", test_file=__file__)
 # - reproduction
 # TODO Improve these by using more xarray functionality, also to arrive at a
 #      more readable representation (instead of the np.unique stuff)
+
+
+# Fixtures --------------------------------------------------------------------
+# Define fixtures here
+
+@pytest.fixture
+def tmp_h5data_fpath(tmpdir) -> str:
+    """Creates temporary hdf5 file with data for test_prey_flee"""
+    # Create predator and prey data
+    predator_data = ([1, 0])
+    prey_data = ([0, 1])
+    fpath = str(tmpdir.join("flee_data.h5"))
+    with h5.File(fpath, "w") as f:
+        f.create_dataset("predator", data=predator_data)
+        f.create_dataset("prey", data=prey_data)
+    return fpath
+
+# Tests -----------------------------------------------------------------------
 
 def test_cost_of_living_prey():
     """Test the cost of living of the prey"""
@@ -113,25 +131,93 @@ def test_predator_movement():
     assert np.any(diff != 0)
     
 
-def test_prey_flee():
-    """ Test whether the prey flees from the predator. Unfortunately, as the 
-        update order is random, the prey can only flee, if its own cell has
-        not been updated, before a predator invades it.
+def test_predator_conservation():
+    """ If life costs and reproduction chance are both zero, the number of 
+        predators should be conserved.
     """
+
+    mv, dm = mtc.create_run_load(from_cfg="test_predator_conservation.yml")
+
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        predator = data['predator']
+        sum_of_predators = predator.sum(dim=['x', 'y'])
+
+        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
+        
+
+def test_prey_conservation():
+    """ If life costs and reproduction chance are both zero, the number of 
+        prey should be conserved if there are no predators around.
+    """
+
+    mv, dm = mtc.create_run_load(from_cfg="test_prey_conservation.yml")
+
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        prey = data['prey']
+        sum_of_prey = prey.sum(dim=['x', 'y'])
+
+        assert(sum_of_prey == sum_of_prey.sel({'time': 0})).all()
+
+
+def test_prey_flee(tmp_h5data_fpath):
+    """ Test whether the prey flees from the predator. If the flee chance is 
+        100% and the resource intake, reproduction chance and cost of living 
+        are zero, predator and prey are just switching places for ever. So 
+        the number of predators and prey is conserved in this system.
+    """
+
     # Create a multiverse, run a single universe and save the data in the 
     # DataManager dm
-    mv, dm = mtc.create_run_load(from_cfg="test_prey_flee.yml")
+    mv, dm = mtc.create_run_load(from_cfg="test_prey_flee.yml",
+                                parameter_space=dict(
+                                    PredatorPrey=dict(
+                                        cell_states_from_file=dict(
+                                            hdf5_file=tmp_h5data_fpath
+                                        )
+                                    )
+                                )
+                            )
     
-    data = dm['multiverse'][0]['data']['PredatorPrey']
-    predator = data['predator']
-    prey = data['prey']
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        predator = data['predator']
+        prey = data['prey']
 
-    diff_prey = np.diff(prey, axis=0)
-    diff_predator = np.diff(predator, axis=0)
+        sum_of_predators = predator.sum(dim=['x', 'y'])
+        sum_of_prey = prey.sum(dim=['x', 'y'])
 
-    assert np.any(diff_prey == -1)
-    assert np.any(diff_predator == -1)
+        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
+        assert(sum_of_prey == sum_of_prey.sel({'time': 0})).all()    
+
+
+def test_hunting():
+    """ Test if prey completely vanishes over time, if the flee chance, 
+        life costs, resource intake and reproduction chance are zero.
+    """
+
+    # Create a multiverse, run a single universe and save the data in the 
+    # DataManager dm
+    mv, dm = mtc.create_run_load(from_cfg="test_hunting.yml")
     
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        predator = data['predator']
+        prey = data['prey']
+
+        sum_of_predators = predator.sum(dim=['x', 'y'])
+        sum_of_prey = prey.sum(dim=['x', 'y'])
+
+        # The sum of predators should be conserved
+        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
+        
+        # The sum of prey should (not necessarily strictly) monotonically
+        # decrease
+        assert(np.diff(sum_of_prey, axis=0) <= 0).all()
+        # For sufficient long time prey should went extinct. 
+        assert(sum_of_prey.sel({'time': 60}) == 0)
+
 
 def test_prey_reproduction(): 
     """Test the basic interaction functions of the PredatorPrey model"""
@@ -190,3 +276,4 @@ def test_predator_reproduction():
 
     # Check that at the end every predator has reproduced
     assert(expected_final_num_predator == num_predator[-1])
+

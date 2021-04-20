@@ -4,7 +4,7 @@ parameter_space:
 
   PredatorPrey:
     space:
-      extent: [100, 1]
+      extent: [2, 1]
       periodic: false  # such that it moves only in 1D
 
     cell_manager:
@@ -12,19 +12,20 @@ parameter_space:
         structure: square
         resolution: 1
 
-      cell_params:
-        p_prey: 0.5
-        p_predator: 0.5
-          
-    prey:
-      cost_of_living: 1.
-      repro_cost: 2.
-      repro_prob: 0.
-      resource_intake: 2.
-      p_flee: 1.
+    cell_states_from_file:
+      hdf5_file: set_dynamically_in_test
+      load_predator: true
+      load_prey: true
 
     predator:
-      cost_of_living: 1.
-      repro_cost: 2.
-      resource_intake: 2.
+      cost_of_living: 0.
+      resource_intake: 0.
       repro_prob: 0.
+
+    
+    prey:
+      cost_of_living: 0.
+      repro_prob: 0.
+      resource_intake: 0.
+      p_flee: 1.
+
