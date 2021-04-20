@@ -91,7 +91,7 @@ Where to next?
    :maxdepth: 1
    :hidden:
 
-   C++ Documentation <../../doxygen/html/index.html#http://>
+   C++ Documentation <../doxygen/html/index.html#http://>
    ref/cpp_doc
    api/utopya/utopya
    dantro package <https://dantro.readthedocs.io/en/stable/>

@@ -17,6 +17,7 @@ file(COPY
 set(TESTS_DATAIO
     cfg_utils_test
     filesystem_test
+    graph_utils_doc_test
     graph_utils_test
     graph_load_test
     hdfbufferfactory_test

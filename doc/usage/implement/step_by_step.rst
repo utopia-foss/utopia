@@ -47,9 +47,9 @@ Choosing a name for your model
 ------------------------------
 This is the point where you should decide on the name of your new Utopia model.
 
-For the purpose of this guide, we assume you want to implement a model called ``MyFancyModel``.
+For the purpose of this guide, we assume you want to implement a model called ``YourModelName``.
 Probably, you will give it a more suitable name.
-So, keep in mind to replace every ``MyFancyModel`` below with the actual model name.
+So, keep in mind to replace every ``YourModelName`` below with the actual model name.
 
 .. note::
 
@@ -57,125 +57,76 @@ So, keep in mind to replace every ``MyFancyModel`` below with the actual model n
     Your model name should consist of words that start with Capital Letters and are ``DirectlyConcatenatedWithoutSeparatingSymbols``.
 
     Also, you should not include the ``Model`` string into the name, e.g.: you *should* name your model ``ForestFire`` rather than ``ForestFireModel``
-    (so ``MyFancyModel`` is actually not the best example ;) ).
+    (so ``YourModelName`` is actually not the best example ;) ).
 
 
 Setting Up The Infrastructure
 -----------------------------
-Ok, let's get started by setting up the model infrastructure.
-The following will involve a lot of copying and renaming, so make sure to pay special care.
+Ok, let's get started by setting up the model infrastructure. If you wish to use one of the pre-implemented models as a basis for your new model, Utopia provides a command to do all the copying, renaming of files, and refactoring of file content:
 
-.. hint::
+.. code-block:: bash
 
-    The Utopia CLI provides a command to do all the copying, renaming of files, and refactoring of file content:
+    (utopia-env) $ utopia models copy ModelToCopy --new-name YourModelName
 
-    .. code-block:: bash
-
-        (utopia-env) $ utopia models copy ModelToCopy --new-name MyFancyModel
-
-    If you let the CLI do this step for you, most of the steps below are already covered.
-    It still makes sense to go through the individual steps and read the remarks, such that you get an idea of what the CLI tool actually does.
-
-    See ``utopia models copy --help`` for more usage information.
-
-    **For CCEES group members:** to copy to the ``utopia/models`` repository, the target project name needs to be ``UtopiaModels``.
-    If this does not work, make sure that the ``utopia/models`` repository on your machine is up-to-date with the latest master and you invoked ``cmake ..`` after the update.
+Replace ``YourModelName`` with whatever you wish to call your model, and you're ready to go! This command creates new directories inside ``src/utopia/models`` and ``python/model_plots``, and ``python/model_tests``, copies the files from the ``CopyMe`` directory and renames all the relevant variables. See ``utopia models copy --help`` for more usage information.
 
 .. note::
 
     If you want your new model in your own models repository, see :ref:`set_up_models_repo`.
 
+Copying Models Manually
+^^^^^^^^^^^^^^^^^^^^^^^
 
-To avoid problems, go through the following points from top to bottom, and first read the entire instructions for one step before starting to carry it out.
+If you want, you can also do these steps manually: go through the following points from top to bottom, and first read the entire instructions for one step before starting to carry it out. Here, ``CopyMe`` refers to the model you wish to copy:
 
+1. Navigate to the ``src/utopia/models`` directory inside the ``utopia`` repository, duplicate the ``CopyMe`` directory of your choice, and rename it to the name of your model (``YourModelName`` above).
 
-1. Move to the ``src/utopia/models`` directory inside the ``utopia`` repository.
-
-2. Copy the ``CopyMe`` directory and paste it in the same directory.
-
-    .. note::
-
-        **Important!** If you are a CCEES group member, you should **not** paste into the ``src/utopia/models`` directory in the ``utopia`` repository (which holds the framework code), but into the corresponding ``src/models`` directory inside the group-internal `models repository <https://ts-gitlab.iup.uni-heidelberg.de/utopia/models>`_.
-
-3. Rename the copied directory to ``MyFancyModel`` (or rather, your chosen
-   name).
-
-4. Rename all the files inside of the newly created directory such that all
-   occurrences of ``CopyMe`` are replaced by ``MyFancyModel``.
+2. Rename all the files inside of the newly created directory such that all
+   occurrences of ``CopyMe`` are replaced by ``YourModelName``.
 
   - You can do so by using the `parameter expansion capabilities <http://wiki.bash-hackers.org/syntax/pe>`_ of BASH: inside your model directory, call
 
   .. code-block:: bash
 
-    for file in CopyMe*; do mv $file ${file/CopyMe/MyFancyModel}; done
+    for file in CopyMe*; do mv $file ${file/CopyMe/YourModelName}; done
 
-5. Tell Utopia that there is a new model, e.g. include your model in the
+3. Tell Utopia that there is a new model, e.g. include your model in the
    Utopia CMake build routine:
 
   - In ``src/utopia/models/``, you will find a ``CMakeLists.txt`` file. Open it and let
     CMake find your model directory by including the command:
-    ``add_subdirectory(MyFancyModel)``.
-  - In ``src/utopia/models/MyFancyModel/``, there is another ``CMakeLists.txt`` file.
+    ``add_subdirectory(YourModelName)``.
+  - In ``src/utopia/models/YourModelName/``, there is another ``CMakeLists.txt`` file.
     Open it and change the line ``add_model(CopyMe CopyMe.cc)`` to
-    ``add_model(MyFancyModel MyFancyModel.cc)``. With this command, you are telling
+    ``add_model(YourModelName YourModelName.cc)``. With this command, you are telling
     CMake to keep track of a new model.
+    
 
-6. Open the file ``MyFancyModel.cc`` in the ``src/utopia/models/MyFancyModel/``
-   directory and do the following:
+4. In ``YourModelName.cc`` in the ``src/utopia/models/YourModelName/`` directory, replace every ``CopyMe`` with ``YourModelName``. In ``YourModelName.hh``, replace every ``CopyMe`` by ``YourModelName`` and every ``COPYME`` by ``YOURMODELNAME``.
 
-  - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
+5. Do the same in the  ``YourModelName_plots.yml``, ``YourModelName_base_plots.yml``, and ``YourModelName_cfg.yml`` files.
 
-7. Open the file ``MyFancyModel.hh`` in the ``src/utopia/models/MyFancyModel/``
-   directory and do the following:
+6. Now check if everything works as desired. For that, enter the ``build`` directory and run ``cmake ..``. Check that the CMake log contains ``Registered model target: YourModelName``. Now execute ``make YourModelName``.
 
-  - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
-  - Throughout the file, replace all ``COPYME``'s by ``MYFANCYMODEL``'s.
-
-8. Open the ``MyFancyModel_plots.yml`` and ``MyFancyModel_base_plots.yml`` files in the ``src/utopia/models/MyFancyModel/`` directory and do the following:
-
-  - Throughout the files, replace all ``CopyMe``'s by ``MyFancyModel``'s.
-
-9. Open the file ``MyFancyModel_cfg.yml`` in the ``src/utopia/models/MyFancyModel/``
-   directory and do the following:
-
-  - Throughout the file, replace all ``CopyMe``'s by ``MyFancyModel``'s.
-
-Now check if everything works as desired. For that, follow
-these steps
-
-10. Enter the ``build`` directory and run ``cmake ..``.
-11. Check that the CMake log contains ``Registered model target: MyFancyModel``.
-12. Now execute ``make MyFancyModel``.
-
-  * Are there errors? Check above that you adjusted everything as
-    described.
+  * Are there errors? Then check that you adjusted everything as
+    described above.
   * Building succeeds? Congratulations! 🎉
 
-13. Use the command line interface to run the model:
+7. Use the command line interface to run the model:
 
   .. code-block:: bash
 
      cd build
      source ./activate
-     utopia run MyFancyModel
+     utopia run YourModelName
 
 If everything works, let's continue with setting up the
-testing and plotting framework.
+testing and plotting framework. You can set up a simple Python testing framework in the following way:
 
-The Python Testing Framework
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8. Navigate to the ``python/model_tests`` directory, copy the ``CopyMe`` directory and rename it to ``YourModelName``. Make sure that there is a file named ``__init__.py`` inside the directory.
+9. Inside the created ``YourModelName`` directory, rename the ``test_CopyMe.py`` file to ``test_YourModelName.py``. Open the ``test_YourModelName.py`` file and replace every ``CopyMe`` with ``YourModelName``.
 
-You can set up a simple Python testing framework in the following way:
-
-14. Move to the ``python/model_tests`` directory.
-15. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``. Make sure
-    that there is a file named ``__init__.py`` inside the directory.
-16. Inside the created ``MyFancyModel`` directory, rename the
-    ``test_CopyMe.py`` file to ``test_MyFancyModel.py``.
-17. Open the ``test_MyFancyModel.py`` file and replace all ``CopyMe``'s
-    by ``MyFancyModel``'s.
-
-In this ``test_MyFancyModel.py`` file you can add tests to your model.
+In this ``test_YourModelName.py`` file you can add tests to your model.
 You have the full capabilities of `pytest <https://pytest.org>`_ available plus
 the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
 
@@ -186,17 +137,13 @@ the ``utopya.testtools`` module (as exemplified in the ``CopyMe`` model tests.)
   running the model.
 
 
-Custom Model Plots
-^^^^^^^^^^^^^^^^^^
 As you saw in the :ref:`tutorial <tutorial>`, it is possible to have custom model plots tailored to the data your model is producing.
 You can set them up in the following way:
 
-18. Move to the ``python/model_plots`` directory.
-19. Copy the ``CopyMe`` directory and rename it to ``MyFancyModel``.
-    Make sure that there is a file named ``__init__.py`` inside the directory.
+10. Navigate to the ``python/model_plots`` directory, copy the ``CopyMe`` directory and rename it to ``YourModelName``. Make sure that there is a file named ``__init__.py`` inside the directory.
 
 The ``*_plots.yml`` files you copied alongside the model configuration control
-the behavior of the plotting framework. In the ``MyFancyModel_plots.yml`` file,
+the behavior of the plotting framework. In the ``YourModelName_plots.yml`` file,
 you can specify which plots are to be performed automatically.
 
 The ``state.py`` script is provided to show you how a model specific plotting

@@ -1,9 +1,9 @@
-.. _faq_graph:
+.. _impl_graph:
 
 Graphs
 ======
 
-This part of the FAQ relates to the usage of the `Boost Graph Library <https://www.boost.org/doc/libs/1_74_0/libs/graph/doc/index.html>`_ in Utopia.
+Utopia makes use of the `Boost Graph Library <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/index.html>`_ to implement graph-related features. The following will help you create and use graphs in your model.
 
 .. contents::
    :local:
@@ -15,10 +15,63 @@ This part of the FAQ relates to the usage of the `Boost Graph Library <https://w
 
 Creating Graph Objects
 ----------------------
-How do I attach custom objects to the vertices and edges of my graph?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Oftentimes it is desirable to attach custom objects to vertices and edges of your graph (or, more precisely: the ``boost::adjacency_list``), e.g. to store a custom vertex state. In the following example, the structs ``Vertex`` and ``Edge`` are applied to an ``adjacency_list``. If you access e.g. a vertex with a ``vertex_descriptor vd`` such as  ``g[vd]``, an object of type ``Vertex`` is returned, which holds the properties ``id`` and ``state``. Introducing properties like this provides an easy way to set up and access internal properties. For further information, see the `bundled property documentation <https://www.boost.org/doc/libs/1_62_0/libs/graph/doc/bundles.html>`_ .
+Utopia provides the ``create_graph`` functionality to easily construct a graph. Assuming we are inside a Utopia model class, such that we have access to a model configuration (``this->_cfg``) and a random number generator (``*this->_rng``), here is an example of how you could construct an undirected graph:
+
+.. code-block:: c++
+
+    #include <utopia/core/graph.hh>
+    
+    // ...
+    
+    /// The vertex container type
+    using VertexContainer = boost::vecS;
+
+    /// The edge container type
+    using EdgeContainer = boost::vecS;
+
+    /// The graph type (here: undirected)
+    using Graph = boost::adjacency_list<
+        EdgeContainer,
+        VertexContainer,
+        boost::undirectedS>;
+    
+    // ..
+    
+    /// Inside the model class: initialize its graph member
+    Graph g = create_graph<Graph>(this->_cfg["my_graph"], *this->_rng);
+    
+Here ``cfg["my_graph"]`` points to the relevant configuration entry from the model configuration file. It could look like this:
+
+.. code-block:: yaml
+
+    my_graph:
+ 
+      # graph model
+      model: ErdosRenyi  # (a random graph)
+      num_vertices: 200
+      mean_degree: 4
+
+      ErdosRenyi:
+        parallel: False
+        self_edges: False
+
+The ``model`` key tells Utopia which graph generation algorithm you wish to use, for which there are several currently available options. Each model key requires its own parameters for the graph generation algorithm – see :ref:`below <graph_gen_functions>` for more details.
+
+.. note::
+
+    Depending on your needs, you will need to use either ``boost::undirectedS`` or ``boost::directedS``/``boost::bidirectionalS`` in the adjacency matrix of your graph.
+
+.. hint::
+    
+    Boost allows you to use different container types for vertices and edges, e.g. ``boost::vecS`` or ``boost::listS``, each optimised for different purposes. See `the boost graph documentation entry <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/using_adjacency_list.html#sec:choosing-graph-type>`_ for more details.
+
+.. _vertex_and_edge_propertymaps:
+
+Attaching custom objects to graph vertices and edges
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Oftentimes it is desirable to attach custom objects to vertices and edges of your graph (or, more precisely: the ``boost::adjacency_list``), e.g. to store a custom vertex state. In the following example, the structs ``Vertex`` and ``Edge`` are applied to an ``adjacency_list``. If you access e.g. a vertex with a ``vertex_descriptor vd`` such as  ``g[vd]``, an object of type ``Vertex`` is returned, which holds the properties ``id`` and ``state``. Introducing properties like this provides an easy way to set up and access internal properties. For further information, see the `bundled property documentation <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/bundles.html>`_ .
 
 .. code-block:: c++
 
@@ -59,15 +112,17 @@ that you define your graph as described in the section on
     edge container type and **then** the vertex container type, whereas for the structs you **first** need to specify the vertex struct and **then** the edge struct.
     If you're wondering why this is — we are, too!
 
+.. _graph_gen_functions:
 
-Are there graph-generating functions available in Utopia?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Yes. Utopia contains a selection of graph creation algorithms. What is more, the
+Graph-generating functions in Utopia
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Utopia contains a selection of graph creation algorithms. What is more, the
 ``Utopia::Graph::create_graph()`` function lets you easily switch between
 different graph creation models.
 
 Let's assume that we have defined a graph type as done in the previous section.
-Let's further assume that we are inside a Utopia model class, such that we
+Let's again further assume that we are inside a Utopia model class, such that we
 have access to a model configuration (``this->_cfg``) and a random number
 generator (``*this->_rng``). (Of course, you would need to adapt these two
 options if you use the function in another situation.)
@@ -76,8 +131,8 @@ In this case, we can just write:
 .. code-block:: c++
 
     Graph g = create_graph<Graph>(
-                this->_cfg["create_graph"], // You model configuration file
-                                            // requires a "create_graph"
+                this->_cfg["my_graph"],     // Your model configuration file
+                                            // requires a "my_graph"
                                             // entry.
                 *this->_rng
                 );
@@ -141,11 +196,12 @@ YAML file looks like this:
         filename: "my_airlines_network.xml"
         format:"graphml" # or "graphviz"/"dot" (the same)
 
+.. warning::
 
+    When generating scale-free networks, you *must* use ``BarabasiAlbert`` for undirected and ``BollobasRiordan`` for directed graphs.
 
 This of course is a highly documented configuration.
 You only need to specify configuration options if the creation algorithm you set requires them, otherwise they will be just ignored.
-
 
 
 
@@ -174,7 +230,7 @@ This is best described through examples:
 Prerequisits on Graph, Vertex, and Edge Type
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Note that this functionality can only be used if the vertices and edges of the
-graph are derived from a  `Utopia::Entity <../doxygen/html/group___graph_entity.html>`_.
+graph are derived from a  `Utopia::Entity <../../../doxygen/html/group___graph_entity.html>`_.
 Your definition of the graph needs to look like this:
 
 
@@ -196,10 +252,10 @@ This graph structure is similar to, though slighly more sophisticated than, the 
 
 
 
-Can I modify the graph structure while looping over a graph entity?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In general you can do it but you should be really careful because the iterators you use to loop over the graph can easily be invalidated.
-Have a look at the `boost graph documentation <https://www.boost.org/doc/libs/1_74_0/libs/graph/doc/adjacency_list.html>`_ for further information.
+Modifying the graph structure while looping over a graph entity
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When looping over a graph and simultaneously modifying its structure, you need to be really careful, because the iterators you use to loop over the graph can easily be invalidated.
+Have a look at the `boost graph documentation <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/adjacency_list.html>`_ for further information.
 
 As a rule of thumb: If you want to change the graph structure ...
 
@@ -207,84 +263,67 @@ As a rule of thumb: If you want to change the graph structure ...
 - do *not* use the ``apply_rule`` functions because they can easily result in buggy behavior.
 
 
+Saving Graph Data
+-----------------
+Utopia provides an interface to save ``boost::adjacency_list``s or custom properties attached to it. In a first step, it is highly recommended to set up a separate ``HDFGroup`` for the graph data using the ``create_graph_group`` function. It automatically adds some metadata as group attributes that allows to conveniently load the data as a ``GraphGroup`` on the frontent side.
+
+Saving a static graph
+^^^^^^^^^^^^^^^^^^^^^
+If you want to save *only* the topology of a graph, you can use the ``save_graph`` functionality to write the vertices and edges to HDF5:
+
+.. literalinclude:: ../../../test/data_io/graph_utils_doc_test.cc
+    :language: c++
+    :start-after: // DOC REFERENCE START: save_graph example
+    :end-before: // DOC REFERENCE END: save_graph example
+
+.. hint::
+
+    The ``save_graph`` function as used in the example above uses ``boost::vertex_index_t`` to retreive the vertex indices. However, custom vertex ids can be used by additionaly passing a PropertyMap of vertex ids. This would be needed, for example, when using a ``boost::listS`` VertexContainer.
+
+.. note::
+
+    If using a VertexContainer (EdgeContainer) type that does not provide a fixed internal ordering and if additionaly saving vertex (edge) properties, then the vertices and edges should be stored alongside the latter dynamically. For more details see :ref:`below <save_graph_properties>`
+
 
 .. _save_graph_properties:
 
-Save Node and Edge Properties
------------------------------
-How can values stored in vertex or edge objects be saved?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Saving vertex and edge properties dynamically
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+With the ``save_vertex_properties`` and ``save_edge_properties`` functions Utopia provides an interface for dynamic saving of graph data accessible via the vertex descriptors and edge descriptors, respectively.
 
-If you use a ``boost::adjacency_list`` with custom properties, you might want to save these properties to HDF5 in order to process the data later (e.g. plot the graph structure). To do so, Utopia provides the ``save_graph_properties`` function. To save properties, you need to pass information on how to access them by providing a tuple of pairs containing a ``name`` and a lambda function.
+When should you use this interface?
+* Not all VertexContainer and EdgeContainer types provide a fixed internal ordering. For example ``boost::vecS`` does, whereas ``boost::listS`` does not. In case a fixed ordering is not given: If you want to save multiple properties or if you want to save property data alongside the graph topology, all of that data should be written using this dynamic interface. **Correct alignment** of the data is guaranteed since all data is written in a single loop over the graph.
+* If in your model the number of vertices and edges changes over time it is difficult to initialize appropriate datasets as the size is not known. Thus, for **dynamic graphs** the dynamic interface should be used which circumvents this problem by creating a new dataset for each time step.
 
-In the following example, we want to save the properties ``id`` and ``state`` and provide two lambdas which extract these properties from an arbitrary ``Vertex v``. However, in general these lambdas can contain any calculation on ``Vertex v``.
+Let's look at an example: Let's assume we have a graph where each vertex holds a ``some_prop`` property and we want to save the graph topology and property data. For that we need to provide tuples of tuples, each of the latter containing a property *name* and the respective *adaptor*. The adaptor is a lambda function returning the property data given a vertex or edge descriptor and a reference to the graph. In order to write 2D data (here: for the edge data), multiple such adaptors must be passed (one for each coordinate) as well as the name of the second dimension.
 
+.. literalinclude:: ../../../test/data_io/graph_utils_doc_test.cc
+    :language: c++
+    :start-after: // DOC REFERENCE START: setup_adaptor_tuples example
+    :end-before: // DOC REFERENCE END: setup_adaptor_tuples example
 
-.. code-block:: c++
+Note that while here we simply extract the properties from the vertices (edges), in general the adaptors can contain any calculation on ``vd`` (``ed``).
 
-    auto get_properties = std::make_tuple(
-            std::make_tuple("id", [](auto& v){return v.id;}),
-            std::make_tuple("state", [](auto& v){return v.state;})
-    );
+These tuples can then be passed to the functions ``save_vertex_properties`` and ``save_edge_properties`` together with an ``adjacency_list``, a parent ``HDFGroup``, and a ``label``. The ``label`` will be used to distinguish the saved data and should be unique.
+For example, if you write a graph at every time step the ``label`` should encode the time at which the graph was written.
 
+.. literalinclude:: ../../../test/data_io/graph_utils_doc_test.cc
+    :language: c++
+    :start-after: // DOC REFERENCE START: save_properties example
+    :end-before: // DOC REFERENCE END: save_properties example
 
-This tuple can be passed to the function ``save_graph_properties`` together with
-an ``adjacency_list``, a parent ``HDFGroup``, and a ``label``. To determine if you
-want to save a vertex or edge property, the vertex or edge type (e.g. ``Vertex``
-or ``Edge``) is provided via a template argument. Please keep in mind that this
-type has to match the one contained in the graph type of ``g``.
-The ``label`` will be used to distinguish the saved data and should be unique.
-If you write a graph at, for example, every time step, the ``label`` should encode the time at which the graph was written.
+.. note::
 
+    In order to guarantee correct alignment of the data, which is needed if you want to be able to associate properties with one another, the ``save_vertex_properties`` and ``save_edge_properties`` functions must only be called once per model update step.
 
-.. code-block:: c++
-
-    save_graph_properties<Vertex>(graph, grp, "graph0", get_properties);
-
-The example code will result in the following structure (assuming the graph
-has 100 vertices):
-
-::
-
-    └┬ grp
-       └┬ id
-           └─ graph0         < ... shape(100,)
-        ├ state
-           └─ graph0         < ... shape(100,)
-
-Supposing that you do not want to apply custom vertices or edges, or you want
-to use functions that require a vertex or edge descriptor (e.g. ``boost::source`),
-you can call ``save_graph_properties`` with a ``vertex_descriptor`` or
-``edge_descriptor`` type as template argument. However, you have to adapt the
-tuple to use a ``descriptor``-type.
-The following example saves the ``id`` of the source vertex for each edge as well
-as its ``weight`` (``edge_dsc`` is the ``GraphType::edge_descriptor``):
-
-.. code-block:: c++
-
-    auto get_properties_desc = std::make_tuple(
-            std::make_tuple("source",
-                            [](auto& g, auto& ed){return g[source(ed, g)].id;}),
-            std::make_tuple("weight",
-                            [](auto& g, auto& ed){return g[ed].weight;})
-    );
-
-    save_graph_properties<edge_dsc>(graph, grp, "graph0", get_properties_desc);
-
-
-If you use a container without ordering to save vertices and/or edges in your
-graph as e.g. a ``boost::setS``, the ordering might differ within multiple calls
-of ``save_graph_properties``. Thus, if you want to be able to associate a
-property with another one (e.g. saved edges and their corresponding weight),
-make sure to call ``save_graph_properties`` only once, as the order is conserved
-in a single call.
+.. _loading_a_graph_from_a_file:
 
 Loading a Graph from a File
 -----------------------------
-Can I also use real-world networks as a basis for the graph?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using real-world networks as a basis for the graph
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Yes you can! Via the ``create_graph`` config interface you can access the graph loading mechanism and do your simulations on airline networks, social networks, and anything that you are able to find out there. The usage is as simple as the following example:
+Using the ``create_graph`` config interface you can access the graph loading mechanism and do your simulations on airline networks, social networks, and anything that you are able to find out there. The usage is as simple as the following example:
 
 .. code-block:: YAML
 
@@ -299,7 +338,7 @@ Yes you can! Via the ``create_graph`` config interface you can access the graph 
 
     The loader only supports loading to ``boost``'s ``adjacency_list``, not to an ``adjacency_matrix``, as this is a bit more difficult.
 
-    A workaround could be to copy the graph via `boosts copy graph functionality <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/copy_graph.html>`_ .
+    A workaround could be to copy the graph via `boosts copy graph functionality <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/copy_graph.html>`_ .
 
 The data that you load may need some curation before it works, though. As we are only loading the **graph's topology, without node/edge/graph attributes**, you might have to get rid of some data attributes, that can cause the loader to crash.
 
@@ -338,10 +377,10 @@ As far as we experienced it, attributes of the type ``vector_float`` or ``vector
 
     One large database of real-world networks, that are available for download in the GraphML format, is `Netzschleuder <https://networks.skewed.de/>`_, another database, that uses the *MatrixMarket* ``.mtx`` format is `Network Repository <http://networkrepository.com>`_.
 
-How do I load edge weights (or some other property) into utopia?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Loading edge weights (or some other property) into utopia
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to load edge weights, or some other *edge* property, that is stored in GraphViz like
+If you want to load edge weights, or some other *edge* property which is stored in GraphViz via
 
 .. code-block:: DOT
 
@@ -353,7 +392,7 @@ If you want to load edge weights, or some other *edge* property, that is stored 
     4;
   }
 
-or in GraphML, similarly
+or in GraphML via
 
 .. code-block:: XML
 
@@ -376,7 +415,7 @@ or in GraphML, similarly
     </graph>
   </graphml>
 
-then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/1_75_0/libs/property_map/doc/dynamic_property_map.html>`_ *to the create graph algorithm*. This can be done in two ways: either to ``boost``'s built-in ``boost:edge_weight``, or to a bundled property, for example a ``struct EdgeState``:
+then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/1_76_0/libs/property_map/doc/dynamic_property_map.html>`_ *to the create graph algorithm*. This can be done in two ways: either to ``boost``'s built-in ``boost:edge_weight``, or to a bundled property, for example a ``struct EdgeState``:
 
 
 .. code-block:: c++
@@ -391,12 +430,13 @@ then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/
     int some_int = 1;
   };
   using GraphType = boost::adjacency_list<
-                    boost::vecS,         // edge cont
-                    boost::vecS,         // vertex cont
-                    boost::directedS,
-                    boost::no_property,  // no vertex properties
-                    boost::property<boost::edge_weight_t, double, EdgeState>
-                    >;
+                          boost::vecS,         // edge container
+                          boost::vecS,         // vertex container
+                          boost::directedS,
+                          boost::no_property,  // no vertex properties
+                          boost::property<boost::edge_weight_t,
+                                          double, EdgeState>
+                          >;
   GraphType g(0);
 
   // Now you need to define dynamic property maps
@@ -417,12 +457,16 @@ then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/
   // g = GraphLoad::load_graph<GraphType>(_cfg_cg["load_from_file"], pmaps);
   // where you need to pass the corresponding config nodes.
 
-Now your graph should be loaded with the edge properties of your desire. If you find out how to include *vertex* properties, please let us know.
+Now your graph should be loaded with the edge properties of your desire. If you find out how to read *vertex* properties, from the file, please let us know.
 
 .. note::
 
     Make sure you load undirected graphs into undirected boost graphs and directed ones into directed ones. Conversions can be made both on the side of the file, and on boost's side, but for the reading process it must be coherent.
 
+.. note::
+
+    Whenever you use more than just one vertex/edge property, or more than just the bundle, the properties need to be nested, as in ``boost::property<boost::edge_weight_t, double, EdgeState>``. See the `documentation page on bundled properties <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/bundles.html>`_ for more examples.
+
 .. warning::
 
-    The loading into bundled edge properties does not work with the typical utopia graph entity specifications as yet, so ``using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;`` ``using Edge = GraphEntity<EdgeTraits>;``, limits you to ``boost``'s built-in properties, `which are quite a few actually <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/property.html>`_.
+    The loading into bundled edge properties does not work with the typical utopia graph entity specifications as yet, so ``using EdgeTraits = Utopia::GraphEntityTraits<EdgeState>;`` ``using Edge = GraphEntity<EdgeTraits>;``, limits you to ``boost``'s built-in properties, `which are quite a few actually <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/property.html>`_.

@@ -7,7 +7,7 @@ This template model supplies a minimal graph-based Utopia model.
 On top of what the :ref:`CopyMeBare model template provides <model_CopyMeBare>`, this model contains:
 
 * Infrastructure for graph setup and data writing
-* A customisable ``GraphType`` (based on the `Boost Graph Library <https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/index.html>`_), including vertex and edge properties
+* A customisable ``GraphType`` (based on the `Boost Graph Library <https://www.boost.org/doc/libs/1_76_0/libs/graph/doc/index.html>`_), including vertex and edge properties
 * Configuration files showcasing some of the graph setup and plotting capabilities
 * A ``cfgs`` directory with further example configuration files
 

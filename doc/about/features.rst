@@ -264,24 +264,13 @@ The ``select`` Interface – Selecting entities using some condition
 Graph Creation
 ^^^^^^^^^^^^^^
 * Create a graph with the ``create_graph`` function using a selection of generating algorithms and a configuration-based interface
-* Available algorithms for k-regular, random (Erdös-Renyi), small-world (Watts-Strogatz), scale-free (Barabási-Albert), directed scale-free (Bollobas-Riordan) graphs
+* Available algorithms for k-regular, random (Erdös-Renyi), small-world (Watts-Strogatz), undirected scale-free (Barabási-Albert), or directed scale-free (Bollobas-Riordan) graphs (see :ref:`here <graph_gen_functions>`).
+* Load a graph directly from GraphML or DOT (Graphviz) files. See :ref:`here<loading_a_graph_from_a_file>` for more details.
 * 📚
   `Doxygen <../../doxygen/html/namespace_utopia_1_1_graph.html>`__,
-  :ref:`FAQ on Create Graph <create_graphs>`,
+  :ref:`Graph documentation entry <impl_graph>`,
   :ref:`Graph Creation requirements for the  apply_rule on Graphs <apply_rule_graph>`
 
-.. code-block:: c++
-
-    include <utopia/graph/iterator.hh>
-    // ...
-
-    // Loop over all vertices and print their states
-    for (auto vertex : range<IterateOver::vertex>(g):
-        std::cout << g[vertex].property << "\n";
-
-    // Loop over all neighbors of vertex '0' and print their states
-    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g):
-        std::cout << g[vertex].property << "\n";
 
 Iterate Over Graph Entities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -804,7 +793,7 @@ C++: Boost-based Model Tests
 * Model code coverage can also be evaluated; again, see :doc:`../README`.
 * 📚
   :ref:`impl_unit_tests`,
-  `Boost.Test documentation <https://www.boost.org/doc/libs/1_71_0/libs/test/doc/html/index.html>`_
+  `Boost.Test documentation <https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/index.html>`_
 
 
 Python-based Model Tests

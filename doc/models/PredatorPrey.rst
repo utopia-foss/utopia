@@ -3,8 +3,7 @@
 ``PredatorPrey`` Dynamics
 =========================
 
-This model is a version of the Predator-Prey model from the CCEES lecture notes.
-It is implemented as a cellular automaton (CA) with the cells arranged on a two-dimensional grid and represents a simple case of spatially resolved population dynamics.
+This model is implemented as a cellular automaton (CA) with the cells arranged on a two-dimensional grid and represents a simple case of spatially resolved population dynamics.
 
 .. note::
 

@@ -14,7 +14,7 @@ Trees grow on a random basis and lightning causes them and the trees in the same
 
 Implementation
 --------------
-The model is implemented based on the the description in the CCEES lecture notes by Kurt Roth (chapter: Discrete Complex Systems — Contact Processes).
+
 The forest is modelled as a cellular automaton where each cell has can be in one of two states: ``empty`` or ``tree``.
 
 The update procedure is as follows: in each iteration step, iterate over all cells in a random order. For each cell, one of two actions can take place, depending on the current state of the cell:
