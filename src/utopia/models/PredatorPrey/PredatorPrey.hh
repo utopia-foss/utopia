@@ -26,12 +26,16 @@ struct State {
     /// The state a prey on this cell has
     SpeciesState prey;
 
+    /// Flag to indicate if the predator on this cell has already moved  
+    bool moved_predator;
+
     /// Construct a cell state with the use of a RNG
     template<class RNGType>
     State(const DataIO::Config& cfg, const std::shared_ptr<RNGType>& rng)
     :
         predator{},
-        prey{}
+        prey{},
+        moved_predator(false)
     {
         std::uniform_real_distribution<double> dist(0., 1.);
 
@@ -224,13 +228,18 @@ private:
         state.prey.resources = 0.;
     }
 
-    /// Move a predator on the given cell
-    void move_predator(const std::shared_ptr<Cell>& cell) {
+    /// Define the movement rule of predator
+    /** If a predator is on the given cell, it moves random to a neighbour 
+     * cell with prey on it. If no prey is available on neighbour cells, it 
+     * moves randomly to an empty cell, if there is on. Otherwise it stays 
+     * on its current cell.
+     */  
+    Rule _move_predator = [this](const auto& cell) {
         // Get the state of the Cell
         auto& state = cell->state;
 
         // Case: only a predator is on the cell
-        if (state.predator.on_cell) {
+        if ((state.predator.on_cell) and (not state.moved_predator)) {
             // checking neighbouring cells for prey and moving to that cell
 
             // clear the containers for cells that contain prey or empty cells
@@ -241,7 +250,7 @@ private:
             for (const auto& nb : this->_cm.neighbors_of(cell)) {
                 auto& nb_state = nb->state;
 
-                if (nb_state.prey.on_cell) {
+                if ((nb_state.prey.on_cell) and (not nb_state.predator.on_cell)) {
                     _prey_cell.push_back(nb);
                 }
                 // if neither a prey nor a predator is on the cell, then
@@ -261,6 +270,8 @@ private:
 
                 // Select a random neighbor cell and move the predator to it
                 auto nb_cell = _prey_cell[dist_prey(*this->_rng)];
+                // Mark target cell as cell with moved predator
+                nb_cell->state.moved_predator=true; 
                 move_predator_to_nb_cell(cell, nb_cell);
             }
 
@@ -274,13 +285,19 @@ private:
                 // Select a random empty neighbor cell and move the predator
                 // to it
                 auto nb_cell = _empty_cell[dist_empty(*this->_rng)];
+                // Mark target cell as cell with moved predator
+                nb_cell->state.moved_predator=true; 
                 move_predator_to_nb_cell(cell, nb_cell);
             }
         }
-    }
+        return state;
+    };
 
-    /// If a prey is on the cell, determine whether it may flee and where to
-    void flee_prey(const std::shared_ptr<Cell>& cell) {
+    /// Define the movement rule of prey. 
+    /**If a prey is on the same cell as a predator, determine whether it may 
+     * flee and where to.
+    */
+    Rule _flee_prey = [this](const auto& cell) {
         auto& state = cell->state;
 
         if (state.prey.on_cell and state.predator.on_cell) {
@@ -306,25 +323,11 @@ private:
                 }
             }
         }
+        return state;
         // NOTE Should the case be added that the neighboring cell has a predator?
         //      In case that there are no empty cells.
         //      Then the prey has again a small probability to flee in the next
         //      round.
-    }
-
-    /// Define the movement rule of an individual
-    /*+ Go through cells. If only a predator populates it, look for prey in
-     * the neighbourhood and move to that cell or go to an empty cell if no
-     * prey is found. If both predator and prey live on the same cell, the
-     * prey flees with a certain probability
-     */
-    Rule _move = [this](const auto& cell) {
-
-        move_predator(cell);
-
-        flee_prey(cell);
-
-        return cell->state;
     };
 
     /// Define the eating rule
@@ -435,7 +438,13 @@ private:
                 //      reproduction?
             }
         }
+        return state;
+    };
 
+    /// Resets the movement flag of predators to "false" for next turn.
+    Rule _reset_predator_movement = [](const auto& cell) {
+        auto& state = cell->state;
+        state.moved_predator = false;
         return state;
     };
 
@@ -483,7 +492,10 @@ public:
         if (this->_cfg["cell_states_from_file"]) {
             const auto& cs_cfg = this->_cfg["cell_states_from_file"];
             const auto hdf5_file = get_as<std::string>("hdf5_file", cs_cfg);
-
+            const auto predator_init_resources = get_as<double>("init_resources", 
+                this->_cfg["cell_manager"]["cell_params"]["predator"]);
+            const auto prey_init_resources = get_as<double>("init_resources", 
+                this->_cfg["cell_manager"]["cell_params"]["prey"]);
             if (get_as<bool>("load_predator", cs_cfg)) {
                 this->_log->info("Loading predator positions from file ...");
 
@@ -492,9 +504,16 @@ public:
                 // detect that a user supplied invalid values (better than
                 // failing silently, which would happen with booleans).
                 _cm.set_cell_states<int>(hdf5_file, "predator",
-                    [](auto& cell, const int on_cell){
+                    [predator_init_resources](auto& cell, const int on_cell){
                         if (on_cell == 0 or on_cell == 1) {
                             cell->state.predator.on_cell = on_cell;
+                            if(on_cell == 1){
+                                cell->state.predator.resources = 
+                                    predator_init_resources;
+                            }
+                            else{
+                                cell->state.predator.resources = 0;
+                            }
                             return;
                         }
                         throw std::invalid_argument("While setting predator "
@@ -510,9 +529,16 @@ public:
                 this->_log->info("Loading prey positions from file ...");
 
                 _cm.set_cell_states<int>(hdf5_file, "prey",
-                    [](auto& cell, const int on_cell){
+                    [prey_init_resources](auto& cell, const int on_cell){
                         if (on_cell == 0 or on_cell == 1) {
                             cell->state.prey.on_cell = on_cell;
+                            if(on_cell == 1){
+                                cell->state.prey.resources = 
+                                    prey_init_resources;
+                            }
+                            else{
+                                cell->state.prey.resources = 0;
+                            }
                             return;
                         }
                         throw std::invalid_argument("While setting prey "
@@ -550,15 +576,21 @@ public:
     void perform_step() {
         apply_rule<Update::async, Shuffle::off>
             (_cost_of_living, _cm.cells());
+        
+        apply_rule<Update::async, Shuffle::on>
+            (_move_predator, _cm.cells(), *this->_rng);
 
         apply_rule<Update::async, Shuffle::on>
-            (_move, _cm.cells(), *this->_rng);
+            (_flee_prey, _cm.cells(), *this->_rng);
 
         apply_rule<Update::async, Shuffle::off>
             (_eat, _cm.cells());
 
         apply_rule<Update::async, Shuffle::on>
             (_repro, _cm.cells(), *this->_rng);
+
+        apply_rule<Update::sync>
+            (_reset_predator_movement, _cm.cells());
     }
 
     /// Monitor model information

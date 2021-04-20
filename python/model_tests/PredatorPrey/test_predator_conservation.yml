@@ -1,0 +1,16 @@
+---
+parameter_space:
+  num_steps: 30
+
+  PredatorPrey:
+    predator:
+      cost_of_living: 0.
+      resource_intake: 0.
+      repro_prob: 0.
+    
+    prey:
+      cost_of_living: 0.
+      repro_prob: 0.
+      resource_intake: 0.
+
+
