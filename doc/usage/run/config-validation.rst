@@ -36,6 +36,7 @@ A ``default`` value is required, though the validity restrictions are optional.
 Refer to the documentation below and to the examples to learn more about possible keys.
 
 .. automethod:: utopya.parameter.Parameter.__init__
+   :noindex:
 
 .. warning::
 
@@ -49,7 +50,6 @@ Examples
     :language: yaml
     :start-after: ### Start -- config_validation_simple_tags
     :end-before:  ### End ---- config_validation_simple_tags
-    :dedent: 2
 
 .. hint::
 
@@ -67,7 +67,6 @@ Simply add the corresponding YAML tag and the default value directly:
     :language: yaml
     :start-after: ### Start -- config_validation_shorthand_tags
     :end-before:  ### End ---- config_validation_shorthand_tags
-    :dedent: 2
 
 Available shorthands are:
 
@@ -93,6 +92,7 @@ If ``parameter_space`` actually is a parameter space, validation will *always* o
 For all specified validation parameters, the given value is checked against the constraints using the :py:class:`~utopya.parameter.Parameter`\ 's :py:meth:`~utopya.parameter.Parameter.validate` method:
 
 .. automethod:: utopya.parameter.Parameter.validate
+   :noindex:
 
 .. hint::
 

@@ -2,13 +2,13 @@
 
 \mainpage Utopia Doxygen Documentation
 
-Utopia is a software toolbox for creating, running, and analyzing hierarchical
-models.
+Utopia is a comprehensive modelling framework for complex and evolving systems.
+It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 
 \section Introduction
 
 This is the documentation of the Utopia C++ source code.
-For a guide on how to start with Utopia, please refer to the Cook Book.
+For a guide on how to start with Utopia, please refer to the <a href="https://docs.utopia-project.org/">main user manual</a>.
 
 A good starting point for diving in is the **Modules** page.
 It contains a structured overview of the documented classes and functions.
@@ -18,7 +18,7 @@ It contains a structured overview of the documented classes and functions.
 \verbatim
 
 Utopia — Comprehensive Modelling Framework for Complex Environmental Systems
-Copyright (C) 2016 – 2020  Utopia Developers
+Copyright (C) 2016 – 2021  Utopia Developers
 
 The term "Utopia Developers" refers to all direct contributors to this
 software package. A full list of copyright holders and information about

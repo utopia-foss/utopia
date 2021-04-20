@@ -70,13 +70,13 @@ class PlotHelper(dtr.plot_creators.PlotHelper):
 # Plot creators
 
 class ExternalPlotCreator(dtr.plot_creators.ExternalPlotCreator):
-    """This is the Utopia-specific version of dantro's ``ExternalPlotCreator``
+    """This is the Utopia-specific version of dantro's ``ExternalPlotCreator``.
 
     Its main purpose is to define common settings for plotting. By adding this
     extra layer, it allows for future extensibility as well.
 
     One of the common settings is that it sets as ``BASE_PKG`` the utopya
-    :py:module:`utopya.plot_funcs`, which is an extension of those functions
+    :py:mod:`utopya.plot_funcs`, which is an extension of those functions
     supplied by dantro.
     """
     # Extensions

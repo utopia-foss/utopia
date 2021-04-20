@@ -188,18 +188,14 @@ class Task:
                 property and used to calculate the progress given the current
                 task object as argument
         """
-        # Carry over arguments attributes
         self._name = str(name) if name is not None else None
         self._priority = priority if priority is not None else np.inf
 
-        # Create a unique ID
         self._uid = uuid.uuid1()
 
-        # Save the callbacks and the progress function
         self.callbacks = callbacks
         self._progress_func = progress_func
 
-        # The to-be-populated set of _fulfilled_ stop conditions
         self._stop_conditions = set()
 
         log.debug("Initialized Task '%s'.\n  Priority: %s,  UID: %s.",
@@ -240,7 +236,6 @@ class Task:
         if self._progress_func is None:
             return 0.
 
-        # Invoke it to get the progress and check interval
         progress = self._progress_func(self)
 
         if progress >= 0 and progress <= 1:
@@ -253,13 +248,15 @@ class Task:
     @property
     def fulfilled_stop_conditions(self) -> Set['StopCondition']:
         """The set of *fulfilled* stop conditions for this task. Typically,
-        this is set by the StopCondition itself as part of its evaluation in
-        :py:meth:`utopya.stopcond.StopCondition.fulfilled`.
+        this is set by the :py:class:`~utopya.stopcond.StopCondition` itself
+        as part of its evaluation in the
+        :py:meth:`utopya.stopcond.StopCondition.fulfilled` method.
         """
         return self._stop_conditions
 
 
     # Magic methods ...........................................................
+    # ... including rich comparisons, needed in PriorityQueue
 
     def __hash__(self) -> int:
         return hash(self.uid)
@@ -267,20 +264,21 @@ class Task:
     def __str__(self) -> str:
         return "Task<uid: {}, priority: {}>".format(self.uid, self.priority)
 
-    # Rich comparisons, needed in PriorityQueue
-    # NOTE only need to implement __lt__, __le__, and __eq__, the others are
-    # created by calling the methods with swapped arguments.
-
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return bool(self.order_tuple < other.order_tuple)
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         return bool(self.order_tuple <= other.order_tuple)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
+        """Evaluates equality of two tasks: returns true only if identical.
+
+        .. note::
+
+            We trust that the unique ID of each task (generated with ``uuid``) is really unique, therefore different tasks can never be fully
+            equivalent.
+        """
         return bool(self is other)
-        # NOTE we trust 'uuid' that the IDs are unique therefore different
-        #      tasks can not get the same ID --> are different in ordering
 
 
     # Private methods .........................................................
@@ -288,9 +286,11 @@ class Task:
     def _invoke_callback(self, name: str):
         """If given, invokes the callback function with the name `name`.
 
-        NOTE In order to have higher flexibility, this will _not_ raise errors
-             or warnings if there was no callback function specified with the
-             give name.
+        .. note::
+
+            In order to have higher flexibility, this will *not* raise errors
+            or warnings if there was no callback function specified with the
+            given name.
         """
         if self.callbacks and name in self.callbacks:
             self.callbacks[name](self)
@@ -300,21 +300,17 @@ class Task:
 # ... working with subprocess
 
 class WorkerTask(Task):
-    """A specialisation of the Task class that is aimed at use in the
-    WorkerManager.
+    """A specialisation of :py:class:`~utopya.task.Task` for use in the
+    :py:class:`~utopya.workermanager.WorkerManager`.
 
-    It is able to spawn a worker process, executing the task. Task execution
-    is non-blocking. At the same time, the worker's stream can be read in via
-    another non-blocking thread.
+    It is able to spawn a worker process using ``subprocess.Popen``, executing
+    the task in a non-blocking manner. At the same time, the worker's stream
+    can be read in via another non-blocking thread and stream information can
+    be parsed. Furthermore, this class provides most of the interface for
+    signalling the spawned process.
 
-    Attributes:
-        profiling (dict): Profiling information of this WorkerTask
-        setup_func (Callable): The setup function to use before this task is
-            being worked on
-        setup_kwargs (dict): The kwargs to use to call setup_func
-        streams (dict): the associated streams of this WorkerTask
-        worker (subprocess.Popen): The worker process, if spawned
-        worker_kwargs (dict): The kwargs to use to spawn a worker process
+    For an equivalent class that uses ``multiprocessing`` instead of
+    ``subprocess``, see the derived :py:class:`~utopya.task.MPProcessTask`.
     """
 
     # Extend the slots of the Task class with some WorkerTask-specific slots
@@ -322,7 +318,9 @@ class WorkerTask(Task):
                  '_worker', '_worker_pid', '_worker_status',
                  'streams', 'profiling')
 
-    # A mapping of functions that are used in parsing the streams
+    # Stream parser functions, used to generate Python objects from the
+    # streams read from the worker. Resolved objects are stored in the
+    # corresponding entry of the ``streams`` attribute.
     STREAM_PARSE_FUNCS = dict(default=None,
                               yaml_dict=parse_yaml_dict)
 
@@ -331,27 +329,35 @@ class WorkerTask(Task):
                  setup_kwargs: dict=None,
                  worker_kwargs: dict=None,
                  **task_kwargs):
-        """Initialize a WorkerTask object, a specialization of a task for use
-        in the WorkerManager.
+        """Initialize a WorkerTask.
+
+        This is a specialization of :py:class:`~utopya.task.Task` for use in
+        the :py:class:`~utopya.workermanager.WorkerManager`.
 
         Args:
-            setup_func (Callable, optional): The function to call before the
-                worker process is spawned
-            setup_kwargs (dict, optional): The kwargs to call setup_func with
-            worker_kwargs (dict, optional): The kwargs needed to spawn the
-                worker. Note that these are also passed to setup_func and, if a
-                setup_func is given, the return value of that function will be
-                used for the worker_kwargs.
-            **task_kwargs: Arguments to be passed to Task.__init__, including
-                the callbacks dictionary.
+            setup_func (Callable, optional): The setup function to use before
+                this task is spawned; this allows to dynamically handle the
+                worker arguments. It is called with the ``worker_kwargs``
+                keyword argument, containing the dict passed here.
+                Additionally, ``setup_kwargs`` are unpacked into the funtion
+                call. The function should return a dict that is then used as
+                ``worker_kwargs`` for the individual task.
+            setup_kwargs (dict, optional): The keyword arguments unpacked into
+                the ``setup_func`` call.
+            worker_kwargs (dict, optional): The keyword arguments needed to
+                spawn the worker. Note that these are also passed to
+                ``setup_func`` and, if a ``setup_func`` is given, the return
+                value of that function will be used for the ``worker_kwargs``.
+            **task_kwargs: Arguments to be passed to
+                :py:meth:`~utopya.task.Task.__init__`, including the callbacks
+                dictionary among other things.
 
         Raises:
-            ValueError: If neither `setup_func` nor `worker_kwargs` were given
+            ValueError: If neither ``setup_func`` nor ``worker_kwargs`` were
+                given, thus lacking information on how to spawn the worker.
         """
-
         super().__init__(**task_kwargs)
 
-        # Check the argument values
         if setup_func:
             setup_kwargs = setup_kwargs if setup_kwargs else dict()
 
@@ -366,12 +372,10 @@ class WorkerTask(Task):
             raise ValueError("Need either argument `setup_func` or "
                              "`worker_kwargs`, got none of those.")
 
-        # Save the arguments
         self.setup_func = setup_func
         self.setup_kwargs = copy.deepcopy(setup_kwargs)
         self.worker_kwargs = copy.deepcopy(worker_kwargs)
 
-        # Create empty attributes to be filled with worker information
         self._worker = None
         self._worker_pid = None
         self._worker_status = None
@@ -405,7 +409,6 @@ class WorkerTask(Task):
             raise RuntimeError("A worker process was already associated with "
                                "this task; cannot change it!")
 
-        # Save the object and its process id
         self._worker = proc
         self._worker_pid = proc.pid
 
@@ -439,10 +442,8 @@ class WorkerTask(Task):
                 # The worker finished. Save the exit status and finish up ...
                 self._worker_status = poll_res
                 self._finished()
-
             return poll_res
 
-        # Return the cached exit status
         return self._worker_status
 
     @property
@@ -466,10 +467,10 @@ class WorkerTask(Task):
         """Spawn a worker process using subprocess.Popen and manage the
         corresponding queue and thread for reading the stdout stream.
 
-        If there is a setup_func, this function will be called first.
+        If there is a ``setup_func``, this function will be called first.
 
         Afterwards, from the worker_kwargs returned by that function or from
-        the ones given during initialisation (if not setup_func was given),
+        the ones given during initialisation (if no ``setup_func`` was given),
         the worker process is spawned and associated with this task.
 
         Returns:
@@ -477,7 +478,7 @@ class WorkerTask(Task):
 
         Raises:
             RuntimeError: If a worker was already spawned for this task.
-            TypeError: For invalid `args` argument
+            TypeError: For invalid ``args`` argument
         """
         if self.worker:
             raise RuntimeError("Can only spawn one worker per task!")
@@ -515,15 +516,19 @@ class WorkerTask(Task):
 
         Args:
             stream_names (list, optional): The list of stream names to read.
-                If 'all' (default), will read all streams.
+                If ``all`` (default), will read all streams.
             max_num_reads (int, optional): How many lines should be read from
                 the buffer. For -1, reads the whole buffer.
-                WARNING: Do not make this value too large as it could block the
-                whole reader thread of this worker.
+
+                    .. warning::
+
+                        Do not make this value too large as it could block the
+                        whole reader thread of this worker.
+
             forward_directly (bool, optional): Whether to call the
-                `forward_streams` method; this is done before the callback and
-                can be useful if the callback should not happen before the
-                streams are forwarded.
+                :py:meth:`~utopya.task.WorkerTask.forward_streams` method;
+                this is done before the callback and can be useful if the
+                callback should not happen before the streams are forwarded.
 
         Returns:
             None
@@ -559,12 +564,10 @@ class WorkerTask(Task):
                     break
 
                 else:
-                    # Got entries, write it to the stream's raw log
                     stream['log_raw'].append(line)
 
-                    # Check if there was a parsed object
+                    # Check for parsed object
                     if obj is not None:
-                        # Add object to the parsed log and set the flag
                         stream['log_parsed'].append(obj)
                         contained_parsed_obj = True
 
@@ -577,13 +580,11 @@ class WorkerTask(Task):
             return contained_parsed_obj
 
         if not self.streams:
-            # There are no streams to read
             log.debug("No streams to read for WorkerTask '%s' (uid: %s).",
                       self.name, self.uid)
             return
 
         elif stream_names == 'all':
-            # Gather list of stream names
             stream_names = list(self.streams.keys())
 
         # Now have the stream names set properly
@@ -592,22 +593,18 @@ class WorkerTask(Task):
 
         # Loop over stream names and call the function to read a single stream
         for stream_name in stream_names:
-            # Get the corresponding stream dict
             stream = self.streams[stream_name]
             # NOTE This way, a non-existent stream_name will not pass silently
-            #      put raise a KeyError
+            #      put raise a KeyError, as it should.
 
-            # Read the stream, saving its return value (needed for flag)
             rv = read_single_stream(stream, stream_name)
 
             if rv:
                 got_parsed_obj = True
 
-        # May want to forward
         if forward_directly:
             self.forward_streams()
 
-        # Invoke a callback, if there was a parsed object
         if got_parsed_obj:
             self._invoke_callback('parsed_object_in_stream')
 
@@ -642,21 +639,17 @@ class WorkerTask(Task):
             None
         """
         if not self.streams:
-            # There are no streams to save
             log.debug("No streams to save for WorkerTask '%s' (uid: %s).",
                       self.name, self.uid)
             return
 
         elif stream_names == 'all':
-            # Gather list of stream names
             stream_names = list(self.streams.keys())
 
         # Go over all streams and check if they were configured to be saved
         for stream_name in stream_names:
-            # Get the corresponding stream dict
             stream = self.streams[stream_name]
 
-            # Determine if to save this one
             if not stream.get('save'):
                 log.debug("Not saving stream '%s' ...", stream_name)
                 continue
@@ -713,13 +706,10 @@ class WorkerTask(Task):
                 # Ensure new line at the end
                 f.write("\n")
 
-            # Update counter
             stream['lines_saved'] += len(lines_to_save)
 
             log.debug("Saved %d lines of stream '%s'.",
                       len(lines_to_save), stream_name)
-
-        # All done.
 
     def forward_streams(self, stream_names: list='all',
                         forward_raw: bool=False) -> bool:
@@ -749,30 +739,22 @@ class WorkerTask(Task):
                     print(prefix, line)
 
             else:
-                # use the logging module
                 for line in lines:
                     log.log(log_level, "%s %s", prefix, line)
 
         # Check whether there are streams that could be printed
         if not self.streams:
-            # There are no streams to print
             log.debug("No streams to print for WorkerTask '%s' (uid: %s).",
                       self.name, self.uid)
             return
 
         elif stream_names == 'all':
-            # Gather list of stream names
             stream_names = list(self.streams.keys())
 
-        # Keep track whether there was output, which will be the return value
         rv = False
-
-        # Go over all streams in the list
         for stream_name in stream_names:
-            # Get stream; will raise KeyError if invalid
             stream = self.streams[stream_name]
 
-            # Determine if to forward this one
             if not stream.get('forward'):
                 log.debug("Not forwarding stream '%s' ...", stream_name)
                 continue
@@ -783,10 +765,8 @@ class WorkerTask(Task):
             stream_log = stream['log_raw'] if forward_raw else stream['log']
             lines = stream_log[stream['lines_forwarded']:]
             if not lines:
-                # Nothing to print
                 continue
 
-            # Write and increment counter
             print_lines(lines, log_level=stream.get('log_level'))
             stream['lines_forwarded'] += len(lines)
 
@@ -795,7 +775,6 @@ class WorkerTask(Task):
             log.debug("Forwarded %d lines for stream '%s' of WorkerTask '%s'.",
                       len(lines), stream_name, self.name)
 
-        # Done.
         return rv
 
     def signal_worker(self, signal: str) -> tuple:
@@ -891,7 +870,6 @@ class WorkerTask(Task):
     def _spawn_worker(self, *, args: tuple, popen_kwargs: dict = None,
                       read_stdout: bool = True, **_) -> subprocess.Popen:
         """Helper function to spawn the worker subprocess"""
-        # Prepare arguments
         args, popen_kwargs = self._prepare_process_args(
             args=args,
             read_stdout=read_stdout,
@@ -905,7 +883,6 @@ class WorkerTask(Task):
                 "process."
             )
 
-        # Spawn the child process with the given arguments
         log.debug("Spawning worker process with args:\n  %s", args)
         proc = self._spawn_process(args, **popen_kwargs)
 
@@ -929,11 +906,8 @@ class WorkerTask(Task):
                              streams_log_lvl: int = None,
                              **_):
         """Sets up the stream reader thread"""
-        # Create the queue that will contain the stream
-        q = queue.Queue()
+        q = queue.Queue()  # will contain the stream
 
-        # Resolve and assemble the enqueue function, passing the parser
-        # function to it ... (parse_func=None is a valid argument)
         log.debug("Using stream parse function: %s", parser)
         parse_func = self.STREAM_PARSE_FUNCS[parser]
         enqueue_func = partial(enqueue_lines, parse_func=parse_func,
@@ -942,8 +916,7 @@ class WorkerTask(Task):
         # Generate the thread that reads the stream and populates the queue
         t = threading.Thread(target=enqueue_func,
                              kwargs=dict(queue=q, stream=stream))
-        # Set to be a daemon thread => will die with the parent thread
-        t.daemon = True
+        t.daemon = True  # ==> will die with the parent thread
 
         # Start the thread; this will lead to enqueue_func being called
         t.start()
@@ -964,7 +937,6 @@ class WorkerTask(Task):
         log.debug("Added thread to read worker %s's %s stream",
                   self.name, stream_name)
 
-        # If configured to save, save the
         if save_streams:
             if not save_streams_to:
                 raise ValueError(
@@ -972,7 +944,6 @@ class WorkerTask(Task):
                     "`save_streams_to` argument in `worker_kwargs`!"
                 )
 
-            # Perform a format operation to generate the path
             save_path = save_streams_to.format(name=stream_name)
             self.streams[stream_name]['save_path'] = save_path
 
@@ -990,8 +961,9 @@ class WorkerTask(Task):
         """
         # Update profiling info
         self.profiling['end_time'] = time.time()
-        self.profiling['run_time'] = (self.profiling['end_time']
-                                      - self.profiling['create_time'])
+        self.profiling['run_time'] = (
+            self.profiling['end_time'] - self.profiling['create_time']
+        )
         # NOTE these are both approximate values as the worker process must
         # have ended prior to the call to this method
 
@@ -1003,7 +975,6 @@ class WorkerTask(Task):
         for stream_name in self.streams:
             self._stop_stream_reader(stream_name)
 
-        # If given, call the callback function
         self._invoke_callback('finished')
 
         log.debug("Task %s: worker finished with status %s.",
@@ -1367,20 +1338,20 @@ class TaskList:
             TypeError: Tried to add a non-Task type object
             ValueError: Task already added to this TaskList
         """
-
         if self._locked:
             raise RuntimeError("TaskList locked! Cannot append further tasks.")
 
         elif not isinstance(val, Task):
-            raise TypeError("TaskList can only be filled with "
-                            "Task objects, got object of type {}, "
-                            "value {}".format(type(val), val))
+            raise TypeError(
+                "TaskList can only be filled with Task objects, got object of "
+                f"type {type(val)}, value {repr(val)}"
+            )
         elif val in self:
-            raise ValueError("Task '{}' (uid: {}) was already added "
-                             "to this TaskList, cannot be added "
-                             "again.".format(val.name, val.uid))
+            raise ValueError(
+                f"Task '{val.name}' (uid: {val.uid}) was already added to "
+                "this TaskList, cannot be added again."
+            )
 
-        # else: Everything ok, append the object
         self._l.append(val)
 
     def __add__(self, tasks: Sequence[Task]):

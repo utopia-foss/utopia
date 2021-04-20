@@ -190,8 +190,9 @@ class Model:
 
     def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None,
                   use_tmpdir: bool=None, **update_meta_cfg) -> Multiverse:
-        """Creates a :class:`utopya.Multiverse` for this model, optionally
-        loading a configuration from a file and updating it with further keys.
+        """Creates a :class:`utopya.multiverse.Multiverse` for this model,
+        optionally loading a configuration from a file and updating it with
+        further keys.
 
         Args:
             from_cfg (str, optional): The name of the config file (relative to
@@ -204,10 +205,10 @@ class Model:
             **update_meta_cfg: Can be used to update the meta configuration
 
         Returns:
-            Multiverse: The created Multiverse object
+            utopya.multiverse.Multiverse: The created Multiverse object
 
         Raises:
-            ValueError: If both from_cfg and run_cfg_path were given
+            ValueError: If both ``from_cfg`` and ``run_cfg_path`` were given
         """
         # A dict that can be filled with objects to store in self._mvs
         objs_to_store = dict()

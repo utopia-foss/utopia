@@ -18,11 +18,11 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def timeout_wall(task: 'WorkerTask', *, seconds: float) -> bool:
+def timeout_wall(task: 'utopya.task.WorkerTask', *, seconds: float) -> bool:
     """Checks the wall timeout of the given worker
 
     Args:
-        task (WorkerTask): The WorkerTask object to check
+        task (utopya.task.WorkerTask): The WorkerTask object to check
         seconds (float): After how many seconds to trigger the wall timeout
 
     Returns:
@@ -31,12 +31,12 @@ def timeout_wall(task: 'WorkerTask', *, seconds: float) -> bool:
     return bool((time.time() - task.profiling['create_time']) > seconds)
 
 
-def check_monitor_entry(task: 'WorkerTask', *, entry_name: str,
+def check_monitor_entry(task: 'utopya.task.WorkerTask', *, entry_name: str,
                         operator: str, value: float) -> bool:
     """Checks if a monitor entry compares in a certain way to a given value
 
     Args:
-        task (WorkerTask): The WorkerTask object to check
+        task (utopya.task.WorkerTask): The WorkerTask object to check
         entry_name (str): The name of the monitor entry, leading to the value
             to the left-hand side of the operator
         operator (str): The binary operator to use

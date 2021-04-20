@@ -25,9 +25,9 @@ Notes, warnings, and hints can be included thusly:
 .. warning::
 
     This is a warning.
-    
+
 .. hint::
-    
+
     This is a hint.
 
 Math and Formulae
@@ -45,16 +45,17 @@ Code snippets and blocks
 Code snippets like ``std::algorithm`` or ``cell_manager`` are indicated like this. Code blocks can be included like this:
 
     .. code-block:: python
-    
+
         def id(x):
             return x
-            
+
 Python Documentation Bits
 """""""""""""""""""""""""
 
 The typical use case of Sphinx is rendering a documentation of Python modules.
 
-.. autoclass:: utopya.Multiverse
+.. autoclass:: utopya.multiverse.Multiverse
+    :noindex:
 
 Doxygen Documentation Bits
 """"""""""""""""""""""""""

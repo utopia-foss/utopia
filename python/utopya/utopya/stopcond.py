@@ -75,7 +75,7 @@ class StopCondition:
                   "function(s).", self.name, len(self.to_check))
 
     @property
-    def fulfilled_for(self) -> Set['Task']:
+    def fulfilled_for(self) -> Set['utopya.task.Task']:
         """The set of tasks this stop condition was fulfilled for"""
         return self._fulfilled_for
 
@@ -156,7 +156,7 @@ class StopCondition:
             return f"StopCondition '{self.name}': {self.description}"
         return f"StopCondition '{self.name}'"
 
-    def fulfilled(self, task: 'Task') -> bool:
+    def fulfilled(self, task: 'utopya.task.Task') -> bool:
         """Checks if the stop condition is fulfilled for the given worker,
         using the information from the dict.
 
@@ -167,7 +167,7 @@ class StopCondition:
         fulfilled stop conditions will
 
         Args:
-            task (Task): Task object that is to be checked
+            task (utopya.task.Task): Task object that is to be checked
 
         Returns:
             bool: If all stop condition functions returned true for the given

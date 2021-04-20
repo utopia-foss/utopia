@@ -16,22 +16,25 @@ log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
+# matplotlib color normalizations supported by the ColorManager
 NORMS = {
-    'Normalize': mpl.colors.Normalize,
-    'BoundaryNorm': mpl.colors.BoundaryNorm,
-    'NoNorm': mpl.colors.NoNorm,
-    'LogNorm': mpl.colors.LogNorm,
-    'PowerNorm': mpl.colors.PowerNorm,
-    'SymLogNorm': mpl.colors.SymLogNorm,
-    'TwoSlopeNorm': mpl.colors.TwoSlopeNorm
+    'Normalize':        mpl.colors.Normalize,
+    'BoundaryNorm':     mpl.colors.BoundaryNorm,
+    'NoNorm':           mpl.colors.NoNorm,
+    'LogNorm':          mpl.colors.LogNorm,
+    'PowerNorm':        mpl.colors.PowerNorm,
+    'SymLogNorm':       mpl.colors.SymLogNorm,
+    'TwoSlopeNorm':     mpl.colors.TwoSlopeNorm,
 }
 
 # -----------------------------------------------------------------------------
 
 class HandlerEllipse(HandlerPatch):
     """Custom legend handler to turn an ellipse handle into a legend key."""
+
     def create_artists(self, legend, orig_handle, xdescent, ydescent, width,
                        height, fontsize, trans):
+        """Create an ellipse as a matplotlib artist object."""
         center = 0.5 * width - 0.5 * xdescent, 0.5 * height - 0.5 * ydescent
         p = mpatches.Ellipse(xy=center, width=height + xdescent,
                             height=height + ydescent)
@@ -39,9 +42,12 @@ class HandlerEllipse(HandlerPatch):
         p.set_transform(trans)
         return [p]
 
+
+# -----------------------------------------------------------------------------
+
 class ColorManager:
     """Custom color manager which provides an interface to the
-    matplotlib.colors module.
+    ``matplotlib.colors`` module.
     """
     def __init__(
         self,
@@ -54,10 +60,10 @@ class ColorManager:
     ):
         """Initializes the ``ColorManager`` by building the colormap, the norm,
         and the colorbar labels.
-        
+
         Args:
             cmap (Union[str, dict, mpl.colors.Colormap], optional):
-                The colormap. If it is a string, it must name a registered 
+                The colormap. If it is a string, it must name a registered
                 colormap. If it is a dict, the following arguments are
                 available:
 
@@ -76,23 +82,23 @@ class ColorManager:
                     In both cases, the bins must monotonically increase.
 
                     If a list of colors is passed they are automatically
-                    assigned to the bin-centers [0, 1, 2, ...].
+                    assigned to the bin-centers ``[0, 1, 2, ...]``.
                 under (Union[str, dict], optional):
                     Passed on to
-                    `Colormap.set_under <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_under>`_.
+                    `Colormap.set_under <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_under>`__.
                 over (Union[str, dict], optional):
                     Passed on to
-                    `Colormap.set_over <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_over>`_.
+                    `Colormap.set_over <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_over>`__.
                 bad (Union[str, dict], optional):
                     Passed on to
-                    `Colormap.set_bad <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_bad>`_.
+                    `Colormap.set_bad <https://matplotlib.org/api/_as_gen/matplotlib.colors.Colormap.html#matplotlib.colors.Colormap.set_bad>`__.
                 placeholder_color (optional): ``None`` values in
                     ``from_values`` are replaced with this color
                     (default: white).
 
             norm (Union[str, dict, mpl.colors.Normalize], optional):
                 The norm that is applied for the color-mapping. If it is a
-                string, the matching norm in `matplotlib.colors <https://matplotlib.org/api/colors_api.html>`_
+                string, the matching norm in `matplotlib.colors <https://matplotlib.org/api/colors_api.html>`__
                 is created with default values. If it is a dict, the ``name``
                 entry specifies the norm and all further entries are passed to
                 its constructor. Overwritten if a discrete colormap is
@@ -123,7 +129,7 @@ class ColorManager:
         # norm_kwargs below.
         if isinstance(norm, mpl.colors.Normalize):
             self._norm = norm
-          
+
         elif isinstance(norm, str) or norm is None:
             norm_kwargs = dict(name=norm)
 
@@ -145,7 +151,7 @@ class ColorManager:
                 k: (v if v is not None else _placeholder_color)
                 for k, v in mapping.items()
             }
-            
+
             cmap_kwargs['name'] = 'ListedColormap'
             cmap_kwargs['colors'] = list(mapping.values())
 
@@ -172,7 +178,7 @@ class ColorManager:
             labels = {k: v for k, v in enumerate(labels)}
 
         self._labels = copy.deepcopy(labels)
-        
+
         # Set cmap and norm if not done already
         if cmap_kwargs:
             self._cmap = self._create_cmap(**cmap_kwargs)
@@ -187,21 +193,21 @@ class ColorManager:
     @property
     def norm(self):
         return self._norm
-    
+
     @property
     def labels(self):
         return self._labels
 
     def _parse_boundaries(self, bins):
         """Parses the boundaries for the BoundaryNorm.
-        
+
         Args:
             bins (Sequence): Either monotonically increasing sequence of bin
                 centers or sequence of connected intervals (2-tuples).
 
         Returns:
             (list): Monotonically increasing boundaries.
-        
+
         Raises:
             ValueError: On disconnected intervals or decreasing boundaries.
         """
@@ -251,11 +257,11 @@ class ColorManager:
                      under: Union[str, dict]=None, over: Union[str, dict]=None,
                      **cmap_kwargs):
         """Creates a colormap.
-        
+
         Args:
             name (str, optional): The colormap name. Can either be the name of
                 a registered colormap or ``ListedColormap``. ``None`` means
-                :rc:`image.cmap`.
+                that the ``image.cmap`` value from the RC parameters is used.
             bad (Union[str, dict], optional): Set color to be used for masked
                 values.
             under (Union[str, dict], optional): Set the color for low
@@ -265,10 +271,10 @@ class ColorManager:
             **cmap_kwargs: If ``name = ListedColormap``, passed on to the
                 constructor of the colormap, else passed to
                 matplotlib.cm.get_cmap.
-        
+
         Returns:
             matplotlib.colors.Colormap: The created colormap.
-        
+
         Raises:
             ValueError: On invalid colormap name.
         """
@@ -295,7 +301,7 @@ class ColorManager:
 
         if bad is not None:
             cmap.set_bad(**bad)
-        
+
         if under is not None:
             cmap.set_under(**under)
 
@@ -306,17 +312,17 @@ class ColorManager:
 
     def _create_norm(self, name: str=None, **norm_kwargs):
         """Creates a norm.
-        
+
         Args:
             name (str, optional): The norm name. Must name a
-                matplotlib.colors.Normalize instance (see 
+                matplotlib.colors.Normalize instance (see
                 `matplotlib.colors <https://matplotlib.org/api/colors_api.html>`_).
                 ``None`` means *Normalize*.
-            **norm_kwargs: Passed on to the constructor of the norm.
-        
+            \**norm_kwargs: Passed on to the constructor of the norm.
+
         Returns:
             matplotlib.colors.Normalize: The created norm.
-        
+
         Raises:
             ValueError: On invalid norm specification.
         """
@@ -332,27 +338,27 @@ class ColorManager:
 
     def map_to_color(self, X):
         """Maps the input data to color(s) by applying both norm and colormap.
-        
+
         Args:
             X (Union[scalar, ndarray]): The data value(s) to convert to RGBA.
-        
+
         Returns:
             Tuple of RGBA values if X is scalar, otherwise an array of RGBA
             values with a shape of ``X.shape + (4, )``.
         """
         return self.cmap(self.norm(X))
-    
+
     def create_cbar(self, mappable, *, fig=None, ax=None, **cbar_kwargs):
         """Creates a colorbar.
-        
+
         Args:
             mappable: The matplotlib.cm.ScalarMappable described by the
                 colorbar.
             fig (None, optional): The Figure
             ax (None, optional): The axis
-            **cbar_kwargs: Passed on to
+            \**cbar_kwargs: Passed on to
                 `fig.colorbar <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.colorbar.html>`_.
-        
+
         Returns:
             The created colorbar.
         """

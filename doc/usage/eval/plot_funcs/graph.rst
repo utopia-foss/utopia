@@ -2,6 +2,7 @@ Graph Plots
 ===========
 
 .. automodule:: utopya.plot_funcs.dag.graph
+   :noindex:
 
 For detailed descriptions of the networkx plot functions that are used here, refer to the `networkx docs <https://networkx.github.io/documentation/stable/reference/drawing.html>`_.
 
@@ -65,3 +66,4 @@ For a nonlinear color-mapping, adjust the ``cmap_norm``:
 
 
 .. autofunction:: utopya.plot_funcs.dag.graph.draw_graph
+    :noindex:

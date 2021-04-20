@@ -12,7 +12,7 @@ Follow the instructions given *there* to set up your own Utopia models repositor
 
     *This* page details only the anatomy of such a models repository and it is not a guide.
     If you want to know more about how to customize the repository or if you run into trouble, read on (or return here at a later point).
-    
+
     If you want to get right into setting up your framework repository, directly navigate to the template project.
 
 
@@ -55,7 +55,7 @@ Sets up a sphinx- and doxygen-based documentation infrastructure, where model do
 Sphinx is used for the user manual, doxygen for the C++ documentation.
 
 ``docker/``
-^^^^^^^^^^
+^^^^^^^^^^^
 Sets up docker images that are used for automated testing, e.g. via GitLab CI/CD.
 There typically is some form of base image that fulfills the Utopia dependencies.
 If there are additional dependencies for the project repository, it might make sense to have a second image that installs those; by creating this second image, CI/CD runtimes and resource use is greatly reduced because dependencies do not have to be installed repeatedly.
@@ -76,8 +76,8 @@ However, more importantly, the ``python/CMakeLists.txt`` file will invoke the ut
     These are automatically installed via the build system and pip.
 
 
-``src/models/``❗
-^^^^^^^^^^^^^^^^^
+``src/models/`` ❗
+^^^^^^^^^^^^^^^^^^
 This is where your model implementations live.
 
 The root-level ``src/models/CMakeLists.txt`` file is used to communicate the existence of these models to the build system.

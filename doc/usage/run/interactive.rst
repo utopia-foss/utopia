@@ -91,6 +91,7 @@ For more information on the available interface, have a look at excerpts from it
 
 .. autoclass:: utopya.Model
     :members: info_bundle, create_mv, create_run_load, create_frozen_mv, default_model_cfg
+    :noindex:
 
     .. automethod:: __init__
 
@@ -105,6 +106,7 @@ This class actually carries out the simulation run, i.e. running multiple so-cal
 
 .. autoclass:: utopya.Multiverse
     :members: __init__, dm, pm, meta_cfg, run
+    :noindex:
 
 The ``FrozenMultiverse`` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,6 +120,7 @@ To create such an instance from the ``Model`` class, use the ``Model.create_froz
 
 .. autoclass:: utopya.multiverse.FrozenMultiverse
   :members: __init__
+  :noindex:
 
 
 The ``DataManager``
@@ -129,6 +132,7 @@ When created by a multiverse instance, it already has the required default confi
 
 .. autoclass:: utopya.DataManager
     :members: __init__, load_from_cfg, load
+    :noindex:
 
 
 The ``PlotManager``
@@ -137,6 +141,7 @@ The ``PlotManager`` – well, manages the plotting.
 
 .. autoclass:: utopya.plotting.PlotManager
     :members: __init__, plot, plot_from_cfg
+    :noindex:
 
 
 

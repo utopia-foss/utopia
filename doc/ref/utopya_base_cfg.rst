@@ -3,7 +3,7 @@
 Multiverse Base Configuration
 =============================
 
-The following is the base configuration of the :py:class:`utopya.Multiverse` class.
+The following is the base configuration of the :py:class:`utopya.multiverse.Multiverse` class.
 It provides all *defaults* that are needed to run a simulation, but is subsequently updated :ref:`by other configuration layers <feature_meta_config>` to form the *meta configuration*.
 
 The base configuration is meant to be self-documenting, thus allowing to see which parameters are available.

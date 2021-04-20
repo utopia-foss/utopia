@@ -27,7 +27,6 @@ A batch file may look like this:
    :language: yaml
    :start-after: # START --- example_basic
    :end-before: # END ----- example_basic
-   :dedent: 2
 
 
 In the above example, two evaluation tasks are defined, ``densities`` and ``spatial``, each loading data from some ``run_dir`` within the Utopia output directory and performing a subset of plots on that data.

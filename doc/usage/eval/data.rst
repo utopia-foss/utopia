@@ -16,14 +16,14 @@ In this section we will take a look at utopya's capabilities to handle simulatio
 ----
 
 
-The :py:class:`~utopya.DataManager`
-------------------------------------
+The :py:class:`~utopya.datamanager.DataManager`
+-----------------------------------------------
 Objects of this class are the home of all your simulation data.
-One such :py:class:`~utopya.DataManager` object is initialized together with the :py:class:`~utopya.Multiverse` and thereafter available as :py:attr:`~utopya.Multiverse.dm` attribute. It is set up with a :ref:`load configuration <data_manager_load_cfg>` and, upon invocation of its :py:meth:`~utopya.DataManager.load_from_cfg` method, will load the simulation data using that configuration. It is equipped to handle hierarchical data, storing it as a data tree.
+One such :py:class:`~utopya.datamanager.DataManager` object is initialized together with the :py:class:`~utopya.multiverse.Multiverse` and thereafter available as :py:attr:`~utopya.multiverse.Multiverse.dm` attribute. It is set up with a :ref:`load configuration <data_manager_load_cfg>` and, upon invocation of its :py:meth:`~dantro.data_mngr.DataManager.load_from_cfg` method, will load the simulation data using that configuration. It is equipped to handle hierarchical data, storing it as a data tree.
 
 .. hint::
 
-    To visually inspect the tree representation, you can use the :py:attr:`~utopya.DataManager.tree` property: ``print(dm.tree)``.
+    To visually inspect the tree representation, you can use the :py:attr:`~dantro.data_mngr.DataManager.tree` property: ``print(dm.tree)``.
     This also works with every group-like member of the tree.
 
 This functionality is all based on the `dantro package <https://dantro.readthedocs.io/en/stable/>`_, which provides a uniform interface to handle hierarchically structured data.
@@ -37,7 +37,7 @@ However, to *handle* that data, one expects data with the dimensions ``x``, ``y`
 
 Handling Large Amounts of Data
 ------------------------------
-To handle large amounts of simulation data (which is not uncommon), the :py:class:`~utopya.DataManager` provides so-called *proxy loading* for HDF5 data:
+To handle large amounts of simulation data (which is not uncommon), the :py:class:`~utopya.datamanager.DataManager` provides so-called *proxy loading* for HDF5 data:
 instead of loading the data directly into memory, the structure and metadata of the HDF5 file is used only to generate the data tree.
 At the place where normally the data would be stored in the data containers, a proxy object is placed (in this case: :py:class:`~dantro.proxy.Hdf5Proxy`).
 Upon access to the data, the proxy gets automatically resolved, leading to the data being loaded into memory and replacing the proxy object in the data container.
@@ -140,7 +140,7 @@ Configuration and API Reference
 
 Default Load Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Below, the default :py:class:`~utopya.DataManager` configuration is included, which also specifies the default load configuration.
+Below, the default :py:class:`~utopya.datamanager.DataManager` configuration is included, which also specifies the default load configuration.
 Each entry of the ``load_cfg`` key refers to one so-called "data entry".
 Files that match the ``glob_str`` are loaded using a certain ``loader`` and placed at a ``target_path`` within the data tree.
 
@@ -152,5 +152,7 @@ Files that match the ``glob_str`` are loaded using a certain ``loader`` and plac
 
 ``DataManager``
 ^^^^^^^^^^^^^^^
-.. autoclass:: utopya.DataManager
-    :members: __init__, load_from_cfg, load, tree
+.. autoclass:: utopya.datamanager.DataManager
+    :members: __init__
+    :inherited-members: load_from_cfg, load, tree, tree_condensed
+    :noindex:

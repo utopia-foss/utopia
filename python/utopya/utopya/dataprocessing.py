@@ -40,17 +40,17 @@ def create_mask(data: xr.DataArray, *,
                 operator_name: str, rhs_value: float) -> xr.DataArray:
     """Given the data, returns a binary mask by applying the following
     comparison: ``data <operator> rhs value``.
-    
+
     Args:
         data (xr.DataArray): The data to apply the comparison to. This is the
             lhs of the comparison.
         operator_name (str): The name of the binary operator function as
             registered in utopya.tools.OPERATOR_MAP
         rhs_value (float): The right-hand-side value
-    
+
     Raises:
         KeyError: On invalid operator name
-    
+
     No Longer Returned:
         xr.DataArray: Boolean mask
     """
@@ -116,7 +116,7 @@ TRANSFORMATIONS = {
     # Attribute access, also allowing fallback
     'getattr':  lambda d, kws: getattr(d, *(kws if not isinstance(kws, str)
                                             else [kws])),
-    
+
     # Item access
     'getitem':  lambda d, kws: d[kws],
 
@@ -157,17 +157,17 @@ TRANSFORMATIONS = {
     'squeeze':  lambda d, kws: d.squeeze(**(kws if kws else {})),
 
     # Count unique values
-    'count_unique': 
+    'count_unique':
         lambda d, _: count_unique(d),
-    
+
     # Create a mask from the given data
-    'create_mask':  
+    'create_mask':
         lambda d, kws: create_mask(d, **(kws if isinstance(kws, dict)
                                          else dict(operator_name=kws[0],
                                                    rhs_value=kws[1]))),
 
     # Filter values that do not match a condition, i.e.: make them NaN
-    'where':   
+    'where':
         lambda d, kws: where(d, **(kws if isinstance(kws, dict)
                                    else dict(operator_name=kws[0],
                                              rhs_value=kws[1]))),
@@ -218,8 +218,8 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
               aux_data: Union[xr.Dataset, BaseDataGroup]=None,
               log_level: int=None) -> xr.DataArray:
     """Applies transformations to the given data, e.g.: reducing dimensionality
-    or calculating 
-    
+    or calculating
+
     Args:
         data (xr.DataArray): The data that is to be reduced in dimensionality
         *operations (Union[dict, str]): Which operations to apply and with
@@ -232,10 +232,10 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
             NOTE Needed in those cases.
         log_level (int, optional): Which level to log the progress of the
             operations on. If not given, will be 10.
-    
+
     Returns:
         xr.DataArray: A new object with dimensionality-reduced data.
-    
+
     Raises:
         TypeError: On bad ``operations`` specification
         ValueError: On bad operation name
@@ -272,7 +272,7 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
                                  "one and only one key that does not start "
                                  "with '_'. Got keys: {}. Full dict: {}"
                                  "".format(i, ", ".join(names), op_spec))
-            
+
             # Get the single name
             op_name = names[0]
             may_fail = op_spec.get('_may_fail', False)
@@ -340,63 +340,65 @@ def transform(data: xr.DataArray, *operations: Union[dict, str],
 def find_endpoint(data: xr.DataArray, *, time: int=-1,
                   **kwargs) -> Tuple[bool, xr.DataArray]:
     """Find the endpoint of a dataset wrt. ``time`` coordinate.
-    
+
     This function is compatible with the
     :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
-    
+
     Arguments:
         data (xr.DataArray): The data
         time (int, optional): The time index to select
         **kwargs: Passed on to ``data.isel`` call
-    
+
     Returns:
-        Tuple[bool, xr.DataArray]: (endpoint found, endpoint) 
+        Tuple[bool, xr.DataArray]: (endpoint found, endpoint)
     """
     return True, data.isel(time=time, **kwargs)
 
-def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0, 
-                  abs_std: float=None, rel_std: float=None, mean_kwargs=None, 
-                  std_kwargs=None, isclose_kwargs=None, 
+def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
+                  abs_std: float=None, rel_std: float=None, mean_kwargs=None,
+                  std_kwargs=None, isclose_kwargs=None,
                   squeeze: bool=True) -> Tuple[bool, float]:
     """Find the fixpoint(s) of a dataset and confirm it by standard deviation.
-    For dimensions that are not 'time' the fixpoints are compared and 
+    For dimensions that are not 'time' the fixpoints are compared and
     duplicates removed.
-    
+
     This function is compatible with the
     :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
-    
+
     Arguments:
         data (xr.Dataset): The data
         spin_up_time (int, optional): The first timestep included
-        abs_std (float, optional): The maximal allowed absolute standard 
+        abs_std (float, optional): The maximal allowed absolute standard
             deviation
-        rel_std (float, optional): The maximal allowed relative standard 
+        rel_std (float, optional): The maximal allowed relative standard
             deviation
         mean_kwargs (dict, optional): Additional keyword arguments passed on
             to the appropriate array function for calculating mean on data.
-        std_kwargs (dict, optional): Additional keyword arguments passed on to 
+        std_kwargs (dict, optional): Additional keyword arguments passed on to
             the appropriate array function for calculating std on data.
         isclose_kwargs (dict, optional): Additional keyword arguments passed
             on to the appropriate array function for calculating np.isclose for
             fixpoint-duplicates across dimensions other than 'time'.
         squeeze (bool, optional): Use the data.squeeze method to remove
             dimensions of length one. Default is True.
-    
+
     Returns:
-        tuple: (fixpoint found, mean) 
+        tuple: (fixpoint found, mean)
     """
     if squeeze:
         data = data.squeeze()
     if len(data.dims) > 2:
-        raise ValueError("Method 'find_fixpoint' cannot handle data with more"
-                         " than 2 dimensions. Data has dims {}"
-                         "".format(data.dims))
+        raise ValueError(
+            "Method 'find_fixpoint' cannot handle data with more than 2 "
+            f"dimensions. Data has dims {data.dims}"
+        )
     if spin_up_time > data.time[-1]:
-        raise ValueError("Spin up time was chosen larger than actual simulation"
-                         " time in module find_fixpoint. Was {}, but"
-                         " simulation time was {}. .".format(spin_up_time,
-                                                             data.time.data[-1]))
-    
+        raise ValueError(
+            "Spin up time was chosen larger than actual simulation time in "
+            f"module find_fixpoint. Was {spin_up_time}, but simulation time "
+            f"was {data.time.data[-1]}."
+        )
+
     # Get the data
     data = data.where(data.time >= spin_up_time, drop=True)
 
@@ -420,7 +422,7 @@ def find_fixpoint(data: xr.Dataset, *, spin_up_time: int=0,
                 data_var[i+1:][mask] = np.nan
 
         conclusive = conclusive and (np.count_nonzero(~np.isnan(data_var)) > 0)
-    
+
     return conclusive, mean
 
 def find_multistability(*args, **kwargs) -> Tuple[bool, float]:
@@ -429,18 +431,18 @@ def find_multistability(*args, **kwargs) -> Tuple[bool, float]:
     Performs find_fixpoint. Method conclusive if find_fixpoint conclusive with
     multiple entries.
 
-
     Arguments:
-        *args, **kwargs: passed on to find_fixpoint
+        ``*args``, ``**kwargs``: passed on to
+            :py:func:`~utopya.dataprocessing.find_fixpoint`
 
     Returns
-        tuple: (multistability found, mean) 
+        Tuple[bool, float]: (multistability found, mean)
     """
     conclusive, mean = find_fixpoint(*args, **kwargs)
 
     if not conclusive:
         return conclusive, mean
-    
+
     for data_var_name, data_var in mean.data_vars.items():
         # Conclusive only if there are at least two non-nan values.
         # Count the non-zero entries of the inverse of boolian array np.isnan.
@@ -450,37 +452,39 @@ def find_multistability(*args, **kwargs) -> Tuple[bool, float]:
 
     return False, mean
 
-def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0, 
+def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
                      squeeze: bool=True,
                      **find_peak_kwargs) -> Tuple[bool, list]:
     """Find oscillations in a dataset.
-    
+
     This function is compatible with the
     :py:func:`utopya.plot_funcs.attractor.bifurcation_diagram`.
-    
+
     Arguments:
         data (xr.Dataset): The data
         spin_up_time (int, optional): The first timestep included
         squeeze (bool, optional): Use the data.squeeze method to remove
             dimensions of length one. Default is True.
-        **find_peak_kwargs: Passed on to ``scipy.signal.find_peaks``. Default
-            for kwarg 'height' is -1e15.
-    
+        ``**find_peak_kwargs``: Passed on to ``scipy.signal.find_peaks``.
+            Default for kwarg ``height`` is set to ``-1.e+15``.
+
     Returns:
         Tuple[bool, list]: (oscillation found, [min, max])
     """
     if squeeze:
         data = data.squeeze()
     if len(data.dims) > 1:
-        raise ValueError("Method 'find_oscillation' cannot handle data with more"
-                         " than 1 dimension. Data has dims {}"
-                         "".format(data.dims))
+        raise ValueError(
+            "Method 'find_oscillation' cannot handle data with more than 1 "
+            f"dimension. Data has dims {data.dims}"
+        )
     if spin_up_time > data.time[-1]:
-        raise ValueError("Spin up time was chosen larger than actual simulation"
-                         " time in module find_oscillation. Was {}, but"
-                         " simulation time was {}. .".format(spin_up_time,
-                                                             data.time.data[-1]))
-    
+        raise ValueError(
+            "Spin up time was chosen larger than actual simulation time in "
+            f"module find_oscillation. Was {spin_up_time}, but simulation "
+            f"time was {data.time.data[-1]}."
+        )
+
     # Only use the data after spin up time
     data = data.where(data.time >= spin_up_time, drop=True)
 
@@ -496,7 +500,7 @@ def find_oscillation(data: xr.Dataset, *, spin_up_time: int=0,
         maxima, max_props = find_peaks(data_var, **find_peak_kwargs)
         amax = np.amax(data_var)
         minima, min_props = find_peaks(amax - data_var, **find_peak_kwargs)
-        
+
         if not maxima.size or not minima.size:
             mean = data_var.mean(dim='time')
             attractor[data_var_name] = ('osc', [mean, mean])

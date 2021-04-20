@@ -15,7 +15,7 @@ Errorbar and Errorbands
 For errorbar plots, two options are available: the errorbar plot uses bars to represent a symmetric confidence interval; the errorband plot uses a shaded area.
 The corresponding base plot configurations are called ``.dag.generic.errorbar`` and ``.dag.generic.errorbands``.
 
-For more information, refer to the docstrings below and to `the dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#errorbar-and-errorbands-visualizing-confidence-intervals>`_.
+For more information, refer to the docstrings below and to the `dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#errorbar-and-errorbands-visualizing-confidence-intervals>`_.
 
 .. autofunction:: dantro.plot_creators.ext_funcs.generic.errorbar
 

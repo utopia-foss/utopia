@@ -33,21 +33,12 @@ configure_file(conf.py.in conf.py)
 add_custom_target(sphinx_html
     COMMAND ${RUN_IN_UTOPIA_ENV} sphinx-build
             -T -b html
+            -W --keep-going -w build_errors.log         # warnings as errors
             -c ${CMAKE_CURRENT_BINARY_DIR}              # conf.py dir
             -d ${CMAKE_CURRENT_BINARY_DIR}/_doctrees    # doctree pickles dir
             ${CMAKE_CURRENT_SOURCE_DIR}                 # input dir
             ${CMAKE_CURRENT_BINARY_DIR}/html            # output dir
 )
-
-# Add a target to build the API references of utopya, dantro, and paramspace
-add_custom_target(sphinx_apidoc_utopya
-    COMMAND ${RUN_IN_UTOPIA_ENV}
-            sphinx-apidoc -f
-                --module-first --private --no-toc
-                --output-dir ${CMAKE_CURRENT_SOURCE_DIR}/api/utopya/
-                ${PROJECT_SOURCE_DIR}/python/utopya/utopya
-)
-add_dependencies(sphinx_html sphinx_apidoc_utopya)
 
 # Add the doxygen-dependent documentation target only when it exists
 if (TARGET doxygen_utopia)

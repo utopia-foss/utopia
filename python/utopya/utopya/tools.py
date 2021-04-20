@@ -8,7 +8,7 @@ import logging
 import collections
 import subprocess
 from datetime import timedelta
-from typing import Union, Tuple, Sequence, Callable
+from typing import Union, Tuple, Sequence, Callable, Any
 
 from ._yaml import yaml, load_yml, write_yml
 
@@ -141,7 +141,7 @@ def add_item(value, *, add_to: dict, key_path: Sequence[str],
             message; gets passed `value` as positional argument.
 
     Raises:
-        ErrorMsg: (depends on specified exception callable)
+        Exception: type depends on specified ``ErrorMsg`` callable
     """
     # Check the value by calling the function; it should raise an error
     if is_valid is not None:
@@ -310,11 +310,11 @@ def center_in_line(s: str, *, num_cols: int=TTY_COLS, fill_char: str="·",
     return fill_line(spacing + s + spacing, num_cols=num_cols,
                      fill_char=fill_char, align='centre')
 
-def pprint(obj, **kwargs):
+def pprint(obj: Any, **kwargs):
     """Prints a "pretty" string representation of the given object.
 
     Args:
-        obj (TYPE): The object to print
+        obj (Any): The object to print
         **kwargs: Passed to print
     """
     print(pformat(obj), **kwargs)
@@ -368,7 +368,7 @@ def open_folder(path: str):
 # misc ------------------------------------------------------------------------
 
 def parse_si_multiplier(s: str) -> int:
-    """Parses a string like ``1.23M`` or ``-2.34 k` into an integer.
+    """Parses a string like ``1.23M`` or ``-2.34 k`` into an integer.
 
     If it is a string, parses the SI multiplier and returns the appropriate
     integer for use as number of simulation steps.
@@ -378,7 +378,7 @@ def parse_si_multiplier(s: str) -> int:
     .. note::
 
         This is only intended to be used with integer values and does *not*
-        support float values like `1u`.
+        support float values like ``1u``.
 
     The used regex can be found `here <https://regex101.com/r/xngAoc/1>`_.
 
