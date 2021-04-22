@@ -68,6 +68,7 @@ Where to next?
    models/ContDisease
    models/ForestFire
    models/GameOfLife
+   models/Opinionet
    models/PredatorPrey
    models/SandPile
    models/SEIRD

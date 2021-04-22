@@ -1,0 +1,41 @@
+# Configuration file used to test a single revision step
+---
+parameter_space:
+
+  perform_sweep: true
+  num_steps: 1
+
+  Opinionet: !model
+    model_name: Opinionet
+
+    opinion_space:
+      type: !sweep
+        default: continuous
+        values: [continuous, discrete]
+
+      interval: [-1, 1]
+
+      num_opinions: 6
+
+    network:
+      model: ErdosRenyi
+      num_vertices: 200
+      mean_degree: 10
+
+      directed: !sweep
+        default: false
+        values: [false, true]
+
+      edges:
+        rewiring: false
+
+    interaction_function: !sweep
+      default: Deffuant
+      values: [HegselmannKrause, Deffuant]
+
+    susceptibility: 0.3
+
+    tolerance: !coupled-sweep
+      target_name: type
+      default: 0.3
+      values: [0.3, 3]

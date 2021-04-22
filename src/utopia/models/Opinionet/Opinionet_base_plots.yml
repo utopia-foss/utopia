@@ -1,0 +1,94 @@
+# Base configuration for the Opinionet plots
+---
+# default animation configurations
+animation:
+  animation:
+    enabled: true
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 300
+      ffmpeg:
+        init:
+          fps: 8
+        saving:
+          dpi: 300
+    writer: ffmpeg
+  file_ext: mp4
+
+
+graph:
+  based_on: .dag.graph
+  dag_options:
+    select_path_prefix: data/Opinionet
+
+
+opinion_animated:
+  based_on: animation
+  creator: universe
+  universes: all
+  module: model_plots.Opinionet
+  plot_func: opinion_animated
+
+  helpers:
+    set_labels:
+        x: User opinion
+        y: Group size
+  num_bins: 100
+  time_idx: # plot one specific time frame
+  animation:
+    animation_update_kwargs:
+      stepsize: 10
+
+
+time_series_opinion:
+  creator: universe
+  universes: all
+  module: model_plots.Opinionet
+  plot_func: opinion_time_series
+  dag_options:
+    select_path_prefix: data/Opinionet
+
+  helpers:
+    setup_figure:
+      ncols: 2
+      sharey: True
+      gridspec_kw:
+        width_ratios: [4, 1]
+        wspace: 0.05
+
+    axis_specific:
+      density_development:
+        axis: [0, 0]
+        set_labels:
+          x: Time
+          y: User opinion
+      final_histogram:
+        axis: [1, 0]
+        set_title:
+          title: Final
+        set_labels:
+          x: Group size
+
+  density_kwargs:
+    origin: lower
+    aspect: auto
+    cmap: bone_r
+
+  hist_kwargs:
+    color: mediumseagreen
+    orientation: horizontal
+
+
+multiverse.errorbars:
+  creator: multiverse
+  expected_multiverse_ndim: [1,2,3,4,5]
+  module: dantro.plot_creators.ext_funcs.generic
+  plot_func: errorbars
+
+
+sweep_2d:
+  creator: multiverse
+  expected_multiverse_ndim: [2,3,4,5]
+  module: model_plots.Opinionet
+  plot_func: sweep2d

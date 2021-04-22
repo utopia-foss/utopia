@@ -1,0 +1,187 @@
+# Default plots for the Opinionet model
+---
+graph:
+  based_on: graph
+  select:
+    graph_group: nw
+
+  graph_creation:
+    at_time_idx: -1
+    node_props: ['opinion']
+    # edge_props: ['edge_weight']
+  graph_drawing: &graph_drawing
+    positions:
+      model: spring
+      k: 1
+    nodes:
+      node_color:
+        from_property: opinion
+      node_size:
+        from_property: degree
+        scale_to_interval: [10, 200]
+    edges:
+      width: 0.2
+
+  helpers:
+    set_title:
+      title: Graph at time
+
+
+graph_animation:
+  enabled: false
+  based_on: [graph, animation]
+
+  select:
+    graph_group: nw
+  graph_creation:
+    node_props: ['opinion']
+  graph_drawing:
+    <<: *graph_drawing
+  graph_animation:
+    sel:
+      time:
+        from_property: opinion
+
+
+opinion_animated:
+  based_on: opinion_animated
+  animation:
+    animation_update_kwargs:
+      stepsize: 1
+  num_bins: 100
+  helpers:
+    set_title:
+      title: Opinion distribution
+
+
+opinion_time_series:
+  based_on: time_series_opinion
+  select:
+    opinion: nw/opinion
+
+  opinion_range: [0., 1.]
+  representatives:
+    enabled: True
+    max_reps: 5
+    rep_threshold: 10
+  density_kwargs:
+    vmin: 0
+    vmax: 25
+
+# evaluating a parameter sweep over the tolerance and the seed
+localization_over_tolerance:
+  based_on: multiverse.errorbars
+
+  select_and_combine:
+    fields:
+      tolerances:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , tolerance]
+      localization:
+        path: data/Opinionet/nw/opinion
+        transform:
+          - operation: .isel
+            args: [!dag_prev ]
+            kwargs:
+              time: -1
+          - operation: op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
+              bins: 100
+              interval: [0., 1.]
+  transform:
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        seed: 0
+      tag: tolerance
+    - operation: .mean
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+      tag: localization_mean
+    - operation: .std
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+        ddof: 1
+      tag: localization_std
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          L: !dag_tag localization_mean
+          dL: !dag_tag localization_std
+      tag: data
+
+  x: tolerance
+  y: L
+  yerr: dL
+  capsize: 2
+  marker: o
+  helpers:
+    set_title:
+      title: Peak localization
+    set_labels:
+      x: Tolerance
+      y: Localization
+
+# evaluating a parameter sweep over the tolerance and susceptibility
+localization_2d:
+  based_on: sweep_2d
+
+  select_and_combine:
+    fields:
+      tolerances:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , tolerance]
+      susceptibilities:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , susceptibility]
+      localization:
+        path: data/Opinionet/nw/opinion
+        transform:
+          - operation: .isel
+            args: [!dag_prev ]
+            kwargs:
+              time: -1
+          - operation: op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
+              bins: 100
+              interval: [0., 1.]
+
+  transform:
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        susceptibility: 0
+      tag: tolerance
+    - operation: .isel
+      args: [!dag_tag susceptibilities]
+      kwargs:
+        tolerance: 0
+      tag: susceptibility
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          susceptibility: !dag_tag susceptibility
+          L: !dag_tag localization
+      tag: data
+
+  x: tolerance
+  y: susceptibility
+  z: L
+
+  helpers:
+    set_title:
+      title: Peak localization
+    set_labels:
+      x: Tolerance
+      y: Susceptibility
