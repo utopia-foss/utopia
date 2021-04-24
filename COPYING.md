@@ -32,24 +32,23 @@ to as "Utopia Developers" in the respective copyright notices.
 
 ### Maintainers
 
+* Thomas Gaskin
 * Benjamin Herdeanu
 * Harald Mack
 * Lukas Riedel
 * Yunus Sevinchan
-* Julian Weninger (appears in commits also as `Julian`, `jweninger`, and
-  `Julian 530U3C Ubuntu`)
+* Julian Weninger
 
 ### Contributors
 
 * Narek Baghumian
 * Lorenzo Biasi
 * Unai Fischer Abaigar
-* Thomas Gaskin
 * Leonhard Holtmann
 * Christian Kobrow
 * Fabian Krautgasser
 * Daniel Lake
-* Hendrik Leusmann (appears in commits as `H_Leusmann`)
+* Hendrik Leusmann
 * Peter Manshausen
 * Robert Rauschen
 * Soeren Rubner
