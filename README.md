@@ -23,10 +23,13 @@ All parts of the frontend make use of a hierarchic, recursively-updated YAML-bas
 Using the [paramspace package][paramspace], this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
 The [dantro][dantro]-based data processing pipeline automates visualization, thereby coupling the model implementation and its analysis closer together.
 
-Several models are readily included in the framework, among them Conway's Game of Life, as well as one CA- and one agent-based contagious disease model.
+Several models are readily included in the framework, among them Conway's Game of Life, one CA- and one agent-based contagious disease model, and a network-based model of social opinion dynamics.
 Investigating these models by performing simulation runs with a few varying parameters, or sensitivity analysis over a large parameter space, requires little to no programming skills.
 
-For introductory guides, feature lists, FAQs, and API references refer to the online [user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/index.html).
+For introductory guides, feature lists, FAQs, and API references refer to the online [user manual at docs.utopia-project.org][Utopia-docs]
+
+Utopia development happens mainly on our self-hosted GitLab instance at [`ts-gitlab.iup.uni-heidelberg.de`][Utopia].
+Additionally, you can retrieve the code and get in contact via mirrored repositories on [GitLab.com][Utopia-Gitlab] and [GitHub][Utopia-Github].
 
 ### How to cite Utopia
 
@@ -36,6 +39,7 @@ Please cite at least the following publication if you use Utopia (or a modified 
 > Lukas Riedel, Benjamin Herdeanu, Harald Mack, Yunus Sevinchan, and Julian Weninger. 2020. **“Utopia: A Comprehensive and Collaborative Modeling Framework for Complex and Evolving Systems.”** *Journal of Open Source Software* 5 (53): 2165. DOI: [10.21105/joss.02165](https://doi.org/10.21105/joss.02165).
 
 The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation file format](https://citation-file-format.github.io/) and contains additional metadata to reference this software, its authors, and associated publications.
+See the [user manual](https://docs.utopia-project.org/html/cite.html) for more information and BibTeX data.
 
 ### Contents of this README
 * [How to install](#how-to-install)
@@ -55,18 +59,14 @@ The [`CITATION.cff`](CITATION.cff) file in this repository follows the [citation
 
 ## How to install
 The following instructions will install Utopia into a development environment
-on your machine.
-
-If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
+on your machine. If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
 
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (20.04 or newer) setups.
-
-Since __Windows__ supports the installation of Ubuntu via [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), Utopia can also be used on Windows.
+These instructions are intended for 'clean' __macOS__ or __Ubuntu__ (20.04 or newer) setups. Since __Windows__ supports the installation of Ubuntu via [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), Utopia can also be used on Windows.
 Follow the [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to install Ubuntu, then follow the instructions for Ubuntu in this README.
 
-_Note:_ Utopia is always tested against a recent Ubuntu release.
+**Note:** Utopia is always tested against a recent Ubuntu release.
 However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
 ⚠️ If you encounter difficulties, have a look at the [**troubleshooting section**](#troubleshooting).
@@ -82,7 +82,7 @@ there as well.
 In your terminal, enter the `Utopia` directory you just created.
 
 Now, get a clone URL via the _Clone_ button in the top right-hand corner of the [Utopia project page][Utopia].  
-If you are a developer or CCEES group member, you should [get an SSH key registered](#ssh-repository-access) with the GitLab and use the SSH address.
+If you are a developer, you should [get an SSH key registered](#ssh-repository-access) with the GitLab and use the SSH address.
 Otherwise, use the HTTPS address.
 
 To clone the repository, use the following command and add the chosen clone URL at the indicated place:
@@ -99,7 +99,7 @@ directory (mirroring this repository) inside your top-level `Utopia` directory.
 #### 2 — Install dependencies
 Install the third-party dependencies using a package manager.
 
-_Note:_ If you have [Anaconda][Anaconda] installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
+**Note:** If you have [Anaconda][Anaconda] installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
 However, notice that there might be issues during [the configuration step](#4-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
@@ -111,7 +111,7 @@ apt install cmake gcc g++ gfortran git libarmadillo-dev libboost-all-dev \
             python3-dev python3-pip python3-venv
 ```
 
-Further, we recommend to install the following optional packages:
+Further, we recommend installing the following optional packages:
 
 ```bash
 apt update
@@ -120,7 +120,7 @@ apt install ffmpeg graphviz doxygen
 
 You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
 
-*Note:* For simplicity, we suggest to install the meta-package `libboost-all-dev` which includes the whole [Boost][Boost] library.
+**Note:** For simplicity, we suggest installing the meta-package `libboost-all-dev` which includes the whole [Boost][Boost] library.
 If you want a minimal installation (only the [strictly required components](#dependencies)), use the following packages instead:
 `libboost-dev libboost-test-dev libboost-graph-dev libboost-regex-dev`.
 
@@ -145,7 +145,7 @@ Here are the installation instructions for both:
     brew install armadillo boost cmake hdf5 pkg-config python3 spdlog yaml-cpp
     ```
 
-    Further, we recommend to install the following optional packages:
+    Further, we recommend installing the following optional packages:
 
     ```bash
     brew update
@@ -154,7 +154,7 @@ Here are the installation instructions for both:
 
 * **MacPorts**:
 
-    Notice that `port` commands typically require administrator rights (`sudo`).
+    Please be aware that `port` commands typically require administrator rights (`sudo`).
 
     Install the required packages:
 
@@ -171,7 +171,7 @@ Here are the installation instructions for both:
     port select --set pip3 pip37
     ```
 
-    Further, we recommend to install the following optional packages:
+    Further, we recommend installing the following optional packages:
 
     ```bash
     port install doxygen ffmpeg graphviz
@@ -193,7 +193,7 @@ cd build
 cmake ..
 ```
 
-**Note:** If you use **MacPorts**, append the location of your Python installation to the CMake command (this is only required when calling CMake on a clean `build` directory):
+**Note:** If you are using **MacPorts**, append the location of your Python installation to the CMake command (this is only required when calling CMake on a clean `build` directory):
 
 ```bash
 cmake -DPython_ROOT_DIR=/opt/local ..
@@ -208,7 +208,6 @@ make dummy     # builds only the dummy model
 make -j4 all   # builds all models, using 4 CPUs
 ```
 
-_Note:_ On macOS ≥ 11, you might encounter errors at this point; please refer to [the troubleshooting section](#troubleshooting).
 
 
 #### 4 — Run a model 🎉
@@ -222,7 +221,7 @@ source ./activate
 to enter the virtual environment, where the Utopia Command Line Interface (CLI) is available.
 (If you later want to exit the virtual environment, call the `deactivate` command.)
 
-*Note:* If you are using `csh` or `fish` shells, use the respective `activate` scripts located in `build/utopia-env/bin/` (see [below](#how-to-run-a-model)).
+**Note:** If you are using `csh` or `fish` shells, use the respective `activate` scripts located in `build/utopia-env/bin/` (see [below](#how-to-run-a-model)).
 
 The `utopia` command is now available and gives you control over running and evaluating model simulations:
 
@@ -231,13 +230,13 @@ utopia run dummy
 ```
 
 The model output will be written into `~/utopia_output/dummy/<timestamp>`.
-For more information on how to use the command line interface, see the [information for users](#how-to-run-a-model) below and the [documentation](#utopia-documentation).
+For more information on how to use the command line interface, see the [information for users](#how-to-run-a-model) below and the [documentation][Utopia-docs].
 
 
 #### 5 — Make sure everything works
 _This step is optional, but recommended._
 
-To make sure that Utopia works as expected on your machine, [build and carry out all tests](#testing).
+To make sure that Utopia works as expected on your machine, [build and carry out](https://docs.utopia-project.org/html/usage/implement/running-tests.html) all tests.
 
 ### Optional Installation Steps
 
@@ -258,6 +257,8 @@ The following instructions will enable additional, *optional* features of Utopia
         ```bash
         brew update && brew install parallelstl
         ```
+
+    * On **macOS** with **MacPorts**, we are [currently unsure](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/-/issues/254) whether multithreading is workable.
 
 1. Enter the Utopia build directory, and call CMake again. This time, enable the use of multithreading with the `MULTITHREADING` option:
 
@@ -291,7 +292,7 @@ The following instructions will enable additional, *optional* features of Utopia
 
 ### Utopia via Docker
 [Docker][docker] is a free OS-level virtualization software.
-It allows to run any application in a closed environment container.
+It allows running any application in a closed environment container.
 
 The Utopia docker image is a way to run Utopia models and evaluate them without having to go through the installation procedure.
 It is also suitable for framework and model development.
@@ -305,13 +306,13 @@ The image and instructions on how to create a container from it can be found on 
 
 ## Quickstart
 This section gives a glimpse into working with Utopia.
-It's not more than a glimpse; after playing around with this, [consult the documentation](#utopia-documentation) to gain access to more information material, and especially: the [**Utopia Tutorial**][Utopia-tutorial].
+It's not more than a glimpse; after playing around with this, [consult the documentation][Utopia-docs] to gain access to more information material, and especially: the [**Utopia Tutorial**][Utopia-tutorial].
 
 
 ### How to run a model?
 The Utopia command line interface (CLI) is, by default, only available in a Python virtual environment, in which `utopya` (the Utopia frontend) and its dependencies are installed.
 To conveniently work with the frontend, you should thus enter the virtual environment.
-Execute *one* of the commands below depending on which type of shell you use:
+Execute *one* of the commands below, depending on which type of shell you're using:
 
 ```bash
 source ./build/activate                  # For bash, zsh, or similar
@@ -335,7 +336,7 @@ Alternatively, have a look at the [`src/utopia/models`](../src/utopia/models) di
 
 The `utopia run` command carries out a pre-configured simulation for that model, loads the data, and performs automated plots.
 
-_Note:_
+**Note:**
 * The script will always run through, even if there were errors in the
     individual parts. Thus, you should check the terminal output for errors
     and warnings (red or yellow, respectively). If you want the CLI to fail on
@@ -351,7 +352,7 @@ utopia --help
 utopia run --help
 ```
 
-Best place to continue from here is the [tutorial][Utopia-tutorial].
+The best place to continue from here is the [tutorial][Utopia-tutorial].
 
 
 
@@ -381,9 +382,7 @@ To do that, follow the linked instructions to [generate a key pair](https://docs
 and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
 
 ### New to Utopia? How do I implement a model?
-Aside from exploring the already existing models, you should check out the guides in the [documentation](#utopia-documentation)) which will get you started for implementing your own, fancy, new Utopia model. 🎉
-
-**For members of the CCEES group,** there is the internal [models repository][Models]; this is the home of your model.
+Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will guide you through the process of implementing your very own Utopia model.
 
 ### Building the documentation locally
 To build the documentation locally, navigate to the `build` directory and run
@@ -443,7 +442,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 
 ### Testing
-Utopia contains unit tests to ensure consistency by checking if class members
+Utopia contains unit tests to ensure consistency by checking whether class members
 and functions are working correctly. This is done both for the C++ and the
 Python code.
 The tests are integrated into the GitLab Continuous Integration pipeline,
@@ -452,7 +451,7 @@ can be easily detected.
 Tests can also be executed locally, to test a (possibly altered) version of
 Utopia *before* committing and pushing changes to the GitLab.
 
-See [the user manual](https://hermes.iup.uni-heidelberg.de/utopia_doc/master/html/usage/implement/running-tests.html) for more details on how to run tests.
+See [the user manual](https://docs.utopia-project.org/html/usage/implement/running-tests.html) for more details on how to run tests.
 
 ### Setting up a separate repository for models
 Working inside a clone or a fork of this repository is generally *not* a good idea: it makes updating harder, prohibits efficient version control on the models, and makes it more difficult to include additional dependencies or code.
@@ -466,19 +465,19 @@ Follow the instructions in [the `models_template` project][models_template] for 
 
 ## Dependencies
 
-| Software             | Required Version    | Tested Version  | Comments                    |
-| -------------------- | ------------------- | --------------- | --------------------------- |
-| GCC                  | >= 9                | 10              | Full C++17 support required |
-| _or:_ clang          | >= 9                | 10.0            | Full C++17 support required |
-| _or:_ Apple LLVM     | >= 9                |                 | Full C++17 support required |
-| [CMake][cmake]       | >= 3.13             | 3.16            | |
-| pkg-config           | >= 0.29             | 0.29            | |
-| [HDF5][HDF5]         | >= 1.10.4           | 1.10.4          | |
-| [Boost][Boost]       | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
-| [Armadillo][arma]    | >= 9.600            | 9.800           | |
-| [yaml-cpp][yaml-cpp] | >= 0.6.2            | 0.6.2           | |
-| [spdlog][spdlog]     | >= 1.3              | 1.5.0           | |
-| [Python3][Python3]   | >= 3.6              | 3.8.2           | |
+| Software                                       | Required Version    | Tested Version  | Comments                    |
+| ---------------------------------------------- | ------------------- | --------------- | --------------------------- |
+| GCC                                            | >= 9                | 10              | Full C++17 support required |
+| _or:_ clang                                    | >= 9                | 10.0            | Full C++17 support required |
+| _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
+| [CMake](https://cmake.org/)                    | >= 3.13             | 3.16            | |
+| pkg-config                                     | >= 0.29             | 0.29            | |
+| [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4           | 1.10.4          | |
+| [Boost](http://www.boost.org/)                 | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
+| [Armadillo](http://arma.sourceforge.net/)      | >= 9.600            | 9.800           | |
+| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.6.2            | 0.6.2           | |
+| [spdlog](https://github.com/gabime/spdlog)     | >= 1.3              | 1.5.0           | |
+| [Python3](https://www.python.org/downloads/)   | >= 3.6              | 3.8.2           | |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
 Currently, Utopia is tested against the packages provided by **Ubuntu 20.04**.
@@ -493,45 +492,36 @@ If you encounter difficulties with the installation procedure for any of these d
 
 ### Python
 Utopia's frontend, `utopya`, uses some additional python packages.
+These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#3-configure-and-build).
 
-These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#4-configure-and-build)).
-
-| Software                 | Version    | Comments                        |
-| ------------------------ | ---------- | ------------------------------- |
-| [Sphinx][Sphinx]         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace][paramspace] | >= 2.5.4   | Makes parameter sweeps easy     |
-| [dantro][dantro]         | >= 0.16    | Handle, transform, and visualize hierarchically organized data |
+| Software                                                | Version    | Comments                        |
+| ------------------------------------------------------- | ---------- | ------------------------------- |
+| [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 2.0     | Builds the Utopia documentation |
+| [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.4   | Makes parameter sweeps easy     |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.16    | Handle, transform, and visualize hierarchically organized data |
 
 
 ### Recommended
 The following depencies are _recommended_ to be installed, but are not strictly required by Utopia:
 
-| Software              | Version | Comments                          |
-| --------------------- | ------- | --------------------------------- |
-| [doxygen][doxygen]    | >= 1.8  | Builds the C++ code documentation |
-| [graphviz][graphviz]  | >= 2.40 | Used by doxygen to create dependency diagrams |
-| [ffmpeg][ffmpeg]      | >= 4.1  | Used for creating videos |
-| [ParallelSTL][pstl]   |         | Parallelization of STL algorithms (included in GCC >= 9) |
-| [TBB][tbb]            | >= 2018.5  | Intel parallelization library required by ParallelSTL |
-
+| Software                                              | Version | Comments                          |
+| ----------------------------------------------------- | ------- | --------------------------------- |
+| [doxygen](http://www.doxygen.nl)                      | >= 1.8  | Builds the C++ code documentation |
+| [graphviz](https://graphviz.gitlab.io)                | >= 2.40 | Used by doxygen to create dependency diagrams |
+| [ffmpeg](https://www.ffmpeg.org)                      | >= 4.1  | Used for creating videos |
+| [ParallelSTL](https://github.com/oneapi-src/oneDPL)   |         | Parallelization of STL algorithms (included in GCC >= 9) |
+| [TBB](https://github.com/oneapi-src/oneTBB)           | >= 2018.5  | Intel parallelization library required by ParallelSTL |
 
 
 <!-- ###################################################################### -->
 
 ## Troubleshooting
-* On **macOS Big Sur**, you *might* encounter an error during building of models, claiming that certain SDKs in `/Library/Developer/CommandLineTools/SDKs/` are missing.
-    A remedy can be to add a [symlink](https://apple.stackexchange.com/a/115647/208830) `MacOSX11.0.sdk -> MacOSX.sdk`, depending on the given error message:
-
-    ```bash
-    $ ln -s /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk /Library/Developer/CommandLineTools/SDKs/MacOSX11.0.sdk
-    ```
-
-    This command might require `sudo`.
 
 * If you have a previous installation and the **build fails inexplicably**,
     removing the `build` directory completely and starting anew from the
     [configuration step](#3-configure-and-build) should help.  
     In cases where the installation _used_ to work but at some point _stopped_ working, this should be a general remedy.
+    If the problem does *not* seem to be related to the Python environment, deleting only `build/CMakeCache.txt` may already suffice and save some configuration time.
 
 * In cases where you encounter errors with the **model registry**, it helps to
     remove the registry entries of all models and regenerate them:
@@ -545,7 +535,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 * **Anaconda** ships its own version of the HDF5 library which is _not_
     compatible with Utopia. To tell CMake where to find the correct version of
     the library, add the following argument (without the comments!) to the
-    `cmake ..` command during [configuration](#4-configure-and-build):
+    `cmake ..` command during [configuration](#3-configure-and-build):
 
     ```bash
     -DHDF5_ROOT=/usr/           # on Ubuntu
@@ -563,14 +553,15 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 <!-- Links ################################################################ -->
 
 [Utopia]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia
-[Models]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/models
+[Utopia-Gitlab]: https://gitlab.com/utopia-project/utopia
+[Utopia-Github]: https://github.com/utopia-foss/utopia
 [models_template]: https://gitlab.com/utopia-project/models_template
 
 [Utopia-issues]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues
 [Utopia-new-issue]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/new?issue
 
-[Utopia-docs]: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/
-[Utopia-tutorial]: https://hermes.iup.uni-heidelberg.de/utopia_doc/latest/html/guides/tutorial.html
+[Utopia-docs]: https://docs.utopia-project.org/html/index.html
+[Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
 [paramspace]: https://gitlab.com/blsqr/paramspace
@@ -583,6 +574,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [MacPorts]: https://www.macports.org/
 [Anaconda]: https://www.anaconda.com/
 
+<!-- These shortlinks are used in the text but cannot be used in the table (due to this file being embedded via sphinx) -->
 [CMake]: https://cmake.org/
 [HDF5]: https://www.hdfgroup.org/solutions/hdf5/
 [Boost]: http://www.boost.org/

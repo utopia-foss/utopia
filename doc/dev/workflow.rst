@@ -204,7 +204,8 @@ Where do these tests come from? You need to write them. You can write tests in C
 * C++: look at the files in the ``test`` directory inside of each model within
   the ``src/utopia/models`` directory.
 
-For setting up the testing system for your model, look at the description in the :ref:`impl_step_by_step`. For running your tests, see the :doc:`README <../README>`.
+For setting up the testing system for your model, look at the description in the :ref:`impl_step_by_step`.
+For running your tests, see :ref:`running_tests`.
 
 Note that if you have set up the testing infrastructure for your model, your tests will automatically be built and executed whenever you push something to the GitLab project. If your test fails, you will receive an e-mail notification and you will see in your merge request that the test failed. If this happens, don't worry! Just fix the error, commit it, and push it again. Only when you want your merge request to get integrated into the Utopia master branch do all tests need to pass.
 
