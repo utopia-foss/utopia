@@ -265,7 +265,7 @@ As a rule of thumb: If you want to change the graph structure ...
 
 Saving Graph Data
 -----------------
-Utopia provides an interface to save ``boost::adjacency_list``s or custom properties attached to it. In a first step, it is highly recommended to set up a separate ``HDFGroup`` for the graph data using the ``create_graph_group`` function. It automatically adds some metadata as group attributes that allows to conveniently load the data as a ``GraphGroup`` on the frontent side.
+Utopia provides an interface to save ``boost::adjacency_list`` s or custom properties attached to it. In a first step, it is highly recommended to set up a separate ``HDFGroup`` for the graph data using the ``create_graph_group`` function. It automatically adds some metadata as group attributes that allows to conveniently load the data as a ``GraphGroup`` on the frontent side.
 
 Saving a static graph
 ^^^^^^^^^^^^^^^^^^^^^
@@ -275,6 +275,7 @@ If you want to save *only* the topology of a graph, you can use the ``save_graph
     :language: c++
     :start-after: // DOC REFERENCE START: save_graph example
     :end-before: // DOC REFERENCE END: save_graph example
+    :dedent: 4
 
 .. hint::
 
@@ -301,6 +302,7 @@ Let's look at an example: Let's assume we have a graph where each vertex holds a
     :language: c++
     :start-after: // DOC REFERENCE START: setup_adaptor_tuples example
     :end-before: // DOC REFERENCE END: setup_adaptor_tuples example
+    :dedent: 4
 
 Note that while here we simply extract the properties from the vertices (edges), in general the adaptors can contain any calculation on ``vd`` (``ed``).
 
@@ -311,6 +313,7 @@ For example, if you write a graph at every time step the ``label`` should encode
     :language: c++
     :start-after: // DOC REFERENCE START: save_properties example
     :end-before: // DOC REFERENCE END: save_properties example
+    :dedent: 4
 
 .. note::
 

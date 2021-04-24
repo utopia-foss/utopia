@@ -77,7 +77,7 @@ How the neighbor is chosen depends on the network: in a directed network, the pr
 Network
 ^^^^^^^
 
-In each iteration of the model, a single user is chosen at random with uniform probability, and this user's opinion is updated through its interaction with other users. Which users interact is determined through the network topology. Utopia allows choosing :ref:`different types of underlying topologies<feature_graph_creation>` for the network (e.g. small-world or scale-free), or :ref:`loading your own network from a dataset<loading_a_graph_from_a_file>`. The network can be directed or undirected, and edges can be given *weights*, representing the probability of the end nodes interacting.
+In each iteration of the model, a single user is chosen at random with uniform probability, and this user's opinion is updated through its interaction with other users. Which users interact is determined through the network topology. Utopia allows choosing :ref:`different types of underlying topologies<graph_gen_functions>` for the network (e.g. small-world or scale-free), or :ref:`loading your own network from a dataset<loading_a_graph_from_a_file>`. The network can be directed or undirected, and edges can be given *weights*, representing the probability of the end nodes interacting.
 
 .. hint:: You can control the network topology through the ``network/model`` key, and the directedness through the ``directed`` key.
 
@@ -145,7 +145,7 @@ The following keys in the model configuration allow you to control the model:
 
     - ``directed``: whether or not the network should be directed. If directed, the network edges will be given weights (see above).
     
-    - ``model``: the network topology: can be ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), or ``load_from_file`` (see :ref:`here<feature_graph_creation>`).
+    - ``model``: the network topology: can be ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
     
     - ``edges``:
     
