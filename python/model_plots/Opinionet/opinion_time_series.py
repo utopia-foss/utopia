@@ -6,13 +6,13 @@ from utopya.plotting import is_plot_func, PlotHelper
 
 # -----------------------------------------------------------------------------
 
-@is_plot_func(use_dag=True, required_dag_tags=['opinion'])
+@is_plot_func(use_dag=True, required_dag_tags=['opinion', 'opinion_space'])
 def opinion_time_series(
     *,
     hlpr: PlotHelper,
     data: dict,
     bins: int = 100,
-    opinion_range = (0., 1.),
+    opinion_range = None,
     representatives: dict = None,
     density_kwargs: dict = None,
     hist_kwargs: dict = None
@@ -24,6 +24,8 @@ def opinion_time_series(
         hlpr (PlotHelper): The Plot Helper
         data (dict): The data from DAG selection
         bins (int, optional): The number of bins for the histograms
+        opinion_range (tuple, optional): range of opinions to be plotted. If
+            none provided, the opinion space from the config is used.
         representatives (dict, optional): kwargs for representative
             trajectories. Possible configurations:
                 'enabled': Whether to show representative trajectories
@@ -36,6 +38,14 @@ def opinion_time_series(
     """
     opinions = data['opinion']
     final_opinions = opinions.isel(time=-1)
+    cfg_op_space = data['opinion_space']
+    if opinion_range is not None:
+        opinion_range = opinion_range
+    else:
+        if (cfg_op_space['type']) == 'continuous':
+            opinion_range = cfg_op_space['interval']
+        elif (cfg_op_space['type']) == 'discrete':
+            opinion_range = tuple((0, cfg_op_space['num_opinions']))
 
     num_vertices = opinions.coords['vertex_idx'].size
     time = opinions.coords['time'].data
@@ -111,7 +121,7 @@ def opinion_time_series(
                     for v in rand_vertex_idxs:
                         if (
                             final_opinions.isel(vertex_idx=v) > b
-                            and final_opinions.isel(vertex_idx=v) < b+1./b
+                            and final_opinions.isel(vertex_idx=v) < b+1./bins
                             and v not in reps
                         ):
                             reps.append(v)

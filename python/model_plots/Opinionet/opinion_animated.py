@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from utopya import DataManager, UniverseGroup
-from utopya.plotting import UniversePlotCreator, PlotHelper, is_plot_func
+from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
 
 log = logging.getLogger(__name__)
 logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
@@ -33,8 +33,7 @@ def opinion_animated(dm: DataManager, *,
     if (cfg_op_space['type']) == 'continuous':
         val_range = cfg_op_space['interval']
     elif (cfg_op_space['type']) == 'discrete':
-        val_range = tuple((cfg_op_space['discrete_values'][0],
-                           cfg_op_space['discrete_values'][-1]))
+        val_range = tuple((0, cfg_op_space['num_opinions']))
 
     #get histograms.............................................................
     def get_hist_data(input_data):
