@@ -46,9 +46,6 @@ time_series_opinion:
   universes: all
   module: model_plots.Opinionet
   plot_func: opinion_time_series
-  dag_options:
-    select_path_prefix: data/Opinionet
-
   helpers:
     setup_figure:
       ncols: 2

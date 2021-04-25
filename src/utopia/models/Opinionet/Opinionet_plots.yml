@@ -57,9 +57,12 @@ opinion_animated:
 opinion_time_series:
   based_on: time_series_opinion
   select:
-    opinion: nw/opinion
-
-  opinion_range: [0., 1.]
+    opinion: data/Opinionet/nw/opinion
+    opinion_space:
+      path: cfg/Opinionet
+      with_previous_result: true
+      transform:
+        - getitem: opinion_space
   representatives:
     enabled: True
     max_reps: 5
