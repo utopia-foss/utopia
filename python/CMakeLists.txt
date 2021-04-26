@@ -4,34 +4,18 @@
 message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
-# Manually install dependencies for utopya, if they are not already satisfied
-# NOTE Take care that the versions used here match those in the README.md
-#      and those in the utopya setup.py file.
-# -- dantro --
-python_find_package(PACKAGE dantro VERSION 0.16.2)
-
-if(NOT PYTHON_PACKAGE_dantro_FOUND)
-    # install from current _master_ branch
-    python_install_package_remote(
-        URL https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro.git@release/v0.16
-        TRUSTED_HOST ts-gitlab.iup.uni-heidelberg.de)
-endif()
-
-
-# Now, ready to install utopya
-
-# -- utopya --
-python_find_package(PACKAGE utopya VERSION 0.8.5)
+python_find_package(PACKAGE utopya VERSION 0.8.7)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
 
     # For easier development: install using symlinks to the local package
     set(UTOPIA_PYTHON_INSTALL_EDITABLE True)
-
-    # Install utopya and dependencies
     python_install_package(PATH utopya)
 endif()
+
+# Inform about dantro version (installation happened via utopya dependencies)
+python_find_package(PACKAGE dantro)
 
 
 # Pass info to utopya  ........................................................
