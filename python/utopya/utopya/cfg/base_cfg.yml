@@ -181,28 +181,8 @@ run_kwargs:
   # The entries of the following list are OR-connected, i.e. it suffices that
   # one is fulfilled for the corresponding worker to be stopped
   stop_conditions: ~
-  # Below, an EXAMPLE for two OR-connected stop conditions
-    # # First condition: Timeout for long simulations
-    # - !stop-condition
-    #   name: single simulation timeout
-    #   description: terminates a simulation if it ran for too long
-    #   enabled: true               # (optional, true by default)
-    #   to_check:                   # A sequence of AND-connected conditions
-    #     - func: timeout_wall      # Looked up in utopya.stopcond_funcs
-    #       seconds: !expr 60*10    # --> terminated after 10 minutes wall time
-    #       # ... further arguments here are passed on to the selected function
-    #
-    # # Second condition: Terminating depending on a monitor entry
-    # - !stop-condition
-    #   name: extinction
-    #   description: terminates a simulation if entity density goes to zero
-    #   to_check:
-    #     - func: check_monitor_entry
-    #       entry_name: MyModel.density
-    #       operator: <=
-    #       value: 0.
-    #       # Will stop if: {monitor entry} <= 0.
-  # End of StopCondition example
+  # See docs for how to set these up:
+  #   https://docs.utopia-project.org/html/usage/run/stop-conditions.html
 
 
 # The defaults for the worker_kwargs
@@ -355,6 +335,10 @@ data_manager:
       required: true
       path_regex: data/uni(\d+)/config.yml
       target_path: multiverse/{match:}/cfg
+      parallel:
+        enabled: true
+        min_files: 1000
+        min_total_size: 1048576  # 1 MiB
 
     # Load the binary output data from each simulation.
     data:
@@ -370,7 +354,7 @@ data_manager:
         enabled: false
 
         # Number of processes to use; negative is deduced from os.cpu_count()
-        processes: -1
+        processes: ~
 
         # Threshold values for parallel loading; if any is below these
         # numbers, loading will *not* be in parallel.
