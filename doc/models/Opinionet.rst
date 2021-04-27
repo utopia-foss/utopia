@@ -1,6 +1,6 @@
 .. _model_Opinionet:
 
-``Opinionet`` – Opinion Dynamics
+``Opinionet`` — Opinion Dynamics
 ================================
 
 ``Opinionet`` is a model of opinion dynamics on a social network. It simulates a network of users (nodes in a network), who update their opinions upon interaction with their social contacts (their neighboring nodes).
@@ -36,7 +36,7 @@ There are two basic types of interaction functions: the *Deffuant* type, and the
 .. math::
 
     \sigma_i(t+1) = \sigma_i(t) + \mu * (\langle\sigma_k \rangle - \sigma_i(t) ),
-    
+
 *(b) Discrete opinion space:*
 
 .. math::
@@ -88,9 +88,9 @@ In each iteration of the model, a single user is chosen at random with uniform p
 **Edge weights:** The edge weights are calculated using a softmax function. Let :math:`\Delta \sigma_{i,j}` be the opinion difference :math:`\vert \sigma_i - \sigma_j \vert` between users :math:`i` and :math:`j`. The weight on edge :math:`i, j` is then set to
 
 .. math::
-    
+
     w_{i, j} = \dfrac{e^{-w \Delta \sigma_{i, j}}}{\sum_{k} e^{-w \Delta \sigma_{i, k}}},
-    
+
 where the sum over :math:`k` ranges over all neighbors of :math:`i` (softmax function). The parameter :math:`w>0` is the *weighting parameter*. It controls how sharply the edge weights decrease with the opinion difference. For :math:`w=0`, the edge weights are all equal to 1/out degree(i).
 
 .. hint:: You can control the weighting parameter via the ``network/edges/weighting`` key. It only has an effect when the network is directed.
@@ -126,15 +126,15 @@ Model parameters
 .. raw:: html
 
    </details>
-   
+
 The following keys in the model configuration allow you to control the model:
 
 - ``opinion_space``:
 
     - ``type``: whether the opinion space is ``continuous`` or ``discrete``.
-    
+
     - ``interval``: if the opinion space is continuous: a real, closed interval.
-    
+
     - ``num_opinions``: if the opinion space is discrete: the number of discrete opinions.
 
 - ``tolerance``: a real, positive value representing the confidence bound.
@@ -144,18 +144,18 @@ The following keys in the model configuration allow you to control the model:
 - ``network``:
 
     - ``directed``: whether or not the network should be directed. If directed, the network edges will be given weights (see above).
-    
+
     - ``model``: the network topology: can be ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
-    
+
     - ``edges``:
-    
+
         - ``weighting``: the weighting parameter used in the softmax function to set the edge weights (see above). Must be a postive real.
-        
+
         - ``rewiring``: whether or not edges between users with large opinion differences are rewired.
 
 
-   
- 
+
+
 
 .. _plotting:
 
@@ -249,4 +249,3 @@ Literature
 - Perra, N. & Rocha, L. E. C. (2019). *Modelling opinion dynamics in the age of algorithmic personalisation.* Sci. Rep. **9** 7261.
 - Sobkowicz, P. (2012). *Discrete Model of Opinion Changes Using Knowledge and Emotions as Control Variables.* PLoS ONE **7** 9: e44489.
 - Sznajd-Weron, K. (2005). *Sznajd model and its applications.* Acta Physica Polonica B **36** 8: 2537–2547.
-

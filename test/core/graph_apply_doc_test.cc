@@ -16,7 +16,7 @@ namespace Utopia
 // Below, an example of the required graph types - doc reference line
 
 // -- Vertex --------------------------------------------------------------
-/// The vertex state 
+/// The vertex state
 struct VertexState {
     /// A vertex property
     unsigned v_prop = 0;
@@ -85,8 +85,8 @@ struct GraphFixture {
         }
 
         for (auto e = 0u; e < num_edges; ++e){
-            boost::add_edge(boost::random_vertex(g, rng), 
-                            boost::random_vertex(g, rng), 
+            boost::add_edge(boost::random_vertex(g, rng),
+                            boost::random_vertex(g, rng),
                             Edge(EdgeState{e_prop_default}), g);
         }
     };
@@ -99,7 +99,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
     // DOC REFERENCE START: apply_rule on graph entities examples
     // -- Simple Examples -----------------------------------------------------
     // NOTE: The full possibilities are described in the detailed example below
-    
+
     // Sequentially iterate over all vertices (without shuffling) and set the
     // vertices' v_prop to 42.
     apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
@@ -107,16 +107,16 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
             auto& state = g[vertex_desc].state;
             state.v_prop = 42;
         },
-        g 
+        g
     );
 
-    // Set all neighbors' v_prop synchronously to the sum of all their 
+    // Set all neighbors' v_prop synchronously to the sum of all their
     // neighbors' v_prop accumulated to the former v_prop.
     apply_rule<IterateOver::neighbors, Update::sync>(
         [](const auto neighbor_desc, auto& g){
             auto state = g[neighbor_desc].state;
-            
-            for (const auto next_neighbor 
+
+            for (const auto next_neighbor
                     : range<IterateOver::neighbors>(neighbor_desc, g))
             {
                 state.v_prop += g[next_neighbor].state.v_prop;
@@ -125,12 +125,12 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
             return state;
         },
         boost::vertex(0, g), // Neighbors of vertex '0'
-        g 
+        g
     );
 
     // -- Example with detailed explanation -----------------------------------
     apply_rule<                     // Apply a rule to graph entities
-        IterateOver::vertices,      // Choose the entities that the rule 
+        IterateOver::vertices,      // Choose the entities that the rule
                                     // should be applied to. Here: vertices.
                                     // All available options are:
                                     //   * IterateOver::vertices
@@ -138,9 +138,8 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
                                     //
                                     //   * IterateOver::neighbors
                                     //   * IterateOver::inv_neighbors (inverse)
-                                    //   * IterateOver::degree
-                                    //   * IterateOver::out_degree
-                                    //   * IterateOver::in_degree
+                                    //   * IterateOver::out_edges
+                                    //   * IterateOver::in_edges
                                     //
                                     // The last options require the
                                     // parent_vertex that works as a reference.
@@ -150,7 +149,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
                                     // With Update::sync, the state change is
                                     // first buffered and applied to all
                                     // entities at once.
-        
+
         Shuffle::off                // Whether to randomize the order. This
                                     // argument is only available for the
                                     // Update::async mode. For Shuffle::on, it
@@ -174,7 +173,7 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
                                     // whole graph is copied!
         {
             // Get the state (by reference)
-            auto& state = g[vertex_desc].state;     
+            auto& state = g[vertex_desc].state;
             // WARNING: If Update::sync was selected, you should work on a COPY
             //          of the state. To achieve that, leave away the '&' and
             //          return the state at the end of the rule function.
@@ -183,13 +182,13 @@ BOOST_FIXTURE_TEST_CASE(Test_apply_rule_graph_doc_examples, GraphFixture)
             state.v_prop = 42;
 
             // ... can do more stuff here ...
-            
+
             // For Update::sync, return the state. Optional for Update::async.
             // return state;
         },
         // boost::vertex(0, g),     // This is the parent_vertex argument.
                                     // The parent vertex that needs to be
-                                    // given when IterateOver requires a 
+                                    // given when IterateOver requires a
                                     // reference vertex.
                                     // As an example, vertex 0 is given here.
 
