@@ -24,25 +24,25 @@ enum class IterateOver {
     edges,
 
     /// Iterate over neighbors (adjacent_vertices).
-    /** This iteration requires a vertex descriptor who's neighbors' to iterate
+    /** This iteration requires a vertex descriptor whose neighbors to iterate
      *  over.
      */
     neighbors,
 
     /// Iterate inversely over neighbors (adjacent_vertices).
-    /** This iteration requires a vertex descriptor who's neighbors' to iterate
+    /** This iteration requires a vertex descriptor whose neighbors to iterate
      *  over.
      */
     inv_neighbors,
 
     /// Iterate over the in edges of a vertex.
-    /** This iteration requires a vertex descriptor who's neighbors' to iterate
+    /** This iteration requires a vertex descriptor whose neighbors to iterate
      *  over.
      */
     in_edges,
 
     /// Iterate over the out edges of a vertex.
-    /** This iteration requires a vertex descriptor who's neighbors' to iterate
+    /** This iteration requires a vertex descriptor whose neighbors to iterate
      *  over.
      */
     out_edges
