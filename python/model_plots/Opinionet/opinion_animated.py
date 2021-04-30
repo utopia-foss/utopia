@@ -16,13 +16,15 @@ def opinion_animated(dm: DataManager, *,
                      uni: UniverseGroup,
                      hlpr: PlotHelper,
                      num_bins: int=100,
-                     time_idx: int):
+                     time_idx: int,
+                     **plot_kwargs):
 
     """Plots an animated histogram of the opinion distribution over time.
 
     Arguments:
         num_bins(int): Binning of the histogram
         time_idx (int, optional): Only plot one single frame (eg. last frame)
+        plot_kwargs (dict, optional): Passed to plt.bar
     """
 
     #datasets...................................................................
@@ -47,7 +49,7 @@ def opinion_animated(dm: DataManager, *,
     #calculate histograms, set axis ranges
     counts, bin_edges, pos = get_hist_data(opinions[t, :])
     hlpr.ax.set_xlim(val_range)
-    bars = hlpr.ax.bar(pos, counts, width=np.diff(bin_edges))
+    bars = hlpr.ax.bar(pos, counts, width=np.diff(bin_edges), **plot_kwargs)
     text = hlpr.ax.text(0.02, 0.93, f'step {time[t]}', transform=hlpr.ax.transAxes)
 
     #animate....................................................................
