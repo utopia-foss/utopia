@@ -1,34 +1,30 @@
 ---
-perform_sweep: true
-
 parameter_space:
   num_steps: 30
 
   PredatorPreyPlant:
     space:
-      extent: [30, 1]
-      periodic: !sweep
-        default: true
-        values: [true, false]
+      extent: [2, 1]
+      periodic: false
 
     cell_manager:
       grid:
         structure: square
         resolution: 1
 
-      cell_params:
-        p_prey: 0.5
-        p_predator: 0.5
-        
+    cell_states_from_file:
+      hdf5_file: set_dynamically_in_test
+      load_predator: true
+      load_prey: true
+      load_plant: false
+
     prey:
-      cost_of_living: 1.
-      repro_cost: 2.
+      cost_of_living: 0.
       repro_prob: 0.
-      resource_intake: 2.
+      resource_intake: 0.
       p_flee: 1.
 
     predator:
-      cost_of_living: 1.
-      repro_cost: 2.
-      resource_intake: 2.
+      cost_of_living: 0.
+      resource_intake: 0.
       repro_prob: 0.

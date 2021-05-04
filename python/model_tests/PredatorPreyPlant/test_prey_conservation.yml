@@ -1,0 +1,21 @@
+---
+parameter_space:
+  num_steps: 30
+
+  PredatorPreyPlant:
+    cell_manager:
+      cell_params:
+        p_predator: 0.
+        p_prey: 0.5
+    
+    predator:
+      cost_of_living: 0.
+      resource_intake: 0.
+      repro_prob: 0.
+    
+    prey:
+      cost_of_living: 0.
+      repro_prob: 0.
+      resource_intake: 0.
+
+

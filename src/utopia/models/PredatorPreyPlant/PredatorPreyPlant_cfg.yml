@@ -18,17 +18,17 @@ cell_manager:
     # Initial prey and predator resources are drawn from a uniform integer (!)
     # distribution with the limits specified below.
     predator:
-      min_init_resources: 2
-      max_init_resources: 8
+      min_init_resources: !is-unsigned 2
+      max_init_resources: !is-unsigned 8
     prey:
-      min_init_resources: 2
-      max_init_resources: 8
+      min_init_resources: !is-unsigned 2
+      max_init_resources: !is-unsigned 8
  
     # The probabilities to have a predator, plant, and/or prey on a cell.
     # These probabilities are evaluated independently and for each cell.
-    p_predator: 0.05
-    p_prey: 0.3
-    p_plant: 1.
+    p_predator: !is-probability 0.05
+    p_prey: !is-probability 0.3
+    p_plant: !is-probability 1.
 
 # Load species positions from datasets of a HDF5 file.
 # If enabled, the presence of an entity is set using data from the respective
@@ -36,56 +36,102 @@ cell_manager:
 # Values can only be 0 or 1, specifying whether the respective entity is
 # present on the corresponding cell.
 cell_states_from_file:
-  hdf5_file: /abs/path/to/data.hdf5
-  load_predator: false
-  load_prey: false
-  load_plant: false
+  hdf5_file: !is-string /abs/path/to/data.hdf5
+  load_predator: !is-bool false
+  load_prey: !is-bool false
+  load_plant: !is-bool false
 
 
 # --- Model dynamics ----------------------------------------------------------
 # How many cells to randomly select each time step and apply the movement rule
 # to. This is specified in units of the number of available cells.
-num_moves_fraction: 1
+num_moves_fraction: !is-positive 1.
 
 
 # Species-specific parameters; the model dynamics arise from these
 predator:
   # Resource intake from eating and maximum resource value
-  resource_intake: 3.
-  resource_max: 20.
+  resource_intake: !param
+    default: 3.
+    dtype: float
+    limits: [0.,~]
+    
+  resource_max: !param
+    default: 20.
+    dtype: float
+    limits: [0.,~]
+    
 
   # Cost of living (per time step)
-  cost_of_living: 1.
+  cost_of_living: !param
+    default: 1.
+    dtype: float
+    limits: [0.,~]
+    
 
   # Movement limit; how many single steps a predator can make when moving.
-  move_limit: 1
-
+  move_limit: !param
+    default: 1
+    dtype: int
+    limits: [1, ~]
+    
   # Reproduction parameters: minimum resources required, probability for
   # the reproduction taking place, and cost of reproduction.
-  repro_resource_requ: 4.
-  repro_prob: 0.5
-  repro_cost: 2.
+  repro_resource_requ: !param
+    default: 4.
+    dtype: float
+    limits: [0.,~]
+    
+  repro_prob: !is-probability 0.5
+  repro_cost: !param
+    default: 2.
+    dtype: float
+    limits: [0.,~]
+    
 
 
 prey:
-  resource_intake: 3.
-  resource_max: 8.
+  resource_intake: !param
+    default: 3.
+    dtype: float
+    limits: [0.,~]
+    
+  resource_max: !param
+    default: 8.
+    dtype: float
+    limits: [0.,~]
+    
 
-  cost_of_living: 1.
+  cost_of_living: !param
+    default: 1.
+    dtype: float
+    limits: [0.,~]
+    
 
-  move_limit: 1
+  move_limit: !param
+    default: 1
+    dtype: int
+    limits: [1, ~]
 
   # Fleeing probability when on the same cell together with a predator
-  p_flee: 0.5
+  p_flee: !is-probability 0.5
 
-  repro_resource_requ: 4.
-  repro_prob: 0.2
-  repro_cost: 2.
+  repro_resource_requ: !param
+    default: 4.
+    dtype: float
+    limits: [0., ~]
+    
+  repro_prob: !is-probability 0.2
+  repro_cost: !param
+    default: 2.
+    dtype: float
+    limits: [0., ~]
+    
 
 
 plant:
   # Plants' growth model
-  growth_model: stochastic
+  growth_model: !is-string stochastic
   # Available models:
   #  - none:           As in the standard Predator-Prey model, the presence of
   #                    plants is ignored. Thus, available resources for prey
@@ -99,7 +145,7 @@ plant:
   #                    step for each cell without a plant on it.
 
   # The deterministic regeneration time
-  regen_time: 20
+  regen_time: !is-unsigned 20
 
   # The regeneration probability (for stochastic regrowth)
-  regen_prob: 0.05
+  regen_prob: !is-probability 0.05
