@@ -1,17 +1,18 @@
-# Config for testing that the model does the expected for a specific minimal scenario
-#
-# The testing scenario is a single 
-#
-# NOTE that this sets only the common values; the changes are set via passing
-#      additional keys to the the ModelTest.create_run_load method
 ---
 perform_sweep: true
 
 parameter_space:
-  # Do a number of steps
   num_steps: 80
 
-  # Load the default model config
+  case: !sweep
+    default: 0
+    range: [2]
+
+  seed: !coupled-sweep
+    target_name: case
+    default: 42
+    values: [42, 84]
+  
   PredatorPreyPlant:
     space:
       extent: [10, 10]
@@ -33,12 +34,14 @@ parameter_space:
           max_init_resources: 6
         p_prey: 1
         p_predator: 0
-          
+        
     prey:
       cost_of_living: 1
       resource_intake: 0.
 
     plant:
       growth_model: stochastic
-      regen_prob: 0.0
-      
+      regen_prob: !coupled-sweep
+        default: 0.
+        target_name: case
+        values: [0., 1.]

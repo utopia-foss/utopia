@@ -43,18 +43,6 @@ struct State {
         const auto p_prey = get_as<double>("p_prey", cfg);
         const auto p_predator = get_as<double>("p_predator", cfg);
 
-        // Check wether the conditions for the probabilities are met
-        if (   p_prey < 0.
-            or p_predator < 0.
-            or (p_prey + p_predator) > 1.)
-        {
-            throw std::invalid_argument(
-                "Need `p_prey` and `p_predator` in [0, 1] and the sum not "
-                "exceeding 1, but got values: "
-                + std::to_string(p_prey) + " and "
-                + std::to_string(p_predator) + "!");
-        }
-
         // Set a prey on a cell with the given probability by generating a
         // random number in [0, 1) and compare it to wanted probability.
         if (dist(*rng) < p_prey){

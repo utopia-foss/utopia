@@ -45,46 +45,55 @@ struct State {
         const auto p_prey = get_as<double>("p_prey", cfg);
         const auto p_predator = get_as<double>("p_predator", cfg);
 
-        // Check wether the conditions for the probabilities are met
-        if (   p_plant < 0.
-            or p_prey < 0.
-            or p_predator < 0.
-            or p_plant > 1.
-            or p_prey > 1.
-            or p_predator > 1.)
-        {
-            throw std::invalid_argument("Need arguments `p_plant`, `p_prey` "
-                "and `p_predator` to be in interval [0, 1], but got: "
-                + std::to_string(p_plant) + ", "
-                + std::to_string(p_prey) + " and "
-                + std::to_string(p_predator) + "!");
+        auto cfg_prey = get_as<DataIO::Config>("prey", cfg);
+        auto cfg_predator = get_as<DataIO::Config>("predator", cfg);
+
+        // Check if the max resource limit is actually higher than the lower
+        // limit.
+        const auto min_init_resources_prey = get_as<int>("min_init_resources", 
+            cfg_prey);
+        const auto max_init_resources_prey = get_as<int>("max_init_resources", 
+            cfg_prey);
+        const auto min_init_resources_predator = 
+            get_as<int>("min_init_resources", cfg_predator);
+        const auto max_init_resources_predator = 
+            get_as<int>("max_init_resources", cfg_predator);
+        if(max_init_resources_predator < 
+            min_init_resources_predator){
+            throw::std::invalid_argument("The upper limit for the initial "
+            "predator resources needs to be higher than the lower limit.");
         }
-        
+        if(max_init_resources_prey < 
+            min_init_resources_prey){
+            throw::std::invalid_argument("The upper limit for the initial "
+            "prey resources needs to be higher than the lower limit.");
+        }
         // Set a plant on this cell with a given probability
         plant.on_cell = (dist(*rng) < p_plant);
-
-        // Set a prey on this cell with the desired probability; also set the
-        // initial resource amount from an integer distribution.
-        if (dist(*rng) < p_prey) {
-            prey.on_cell = true;
-            std::uniform_int_distribution<> init_res_dist_prey(
-                get_as<int>("min_init_resources", cfg["prey"]),
-                get_as<int>("max_init_resources", cfg["prey"])
-            );
-
-            prey.resources = init_res_dist_prey(*rng);
-        }
 
         // Set a predator on a cell with the given probability and the 
         // resources in the given range.
         if (dist(*rng) < p_predator) {
             predator.on_cell = true;
             std::uniform_int_distribution<> init_res_dist_pred(
-                get_as<int>("min_init_resources", cfg["predator"]),
-                get_as<int>("max_init_resources", cfg["predator"])
+                min_init_resources_predator,
+                max_init_resources_predator
             );
             predator.resources = init_res_dist_pred(*rng);
         }
+
+        // Set a prey on this cell with the desired probability; also set the
+        // initial resource amount from an integer distribution.
+        if (dist(*rng) < p_prey) {
+            prey.on_cell = true;
+            std::uniform_int_distribution<> init_res_dist_prey(
+                min_init_resources_prey,
+                max_init_resources_prey
+            );
+
+            prey.resources = init_res_dist_prey(*rng);
+        }
+
 
     }
 };
@@ -267,32 +276,6 @@ private:
     }
 
 
-    /// If a prey is on the cell, determine whether it may flee and where to
-    /** A prey should only flee if there is a predator on the cell, too.
-     *  First empty neighboring cells are collected to which a prey can 
-     *  potentially flee. Choose a random cell out of the selection to flee to.
-     *  If there is no empty cell nothing happens.
-     */
-    void flee_prey(const std::shared_ptr<Cell>& cell) {
-        // Collect empty neighboring cells to which the prey could flee
-        _empty_cell.clear();
-        for (const auto& nb : this->_cm.neighbors_of(cell)) {
-            if (    not nb->state.prey.on_cell
-                and not nb->state.predator.on_cell)
-                _empty_cell.push_back(nb);
-        }
-
-        // If there is an empty cell, move there
-        if (_empty_cell.size() > 0) {
-            // Choose a random cell to move to
-            std::uniform_int_distribution<> 
-                dist(0, _empty_cell.size() - 1);
-            auto nb_cell = _empty_cell[dist(*this->_rng)];
-            move_prey_to_nb_cell(cell, nb_cell);
-        }
-    }
-
-
     /// Move the prey looking for resources
     /** If plants are enabled, prey might need to look for available resources 
      *  in the form of plants in the neighboring cells. If there is a plant on
@@ -390,12 +373,7 @@ private:
         // Marker used to compute how many steps the prey or predator has taken
         unsigned int step = 0;
 
-        if (state.prey.on_cell and state.predator.on_cell) {
-            if (_prob_distr(*this->_rng) < _params.prey.p_flee) {
-                flee_prey(cell);
-            }
-        }
-        else if (state.predator.on_cell) {
+        if (state.predator.on_cell) {
             while (    step++ < _params.predator.move_limit
                    and not cell->state.prey.on_cell)
             {
@@ -407,6 +385,40 @@ private:
                 cell = move_prey(cell);
         }
     };
+
+
+
+    /// If a prey is on the cell, determine whether it may flee and where to
+    /** A prey should only flee if there is a predator on the cell, too.
+     *  First empty neighboring cells are collected to which a prey can 
+     *  potentially flee. Choose a random cell out of the selection to flee to.
+     *  If there is no empty cell nothing happens.
+     */
+    Rule _flee_prey = [this](const auto& cell) {
+        auto& state = cell->state;
+        
+        if (state.prey.on_cell and state.predator.on_cell and 
+            (_prob_distr(*this->_rng) < _params.prey.p_flee)) {
+            // Collect empty neighboring cells to which the prey could flee
+            _empty_cell.clear();
+            for (const auto& nb : this->_cm.neighbors_of(cell)) {
+                if (    not nb->state.prey.on_cell
+                    and not nb->state.predator.on_cell)
+                    _empty_cell.push_back(nb);
+            }
+
+            // If there is an empty cell, move there
+            if (_empty_cell.size() > 0) {
+                // Choose a random cell to move to
+                std::uniform_int_distribution<> 
+                    dist(0, _empty_cell.size() - 1);
+                auto nb_cell = _empty_cell[dist(*this->_rng)];
+                move_prey_to_nb_cell(cell, nb_cell);
+            }
+        }
+        return state;
+    };
+
 
 
     /// Define the eating rule
@@ -546,11 +558,6 @@ public:
         _params(this->_cfg),
         _num_moves([&](){
             const auto f = get_as<double>("num_moves_fraction", this->_cfg);
-            
-            if (f < 0.) {
-                throw std::invalid_argument("Parameter num_moves_fraction "
-                    "needs to be positive, was " + std::to_string(f) + "!");
-            }
             return f * this->_cm.cells().size();
         }()),
 
@@ -604,9 +611,32 @@ private:
             // detect that a user supplied invalid values (better than
             // failing silently, which would happen with booleans).
             _cm.set_cell_states<int>(hdf5_file, "predator",
-                [](auto& cell, const int on_cell){
+                [this](auto& cell, const int on_cell){
                     if (on_cell == 0 or on_cell == 1) {
+                        // Place predator state on cell.
                         cell->state.predator.on_cell = on_cell;
+                        // Take care of species resources.
+                        if(on_cell){
+                            const auto& predator_cfg = 
+                                get_as<Config>("predator", 
+                                _cfg["cell_manager"]["cell_params"]);
+                            int min_init_resources_predator = 
+                                get_as<int>("min_init_resources", 
+                                predator_cfg);
+                            int max_init_resources_predator = 
+                                get_as<int>("max_init_resources", 
+                                predator_cfg);
+                            std::uniform_int_distribution<> 
+                                init_res_dist_predator(
+                                min_init_resources_predator,
+                                max_init_resources_predator
+                            );
+                            cell->state.predator.resources = 
+                                init_res_dist_predator(*this->_rng);
+                        }
+                        else{
+                            cell->state.predator.resources = 0;
+                        }
                         return;
                     }
                     throw std::invalid_argument("While setting predator "
@@ -621,9 +651,30 @@ private:
             this->_log->info("Loading prey positions from file ...");
 
             _cm.set_cell_states<int>(hdf5_file, "prey",
-                [](auto& cell, const int on_cell){
+                [this](auto& cell, const int on_cell){
                     if (on_cell == 0 or on_cell == 1) {
+                        // Place prey state on cell.
                         cell->state.prey.on_cell = on_cell;
+                        // Take care of species resources.
+                        if(on_cell){
+                            const auto& prey_cfg = 
+                                get_as<Config>("prey", 
+                                _cfg["cell_manager"]["cell_params"]);
+                            int min_init_resources_prey = 
+                                get_as<int>("min_init_resources", prey_cfg);
+                            int max_init_resources_prey = 
+                                get_as<int>("max_init_resources", prey_cfg);
+                            std::uniform_int_distribution<> 
+                                init_res_dist_prey(
+                                min_init_resources_prey,
+                                max_init_resources_prey
+                            );
+                            cell->state.prey.resources = 
+                                init_res_dist_prey(*this->_rng);
+                        }
+                        else{
+                            cell->state.prey.resources = 0;
+                        }
                         return;
                     }
                     throw std::invalid_argument("While setting prey "
@@ -672,7 +723,8 @@ public:
         for (std::size_t i = 0; i < _num_moves; ++i) {
             move_entities(_cm.cells()[_cm_dist(*this->_rng)]);
         }
-
+        apply_rule<Update::async, Shuffle::on>(_flee_prey, _cm.cells(), 
+                                                *this->_rng);
         apply_rule<Update::async, Shuffle::off>(_eat, _cm.cells());
         apply_rule<Update::async, Shuffle::on>(_reproduce, _cm.cells(),
                                                *this->_rng);

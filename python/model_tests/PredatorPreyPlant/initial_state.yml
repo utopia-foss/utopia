@@ -5,8 +5,13 @@ parameter_space:
   # Disable steps; not needed
   num_steps: 0
 
+  case: !sweep
+    default: 0
+    range: [4]
+
   # Test for four different seeds
-  seed: !sweep
+  seed: !coupled-sweep
+    target_name: case
     default: 42
     values: [23, 42, 665, 667]
 
@@ -23,5 +28,11 @@ parameter_space:
         resolution: 21
 
       cell_params:
-        p_prey: 0.2
-        p_predator: 0.285
+        p_prey: !coupled-sweep
+          target_name: case
+          default: 0.2
+          values: [0.2, 0.25, 0.75, 0.9]
+        p_predator: !coupled-sweep
+          target_name: case
+          default: 0.285
+          values: [0.1, 0.3, 0.5, 0.95]

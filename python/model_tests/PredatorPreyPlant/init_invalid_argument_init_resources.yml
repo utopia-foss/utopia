@@ -1,0 +1,36 @@
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 0
+
+  case: !sweep
+    default: 0
+    range: [2]
+
+  seed: !coupled-sweep
+    target_name: case
+    default: 42
+    values: [42, 6542]
+
+  PredatorPreyPlant:  
+    cell_manager:
+      cell_params:
+        prey: 
+          min_init_resources: !coupled-sweep
+            target_name: case
+            default: 2
+            values: [5, 1]
+          max_init_resources: !coupled-sweep
+            target_name: case
+            default: 2
+            values: [1, 5]
+        predator:
+          min_init_resources: !coupled-sweep
+            target_name: case
+            default: 2
+            values: [1, 5]
+          max_init_resources: !coupled-sweep
+            target_name: case
+            default: 2
+            values: [5, 1]

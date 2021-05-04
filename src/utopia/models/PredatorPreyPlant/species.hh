@@ -60,19 +60,10 @@ struct PlantParams {
         // Extract regeneration time and probability
         regen_time([&cfg](){
             const auto t = get_as<int>("regen_time", cfg);
-            if (t < 0) {
-                throw std::invalid_argument("Parameter regen_time should be a "
-                    "positive integer, but was: " + std::to_string(t));
-            }
             return t;
         }()),
         regen_prob(get_as<double>("regen_prob", cfg))
-    {
-        if (regen_prob < 0. or regen_prob > 1.) {
-            throw std::invalid_argument("Parameter regen_prob need be a value "
-                "in [0., 1.], but was: " + std::to_string(regen_prob));
-        }
-    };
+    {};
 
     // Do not allow the default constructor
     PlantParams() = delete;
@@ -90,11 +81,7 @@ struct SpeciesBaseParams : PredatorPrey::SpeciesBaseParams{
         PredatorPrey::SpeciesBaseParams(cfg),
         move_limit([&cfg](){
             const auto lim = get_as<int>("move_limit", cfg);
-            if (lim >= 0) {
-                return lim;
-            }
-            throw std::invalid_argument("Parameter move_limit needs to be a "
-                                        "positive integer!");
+            return lim;
         }())
     {}
 
@@ -108,7 +95,15 @@ struct PredatorParams : public SpeciesBaseParams{
     PredatorParams(const Utopia::DataIO::Config& cfg)
     :
         SpeciesBaseParams(cfg)
-    {};
+    {
+        double repro_cost = get_as<double>("repro_cost", cfg);
+        double repro_resource_requ = get_as<double>("repro_resource_requ", cfg);
+        if (repro_cost > repro_resource_requ) {
+            throw std::invalid_argument("Parameter repro_cost needs to be "
+                "smaller than or equal to the minimal resources required for "
+                "reproduction!");
+        }
+    };
 
     /// The default constructor
     PredatorParams() = delete;
@@ -126,7 +121,15 @@ struct PreyParams : public SpeciesBaseParams {
     :
         SpeciesBaseParams(cfg),
         p_flee(get_as<double>("p_flee", cfg))
-    {};
+    {
+        double repro_cost = get_as<double>("repro_cost", cfg);
+        double repro_resource_requ = get_as<double>("repro_resource_requ", cfg);
+        if (repro_cost > repro_resource_requ) {
+            throw std::invalid_argument("Parameter repro_cost needs to be "
+                "smaller than or equal to the minimal resources required for "
+                "reproduction!");
+        }
+    };
 
     /// The default constructor
     PreyParams() = delete;

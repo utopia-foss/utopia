@@ -18,14 +18,14 @@ cell_manager:
   cell_params:
     # Resource reservoir for predator and prey
     predator:
-      init_resources: 2
+      init_resources: !is-unsigned 2
     prey:
-      init_resources: 2
+      init_resources: !is-unsigned 2
 
     # The probabilities to have a cell initialized with prey and/or predator 
     # on it. Need be non-negative and sum up to a value <= 1.0
-    p_predator: 0.1
-    p_prey: 0.2
+    p_predator: !is-probability 0.1
+    p_prey: !is-probability 0.2
 
 
 # Load species positions from datasets of a HDF5 file.
@@ -34,36 +34,69 @@ cell_manager:
 # Values can only be 0 or 1, specifying whether the respective entity is
 # present on the corresponding cell.
 cell_states_from_file:
-  hdf5_file: /abs/path/to/data.hdf5
-  load_predator: false
-  load_prey: false
+  hdf5_file: !is-string /abs/path/to/data.hdf5
+  load_predator: !is-bool false
+  load_prey: !is-bool false
 
 
 # --- Model dynamics ----------------------------------------------------------
 # Species-specific parameters; the model dynamics arise from these
 predator:
   # Resource intake from eating and maximum resource value
-  resource_intake: 3.
-  resource_max: 8.
+  resource_intake: !param
+    default: 3.
+    dtype: float
+    limits: [0.,~]
+    
+  resource_max: !param
+    default: 8.
+    dtype: float
+    limits: [0.,~]
 
   # Cost of living (per time step)
-  cost_of_living: 1.
+  cost_of_living: !param
+    default: 1.
+    dtype: float
+    limits: [0.,~]
 
   # Reproduction parameters: minimum resources required, probability for
   # the reproduction taking place, and cost of reproduction.
-  repro_resource_requ: 4.
-  repro_prob: 0.2
-  repro_cost: 2.
+  repro_resource_requ: !param
+    default: 4.
+    dtype: float
+    limits: [0.,~]
+  repro_prob: !is-probability 0.2
+  repro_cost: !param
+    default: 2.
+    dtype: float
+    limits: [0.,~]
 
 prey:
-  resource_intake: 3.
-  resource_max: 8.
+  resource_intake: !param
+    default: 3.
+    dtype: float
+    limits: [0.,~]
+    
+  resource_max: !param
+    default: 8.
+    dtype: float
+    limits: [0.,~]
 
-  cost_of_living: 1.
+  # Cost of living (per time step)
+  cost_of_living: !param
+    default: 1.
+    dtype: float
+    limits: [0.,~]
 
   # Fleeing probability when on the same cell together with a predator
-  p_flee: 0.5
+  p_flee: !is-probability 0.5
 
-  repro_resource_requ: 4.
-  repro_prob: 0.2
-  repro_cost: 2.
+  repro_resource_requ: !param
+    default: 4.
+    dtype: float
+    limits: [0.,~]
+  repro_prob: !is-probability 0.2
+  repro_cost: !param
+    default: 2.
+    dtype: float
+    limits: [0.,~]

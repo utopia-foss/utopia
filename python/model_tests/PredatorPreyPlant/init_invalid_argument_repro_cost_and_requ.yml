@@ -1,0 +1,34 @@
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 0
+
+  case: !sweep
+    default: 0
+    range: [2]
+
+  seed: !coupled-sweep
+    target_name: case
+    default: 42
+    values: [42, 6542]
+
+  PredatorPreyPlant:  
+    predator:
+      repro_cost: !coupled-sweep
+        target_name: case
+        default: 2.
+        values: [5., 1.]
+      repro_resource_requ: !coupled-sweep
+        target_name: case
+        default: 4.
+        values: [1., 5.]
+    prey: 
+      repro_cost: !coupled-sweep
+        target_name: case
+        default: 2.
+        values: [1., 5.]
+      repro_resource_requ: !coupled-sweep
+        target_name: case
+        default: 4.
+        values: [5., 1.]

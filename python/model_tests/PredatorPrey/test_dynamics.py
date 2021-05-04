@@ -19,8 +19,6 @@ mtc = ModelTest("PredatorPrey", test_file=__file__)
 # - predators move to prey and prey tries to flee
 # - taking up resources
 # - reproduction
-# TODO Improve these by using more xarray functionality, also to arrive at a
-#      more readable representation (instead of the np.unique stuff)
 
 
 # Fixtures --------------------------------------------------------------------
@@ -38,6 +36,7 @@ def tmp_h5data_fpath(tmpdir) -> str:
         f.create_dataset("prey", data=prey_data)
     return fpath
 
+
 # Tests -----------------------------------------------------------------------
 
 def test_cost_of_living_prey():
@@ -45,24 +44,21 @@ def test_cost_of_living_prey():
     # Create, run, and load a universe
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_prey.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPrey']
-    prey = data["prey"]
+    for uni in dm['multiverse'].values():
+        # Get the data
+        data = uni['data']['PredatorPrey']
+        prey = data['prey']
+        res_prey = data['resource_prey']
+        
+        # Since no predator is present, prey does not flee and does not move.
+        # So the resources of every prey, staying on its cell should decrease
+        # over time.
 
-    prey.stack(dim=['x', 'y'])
-    
-    res_prey = data['resource_prey']
-    res_prey.stack(dim=['x', 'y'])
-
-    # Assert that life is costly...
-    # NOTE Requires initial resources of 2 and cost of living of 1
-    for i, r in enumerate(res_prey):
-        unique = np.unique(r)
-        if 2-i >= 0:
-            assert unique == 2-i
-
-    # Assert that in the end all prey is dead due to starvation
-    assert np.unique(prey.isel(time=-1)) == 0
+        # Assert decreasing resources of prey
+        assert(res_prey.diff("time") <= 0).all() 
+        
+        # Assert that in the end all prey is dead due to starvation
+        assert(prey.isel(time=-1) == 0).all()
 
 
 def test_cost_of_living_Predator():
@@ -71,14 +67,17 @@ def test_cost_of_living_Predator():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="cost_of_living_predator.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPrey']
-    res_predator = data['resource_predator']
+    for uni in dm['multiverse'].values():
+        # Get the data
+        data = uni['data']['PredatorPrey']
+        predator = data['predator']
+        res_predator = data['resource_predator']
+        
+        # Assert that life is costly
+        assert(res_predator.diff("time") <= 0).all()
 
-    # Assert that life is costly
-    for i, r in enumerate(res_predator):
-        unique = np.unique(r)
-        assert unique == 2-i
+        # Assert that in the end all predators starved to death
+        assert(predator.isel(time=-1) == 0).all()
 
 
 def test_eating_prey():
@@ -91,17 +90,15 @@ def test_eating_prey():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_eating_prey.yml")
 
-    # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPrey']
-    res_prey = data['resource_prey']
+    for uni in dm['multiverse'].values():
+        # Get the data
+        data = uni['data']['PredatorPrey']
+        res_prey = data['resource_prey']
 
-    # Assert that prey takes up resources every step and spends 1 resource
-    # for its cost of living
-    # NOTE Requires initial resources of 2 and cost of living of 1 and 
-    #      resource intake of 2
-    for i, r in enumerate(res_prey):
-        unique = np.unique(r)
-        assert unique == 2+i
+        # Assert that prey takes up exactly one net resources every step. 
+        # NOTE Requires initial resources of 2 and cost of living of 1 and 
+        #      resource intake of 2, resulting in 1 net resource.
+        assert(res_prey.diff("time") == 1).all()
 
 
 def test_predator_movement():
@@ -115,21 +112,19 @@ def test_predator_movement():
     mv, dm = mtc.create_run_load(from_cfg="test_predator_movement.yml")
 
     # Get the data
-    data = dm['multiverse'][0]['data']['PredatorPrey']
-    
-    prey = data['prey']
-    predator = data['predator']
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        
+        prey = data['prey']
+        predator = data['predator']
 
-    res_prey = data['resource_prey']
-    res_pred = data['resource_predator']
+        res_prey = data['resource_prey']
+        res_pred = data['resource_predator']
 
-    # Check that predators moves
-    # Calculate the difference between successive steps
-    diff = np.diff(predator, axis=0)
+        # Check that predators moves
+        # Calculate the difference between successive steps
+        assert(predator.diff("time") != 0).any()
 
-    # Check whether at some point the predator moved to another cell
-    assert np.any(diff != 0)
-    
 
 def test_predator_conservation():
     """ If life costs and reproduction chance are both zero, the number of 
@@ -141,10 +136,10 @@ def test_predator_conservation():
     for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
         predator = data['predator']
-        sum_of_predators = predator.sum(dim=['x', 'y'])
 
-        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
-        
+        # Assert that in all timesteps the sum of predators is conserved
+        assert(predator.sum(dim=['x','y']).diff('time') == 0).all()
+
 
 def test_prey_conservation():
     """ If life costs and reproduction chance are both zero, the number of 
@@ -156,9 +151,9 @@ def test_prey_conservation():
     for uni in dm['multiverse'].values():
         data = uni['data']['PredatorPrey']
         prey = data['prey']
-        sum_of_prey = prey.sum(dim=['x', 'y'])
 
-        assert(sum_of_prey == sum_of_prey.sel({'time': 0})).all()
+        # Assert that in all timesteps the sum of prey is conserved
+        assert(prey.sum(dim=['x','y']).diff('time') == 0).all()
 
 
 def test_prey_flee(tmp_h5data_fpath):
@@ -185,12 +180,10 @@ def test_prey_flee(tmp_h5data_fpath):
         predator = data['predator']
         prey = data['prey']
 
-        sum_of_predators = predator.sum(dim=['x', 'y'])
-        sum_of_prey = prey.sum(dim=['x', 'y'])
-
-        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
-        assert(sum_of_prey == sum_of_prey.sel({'time': 0})).all()    
-
+        # Assert that prey and predator both are conserved for this scenario
+        assert(prey.sum(dim=['x','y']).diff('time') == 0).all()
+        assert(predator.sum(dim=['x','y']).diff('time') == 0).all()
+       
 
 def test_hunting():
     """ Test if prey completely vanishes over time, if the flee chance, 
@@ -206,17 +199,15 @@ def test_hunting():
         predator = data['predator']
         prey = data['prey']
 
-        sum_of_predators = predator.sum(dim=['x', 'y'])
-        sum_of_prey = prey.sum(dim=['x', 'y'])
-
         # The sum of predators should be conserved
-        assert(sum_of_predators == sum_of_predators.sel({'time': 0})).all()
+        assert(predator.sum(dim=['x','y']).diff('time') == 0).all()
         
         # The sum of prey should (not necessarily strictly) monotonically
         # decrease
-        assert(np.diff(sum_of_prey, axis=0) <= 0).all()
+        assert(prey.sum(dim=['x','y']).diff('time') <= 0).all()
+
         # For sufficient long time prey should went extinct. 
-        assert(sum_of_prey.sel({'time': 60}) == 0)
+        assert(prey.isel(time=-1) == 0).all()
 
 
 def test_prey_reproduction(): 
@@ -225,30 +216,25 @@ def test_prey_reproduction():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_prey_reproduction.yml")
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPrey']
-    prey = data['prey']
-    predator = data['predator']
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        prey = data['prey']
+        predator = data['predator']
 
-    # There are no predators
-    assert np.all(predator) == 0
+        # There are no predators
+        assert(predator == 0).all()
 
-    # Count the number of prey for each time step
-    num_prey = [np.count_nonzero(p) for p in prey]
-    print(num_prey)
+        # NOTE  The parameters are selected such that each prey can have one 
+        #       offspring. So the amount of prey in the last step should be 
+        #       twice the amount in the initial step.
 
-    # Calculate total number of prey which can be created from the
-    # amount of available resources
-    # NOTE  The parameters are selected such that each prey can have one 
-    #       offspring
-    expected_final_num_prey = num_prey[0] * 2
+        # Check that not all preys reproduce after the first iteration step
+        assert(2 * prey.isel(time=0).sum(dim=['x','y']) 
+                != prey.isel(time=1).sum(dim=['x','y']))
 
-    # Check that not all preys reproduce after the first iteration step
-    assert expected_final_num_prey != num_prey[1]
-
-    # Check that at the end every prey has reproduced
-    assert expected_final_num_prey == num_prey[-1]
+        # Check that at the end every prey has reproduced
+        assert(2 * prey.isel(time=0).sum(dim=['x','y']) 
+                == prey.isel(time=-1).sum(dim=['x','y']))
 
 
 def test_predator_reproduction(): 
@@ -257,23 +243,19 @@ def test_predator_reproduction():
     # DataManager dm
     mv, dm = mtc.create_run_load(from_cfg="test_predator_reproduction.yml")
 
-    # Get the data
-    uni = dm['multiverse'][0]
-    data = uni['data']['PredatorPrey']
-    predator = data['predator']
+    for uni in dm['multiverse'].values():
+        data = uni['data']['PredatorPrey']
+        predator = data['predator']
 
-    # Count the number of predators for each time step
-    num_predator = [np.count_nonzero(p == 1) for p in predator]
+        # NOTE  The parameters are selected such that each predator can have 
+        #       one offspring. So the amount of predators in the last step 
+        #       should be twice the amount in the initial step.
 
-    # Calculate total number of predator which can be created from the
-    # amount of available resources
-    # NOTE  The parameters are selected such that each predator can have one 
-    #       offspring
-    expected_final_num_predator = num_predator[0] * 2
+        # Check that not all predators reproduce after the first iteration step
+        assert(2 * predator.isel(time=0).sum(dim=['x','y']) 
+                != predator.isel(time=1).sum(dim=['x','y']))
 
-    # Check that not all predators reproduce after the first iteration step
-    assert expected_final_num_predator != num_predator[1]
-
-    # Check that at the end every predator has reproduced
-    assert(expected_final_num_predator == num_predator[-1])
+        # Check that at the end every predator has reproduced
+        assert(2 * predator.isel(time=0).sum(dim=['x','y']) 
+                == predator.isel(time=-1).sum(dim=['x','y']))
 
