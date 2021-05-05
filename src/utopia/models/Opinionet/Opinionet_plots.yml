@@ -52,6 +52,7 @@ opinion_animated:
   helpers:
     set_title:
       title: Opinion distribution
+  color: dodgerblue
 
 
 opinion_time_series:

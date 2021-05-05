@@ -31,9 +31,9 @@ network:
 
   # network model
   model: WattsStrogatz # can be: WattsStrogatz (scale-free), ErdosRenyi (random),
-                       # BollobasRiordan (small-world, directed),
+                       # regular, complete, BollobasRiordan (small-world, directed),
                        # BarabasiAlbert (small-world, undirected),
-                       # load_from_file (load a custom graph)
+                       # regular, load_from_file (load a custom graph)
   num_vertices: 200
   mean_degree: 4
 
@@ -43,6 +43,7 @@ network:
 
   WattsStrogatz:
     p_rewire: 0.2
+    oriented: false
 
   BollobasRiordan:
     alpha: 0.4
@@ -50,6 +51,9 @@ network:
     gamma: 0.
     del_in: 1.
     del_out: 0.
+
+  regular:
+    oriented: false
 
   edges:
     weighting: !param

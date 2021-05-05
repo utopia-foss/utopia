@@ -7,4 +7,6 @@ parameter_space:
     create_graph:
       model: regular
       num_vertices: 10
-      mean_degree: 9
+      mean_degree: 10
+      regular:
+        oriented: true

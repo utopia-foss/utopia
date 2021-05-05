@@ -6,6 +6,7 @@ file(COPY
         "cell_manager_test.h5"
         "cell_manager_integration_test.yml"
         "graph_creation_test.yml"
+        "graph_Complete_Regular_WS_test.yml"
         "grid_square_test.yml"
         "model_test.yml"
         "model_nested_test.yml"
@@ -33,6 +34,7 @@ set(TESTS_CORE
     graph_test
     graph_apply_test
     graph_apply_doc_test
+    graph_Complete_Regular_WS_test
     graph_creation_test
     graph_entity_test
     graph_iterator_test

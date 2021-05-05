@@ -126,7 +126,7 @@ graph:
       width:
         from_property: weights        # Map the 'weights' data to the edge
         scale_to_interval: [0.1, 1.2] # width and scale the data accordingly.
-  
+
   helpers:
     set_title:
       title: Final Graph

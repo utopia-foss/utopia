@@ -3,13 +3,13 @@
 # This file should ONLY contain model-specific configuration and needs to be
 # written such that it can be used by _every_ model instance, regardless
 # of the level within a model hierarchy.
-# 
+#
 # To that end, it needs to specify the parameters at the level of the instance
 # of a Model class.
-# 
+#
 # This file is usually handled by the frontend: usage of advanced yaml features
 # like anchors and tags is supported.
-# 
+#
 # Note, however, that this file should hold the _default_ values for a single
 # instance. Therefore, parameter sweeps should not be specified here!
 # Furthermore, if including other models' parameters via the `!model` tag, make
@@ -22,11 +22,15 @@ space:
 
 # -- Network and agent initialization -----------------------------------------
 create_graph:
-  model: ErdosRenyi
-  num_vertices: 42
-  mean_degree: 4
+  model: regular
+  num_vertices: 30
+  mean_degree: 1
 
   # --- Model-specific parameters
+  regular:
+    # Whether the underlying lattice is oriented (directed only)
+    oriented: true
+
   ErdosRenyi:
     # Allow parallel edges
     parallel: false
@@ -36,7 +40,10 @@ create_graph:
 
   WattsStrogatz:
     # Rewiring probability
-    p_rewire: 0.2
+    p_rewire: 0.
+
+    # Orientation of the underlying lattice (directed only)
+    oriented: false
 
   BarabasiAlbert:
     # Allow parallel edges
