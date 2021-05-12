@@ -2,7 +2,9 @@
 ---
 # Spatial CA animations .......................................................
 parameter_anim:
-  based_on: state_anim
+  based_on:
+    - state_anim
+    - .ca.state.anim_ffmpeg
 
   to_plot:
     some_heterogeneous_parameter:

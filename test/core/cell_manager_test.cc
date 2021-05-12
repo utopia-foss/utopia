@@ -318,7 +318,7 @@ int main() {
                                                    cfg["nb_bad1"]);
             },
             "Got unexpected neighborhood mode 'bad'! Available modes: "
-            "empty, vonNeumann, Moore."));
+            "empty, vonNeumann, Moore, hexagonal."));
 
         assert(check_error_message<std::invalid_argument>(
             "nb_bad2",

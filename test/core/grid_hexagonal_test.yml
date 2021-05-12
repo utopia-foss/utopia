@@ -1,0 +1,120 @@
+# Configuration nodes for the test of the hexagonal grid
+---
+spaces:
+  # default: not configured from here
+
+  even_pointy:
+    periodic: true
+    extent: [4.2983, 3.7224]
+    # domain area: 16
+
+  even_np_pointy:
+    periodic: false
+    extent: [4.2983, 3.7224]
+    # domain area: 16
+
+  uneven_pointy:
+    periodic: true
+    extent: [3.2237, 2.7918]
+    # domain area: 9
+
+  uneven_np_pointy:
+    periodic: false
+    extent: [3.2237, 2.7918]
+    # domain area: 9
+
+  nasty:
+    periodic: true
+    extent: [1.75, 1.9892] # y is adapted to succeed at medium_res
+    # domain area: 3.4811
+
+
+# Grids for testing all spaces
+grids:
+  tiny_res:
+    structure: hexagonal
+    resolution: 1
+
+    # For testing the shape and the number of cells
+    expected_shapes:
+      default:          -1     # aspect ratio of hexagon violated
+      even_pointy:      [4, 4] # 16 
+      even_np_pointy:   [4, 4] # 16
+      uneven_pointy:    -1     # 3x3: periodic space does not fit impair rows
+      uneven_np_pointy: [3, 3] # 9
+      nasty:            -1     # does not work
+
+  small_res:
+    structure: hexagonal
+    resolution: 5
+
+    expected_shapes: # tiny_res % 5
+      default:          -1        # aspect ratio of hexagon violated
+      even_pointy:      [20, 20]
+      even_np_pointy:   [20, 20]
+      uneven_pointy:    -1        # 15x15, impair number of rows not allowed
+      uneven_np_pointy: [15, 15] 
+      nasty:            -1        # does not work
+  
+  small_res_high_tolerance:
+    structure: hexagonal
+    resolution: 5
+    aspect_ratio_tolerance: 0.25  # increase the default of 0.02
+
+    # For testing the shape and the number of cells
+    expected_shapes:
+      default:          [5, 5]   # works with distorted aspect ratio
+      even_pointy:      [20, 20]
+      even_np_pointy:   [20, 20]
+      uneven_pointy:    [15, 14] # works with distorted aspect ratio
+                                 # impair number of rows is reduced to next int
+      uneven_np_pointy: [15, 15] 
+      nasty:            [8, 10]  # works with distorted aspect ratio
+  
+  decimal_res:
+    structure: hexagonal
+    resolution: 10
+
+    expected_shapes: # tiny res % 10
+      default:          -1        # aspect ratio of hexagon violated
+      even_pointy:      [40, 40]
+      even_np_pointy:   [40, 40]
+      uneven_pointy:    [30, 30]  # 30x30 pair number of rows, allowed
+      uneven_np_pointy: [30, 30] 
+      nasty:            -1        # aspect ratio of hexagon violated
+  
+  medium_res:
+    structure: hexagonal
+    resolution: 32   # ... to match 'default' space
+
+    expected_shapes: # tiny_res % 32
+      default:          [30, 34]      
+      even_pointy:      [128, 128]
+      even_np_pointy:   [128, 128]
+      uneven_pointy:    [96, 96]
+      uneven_np_pointy: [96, 96]
+      nasty:            [52, 68]
+
+  invalid_res:
+    structure: hexagonal
+    resolution: -1    # bad value!
+
+    expected_shapes:
+      default:        -2    # will check for bad value error message
+      even_pointy:    -2
+      even_np_pointy: -2
+      uneven_pointy:  -2
+      uneven_np_pointy: -2
+      nasty:      -2
+
+  missing_res:
+    structure: hexagonal
+    # resolution: 0    # missing value
+
+    expected_shapes:
+      default:    -3    # will check for missing value error message
+      even_pointy:       -3
+      even_np_pointy:     -3
+      uneven_pointy:  -3
+      uneven_np_pointy:  -3
+      nasty:      -3

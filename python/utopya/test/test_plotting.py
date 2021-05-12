@@ -239,6 +239,29 @@ def test_ca_plotting():
     mv.pm.plot_from_cfg(plot_only=["strategy_and_payoff_frames"])
 
 
+def test_ca_plotting_hexagonal():
+    """Tests the plot_funcs.ca module with hexagonal lattice"""
+    update_meta_cfg = {'parameter_space': {'CopyMeGrid': {
+                                'cell_manager': {
+                                    'grid': {'structure': 'hexagonal'},
+                                    'neighborhood': {'mode': 'hexagonal'}}}}}
+    mv, _ = ModelTest('CopyMeGrid').create_run_load(**update_meta_cfg)
+
+    # Run the CA plots (initial frame + animation)
+    mv.pm.plot_from_cfg(plot_only=["initial_state_and_trait"])
+    mv.pm.plot_from_cfg(plot_only=["state_and_trait_anim"])
+
+
+    # Same again with SimpleEG . . . . . . . . . . . . . . . . . . . . . . . .
+    mv, _ = ModelTest('SimpleEG').create_run_load(**update_meta_cfg)
+
+    # Plot the default configuration, which already includes some CA plotting
+    mv.pm.plot_from_cfg()
+
+    # To explicitly plot with the frames writer, select the disabled config
+    mv.pm.plot_from_cfg(plot_only=["strategy_and_payoff_frames"])
+
+
 def test_time_series_plots():
     """Tests the plot_funcs.time_series module"""
     mv, _ = ModelTest('SandPile').create_run_load()

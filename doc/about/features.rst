@@ -157,6 +157,7 @@ The Physical ``Space`` a Model is embedded in
 The ``CellManager``
 ^^^^^^^^^^^^^^^^^^^
 * Creates a grid discretization of the :ref:`physical space <feature_space>` and aims for being controllable from the configuration while providing a good performance.
+* The grid discretization can be a ``square`` or a ``hexagonal`` lattice. This can be changed via the configuration, allowing easy evaluation of the effects of different discretizations.
 * For example usage, see implemented models.
 * 📚
   `Doxygen <../../doxygen/html/group___cell_manager.html>`__,

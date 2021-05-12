@@ -14,11 +14,11 @@ space:
 # --- CellManager and cell initialization -------------------------------------
 cell_manager:
   grid:
-    structure: square
+    structure: hexagonal
     resolution: 128      # in cells per unit length of physical space
 
   neighborhood:
-    mode: Moore
+    mode: hexagonal
 
   # Cell initialization parameters
   cell_params:
@@ -27,15 +27,15 @@ cell_manager:
     p_susceptible: 0.3
 
     # Initial immune density, value in [0, 1]
-    # With this probability, a cell is initialized as immune, however, only if
+    # With this probability, a cell is initialized as immune; however, only if
     # it was initialized as susceptible already (determined by p_susceptible)
     p_immune: &p_immune 0.001
 
-    # The cell specific probability p_transmit to transmit the disease to other
+    # The cell-specific probability p_transmit to transmit the disease to other
     # cells. This parameter sets the initial value for each cell.
     # This probability can be manipulated using the transmission_control to either
-    # manipulate it for all cell or for a subset of cells at specified times.
-    # This allows for example to set some cells to be superspreader.
+    # manipulate it for all cells or a subset of cells at specified times.
+    # This allows, for example, to set some cells to be superspreader.
     p_transmit: &p_transmit
       mode: value
       value:
@@ -48,6 +48,7 @@ cell_manager:
 # NOTE that the default parameters below are chosen according to the
 #      Covid-19 storyline roughly approximating the current knowledge, which
 #      of course still changes and updates weekly (updated June 16th, 2020).
+#      Parameters are chosen such that one time-step corresponds to one day.
 
 # Probability per site and time step to transition from state empty to
 # susceptible.
@@ -59,19 +60,19 @@ p_susceptible: 0.
 # via p_susceptible.
 p_immune: *p_immune
 
-# Cell specific probability to transmit the disease set at transition
-# from an empty to a susceptible cell via p_susceptible. This sets the cell
+# Cell specific probability of transmitting the disease set at transition
+# from an empty to a susceptible cell via p_susceptible. It sets the cell
 # state `p_transmit` used in the model dynamics.
 p_transmit: *p_transmit
 
 # Probability per site and time step for a susceptible cell to _not_ become
 # infected if an infected cell is in the neighborhood. This probability
-# applies per event so it does _not_ mean that an immune cell is also immune
+# applies per event, so it does _not_ mean that an immune cell is also immune
 # in the next iteration step.
 p_random_immunity: 0.
 
 # Probability per susceptible cell and time step for a random point exposure
-# NOTE This is affected by the exposure control, see below.
+# NOTE This is affected by the exposure control; see below.
 p_exposed: 0.001
 
 # Probability per exposed cell and time step to transition to infected state
@@ -80,7 +81,7 @@ p_infected: 0.2
 
 # Probability to recover if infected
 # Note that p_recovered + p_deceased need to be smaller than 1
-# The default is set to 1/14=0.0714, modeling that, on average, infection
+# The default is set to 1/14=0.0714, modeling that, on average, infections
 # require approximately 14 days to go away.
 p_recovered: 0.0714
 
@@ -92,24 +93,24 @@ p_recovered: 0.0714
 p_deceased: 0.02
 
 # Probability per site and time step to transition to empty
-# As default, there are no living cells vanishing by chance i.e. the system
+# As default, no living cells are vanishing by chance i.e. the system
 # is approximated to be closed for the given time scales.
 p_empty: 0.
 
-# The probability to loose immunity if a cell is recovered
+# The probability to lose immunity if a cell is recovered
 # This value is quite uncertain because it is not known whether and with what
 # probability immunity is lost in the case of Covid-19. Currently, the effect
-# of losing immunity through virus mutation seem to be smaller then for the
-# common influenca virus with roughly one year. However, there are studies
+# of losing immunity through virus mutation seems to be smaller than for the
+# common influenza virus with roughly one year. However, there are studies
 # suggesting that especially for light Covid-19 infections, new infections
-# can happen with a probably non-negligable rate.
-# The given default tries to roughly incorporate and estimate both effects.
+# can happen with a probably non-negligible rate.
+# The given default tries to incorporate and estimate both effects roughly.
 p_lose_immunity: 0.01
 
 # ... Movement ...............................................................
 # Whether to allow cells to move away from infected neighboring cells
 # If a neighbor is infected a cell searches for a random empty neighboring
-# place and moves towards it. If there is no space do nothing.
+# place and moves towards it. If there is no space, do nothing.
 move_away_from_infected: false
 
 # Probability to move in a random direction
@@ -119,7 +120,7 @@ p_move_randomly: 0.2
 # --- Exposure Control -------------------------------------------------------
 # Exposure control to investigate the time-dependent influence of the
 # disease driving force. Note that exposure control is applied at the
-# beginning of an iteration step. It's effect is seen in the following
+# beginning of an iteration step. Its effect is seen in the following
 # time step
 exposure_control:
   enabled: false
@@ -133,7 +134,7 @@ exposure_control:
   # To disable, pass an empty sequence.
   at_times: !listgen [0, 100, 20]
 
-  # Change the probability of a random exposure.
+  # Change the probability of random exposure.
   # The expected value is a list of [iteration_step, new_value] pairs, e.g.
   #   - [10, .5]
   #   - [42, 0.]
@@ -146,7 +147,7 @@ exposure_control:
 # --- Immunity Control --------------------------------------------------------
 # Immunity control to investigate the time-dependent influence of actively
 # provided immunities. Note that immunity control is applied at the
-# beginning of an iteration step but after the exposure control. It's effect
+# beginning of an iteration step but after the exposure control. Its effect
 # is seen in the following time step
 immunity_control:
   enabled: false
@@ -173,12 +174,12 @@ immunity_control:
 
 # --- Transmission Control ----------------------------------------------------
 # Transmission control to investigate the time-dependent influence of actively
-# changing decease transmition probabilities. Note that transmission control is
+# changing decease transmission probabilities. Note that transmission control is
 # applied at the beginning of an iteration step after the exposure and immunity
-# control. It's effect is seen in the following time step
+# control. Its effect is seen in the following time step
 transmission_control:
   enabled: false
-  # Change the probability to transmit a decease of a number of randomly
+  # Change the probability to transmit a decease of some randomly
   # selected exposed or infected cells.
   # The expected value is a list of mappings
   # change_p_transmit:
@@ -202,7 +203,7 @@ transmission_control:
 # --- Heterogeneities ---------------------------------------------------------
 # Some cells can be permanently infected or turned into inert cells.
 # Both these features are using the `select_entities` interface; consult the
-# documentation regarding information on available selection modes.
+# documentation regarding the information on available selection modes.
 
 # Make some cells inert: these do not take part in any of the processes
 inert_cells:
@@ -228,7 +229,7 @@ infection_source:
 # Whether to write out spatially resolved data from the CA
 # If false, will write only the non-spatial `densities` and `counts` datasets.
 # Setting this to false can be useful if no spatial analysis is required or if
-# using very large grids.
+# using huge grids.
 write_ca_data: true
 
 # HDF5 Compression level for all datasets

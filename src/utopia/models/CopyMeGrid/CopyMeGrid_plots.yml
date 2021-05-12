@@ -20,7 +20,7 @@ some_trait_mean:
 # Spatial CA state plots (single frames) ......................................
 initial_state_and_trait:
   based_on: state_single_time_step
-  
+
   time_idx: 0
 
   to_plot:
@@ -32,7 +32,9 @@ initial_state_and_trait:
 
 # Spatial CA animations .......................................................
 state_and_trait_anim:
-  based_on: state_anim
+  based_on:
+    - state_anim
+    - .ca.state.anim_ffmpeg
 
   to_plot:
     some_state:
@@ -97,7 +99,7 @@ mean_state_and_trait:
 
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# Some example DAG-based plots that are implemented in the CopyMeGrid model 
+# Some example DAG-based plots that are implemented in the CopyMeGrid model
 # plots and performs some visualization that is not generalizable but needs be
 # implemented specifically for the CopyMeGrid model
 

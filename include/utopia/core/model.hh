@@ -807,9 +807,11 @@ public:
         // Set attributes to mark this dataset as containing grid data
         dset->add_attribute("content", "grid");
         dset->add_attribute("grid_shape", cm.grid()->shape());
+        dset->add_attribute("grid_structure", cm.grid()->structure_name());
         dset->add_attribute("space_extent", cm.grid()->space()->extent);
         dset->add_attribute("index_order", "F");
-        // NOTE CellManager uses "column-style" index ordering, also called "Fortran-style".
+        // NOTE CellManager uses "column-style" index ordering, also called
+        //  "Fortran-style".
 
         _log->debug("Added attributes to dataset '{}' to mark it as storing "
                     "grid data.", name);

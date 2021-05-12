@@ -9,6 +9,43 @@ namespace Utopia {
  *  \{
  */
 
+/// Available grid implementations
+enum class GridStructure {
+  /// A square lattice grid
+  square,
+  /// A triangular lattice grid
+  triangular,
+  /// A hexagonal lattice grid
+  hexagonal
+};
+// NOTE When adding new grid structure type, take care to update 
+//      grid_structure_map!
+
+/// A map from strings to grid structure enum values
+const std::map<std::string, GridStructure> grid_structure_map {
+    {"square",      GridStructure::square},
+    {"triangular",  GridStructure::triangular},
+    {"hexagonal",   GridStructure::hexagonal}
+};
+
+/// Given an GridStructure enum value, return the corresponding string key
+/** This iterates over the grid_structure_map and returns the first key that
+  * matches the given enum value.
+  */
+std::string grid_structure_to_string(const GridStructure& structure) {
+    for (const auto& m : grid_structure_map) {
+        if (m.second == structure) {
+            return m.first;
+        }
+    }
+    // Entry is missing; this should not happen, as the grid_structure_to_string
+    // is meant to include all possible enum values. Inform about it ...
+    throw std::invalid_argument("The given grid structure was not available in "
+        "the grid_structure_map! Are all GridStructure enum values represented "
+        "in the map?");
+};
+
+
 /// Possible neighborhood types; availability depends on choice of grid
 enum class NBMode {
     /// Every entity is utterly alone in the world
@@ -16,7 +53,9 @@ enum class NBMode {
     /// The vonNeumann neighborhood, i.e. only nearest neighbors
     vonNeumann = 1,
     /// The Moore neighborhood, i.e. nearest and next nearest neighbors
-    Moore = 2
+    Moore = 2,
+    /// The hexagonal neighbourhood, i.e. the neighbourhood on a hexagonal grid
+    hexagonal = 3
 };
 // NOTE When adding new neighborhood types, take care to update nb_mode_map!
 //      Also, some high-level error messages (e.g. in the CellManager) might
@@ -26,7 +65,8 @@ enum class NBMode {
 const std::map<std::string, NBMode> nb_mode_map {
     {"empty",       NBMode::empty},
     {"vonNeumann",  NBMode::vonNeumann},
-    {"Moore",       NBMode::Moore}
+    {"Moore",       NBMode::Moore},
+    {"hexagonal",   NBMode::hexagonal}
 };
 
 /// Given an NBMode enum value, return the corresponding string key
@@ -244,6 +284,14 @@ public:
 
     /// Get the shape of the grid discretization
     virtual MultiIndex shape() const = 0;
+
+    /// Structure of the grid
+    virtual GridStructure structure() const = 0;
+
+    /// Structure of the grid as std::string
+    std::string structure_name() const {
+        return grid_structure_to_string(structure());
+    }
 
     /// Const reference to the space this grid maps to
     const std::shared_ptr<Space>& space() const {

@@ -610,6 +610,246 @@ int main() {
 
 
         // -------------------------------------------------------------------
+        std::cout << "------ Hexagonal periodic 2D grid ... ------"
+                  << std::endl;
+
+        std::cout << ".....  Neighborhood:  Empty  ..." << std::endl;
+        NBTest hex_2D_empty("hex_2D_empty", pp);
+        { // Test scope - to keep the main scope clean
+            auto cm = hex_2D_empty.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 0);
+
+            // Check grid shape
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 4);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            // Check neighbors count for all cells
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 0);
+            std::cout << "Neighbor count matches." << std::endl;
+
+        } // End of test scope
+        std::cout << "Success." << std::endl << std::endl;
+
+        std::cout << ".....  Neighborhood:  Empty (w/ params) ..." <<std::endl;
+        NBTest hex_2D_empty_sa("hex_2D_empty_superfluous_args", pp);
+        {
+            auto cm = hex_2D_empty_sa.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 0);
+
+            // Check grid shape
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 4);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            // Check neighbors count for all cells
+            std::cout << "Testing neighbor count ..." << std::endl;
+            check_num_neighbors(cm, 0);
+            std::cout << "Neighbor count matches." << std::endl;
+
+            // Arriving here means it did not throw despite the `distance`
+            // parameter being given and being larger than the grid shape.
+            // It should _only_ throw in the case of an actual neighborhood
+            // being selected, not for the empty neighborhood.
+
+        } // End of test scope
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << ".....  Neighborhood:  Hexagonal  ..." << std::endl;
+        NBTest hex_2D_hexagonal("hex_2D_hexagonal", pp);
+        {
+            auto cm = hex_2D_hexagonal.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 6);
+
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 4);
+            assert(grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing count and uniqueness ..." << std::endl;
+            check_num_neighbors(cm, 6);
+            std::cout << "  Neighbor count matches." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
+
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+
+            // the non boundary cells
+            // check 2 cells each in pair and impair rows
+            assert(expected_neighbors(cm, cm.cells().at(6), // (1,1)
+                                      {0, 1, 5, 7, 10, 11}));
+            std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(7), // (1,2)
+                                      {1, 2, 6, 8, 11, 12}));
+            std::cout << "  Neighbors match for cell (1, 2)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(11), // (2,1)
+                                      {6, 7, 10, 12, 16, 17}));
+            std::cout << "  Neighbors match for cell (2, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(12), // (2,2)
+                                      {7, 8, 11, 13, 17, 18}));
+            std::cout << "  Neighbors match for cell (2, 2)." << std::endl;
+
+            // the boundary cells
+            // check left and right of pair and impair row
+            // check left, right, and center for bottom and top row
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0, 0)
+                                      {15, 16, 4, 1, 5, 6}));
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(1), // (0, 1)
+                                      {16, 17, 0, 2, 6, 7}));
+            std::cout << "  Neighbors match for cell (0, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(4), // (0, 4)
+                                      {19, 15, 3, 0, 9, 5}));
+            std::cout << "  Neighbors match for cell (0, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(5), // (1, 0)
+                                      {4, 0, 9, 6, 14, 10}));
+            std::cout << "  Neighbors match for cell (1, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(9), // (1, 4)
+                                      {3, 4, 8, 5, 13, 14}));
+            std::cout << "  Neighbors match for cell (1, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(10), // (2, 0)
+                                      {5, 6, 14, 11, 15, 16}));
+            std::cout << "  Neighbors match for cell (2, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(14), // (2, 4)
+                                      {9, 5, 13, 10, 19, 15}));
+            std::cout << "  Neighbors match for cell (2, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(15), // (3, 0)
+                                      {14, 10, 19, 16, 4, 0}));
+            std::cout << "  Neighbors match for cell (3, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(16), // (3, 1)
+                                      {10, 11, 15, 17, 0, 1}));
+            std::cout << "  Neighbors match for cell (3, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(19), // (3, 4)
+                                      {13, 14, 18, 15, 3, 4}));
+            std::cout << "  Neighbors match for cell (3, 4)." << std::endl;
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        std::cout << ".....  Neighborhood:  hexagonal  (grid too small) ..."
+                  << std::endl;
+        assert(check_error_message<std::invalid_argument>(
+            "hex_2D_hexagonal_small_grid",
+            [&pp](){
+                NBTest should_fail("hex_2D_hexagonal_small_grid", pp);
+            },
+            "The grid shape is too small to accomodate a neighborhood with "
+            "'distance' parameter set to 1 in a periodic space!",
+            "", true
+        ));
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // -------------------------------------------------------------------
+        std::cout << "------ Hexagonal non-periodic 2D grid ... ------"
+                  << std::endl;
+
+        std::cout << ".....  Neighborhood:  Hexagonal  ..." << std::endl;
+        NBTest hex_2D_hexagonal_np("hex_2D_hexagonal_np", pp);
+        {
+            auto cm = hex_2D_hexagonal_np.cm;
+            auto grid = cm.grid();
+
+            assert(grid->nb_size() == 6);
+
+            assert(grid->shape()[0] == 5);
+            assert(grid->shape()[1] == 4);
+            assert(not grid->is_periodic());
+            std::cout << "Grid shape and periodicity matches." << std::endl;
+
+            std::cout << "Testing uniqueness ..." << std::endl;
+            assert(unique_neighbors(cm));
+            std::cout << "  Neighbors are unique." << std::endl;
+
+            std::cout << "Testing neighborhoods explicitly ..." << std::endl;
+
+            // the non boundary cells
+            // check 2 cells each in pair and impair rows
+            assert(expected_neighbors(cm, cm.cells().at(6), // (1,1)
+                                      {0, 1, 5, 7, 10, 11}));
+            std::cout << "  Neighbors match for cell (1, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(7), // (1,2)
+                                      {1, 2, 6, 8, 11, 12}));
+            std::cout << "  Neighbors match for cell (1, 2)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(11), // (2,1)
+                                      {6, 7, 10, 12, 16, 17}));
+            std::cout << "  Neighbors match for cell (2, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(12), // (2,2)
+                                      {7, 8, 11, 13, 17, 18}));
+            std::cout << "  Neighbors match for cell (2, 2)." << std::endl;
+
+            // the boundary cells
+            // check left and right of pair and impair row
+            // check left, right, and center for bottom and top row
+            assert(expected_neighbors(cm, cm.cells().at(0), // (0, 0)
+                                      {1, 5, 6}));
+            std::cout << "  Neighbors match for cell (0, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(1), // (0, 1)
+                                      {0, 2, 6, 7}));
+            std::cout << "  Neighbors match for cell (0, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(4), // (0, 4)
+                                      {3, 9}));
+            std::cout << "  Neighbors match for cell (0, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(5), // (1, 0)
+                                      {0, 6, 10}));
+            std::cout << "  Neighbors match for cell (1, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(9), // (1, 4)
+                                      {3, 4, 8, 13, 14}));
+            std::cout << "  Neighbors match for cell (1, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(10), // (2, 0)
+                                      {5, 6, 11, 15, 16}));
+            std::cout << "  Neighbors match for cell (2, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(14), // (2, 4)
+                                      {9, 13, 19}));
+            std::cout << "  Neighbors match for cell (2, 4)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(15), // (3, 0)
+                                      {10, 16}));
+            std::cout << "  Neighbors match for cell (3, 0)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(16), // (3, 1)
+                                      {10, 11, 15, 17}));
+            std::cout << "  Neighbors match for cell (3, 1)." << std::endl;
+
+            assert(expected_neighbors(cm, cm.cells().at(19), // (3, 4)
+                                      {13, 14, 18}));
+            std::cout << "  Neighbors match for cell (3, 4)." << std::endl;
+        }
+        std::cout << "Success." << std::endl << std::endl;
+
+
+        // -------------------------------------------------------------------
         // Done.
         std::cout << "------ Total success. ------" << std::endl << std::endl;
         return 0;

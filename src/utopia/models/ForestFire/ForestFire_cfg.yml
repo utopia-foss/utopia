@@ -18,8 +18,8 @@ cell_manager:
 
   neighborhood:
     mode: !param
-      default: vonNeumann
-      is_any_of: [empty, vonNeumann, Moore]
+      default: Moore
+      is_any_of: [empty, vonNeumann, Moore, hexagonal]
 
   # Initialization parameters for each cell
   cell_params:

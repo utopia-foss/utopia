@@ -218,3 +218,40 @@ def test_griddc_integration():
 
     # Check the time coordinates
     assert (grid_data.coords['time'] == [0, 2, 4, 6, 8, 10]).all()
+
+
+
+def test_griddc_integration_hexagonal():
+    """Integration test for the GridDC using the ContDisease model with 
+    hexagonal lattice"""
+    # Configure the ModelTest class for ContDisease
+    mtc = ModelTest("ContDisease", test_file=__file__)
+
+    # Create and run a multiverse and load the data
+    update_meta_cfg = {'parameter_space': {
+                            'ContDisease': {
+                                'cell_manager': {
+                                    'grid': {'structure': 'hexagonal'},
+                                    'neighborhood': {'mode': 'hexagonal'}},
+                                'space': {'extent': [2.217, 0.96]}},
+                            'num_steps': 3}}
+    _, dm = mtc.create_run_load(from_cfg="cfg/griddc_cfg.yml",
+                                **update_meta_cfg)
+
+    
+    # # Get the data
+    grid_data = dm['multiverse'][0]['data/ContDisease/kind']
+    grid_data.data # resolve proxy
+    print("resolved hexagonal grid data:\n", grid_data._data)
+
+    assert 'x: 8' in grid_data._format_info()
+    assert 'y: 4' in grid_data._format_info()
+
+    height = 0.96 / 4 / 0.75
+    size = height / 2.
+    width = 3**0.5 * size
+    
+    xs = np.linspace(0, width*8, 8, False) + 0.5 * width
+    ys = np.linspace(0, height * 0.75 * 4, 4, False) + 0.5 * height
+    assert np.isclose(grid_data.coords['x'], xs, rtol=1e-03).all()
+    assert np.isclose(grid_data.coords['y'], ys, rtol=1e-03).all()

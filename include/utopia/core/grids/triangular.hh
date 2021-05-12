@@ -72,6 +72,11 @@ public:
         return shape;
     }
 
+    /// Structure of the grid
+    GridStructure structure() const override {
+        return GridStructure::triangular;
+    }
+
 
     // .. Position-related methods ............................................
     /// Returns the multi index of the cell with the given ID

@@ -1,5 +1,11 @@
-#include <cassert>
+#define BOOST_TEST_MODULE CoreGridSquare
+
+#include <assert.h>
 #include <iostream>
+#include <boost/test/unit_test.hpp>
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <armadillo>
 
@@ -181,301 +187,256 @@ bool check_num_cells_and_shape(std::string grid_name,
     return true;
 }
 
+struct Fixture {
+    Config cfg;
+    Config cfg_spaces;
+    Config cfg_grids;
 
+    SpaceMap spaces; /// A map of spaces defined in cfg_spaces
 
+    SquareGrid<DefaultSpace> g11; /// An even 1x1 grid
+    SquareGrid<DefaultSpace> g23; /// An uneven 2x3 grid
+    SquareGrid<DefaultSpace> g23_np; /// A non-periodic 2x3 grid
 
-
-// ----------------------------------------------------------------------------
-
-int main() {
-    try {
-        std::cout << "Loading config file ..." << std::endl;
-        auto cfg = YAML::LoadFile("grid_square_test.yml");
-        std::cout << "Success." << std::endl << std::endl;
-
-        // -------------------------------------------------------------------
-        std::cout << "Initializing test spaces ..." << std::endl;
-        
-        SpaceMap spaces;
-
-        spaces.emplace(
+    Fixture ()
+    :
+        cfg(YAML::LoadFile("grid_square_test.yml")),
+        cfg_spaces(get_as<Config>("spaces", cfg)),
+        cfg_grids(get_as<Config>("grids", cfg)),
+        spaces({
             std::make_pair("default",
-                           std::make_shared<DefaultSpace>())
-        );
-        spaces.emplace(
+                           std::make_shared<DefaultSpace>()),
             std::make_pair("nice",
-                           std::make_shared<DefaultSpace>(
-                                cfg["spaces"]["nice"]))
-        );
-        spaces.emplace(
+                           std::make_shared<DefaultSpace>(get_as<Config>(
+                               "nice", cfg_spaces))),
             std::make_pair("uneven",
-                           std::make_shared<DefaultSpace>(
-                                cfg["spaces"]["uneven"]))
-        );
-        spaces.emplace(
+                           std::make_shared<DefaultSpace>(get_as<Config>(
+                               "uneven", cfg_spaces))),
             std::make_pair("uneven_np",
-                           std::make_shared<DefaultSpace>(
-                                cfg["spaces"]["uneven_np"]))
-        );
-        spaces.emplace(
+                           std::make_shared<DefaultSpace>(get_as<Config>(
+                               "uneven_np", cfg_spaces))),
             std::make_pair("nasty",
-                           std::make_shared<DefaultSpace>(
-                                cfg["spaces"]["nasty"]))
-        );
-        spaces.emplace(
+                           std::make_shared<DefaultSpace>(get_as<Config>(
+                               "nasty", cfg_spaces))),
             std::make_pair("devil",
-                           std::make_shared<DefaultSpace>(
-                                cfg["spaces"]["devil"]))
-        );
-        std::cout << "Success." << std::endl << std::endl;
+                           std::make_shared<DefaultSpace>(get_as<Config>(
+                               "devil", cfg_spaces)))
+        }),
+        g11(spaces["default"], get_as<Config>("tiny_res", cfg_grids)),
+        g23(spaces["uneven"], get_as<Config>("tiny_res", cfg_grids)),
+        g23_np(spaces["uneven_np"], get_as<Config>("tiny_res", cfg_grids))
+    { }
+};
 
+BOOST_FIXTURE_TEST_SUITE (test_space_extent, Fixture)
+    BOOST_AUTO_TEST_CASE(space_default) {
+        BOOST_TEST(check_eq(spaces["default"]->extent, SpaceVec({1., 1.})));
+    }
+    BOOST_AUTO_TEST_CASE(space_nice) {
+        BOOST_TEST(check_eq(spaces["nice"]->extent, SpaceVec({4., 4.})));
+    }
+    BOOST_AUTO_TEST_CASE(space_uneven) {
+        BOOST_TEST(check_eq(spaces["uneven"]->extent, SpaceVec({2., 3.})));
+    }
+    BOOST_AUTO_TEST_CASE(space_uneven_np) {
+        BOOST_TEST(check_eq(spaces["uneven_np"]->extent, SpaceVec({ 2., 3.})));
+    }
+    BOOST_AUTO_TEST_CASE(space_nasty) {
+        BOOST_TEST(check_eq(spaces["nasty"]->extent, SpaceVec({1.25, 3.2})));
+    }
+    BOOST_AUTO_TEST_CASE(space_devil) {
+        BOOST_TEST(check_eq(spaces["devil"]->extent, SpaceVec({1.23, 3.14})));
+    }
+BOOST_AUTO_TEST_SUITE_END()
 
-        std::cout << "Checking extents ..." << std::endl;
+BOOST_FIXTURE_TEST_SUITE (test_number_of_cells, Fixture)
+    BOOST_AUTO_TEST_CASE(space_default) {
+        BOOST_TEST(check_num_cells_and_shape("tiny_res", spaces, cfg));
+    }
+    BOOST_AUTO_TEST_CASE(space_nice) {
+        BOOST_TEST(check_num_cells_and_shape("small_res", spaces, cfg));
+    }
+    BOOST_AUTO_TEST_CASE(space_uneven) {
+        BOOST_TEST(check_num_cells_and_shape("decimal_res", spaces, cfg));
+    }
+    BOOST_AUTO_TEST_CASE(space_uneven_np) {
+        BOOST_TEST(check_num_cells_and_shape("medium_res", spaces, cfg));
+    }
+    BOOST_AUTO_TEST_CASE(space_nasty) {
+        BOOST_TEST(check_num_cells_and_shape("invalid_res", spaces, cfg));
+    }
+    BOOST_AUTO_TEST_CASE(space_devil) {
+        BOOST_TEST(check_num_cells_and_shape("missing_res", spaces, cfg));
+    }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE (test_multi_indices, Fixture)
+    BOOST_AUTO_TEST_CASE(even_grid) {
+        BOOST_TEST(check_eq(g11.midx_of(0), MultiIndex({0, 0})));
+        BOOST_TEST(check_eq(g11.midx_of(1), MultiIndex({0, 1})));
+    }
+
+    BOOST_AUTO_TEST_CASE(uneven_grid) {
+        BOOST_TEST(check_eq(g23.midx_of(0), MultiIndex({0, 0})));
+        BOOST_TEST(check_eq(g23.midx_of(1), MultiIndex({1, 0})));
+        BOOST_TEST(check_eq(g23.midx_of(2), MultiIndex({0, 1})));
+        BOOST_TEST(check_eq(g23.midx_of(3), MultiIndex({1, 1})));
+        BOOST_TEST(check_eq(g23.midx_of(4), MultiIndex({0, 2})));
+        BOOST_TEST(check_eq(g23.midx_of(5), MultiIndex({1, 2})));
+    }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE (test_position_methods, Fixture)
+    BOOST_AUTO_TEST_CASE(extent_of) {
+        BOOST_TEST(check_eq(g11.extent_of(0), SpaceVec({1.0, 1.0})));
         
-        assert(spaces["default"]->extent[0] == 1.);
-        assert(spaces["default"]->extent[1] == 1.);
-        
-        assert(spaces["nice"]->extent[0] == 4.);
-        assert(spaces["nice"]->extent[1] == 4.);
-        
-        assert(spaces["uneven"]->extent[0] == 2.);
-        assert(spaces["uneven"]->extent[1] == 3.);
-        
-        assert(spaces["uneven_np"]->extent[0] == 2.);
-        assert(spaces["uneven_np"]->extent[1] == 3.);
-        
-        assert(spaces["nasty"]->extent[0] == 1.25);
-        assert(spaces["nasty"]->extent[1] == 3.2);
-        
-        assert(spaces["devil"]->extent[0] == 1.23);
-        assert(spaces["devil"]->extent[1] == 3.14);
-
-        std::cout << "Success." << std::endl << std::endl;
-
-
-        // -------------------------------------------------------------------
-        std::cout << "------ Testing number of cells ... ------"
-                  << std::endl;
-
-        std::cout << "- - -  Grid:  tiny_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("tiny_res", spaces, cfg));
-
-        std::cout << "- - -  Grid:  small_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("small_res", spaces, cfg));
-
-        std::cout << "- - -  Grid:  decimal_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("decimal_res", spaces, cfg));
-
-        std::cout << "- - -  Grid:  medium_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("medium_res", spaces, cfg));
-
-        std::cout << "- - -  Grid:  invalid_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("invalid_res", spaces, cfg));
-
-        std::cout << "- - -  Grid:  missing_res  - - -" << std::endl;
-        assert(check_num_cells_and_shape("missing_res", spaces, cfg));
-
-
-
-
-        // -------------------------------------------------------------------
-        std::cout << "------ Testing multi-index queries ... ------"
-                  << std::endl;
-
-        // Use the tiny_res grid in combination with different spaces
-        const auto grid_cfg = cfg["grids"]["tiny_res"]; // resolution: 1
-
-        // Enough to test with these two, have shapes [1,1] and [2,3]
-        auto g11 = SquareGrid<DefaultSpace>(spaces["default"], grid_cfg);
-        auto g23 = SquareGrid<DefaultSpace>(spaces["uneven"], grid_cfg);
-
-        // Default space, only (0, 0) available
-        assert(check_eq(g11.midx_of(0), MultiIndex({0, 0})));
-
-        // ... but NO bounds checking, so this is also computed
-        assert(check_eq(g11.midx_of(1), MultiIndex({0, 1})));
-
-        // For the uneven (2x3) space
-        assert(check_eq(g23.midx_of(0), MultiIndex({0, 0})));
-        assert(check_eq(g23.midx_of(1), MultiIndex({1, 0})));
-        assert(check_eq(g23.midx_of(2), MultiIndex({0, 1})));
-        assert(check_eq(g23.midx_of(3), MultiIndex({1, 1})));
-        assert(check_eq(g23.midx_of(4), MultiIndex({0, 2})));
-        assert(check_eq(g23.midx_of(5), MultiIndex({1, 2})));
-
-        std::cout << "Success." << std::endl << std::endl;
-
-
-        // -------------------------------------------------------------------
-        std::cout << "------ Testing position-related methods ... ------"
-                  << std::endl;
-        
-        std::cout << "Testing cell extent ..." << std::endl;
-        assert(check_eq(g11.extent_of(0), SpaceVec({1.0, 1.0})));
         for (unsigned short i=0; i<6; i++) {
-            assert(check_eq(g23.extent_of(i), SpaceVec({1.0, 1.0})));
+            BOOST_TEST(check_eq(g23.extent_of(i), SpaceVec({1.0, 1.0})));
         }
-        std::cout << "Success." << std::endl << std::endl;
-        
-        std::cout << "Testing barycenters ..." << std::endl;
-        assert(check_eq(g11.barycenter_of(0), SpaceVec({0.5, 0.5})));
+    }
 
-        assert(check_eq(g23.barycenter_of(0), SpaceVec({0.5, 0.5})));
-        assert(check_eq(g23.barycenter_of(1), SpaceVec({1.5, 0.5})));
-        assert(check_eq(g23.barycenter_of(2), SpaceVec({0.5, 1.5})));
-        assert(check_eq(g23.barycenter_of(3), SpaceVec({1.5, 1.5})));
-        assert(check_eq(g23.barycenter_of(4), SpaceVec({0.5, 2.5})));
-        assert(check_eq(g23.barycenter_of(5), SpaceVec({1.5, 2.5})));
-        
-        std::cout << "Success." << std::endl << std::endl;
-        
-        std::cout << "Testing cell vertex positions ..." << std::endl;
+    BOOST_AUTO_TEST_CASE(barycenter_of) {
+        BOOST_TEST(check_eq(g11.barycenter_of(0), SpaceVec({0.5, 0.5})));
+
+        BOOST_TEST(check_eq(g23.barycenter_of(0), SpaceVec({0.5, 0.5})));
+        BOOST_TEST(check_eq(g23.barycenter_of(1), SpaceVec({1.5, 0.5})));
+        BOOST_TEST(check_eq(g23.barycenter_of(2), SpaceVec({0.5, 1.5})));
+        BOOST_TEST(check_eq(g23.barycenter_of(3), SpaceVec({1.5, 1.5})));
+        BOOST_TEST(check_eq(g23.barycenter_of(4), SpaceVec({0.5, 2.5})));
+        BOOST_TEST(check_eq(g23.barycenter_of(5), SpaceVec({1.5, 2.5})));
+    }
+
+    BOOST_AUTO_TEST_CASE(vertex_positions) {
         auto g11_id0_vtcs = g11.vertices_of(0);
-        assert(check_eq(g11_id0_vtcs[0], SpaceVec({0.0, 0.0})));
-        assert(check_eq(g11_id0_vtcs[1], SpaceVec({1.0, 0.0})));
-        assert(check_eq(g11_id0_vtcs[2], SpaceVec({1.0, 1.0})));
-        assert(check_eq(g11_id0_vtcs[3], SpaceVec({0.0, 1.0})));
+        BOOST_TEST(check_eq(g11_id0_vtcs[0], SpaceVec({0.0, 0.0})));
+        BOOST_TEST(check_eq(g11_id0_vtcs[1], SpaceVec({1.0, 0.0})));
+        BOOST_TEST(check_eq(g11_id0_vtcs[2], SpaceVec({1.0, 1.0})));
+        BOOST_TEST(check_eq(g11_id0_vtcs[3], SpaceVec({0.0, 1.0})));
 
         auto g23_id5_vtcs = g23.vertices_of(5);
-        assert(check_eq(g23_id5_vtcs[0], SpaceVec({1.0, 2.0})));
-        assert(check_eq(g23_id5_vtcs[1], SpaceVec({2.0, 2.0})));
-        assert(check_eq(g23_id5_vtcs[2], SpaceVec({2.0, 3.0})));
-        assert(check_eq(g23_id5_vtcs[3], SpaceVec({1.0, 3.0})));
-        
-        std::cout << "Success." << std::endl << std::endl;
+        BOOST_TEST(check_eq(g23_id5_vtcs[0], SpaceVec({1.0, 2.0})));
+        BOOST_TEST(check_eq(g23_id5_vtcs[1], SpaceVec({2.0, 2.0})));
+        BOOST_TEST(check_eq(g23_id5_vtcs[2], SpaceVec({2.0, 3.0})));
+        BOOST_TEST(check_eq(g23_id5_vtcs[3], SpaceVec({1.0, 3.0})));
+    }
+BOOST_AUTO_TEST_SUITE_END()
 
 
-        std::cout << "Testing cell ID retrieval from positive positions ..."
-                  << std::endl;
+BOOST_FIXTURE_TEST_SUITE (test_cell_id_retrieval, Fixture)
 
-        assert(g23.is_periodic());
-        assert(g23.space()->extent[0] == 2.);
-        assert(g23.space()->extent[1] == 3.);
+    BOOST_AUTO_TEST_CASE(from_positive_position) {
+        BOOST_TEST(g23.is_periodic());
+        BOOST_TEST(g23.space()->extent[0] == 2.);
+        BOOST_TEST(g23.space()->extent[1] == 3.);
 
         // Within the space, cells of size (1., 1.)
-        assert(check_pos(g23, {0.0, 0.0},       0));
-        assert(check_pos(g23, {0.5, 0.5},       0));
-        assert(check_pos(g23, {0.314, 0.756},   0));
+        BOOST_TEST(check_pos(g23, {0.0, 0.0},       0));
+        BOOST_TEST(check_pos(g23, {0.5, 0.5},       0));
+        BOOST_TEST(check_pos(g23, {0.314, 0.756},   0));
 
-        assert(check_pos(g23, {0.1, 0.6},       0));
-        assert(check_pos(g23, {1.1, 0.6},       1));
-        assert(check_pos(g23, {0.1, 1.6},       2));
-        assert(check_pos(g23, {1.1, 1.6},       3));
-        assert(check_pos(g23, {0.1, 2.6},       4));
-        assert(check_pos(g23, {1.1, 2.6},       5));
+        BOOST_TEST(check_pos(g23, {0.1, 0.6},       0));
+        BOOST_TEST(check_pos(g23, {1.1, 0.6},       1));
+        BOOST_TEST(check_pos(g23, {0.1, 1.6},       2));
+        BOOST_TEST(check_pos(g23, {1.1, 1.6},       3));
+        BOOST_TEST(check_pos(g23, {0.1, 2.6},       4));
+        BOOST_TEST(check_pos(g23, {1.1, 2.6},       5));
 
         // High-level cell boundaries chosen correctly
-        assert(check_pos(g23, {0.99, 0.5},      0));
-        assert(check_pos(g23, {1.0, 0.5},       1));
-        assert(check_pos(g23, {0.99, 0.99},     0));
-        assert(check_pos(g23, {1.0, 1.0},       3));
+        BOOST_TEST(check_pos(g23, {0.99, 0.5},      0));
+        BOOST_TEST(check_pos(g23, {1.0, 0.5},       1));
+        BOOST_TEST(check_pos(g23, {0.99, 0.99},     0));
+        BOOST_TEST(check_pos(g23, {1.0, 1.0},       3));
 
         // High-value space boundaries mapped periodically
-        assert(check_pos(g23, {2.0, 0.0},       0));
-        assert(check_pos(g23, {0.0, 3.0},       0));
-        assert(check_pos(g23, {2.0, 3.0},       0));
+        BOOST_TEST(check_pos(g23, {2.0, 0.0},       0));
+        BOOST_TEST(check_pos(g23, {0.0, 3.0},       0));
+        BOOST_TEST(check_pos(g23, {2.0, 3.0},       0));
 
         // Positions out of space mapped back into space
-        assert(check_pos(g23, {2.5, 3.5},       0));
-        assert(check_pos(g23, {3.5, 3.5},       1));
-        assert(check_pos(g23, {2.5, 4.5},       2));
-        assert(check_pos(g23, {3.5, 4.5},       3));
-        assert(check_pos(g23, {2.5, 5.5},       4));
-        assert(check_pos(g23, {3.5, 5.5},       5));
+        BOOST_TEST(check_pos(g23, {2.5, 3.5},       0));
+        BOOST_TEST(check_pos(g23, {3.5, 3.5},       1));
+        BOOST_TEST(check_pos(g23, {2.5, 4.5},       2));
+        BOOST_TEST(check_pos(g23, {3.5, 4.5},       3));
+        BOOST_TEST(check_pos(g23, {2.5, 5.5},       4));
+        BOOST_TEST(check_pos(g23, {3.5, 5.5},       5));
 
         // Positions waaaay out of space mapped back properly
-        assert(check_pos(g23, {22.0, 33.0},     0));
-        assert(check_pos(g23, {22.5, 33.5},     0));
-        assert(check_pos(g23, {23.5, 33.5},     1));
-        assert(check_pos(g23, {23.0, 34.0},     3));
-        assert(check_pos(g23, {2222.0, 3333.0}, 0));
-        assert(check_pos(g23, {2222.5, 3333.5}, 0));
-        assert(check_pos(g23, {2223.0, 3333.5}, 1));
-        assert(check_pos(g23, {2223.0, 3334.0}, 3));
+        BOOST_TEST(check_pos(g23, {22.0, 33.0},     0));
+        BOOST_TEST(check_pos(g23, {22.5, 33.5},     0));
+        BOOST_TEST(check_pos(g23, {23.5, 33.5},     1));
+        BOOST_TEST(check_pos(g23, {23.0, 34.0},     3));
+        BOOST_TEST(check_pos(g23, {2222.0, 3333.0}, 0));
+        BOOST_TEST(check_pos(g23, {2222.5, 3333.5}, 0));
+        BOOST_TEST(check_pos(g23, {2223.0, 3333.5}, 1));
+        BOOST_TEST(check_pos(g23, {2223.0, 3334.0}, 3));
+    }
 
-        std::cout << "Success." << std::endl << std::endl;
-
-
-        // Again, with negative values (different internal calculation!)
-        std::cout << "Testing cell ID retrieval from negative positions ..."
-                  << std::endl;
-
+    BOOST_AUTO_TEST_CASE(from_negative_position) {
         // Positions out of space mapped back into space
-        assert(check_pos(g23, {-1.5, -2.5},     0));
-        assert(check_pos(g23, {-0.5, -2.5},     1));
-        assert(check_pos(g23, {-1.5, -1.5},     2));
-        assert(check_pos(g23, {-0.5, -1.5},     3));
-        assert(check_pos(g23, {-1.5, -0.5},     4));
-        assert(check_pos(g23, {-0.5, -0.5},     5));
+        BOOST_TEST(check_pos(g23, {-1.5, -2.5},     0));
+        BOOST_TEST(check_pos(g23, {-0.5, -2.5},     1));
+        BOOST_TEST(check_pos(g23, {-1.5, -1.5},     2));
+        BOOST_TEST(check_pos(g23, {-0.5, -1.5},     3));
+        BOOST_TEST(check_pos(g23, {-1.5, -0.5},     4));
+        BOOST_TEST(check_pos(g23, {-0.5, -0.5},     5));
         
         // High-value space boundaries mapped periodically
-        assert(check_pos(g23, {-2.0, 0.0},      0));
-        assert(check_pos(g23, {0.0, -3.0},      0));
-        assert(check_pos(g23, {-2.0, -3.0},     0));
+        BOOST_TEST(check_pos(g23, {-2.0, 0.0},      0));
+        BOOST_TEST(check_pos(g23, {0.0, -3.0},      0));
+        BOOST_TEST(check_pos(g23, {-2.0, -3.0},     0));
 
         // High-value cell boundaries mapped back properly
-        assert(check_pos(g23, {-1.0, -3.0},     1));
-        assert(check_pos(g23, {-1.0, -2.0},     3));
-        assert(check_pos(g23, {-1.0, -1.0},     5));
-        assert(check_pos(g23, {-2.0, -3.0},     0));
-        assert(check_pos(g23, {-2.0, -2.0},     2));
-        assert(check_pos(g23, {-2.0, -1.0},     4));
+        BOOST_TEST(check_pos(g23, {-1.0, -3.0},     1));
+        BOOST_TEST(check_pos(g23, {-1.0, -2.0},     3));
+        BOOST_TEST(check_pos(g23, {-1.0, -1.0},     5));
+        BOOST_TEST(check_pos(g23, {-2.0, -3.0},     0));
+        BOOST_TEST(check_pos(g23, {-2.0, -2.0},     2));
+        BOOST_TEST(check_pos(g23, {-2.0, -1.0},     4));
         
         // Positions waaaay out of space mapped back properly
-        assert(check_pos(g23, {-19.5, 0.5},     0));
-        assert(check_pos(g23, {-20., 0.5},      0));
-        assert(check_pos(g23, {-20.5, 0.5},     1));
-        assert(check_pos(g23, {-22.0, -33.0},   0));
-        assert(check_pos(g23, {-23.0, -34.0},   5));
-        assert(check_pos(g23, {-23.0, -35.0},   3));
-        assert(check_pos(g23, {-2222., -3333.}, 0));
-        assert(check_pos(g23, {-2223., -3335.}, 3));
+        BOOST_TEST(check_pos(g23, {-19.5, 0.5},     0));
+        BOOST_TEST(check_pos(g23, {-20., 0.5},      0));
+        BOOST_TEST(check_pos(g23, {-20.5, 0.5},     1));
+        BOOST_TEST(check_pos(g23, {-22.0, -33.0},   0));
+        BOOST_TEST(check_pos(g23, {-23.0, -34.0},   5));
+        BOOST_TEST(check_pos(g23, {-23.0, -35.0},   3));
+        BOOST_TEST(check_pos(g23, {-2222., -3333.}, 0));
+        BOOST_TEST(check_pos(g23, {-2223., -3335.}, 3));
+    }
 
-        std::cout << "Success." << std::endl << std::endl;
-
-
-        // Also test with non-periodic grid
-        auto g23_np = SquareGrid<DefaultSpace>(spaces["uneven_np"], grid_cfg);
-        assert(not g23_np.is_periodic());
-        assert(g23_np.space()->extent[0] == 2.);
-        assert(g23_np.space()->extent[1] == 3.);
-
-        // Again, with negative values (different internal calculation!)
-        std::cout << "Testing cell ID retrieval for non-periodic grid ..."
-                  << std::endl;
+    BOOST_AUTO_TEST_CASE(non_periodic) {
+        BOOST_TEST(not g23_np.is_periodic());
+        BOOST_TEST(g23_np.space()->extent[0] == 2.);
+        BOOST_TEST(g23_np.space()->extent[1] == 3.);
 
         // Within the space, cells of size (1., 1.)
-        assert(check_pos(g23_np, {0.0, 0.0},       0));
-        assert(check_pos(g23_np, {0.5, 0.5},       0));
-        assert(check_pos(g23_np, {0.314, 0.756},   0));
+        BOOST_TEST(check_pos(g23_np, {0.0, 0.0},       0));
+        BOOST_TEST(check_pos(g23_np, {0.5, 0.5},       0));
+        BOOST_TEST(check_pos(g23_np, {0.314, 0.756},   0));
 
-        assert(check_pos(g23_np, {0.1, 0.6},       0));
-        assert(check_pos(g23_np, {1.1, 0.6},       1));
-        assert(check_pos(g23_np, {0.1, 1.6},       2));
-        assert(check_pos(g23_np, {1.1, 1.6},       3));
-        assert(check_pos(g23_np, {0.1, 2.6},       4));
-        assert(check_pos(g23_np, {1.1, 2.6},       5));
+        BOOST_TEST(check_pos(g23_np, {0.1, 0.6},       0));
+        BOOST_TEST(check_pos(g23_np, {1.1, 0.6},       1));
+        BOOST_TEST(check_pos(g23_np, {0.1, 1.6},       2));
+        BOOST_TEST(check_pos(g23_np, {1.1, 1.6},       3));
+        BOOST_TEST(check_pos(g23_np, {0.1, 2.6},       4));
+        BOOST_TEST(check_pos(g23_np, {1.1, 2.6},       5));
 
         // High-level cell boundaries chosen correctly
-        assert(check_pos(g23_np, {0.99, 0.5},      0));
-        assert(check_pos(g23_np, {1.0, 0.5},       1));
-        assert(check_pos(g23_np, {0.99, 0.99},     0));
-        assert(check_pos(g23_np, {1.0, 1.0},       3));
+        BOOST_TEST(check_pos(g23_np, {0.99, 0.5},      0));
+        BOOST_TEST(check_pos(g23_np, {1.0, 0.5},       1));
+        BOOST_TEST(check_pos(g23_np, {0.99, 0.99},     0));
+        BOOST_TEST(check_pos(g23_np, {1.0, 1.0},       3));
 
         // High-value space boundaries map to boundary cells
-        assert(check_pos(g23_np, {1.999, 0.0},     1));
-        assert(check_pos(g23_np, {2.0,   0.0},     1));
-        assert(check_pos(g23_np, {0.0,   2.999},   4));
-        assert(check_pos(g23_np, {1.999, 2.999},   5));
-        assert(check_pos(g23_np, {2.0,   3.0},     5));
-
-        std::cout << "Success." << std::endl << std::endl;
+        BOOST_TEST(check_pos(g23_np, {1.999, 0.0},     1));
+        BOOST_TEST(check_pos(g23_np, {2.0,   0.0},     1));
+        BOOST_TEST(check_pos(g23_np, {0.0,   2.999},   4));
+        BOOST_TEST(check_pos(g23_np, {1.999, 2.999},   5));
+        BOOST_TEST(check_pos(g23_np, {2.0,   3.0},     5));
 
         // Querying a position outside the space yields an error
-        std::cout << "Testing the correct error messages are emitted ..."
-                  << std::endl;
 
-        assert(check_error_message<std::invalid_argument>(
+        BOOST_TEST(check_error_message<std::invalid_argument>(
             "position query outside of space (for both arguments)",
             [&](){
                 g23_np.cell_at({2.0001, 3.0001});
@@ -483,7 +444,7 @@ int main() {
             "given position is outside the non-periodic space",
             "   ", true)
         );
-        assert(check_error_message<std::invalid_argument>(
+        BOOST_TEST(check_error_message<std::invalid_argument>(
             "position query outside of space (for single argument)",
             [&](){
                 g23_np.cell_at({-0.0001, +0.0001});
@@ -492,112 +453,113 @@ int main() {
             "   ", true)
         );
 
-        std::cout << "Success." << std::endl << std::endl;
+    }
+
+BOOST_AUTO_TEST_SUITE_END()
 
 
-        // -------------------------------------------------------------------
-        std::cout << "------ Testing boundary retrieval method ... ------"
-                  << std::endl;
-
+// Testing cell ID retrieval from positive positions
+BOOST_FIXTURE_TEST_SUITE (test_boundary_retrieval_methods, Fixture)
+    BOOST_AUTO_TEST_CASE(periodic) {
         // Use the decimal resolution (10 cells per length unit) to make
         // calculations easier.
-        // Create a periodic and non-periodic grid
-        auto gdec_p  = SquareGrid<DefaultSpace>(spaces["uneven"],
-                                                cfg["grids"]["decimal_res"]);
-        auto gdec_np = SquareGrid<DefaultSpace>(spaces["uneven_np"],
-                                                cfg["grids"]["decimal_res"]);
-
+        auto gdec_p = SquareGrid<DefaultSpace>(spaces["uneven"],
+                                               get_as<Config>("decimal_res",
+                                                               cfg_grids));
+        
         // The periodic grid should always return an empty grid container
-        std::cout << "Testing periodic grid ..." << std::endl;
+        BOOST_TEST(gdec_p.boundary_cells().size() == 0);  // == all
+        BOOST_TEST(gdec_p.boundary_cells("all").size() == 0);
+        BOOST_TEST(gdec_p.boundary_cells("left").size() == 0);
+        BOOST_TEST(gdec_p.boundary_cells("right").size() == 0);
+        BOOST_TEST(gdec_p.boundary_cells("top").size() == 0);
+        BOOST_TEST(gdec_p.boundary_cells("bottom").size() == 0);
 
-        assert(gdec_p.boundary_cells().size() == 0);  // == all
-        assert(gdec_p.boundary_cells("all").size() == 0);
-        assert(gdec_p.boundary_cells("left").size() == 0);
-        assert(gdec_p.boundary_cells("right").size() == 0);
-        assert(gdec_p.boundary_cells("top").size() == 0);
-        assert(gdec_p.boundary_cells("bottom").size() == 0);
+        BOOST_TEST(check_error_message<std::invalid_argument>(
+            "invalid boundary cell argument does ALSO throw for periodic grid",
+            [&](){
+                gdec_p.boundary_cells("not a valid argument");
+            },
+            "Invalid value for argument `select` in call to method", "   ", true)
+        );
+    }
 
-        std::cout << "Success." << std::endl << std::endl;
-
-
-        std::cout << "Testing non-periodic grid ..." << std::endl;
+    BOOST_AUTO_TEST_CASE(non_periodic) {
+        auto gdec_np = SquareGrid<DefaultSpace>(spaces["uneven_np"],
+                                                get_as<Config>("decimal_res",
+                                                               cfg_grids));
         
         auto gdec_shape = gdec_np.shape();
 
         // Check sizes
-        assert(   gdec_np.boundary_cells().size()
-               == 2 * gdec_shape[0] + 2 * gdec_shape[1] - 4);
-        assert(   gdec_np.boundary_cells("all").size()
-               == gdec_np.boundary_cells().size());
-        assert(   gdec_np.boundary_cells("left").size()
-               == gdec_shape[1]);
-        assert(   gdec_np.boundary_cells("right").size()
-               == gdec_shape[1]);
-        assert(   gdec_np.boundary_cells("bottom").size()
-               == gdec_shape[0]);
-        assert(   gdec_np.boundary_cells("top").size()
-               == gdec_shape[0]);
+        BOOST_TEST(   gdec_np.boundary_cells().size()
+                   == 2 * gdec_shape[0] + 2 * gdec_shape[1] - 4);
+        BOOST_TEST(   gdec_np.boundary_cells("all").size()
+                   == gdec_np.boundary_cells().size());
+        BOOST_TEST(   gdec_np.boundary_cells("left").size()
+                   == gdec_shape[1]);
+        BOOST_TEST(   gdec_np.boundary_cells("right").size()
+                   == gdec_shape[1]);
+        BOOST_TEST(   gdec_np.boundary_cells("bottom").size()
+                   == gdec_shape[0]);
+        BOOST_TEST(   gdec_np.boundary_cells("top").size()
+                   == gdec_shape[0]);
 
         // Now check the actual elements for a specific shape
-        assert(gdec_shape[0] == 20);
-        assert(gdec_shape[1] == 30);
+        BOOST_TEST(gdec_shape[0] == 20);
+        BOOST_TEST(gdec_shape[1] == 30);
 
         // Bottom row; as the size is correct, only need to check min and max
         auto bc_bottom = gdec_np.boundary_cells("bottom");
-        assert(*bc_bottom.begin() == 0);
-        assert(*bc_bottom.rbegin() == 20 - 1);
+        BOOST_TEST(*bc_bottom.begin() == 0);
+        BOOST_TEST(*bc_bottom.rbegin() == 20 - 1);
 
         // Top row; analogously ...
         auto bc_top = gdec_np.boundary_cells("top");
-        assert(*bc_top.begin() == 20 * (30-1));
-        assert(*bc_top.rbegin() == (20*30) - 1);
+        BOOST_TEST(*bc_top.begin() == 20 * (30-1));
+        BOOST_TEST(*bc_top.rbegin() == (20*30) - 1);
 
         // Left boundary; sporadic checks should be ok (more transparent even)
         auto bc_left = gdec_np.boundary_cells("left");
-        assert(*bc_left.begin() == 0);
-        assert(bc_left.count(20));
-        assert(bc_left.count(40));
-        assert(bc_left.count(300));
-        assert(bc_left.count(560));
-        assert(*bc_left.rbegin() == 580);
+        BOOST_TEST(*bc_left.begin() == 0);
+        BOOST_TEST(bc_left.count(20));
+        BOOST_TEST(bc_left.count(40));
+        BOOST_TEST(bc_left.count(300));
+        BOOST_TEST(bc_left.count(560));
+        BOOST_TEST(*bc_left.rbegin() == 580);
 
         // Right boundary
         auto bc_right = gdec_np.boundary_cells("right");
-        assert(*bc_right.begin() == 20 - 1);
-        assert(bc_right.count(39));
-        assert(bc_right.count(59));
-        assert(bc_right.count(299));
-        assert(bc_right.count(539));
-        assert(bc_right.count(559));
-        assert(*bc_right.rbegin() == 20*30 - 1);
+        BOOST_TEST(*bc_right.begin() == 20 - 1);
+        BOOST_TEST(bc_right.count(39));
+        BOOST_TEST(bc_right.count(59));
+        BOOST_TEST(bc_right.count(299));
+        BOOST_TEST(bc_right.count(539));
+        BOOST_TEST(bc_right.count(559));
+        BOOST_TEST(*bc_right.rbegin() == 20*30 - 1);
 
         // All boundary cells
         auto bc_all = gdec_np.boundary_cells("all");
-        assert(*bc_all.begin() == 0);
-        assert(bc_all.count(1));
-        assert(bc_all.count(2));
-        assert(bc_all.count(10));
-        assert(bc_all.count(19));
-        assert(bc_all.count(20));
-        assert(bc_all.count(39));
-        assert(bc_all.count(40));
-        assert(bc_all.count(300));
-        assert(bc_all.count(319));
-        assert(bc_all.count(560));
-        assert(bc_all.count(579));
-        assert(bc_all.count(580));
-        assert(bc_all.count(581));
-        assert(bc_all.count(590));
-        assert(bc_all.count(598));
-        assert(*bc_all.rbegin() == 20*30 - 1);
+        BOOST_TEST(*bc_all.begin() == 0);
+        BOOST_TEST(bc_all.count(1));
+        BOOST_TEST(bc_all.count(2));
+        BOOST_TEST(bc_all.count(10));
+        BOOST_TEST(bc_all.count(19));
+        BOOST_TEST(bc_all.count(20));
+        BOOST_TEST(bc_all.count(39));
+        BOOST_TEST(bc_all.count(40));
+        BOOST_TEST(bc_all.count(300));
+        BOOST_TEST(bc_all.count(319));
+        BOOST_TEST(bc_all.count(560));
+        BOOST_TEST(bc_all.count(579));
+        BOOST_TEST(bc_all.count(580));
+        BOOST_TEST(bc_all.count(581));
+        BOOST_TEST(bc_all.count(590));
+        BOOST_TEST(bc_all.count(598));
+        BOOST_TEST(*bc_all.rbegin() == 20*30 - 1);
 
-        std::cout << "Success." << std::endl << std::endl;
-        
-
-        std::cout << "Testing the correct error messages are emitted ..."
-                  << std::endl;
-                  
-        assert(check_error_message<std::invalid_argument>(
+        // Test error messages                  
+        BOOST_TEST(check_error_message<std::invalid_argument>(
             "invalid boundary cell argument",
             [&](){
                 gdec_np.boundary_cells("not a valid argument");
@@ -605,30 +567,6 @@ int main() {
             "Invalid value for argument `select` in call to method",
             "   ", true)
         );
-        
-        assert(check_error_message<std::invalid_argument>(
-            "invalid boundary cell argument does ALSO throw for periodic grid",
-            [&](){
-                gdec_p.boundary_cells("not a valid argument");
-            },
-            "Invalid value for argument `select` in call to method", "   ", true)
-        );
-        
-        std::cout << "Success." << std::endl << std::endl;
+    }
 
-        // -------------------------------------------------------------------
-        // Done.
-        std::cout << "------ Total success. ------" << std::endl << std::endl;
-        return 0;
-    }
-    catch (std::exception& e) {
-        std::cerr << "Exception occurred: " << e.what() << std::endl;
-        // NOTE cannot call cleanup here because the scope is not shared
-        return 1;
-    }
-    catch (...) {
-        std::cout << "Exception occurred!" << std::endl;
-        // NOTE cannot call cleanup here because the scope is not shared
-        return 1;
-    }
-}
+BOOST_AUTO_TEST_SUITE_END()

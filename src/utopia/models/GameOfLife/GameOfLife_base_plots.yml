@@ -5,13 +5,13 @@
 # Plot a state animation of the cellular automaton
 state_anim:
   based_on: .ca.state
-  
+
   model_name: GameOfLife
 
   # Specify the time index (will be ignored, but needs to be specified)
   time_idx: 0
 
-  # Enable animation (disabled by default)
+  # Enable animation
   animation:
     enabled: true
 
@@ -19,7 +19,7 @@ state_anim:
 density_living_cells:
   based_on: .dag.generic.facet_grid
   creator: multiverse
-  
+
   select_and_combine:
     fields:
       living: living
@@ -33,4 +33,3 @@ density_living_cells:
     - operation: .mean
       args: [!dag_tag living, ['x', 'y']]
       tag: data
-    

@@ -145,6 +145,9 @@ class GridDC(XarrayDC):
     # The attribute to read the index order from
     _GDC_index_order_attr = 'index_order'
 
+    # The attribute to read the desired grid structure from
+    _GDC_grid_structure_attr = 'grid_structure'
+
     # .........................................................................
 
     def __init__(self, *, name: str, data: Union[np.ndarray, xr.DataArray],
@@ -298,17 +301,35 @@ class GridDC(XarrayDC):
         # If there is a space extent attribute available, use that to set the
         # spatial coordinates. Otherwise, assign the trivial coordinates.
         extent = self.attrs.get(self._GDC_space_extent_attr)
+        structure = self.attrs.get(self._GDC_grid_structure_attr)
         if extent is None:
             # Trivial coordinate generator
             coord_gen = lambda n, _: range(n)
             extent = (None,) * len(grid_shape)  # dummy for the iterator below
+            for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
+                new_coords[dim_name] = coord_gen(n, l)
 
-        else:
+        elif structure is None or structure == 'square':
             # Actual cell position coordinate generator
             coord_gen = lambda n, l: np.linspace(0., l, n, False) + (.5*l/n)
+            for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
+                new_coords[dim_name] = coord_gen(n, l)
 
-        for n, l, dim_name in zip(grid_shape, extent, ('x', 'y', 'z')):
-            new_coords[dim_name] = coord_gen(n, l)
+        elif structure == 'hexagonal':
+            if len(grid_shape) != 2:
+                raise ValueError("Unknown grid structure '{}' in {} dimensions",
+                                 structure, len(grid_shape))
+            new_coords['x'] = (  np.linspace(0., extent[0],
+                                             grid_shape[0], False)
+                               + .5 * extent[0] / grid_shape[0])
+            new_coords['y'] = (  np.linspace(0., extent[1], grid_shape[1],
+                                             False)
+                               + .5 * extent[1] / grid_shape[1] / 0.75)
+
+        else:
+            raise ValueError("Unknown grid structure '{}'", structure)
+        
+
 
         # NOTE Time coordinates are not changed, thus need not be determined
 
@@ -359,7 +380,8 @@ class GridDC(XarrayDC):
                                 dims=new_dims, coords=new_coords,
                                 attrs={k: v for k, v in self.attrs.items()
                                        if k in (self._GDC_space_extent_attr,
-                                                self._GDC_grid_shape_attr)})
+                                                self._GDC_grid_shape_attr,
+                                                self._GDC_grid_structure_attr)})
 
         # Carry over the time coordinates
         if 'time' in self._data.dims:
