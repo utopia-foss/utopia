@@ -690,19 +690,18 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
   {
       for (vertices_size_type i = 1; i <= limit; ++i) {
           vertices_size_type w;
-          if (distr(rng) < p_rewire) {
+          if (distr(rng) <= p_rewire) {
               w = random_vertex_id(rng);
               while (
-                  (w != (v + i) % n )
+                  ((forward && (w != (v + i) % n ))
+                    or (!forward && (w != (v - i + n) % n)))
                   &&
-                  ((w >= lower && w <= upper)
+                    ((upper > lower && (w >= lower && w <= upper))
                   or (upper < lower && (w >= lower or w <= upper))
-                  or (edge(vertex(v, g), vertex(w, g), g).second))
-              )
+                  or (edge(vertex(v, g), vertex(w, g), g).second)))
               {
                     w = random_vertex_id(rng);
               }
-
               add_edge(vertex(v, g), vertex(w, g), g);
           }
           else {
@@ -744,7 +743,7 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
           const size_t limit = k/2;
           for (vertices_size_type v = 0; v < n; ++v) {
               // Forwards direction
-              lower = v;
+              lower = (v + n - limit) % n;
               upper = (v + limit) % n;
               add_edges(v, limit, lower, upper, true);
 

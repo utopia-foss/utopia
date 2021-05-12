@@ -76,6 +76,25 @@ BOOST_FIXTURE_TEST_CASE(create_undirected_graph, Graph_Undir)
       BOOST_TEST(boost::num_vertices(g1) == num_vertices);
       BOOST_TEST(boost::num_edges(g1) == num_edges);
 
+      // Check for parallel edges
+      size_t num_parallel = 0;
+      for (auto [v, v_end] = boost::vertices(g0); v!=v_end; ++v) {
+          for (auto [e, e_end] = boost::out_edges(*v, g0); e!=e_end; ++e) {
+              size_t counter = 0;
+              for (auto [g, g_end] = boost::out_edges(*v, g0); g!=g_end; ++g) {
+                  if (target(*g, g0) == target(*e, g0)) {
+                      counter += 1;
+                  }
+              }
+              if (counter > 1) {
+                  num_parallel += 1;
+              }
+              // Check against self-edges
+              BOOST_TEST(target(*e, g0) != *v);
+          }
+      }
+
+      BOOST_TEST(num_parallel == 0);
     }
 }
 
@@ -104,6 +123,25 @@ BOOST_FIXTURE_TEST_CASE(create_directed_graph, Graph_Dir)
       BOOST_TEST(boost::num_vertices(g1) == num_vertices);
       BOOST_TEST(boost::num_edges(g1) == num_edges);
 
+      // Check for parallel edges
+      size_t num_parallel = 0;
+      for (auto [v, v_end] = boost::vertices(g0); v!=v_end; ++v) {
+          for (auto [e, e_end] = boost::out_edges(*v, g0); e!=e_end; ++e) {
+              size_t counter = 0;
+              for (auto [g, g_end] = boost::out_edges(*v, g0); g!=g_end; ++g) {
+                  if (target(*g, g0) == target(*e, g0)) {
+                      counter += 1;
+                  }
+              }
+              if (counter > 1) {
+                  num_parallel += 1;
+              }
+              // Check against self-edges
+              BOOST_TEST(target(*e, g0) != *v);
+          }
+      }
+
+      BOOST_TEST(num_parallel == 0);
     }
 }
 
