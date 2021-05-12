@@ -109,6 +109,7 @@ py:class matplotlib.animation.AbstractMovieWriter
 py:class matplotlib.legend_handler.HandlerPatch
 py:class matplotlib.colors.Normalize
 py:class matplotlib.colors.Colormap
+py:class matplotlib.image.AxesImage
 py:class mpl.colors.Normalize
 py:class mpl.colors.Colormap
 py:class plt.axis

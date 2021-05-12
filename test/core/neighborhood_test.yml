@@ -202,3 +202,70 @@ rect_2D_Moore_np_d2:
     neighborhood:
       mode: Moore
       distance: 2
+
+
+# hexagonal ...................................................................
+
+hex_2D_empty:
+  space:
+    periodic: true
+    extent: [5.3728, 3.7224]
+
+  cell_manager:
+    grid:
+      structure: hexagonal
+      resolution: 1
+
+hex_2D_empty_superfluous_args:
+  space:
+    periodic: true
+    extent: [5.3728, 3.7224]
+
+  cell_manager:
+    grid:
+      structure: hexagonal
+      resolution: 1
+
+    neighborhood:
+      mode: empty
+      distance: 42  # is unused; check that it does not throw
+      
+hex_2D_hexagonal:
+  space:
+    periodic: true
+    extent: [5.3728, 3.7224]
+
+  cell_manager:
+    grid:
+      structure: hexagonal
+      resolution: 1
+
+    neighborhood:
+      mode: hexagonal
+
+hex_2D_hexagonal_small_grid:
+  space:
+    periodic: true
+    extent: [1.075, 3.7224]
+
+  cell_manager:
+    grid:
+      structure: hexagonal
+      resolution: 1
+
+    neighborhood:
+      mode: hexagonal
+
+
+hex_2D_hexagonal_np:
+  space:
+    periodic: false
+    extent: [5.3728, 3.7224]
+
+  cell_manager:
+    grid:
+      structure: hexagonal
+      resolution: 1
+
+    neighborhood:
+      mode: hexagonal

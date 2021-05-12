@@ -1,0 +1,22 @@
+# Example universe run for the SEIRD model
+---
+perform_sweep:
+  true
+
+parameter_space:
+  num_steps: 365 # Corresponding to one 'real-life' year
+
+  SEIRD:
+    cell_manager:
+      grid:
+        resolution: 128
+        structure: !coupled-sweep
+          # Attach to sweep of parameter 'mode'
+          target_name: mode
+          default: hexagonal
+          values: [square, hexagonal, square]
+
+      neighborhood: 
+        mode: !sweep
+          default: hexagonal
+          values: [vonNeumann, hexagonal, Moore]

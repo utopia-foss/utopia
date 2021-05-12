@@ -9,6 +9,8 @@ import xarray as xr
 
 import matplotlib as mpl
 from matplotlib.colors import ListedColormap
+from matplotlib.collections import RegularPolyCollection
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from .. import DataManager, UniverseGroup
 from ..plotting import UniversePlotCreator, PlotHelper, is_plot_func
@@ -21,6 +23,90 @@ log = logging.getLogger(__name__)
 
 # Increase log threshold for animation module
 logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)
+
+
+# -----------------------------------------------------------------------------
+
+def _get_ax_size(ax, fig) -> tuple:
+    """The width and height of the given axis in pixels"""
+    bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    width, height = bbox.width, bbox.height
+    width *= fig.dpi
+    height *= fig.dpi
+    return width, height
+
+
+def imshow_hexagonal(data: xr.DataArray, *, hlpr: PlotHelper,
+                     colormap: Union[str, mpl.colors.Colormap],
+                     **kwargs
+                     ) -> mpl.image.AxesImage:
+    """Display data as an image, i.e., on a 2D hexagonal grid.
+
+    Args:
+        data (xr.DataArray): The array-like data to plot as image.
+        hlpr (PlotHelper): The plot helper.
+        colormap (str or mpl.colors.Colormap): The colormap to use.
+
+    Returns:
+        The RegularPolyCollection representing the hexgrid.
+    """
+    width, height = _get_ax_size(hlpr.ax, hlpr.fig)
+    s = (height / data.y.size) / 0.75 / 2
+    # NOTE the 0.75 factor is required because of the hexagonal offset geometry
+    area = 3**1.5 / 2 * s**2
+
+    # distinguish pair and impair rows (impair have offset)
+    hex_s = 2 * data.isel(y=0).y
+    y_ids = ((data.y / hex_s - 0.5) / 0.75).round().astype(int)
+
+    # compute offsets of polygons
+    xx, yy = np.meshgrid(data.x, data.y)
+    x_offsets = xr.DataArray(data=xx,
+                             dims=("y", "x"),
+                             coords=dict(x=data.x, y=data.y))
+    y_offsets = xr.DataArray(data=yy,
+                             dims=("y", "x"),
+                             coords=dict(x=data.x, y=data.y))
+
+    # ... and add an x-offset for impair rows
+    x_origin = data.isel(x=0, y=0).coords['x']
+    x_offsets[y_ids % 2 == 1] += x_origin
+
+    # # assign the true coordinates
+    # d = d.assign_coords(x=('x', d.x))
+    # d_offset = d_offset.assign_coords(x=('x', d_offset.x + x_origin))
+
+    # get the color mapping
+    if isinstance(colormap, str):
+        cmap = mpl.cm.get_cmap(name=colormap)
+    else:
+        cmap = colormap
+    map_color = mpl.cm.ScalarMappable(cmap=cmap)
+
+    pcoll = RegularPolyCollection(
+        6, sizes=(area,), rotation=0,
+        facecolor=map_color.to_rgba(data.data.flatten()),
+        offsets=np.transpose(
+            [x_offsets.data.flatten(), y_offsets.data.flatten()]
+        ),
+        transOffset=hlpr.ax.transData,
+        animated=True,
+    )
+    hlpr.ax.add_collection(pcoll)
+
+    # use same length scale in x and y
+    hlpr.ax.set_aspect('equal')
+
+    # rescale cmap
+    im = mpl.image.AxesImage(hlpr.ax)
+
+    im.set_cmap(colormap)
+    if 'vmin' in kwargs and 'vmax' in kwargs:
+        # From `limits` argument; will either have none or both
+        im.set_clim(kwargs['vmin'], kwargs['vmax'])
+
+
+    return im
 
 
 # -----------------------------------------------------------------------------
@@ -157,6 +243,14 @@ def state(dm: DataManager, *,
                             "discrete colormap. Was: {} with value: '{}'"
                             "".format(type(cmap), cmap))
 
+        # Parse additional colorbar kwargs and set some default values
+        add_cbar_kwargs = dict()
+        if 'fraction' not in cbar_kwargs:
+            add_cbar_kwargs['fraction'] = 0.05
+
+        if 'pad' not in cbar_kwargs:
+            add_cbar_kwargs['pad'] = 0.02
+
         # Fill imshow_kwargs, using defaults
         imshow_kwargs = imshow_kwargs if imshow_kwargs else {}
         imshow_kwargs = recursive_update(copy.deepcopy(imshow_kwargs),
@@ -167,30 +261,71 @@ def state(dm: DataManager, *,
             imshow_kwargs['vmax'] = limits[1]
 
         # Create imshow object on the currently selected axis
-        im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
-                            origin='lower', aspect='equal',
-                            **imshow_kwargs)
+        structure = data.attrs.get('grid_structure')
+        if structure == 'square' or structure is None:
+            im = hlpr.ax.imshow(data.T, cmap=colormap, animated=True,
+                                origin='lower', aspect='equal',
+                                **imshow_kwargs)
 
-        # Parse additional colorbar kwargs and set some default values
-        add_cbar_kwargs = dict()
-        if 'fraction' not in cbar_kwargs:
-            add_cbar_kwargs['fraction'] = 0.05
+        elif structure == 'hexagonal':
+            hlpr.ax.clear()
+            im = imshow_hexagonal(data=data, hlpr=hlpr, animated=True,
+                                  colormap=colormap, **imshow_kwargs)
+            title=(title if title else prop_name)
+            hlpr.ax.set_title(title)
 
-        if 'pad' not in cbar_kwargs:
-            add_cbar_kwargs['pad'] = 0.02
+
+        elif structure == 'triangular':
+            raise ValueError("Plotting of triangular grid not implemented!")
+
+        else:
+            raise ValueError("Unknown grid structure '{}'!", structure)
 
         # Create the colorbar
-        cbar = hlpr.fig.colorbar(im, ax=hlpr.ax, norm=norm, ticks=bounds,
-                                 **cbar_kwargs, **add_cbar_kwargs)
-        # TODO Should be done by helper
+        # For hexagonal grids, manually create a separate axis next to the current
+        # plotting axis. Add a cbar and manually set the ticks and boundaries (as
+        # the cbar returned by the mpl.image.AxesImage has default range (0, 1)
+        if structure == 'hexagonal':
+            cax.clear()
+            if bounds:
+                num_colors = len(cmap)
+                boundaries = [i/num_colors for i in range(num_colors+1)]
+                tick_locs = [(2*i+1)/(2*num_colors) for i in range(num_colors)]
+            else:
+                boundaries = None
+                tick_locs = [i*0.25 for i in range(5)]
+                if isinstance(colormap, str):
+                    colormap = mpl.cm.get_cmap(name=colormap)
 
-        # For a discrete colormap, adjust the tick positions
-        if bounds:
-            num_colors = len(cmap)
-            tick_locs = (  (np.arange(num_colors) + 0.5)
-                         * (num_colors-1)/num_colors)
+            cbar = mpl.colorbar.ColorbarBase(cax, cmap=colormap, boundaries = boundaries)
             cbar.set_ticks(tick_locs)
-            cbar.ax.set_yticklabels(cmap.keys())
+
+            # For discrete colorbars, set the tick labels at the positions
+            # defined; for continuous colorbars, get the upper and lower
+            # boundaries from the dataset.
+            if bounds:
+                cbar.ax.set_yticklabels(cmap.keys())
+            else:
+                lower = np.min(data.data)
+                upper = np.max(data.data)
+                if lower == upper:
+                    diff = 0.01
+                else:
+                    diff = upper - lower
+
+                ticklabels = [i*diff/4+lower for i in range(5)]
+                cbar.ax.set_yticklabels(ticklabels)
+
+        else:
+            cbar = hlpr.fig.colorbar(im, ax=hlpr.ax, ticks=bounds,
+                                     **cbar_kwargs, **add_cbar_kwargs)
+            # For a discrete colormap, adjust the tick positions
+            if bounds:
+                num_colors = len(cmap)
+                tick_locs = (  (np.arange(num_colors) + 0.5)
+                             * (num_colors-1)/num_colors)
+                cbar.set_ticks(tick_locs)
+                cbar.ax.set_yticklabels(cmap.keys())
 
         # Remove markings, if configured to do so
         if no_cbar_markings:
@@ -222,10 +357,20 @@ def state(dm: DataManager, *,
     # so its fine to take the first shape to extract the number of steps
     num_steps = shapes[0][0]  # TODO use xarray
 
+    structure = prepare_data(list(to_plot.keys())[0],
+                      all_data=all_data, time_idx=0).attrs.get('grid_structure')
+
+
     # Prepare the figure ......................................................
     # Prepare the figure to have as many columns as there are properties
     hlpr.setup_figure(ncols=len(to_plot),
                       scale_figsize_with_subplots_shape=True)
+    if structure == 'hexagonal':
+        old_figsize = hlpr.fig.get_size_inches()  # (width, height)
+        hlpr.fig.set_size_inches(
+            old_figsize[0] * 1.25,
+            old_figsize[1],
+        )
 
     # Store the imshow objects such that only the data has to be updated in a
     # following iteration step. Keys will be the property names.
@@ -235,6 +380,12 @@ def state(dm: DataManager, *,
     for col_no, (prop_name, props) in enumerate(to_plot.items()):
         # Select the axis
         hlpr.select_axis(col_no, 0)
+
+        # For hexagonal grids, add custom colorbar axis
+        if structure == 'hexagonal':
+            divider = make_axes_locatable(hlpr.ax)
+            cax = divider.append_axes("right", size="5%", pad=0.2)
+            hlpr.select_axis(col_no, 0)
 
         # Get the data for this time step
         data = prepare_data(prop_name, all_data=all_data, time_idx=time_idx)
@@ -264,15 +415,28 @@ def state(dm: DataManager, *,
                 data = prepare_data(prop_name,
                                     all_data=all_data, time_idx=time_idx)
 
-                # Update imshow data without creating a new object
-                ims[prop_name].set_data(data.T)
+                # Get the structure of the grid data
+                structure = data.attrs.get('grid_structure')
 
-                # If no limits are provided, autoscale the new limits in the
-                # case of continuous colormaps. A discrete colormap, that is
-                # provided as a dict, should never have to autoscale.
-                if not isinstance(props.get('cmap'), dict):
-                    if not props.get('limits'):
-                        ims[prop_name].autoscale()
+                # For hexagonal grids recreate the plot each time.
+                # Just resetting the data does not show the updated states
+                # otherwise because the facecolors have to be updated, too.
+                # For other grid structures just update the data and colormap.
+                if structure == 'hexagonal':
+                    ims[prop_name] = plot_property(prop_name, data=data,
+                                                   **props)
+
+                else:
+                    # Update imshow data without creating a new object
+                    ims[prop_name].set_data(data.T)
+
+                    # If no limits are provided, autoscale the new limits in
+                    # the case of continuous colormaps. A discrete colormap,
+                    # that is provided as a dict, should never have to
+                    # autoscale.
+                    if not isinstance(props.get('cmap'), dict):
+                        if not props.get('limits'):
+                            ims[prop_name].autoscale()
 
             # Done with this frame; yield control to the animation framework
             # which will grab the frame...

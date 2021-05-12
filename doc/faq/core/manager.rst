@@ -263,7 +263,50 @@ Where and how are neighborhoods calculated?
 The neighborhood computation does not take place in the ``CellManager`` itself, but in the underlying ``Grid`` object and based on the cells' IDs.
 The ``CellManager`` then retrieves the corresponding shared pointers from the IDs and makes them available via the ``neighbors_of`` method.
 
-The available neighborhood modes vary depending on the chosen `grid specialization <../../doxygen/html/class_utopia_1_1_grid.html>`_.
+Can I change the grid discretization? And when should I?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Yes, the grid discretization can be changed.
+Currently available are the ``square`` and ``hexagonal`` grid discretizations.
+To change this, select the respective ``structure`` and ``neighborhood/mode`` in the ``cell_manager``'s configuration
+
+.. code-block :: yaml
+
+  # model configuration
+  ---
+  cell_manager:
+    grid:
+      structure: square   # can be: square or hexagonal
+      resolution: 42      # 42 cells per unit length (of space)
+
+    neighborhood:
+      mode: Moore         # can be: empty (0), vonNeumann (4), Moore (8) (with square structure)
+                          # can be: empty (0), hexagonal (6) (with hexagonal structure)
+                          # the number indicates the number of neighbors per cell
+
+    # Other cell_manager configuration parameters ...
+
+  # Other model configuration parameters ...
+
+.. note::
+
+  The ``resolution`` of the ``hexagonal`` discretization is evaluated per unit area (of space), instead of unit length, as the extent of a hexagon is non-isotrop.
+  I.e. with a resolution of 32 in 1x1 space, there will be 30 x 34 = 1020 cells.
+
+The grid discretization, together with the respectively available neighborhoods, should be changed when exploring the influence of geometry and cell-connectivity on cell-cell interactions.
+In particular, the number of neighbors per cell can be varied between
+
+* 4 (``square`` grid with ``vonNeumann`` neighborhood)
+* 6 (``hexagonal`` grid with ``hexagonal`` neighborhood)
+* 8 (``square`` grid with ``Moore`` neighborhood)
+* 0 (either grid with ``empty`` neighborhood).
+
+On the other hand, the two discretizations differ in how paths in space are constructed when moving from cell to cell:
+In the ``vonNeumann`` neighborhood on a ``square`` lattice the 4 next neighborhoods have unit distance, while the diagonal cells are overly far with distance 2.
+In the ``Moore`` neighborhood they are too close with distance 1, where the true distance of the cell centers would be :math:`\sqrt{2}`.
+In the ``hexagonal`` discretization all neighbors have the true unit distance, however this is only true for paths that are 60° (instead of 90°) apart.
+
+For more details have a look at the `grid implementation <../../doxygen/html/class_utopia_1_1_grid.html>`_ and `this tutorial <http://www-cs-students.stanford.edu/~amitp/game-programming/grids/>`_.
 
 
 Are neighborhoods computed on the fly, or can I cache them?

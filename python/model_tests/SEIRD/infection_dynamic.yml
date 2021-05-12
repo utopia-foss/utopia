@@ -10,7 +10,7 @@ parameter_space:
 
     cell_manager:
       grid:
-        resolution: 4
+        resolution: 32
       
       cell_params:
         p_susceptible: 0.

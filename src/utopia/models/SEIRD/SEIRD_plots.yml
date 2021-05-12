@@ -191,11 +191,15 @@ phase_diagram/EI:
 # ... The CA ..............................................................
 CA_snapshot:
   based_on: CA_snapshot
-  enabled: false
+  enabled: true
   time_idx: -1
 
 CA:
-  based_on: [CA_snapshot, .ca.state.anim_ffmpeg]
+  based_on:
+    - CA_snapshot
+    - .ca.state.anim_ffmpeg
+    - animation
+
 
 
 # ... The CA age ..........................................................
@@ -205,7 +209,7 @@ CA_age_snapshot:
   time_idx: -1
 
 CA_age:
-  based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg]
+  based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg, animation]
 
 
 # ... The clusters ............................................................
@@ -215,7 +219,7 @@ clusters_snapshot:
   time_idx: -1
 
 clusters:
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
+  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg, animation]
 
 
 # --- Miscellaneous -----------------------------------------------------------

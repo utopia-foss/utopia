@@ -69,7 +69,7 @@ public:
     {
         if constexpr (dim > 1) {
             // Make sure the cells really are square
-            const auto eff_res = effective_resolution();
+            const SpaceVec eff_res = effective_resolution();
 
             if (eff_res.min() != eff_res.max()) {
                 // Format effective resolution to show it in error message
@@ -110,6 +110,11 @@ public:
     /// Get shape of the square grid
     MultiIndex shape() const override {
         return _shape;
+    }
+
+    /// Structure of the grid
+    GridStructure structure() const override {
+        return GridStructure::square;
     }
 
 
@@ -249,8 +254,7 @@ public:
       *                2D:  bottom, top
       *                3D:  back, front
       */
-    std::set<IndexType>
-        boundary_cells(std::string select="all") const override
+    std::set<IndexType> boundary_cells(std::string select="all") const override
     {
         static_assert(dim <= 2,
             "SquareGrid::boundary_cells only implemented for 1D and 2D!");

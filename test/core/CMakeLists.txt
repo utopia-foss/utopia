@@ -8,6 +8,7 @@ file(COPY
         "graph_creation_test.yml"
         "graph_Complete_Regular_WS_test.yml"
         "grid_square_test.yml"
+        "grid_hexagonal_test.yml"
         "model_test.yml"
         "model_nested_test.yml"
         "model_setup_test.yml"
@@ -38,6 +39,7 @@ set(TESTS_CORE
     graph_creation_test
     graph_entity_test
     graph_iterator_test
+    grid_hexagonal_test
     grid_square_test
     model_test
     model_nested_test

@@ -6,7 +6,7 @@ parameter_space:
   SEIRD:
     cell_manager:
       grid:
-        resolution: 3
+        resolution: 32
     cell_params:
       p_susceptible: 0
 
