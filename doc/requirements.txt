@@ -1,7 +1,12 @@
 Sphinx >= 3.5
-sphinx_rtd_theme
+
+# Extensions
 sphinx-argparse
 sphinx-markdown-tables
 breathe >= 4.13
 myst-parser
 ipython>=7.0
+
+# Themes
+sphinx_rtd_theme   # unused, but kept for downstream compatibility
+sphinx-book-theme

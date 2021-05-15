@@ -3,12 +3,6 @@
 About Utopia
 ============
 
-.. todo::
-
-    This is a place to describe the evolution of Utopia, how it came about, who is behind it, and what its goals are.
-    Also, it should showcase central capabilities, what its core features are, and what it's particularly suited for.
-
-.. TODO Some catchy image (located OUTSIDE of this repository)
 
 .. contents::
     :local:
