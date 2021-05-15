@@ -1,5 +1,5 @@
 /*
-Utopia-specific customizations to the readthedocs theme
+Utopia-specific customizations to the Sphinx Book Theme
 =======================================================
 
 For some adjustments, the !important tag is required to overwrite dominant
@@ -12,6 +12,25 @@ To assign a specific class to some content, use the following sphinx directive:
         Lorem ipsum dolor sit amet ...
 */
 
+/* Use Fira font */
+@import url(https://fonts.googleapis.com/css?family=Fira+Sans);
+
+html, body, h1, h2, h3, h4, h5, h6 {
+    font-family: "Fira Sans", var(--pst-font-family-base) !important;
+}
+
+/* Markup `contents` diretive in a more appealing way */
+div.contents {
+    /* Light blue background */
+    background-color: rgba(var(--pst-color-admonition-note), 0.04);
+
+    /* Style like admonition boxes */
+    border-radius: .1rem;
+    box-shadow: 0 .2rem .5rem rgba(0,0,0,.05),0 0 .05rem rgba(0,0,0,.1);
+    border-left: .2rem solid;
+    border-color: rgba(var(--pst-color-admonition-note), 1);
+}
+
 
 /* In lists, adjust margins to be more asymmetic than the default (12px) */
 ul, ol {
@@ -21,6 +40,10 @@ ul, ol {
 
 
 /* In FAQ, let first-level TOC be more prominent */
+.faq-toc > ul {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
 .faq-toc > ul > li {
     list-style-type: none !important;
     list-style: none !important;
@@ -30,6 +53,8 @@ ul, ol {
 
 .faq-toc li.toctree-l1 > a {
     font-size: 150%;
-    font-weight: 700;
-    font-family: Roboto Slab, ff-tisa-web-pro, Georgia, Arial, sans-serif;
+    font-weight: 500;
+
+    /* Explicitly use default fonts of Books Theme here */
+    font-family: "Fira Sans", var(--pst-font-family-base) !important;
 }

@@ -52,7 +52,9 @@ Now, your local machine does not yet know that there is a new branch, and, of co
 The first command fetches updates from the remote server, including the information that a new branch has been created. The second command then switches to your new branch.
 
 .. hint::
-    Installing `tab completion <https://github.com/bobthecow/git-flow-completion/wiki/Install-Bash-git-completion>`_ is extremely useful here — it makes finding and typing in branch names much easier. Now do
+    Installing `tab completion <https://github.com/bobthecow/git-flow-completion/wiki/Install-Bash-git-completion>`_ is extremely useful here — it makes finding and typing in branch names much easier.
+    
+Now do
 
 .. code-block:: shell
 
@@ -133,8 +135,8 @@ Creating a global .gitignore
 If, after staging some files, you run the ``git status`` command, you might see a lot of files that you have not created, e.g. ``.DS_Store``\ , ``./vscode``\. These sometimes are files created by your operating system or by your IDE. You can and should create a global ``.gitignore`` file to not see them again. This file tells git to ignore these files across the board. Creating one is simple, but will depend on your operating system. `Here <http://egorsmirnov.me/2015/05/04/global-gitignore-file.html>`_ is a handy reference, but there are others — a quick google search should do the trick. Remember to unstage these files before committing.
 
 
-Merge the master into your branch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Merge the master branch into your branch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 You can merge updates from the master branch into your own branch in the following way: first, load changes to the remote repository, switch to the master branch, and pull its latest version by doing
 
 .. code-block:: shell
