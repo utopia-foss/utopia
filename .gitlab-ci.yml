@@ -449,6 +449,10 @@ test:cli:
     - utopia run dummy --note write_sparse --num-steps 5 --write-every 2
     - utopia run dummy --note write_last --num-steps 5 --write-start 5
 
+    # Test using a configuration set to specify run and plots config
+    - utopia run ForestFire --cs universe_example -N 10 --debug
+    - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo "\nFailed as expected"; fi
+
     # Test the printing of the data tree
     # NOTE Need to sleep here because the eval directory will already exist
     - utopia run dummy --full-data-tree
@@ -499,6 +503,11 @@ test:cli:
     # Test the model copying, first as a dry run, then for real
     - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run
     - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive
+
+    # Fetching model information
+    - utopia models info dummy
+    - utopia models info ForestFire
+    - utopia models info SEIRD
 
     # Test that it is registered. Note: Does not test building!
     - cd build && cmake ..

@@ -12,9 +12,22 @@ import pytest
 
 import utopya
 from utopya.testtools import ModelTest
+from utopya.cfg import write_to_cfg_dir, load_from_cfg_dir
 
 
 # Fixtures --------------------------------------------------------------------
+
+@pytest.fixture
+def tmp_utopya_cfg():
+    """Removes the current utopya_cfg.yml and puts it back upon teardown. This
+    fixture allows putting custom content in that place without persistently
+    changing the test-executing user's local configuration.
+    """
+    previous_state = load_from_cfg_dir("utopya")
+    write_to_cfg_dir("utopya", dict())
+    yield
+    write_to_cfg_dir("utopya", previous_state)
+
 
 
 # Tests -----------------------------------------------------------------------
@@ -62,7 +75,6 @@ def test_ModelTest_create_mv():
                         paths=dict(model_note="foo"))
     assert isinstance(mv2, utopya.Multiverse)
     assert mv2.wm.num_workers == 1
-
 
 def test_ModelTest_create_run_load():
     """Tests the chained version of create_mv"""
@@ -113,81 +125,145 @@ def test_ModelTest_tmpdir_is_tmp():
     # Check if the directory was removed
     assert not os.path.exists(tmpdir_path)
 
-def test_ModelTest_run_and_eval_cfg_paths(tmpdir):
-    """Tests the Model.run_and_eval_cfg_paths method works as expected"""
-    # The dummy model has no config paisr specified
+def test_ModelTest_default_config_sets():
+    """Tests the default config sets"""
+    # The dummy model has no config sets specified
     dummy_mtc = ModelTest("dummy")
-    dummy_cfgs = dummy_mtc.run_and_eval_cfg_paths()
+    dummy_cfgs = dummy_mtc.default_config_sets
     assert not dummy_cfgs
     assert isinstance(dummy_cfgs, dict)
 
     # The ForestFire model has
     ff_mtc = ModelTest("ForestFire")
-    ff_cfgs = ff_mtc.run_and_eval_cfg_paths()
+    ff_cfgs = ff_mtc.default_config_sets
     assert ff_cfgs
     assert 'multiverse_example' in ff_cfgs
     assert 'universe_example' in ff_cfgs
+    assert os.path.isdir(ff_cfgs['multiverse_example']['dir'])
     assert os.path.isfile(ff_cfgs['multiverse_example']['run'])
     assert os.path.isfile(ff_cfgs['multiverse_example']['eval'])
 
-    # Can also specify an absolute search path
-    ff_search_dir = os.path.join(ff_mtc.info_bundle.paths['source_dir'],'cfgs')
-    assert os.path.isabs(ff_search_dir)
-    ff_cfgs_abs = ff_mtc.run_and_eval_cfg_paths(search_dir=ff_search_dir)
-    assert ff_cfgs == ff_cfgs_abs
+    mv_set = ff_mtc.get_config_set('multiverse_example')
+    assert mv_set == ff_cfgs['multiverse_example']
 
-    # Now, to test error messages, fill some temporary directory with paths
-    tmp_search_dir = tmpdir.join("cfgs")
-    assert not tmp_search_dir.exists()
-    assert not ff_mtc.run_and_eval_cfg_paths(search_dir=tmp_search_dir)
+def test_ModelTest_config_sets_custom_search_dirs(tmp_utopya_cfg, tmpdir):
+    """Tests that users can specify a custom search directory via the utopya
+    configuration file. The ``tmp_utopya_cfg`` fixture removes the current
+    user's config file for the duration of the test.
+    """
+    ff_mtc = ModelTest("ForestFire")
 
-    # Create the directory
-    tmp_search_dir.mkdir()
-    assert tmp_search_dir.isdir()
-    assert not ff_mtc.run_and_eval_cfg_paths(search_dir=tmp_search_dir)
+    # With the user-specified file remove, there should definitely be no
+    # _custom_ search directories, only the one in the model source directory
+    sdirs = ff_mtc.default_config_set_search_dirs
+    assert len(sdirs) == 1
+    assert sdirs[0].endswith("src/utopia/models/ForestFire/cfgs")
 
-    # Add a subdirectory and some files
-    for cfg_name, fnames in (('foo', ('run.yml', 'eval.yml')),
-                             ('bar', ('bar_run.yml', 'bar_eval.yml')),
-                             ('baz', ('BAZeval.yml',)),
-                             ('spam', ('spam_run.yml',)),
-                             ('zab', ())):
-        cfg_dir = tmp_search_dir.mkdir(cfg_name)
+    # Now add some paths to the utopya config file
+    custom_search_dirs = [
+        "/some/absolute/path",
+        "some/relative/path",
+        "~/foo/bar",
+        str(tmpdir.join("foo")),
+        str(tmpdir.join("bar/{model_name:}/spam")),
+    ]
+    write_to_cfg_dir("utopya", dict(config_set_search_dirs=custom_search_dirs))
 
-        for fname in fnames:
-            with cfg_dir.join(fname).open('w+') as f:
-                f.write("hey there")
+    # These should all appear in the default config set search directories
+    sdirs = ff_mtc.default_config_set_search_dirs
 
-    # This should work
-    ff_cfgs_tmp = ff_mtc.run_and_eval_cfg_paths(search_dir=tmp_search_dir)
-    assert len(ff_cfgs_tmp) == 4
-    assert 'run' in ff_cfgs_tmp['foo']
-    assert 'eval' in ff_cfgs_tmp['foo']
+    assert "/some/absolute/path" in sdirs
+    assert "some/relative/path" in sdirs
+    assert "~/foo/bar" in sdirs
+    assert str(tmpdir.join("foo")) in sdirs
+    assert str(tmpdir.join("bar/ForestFire/spam")) in sdirs
 
-    assert 'run' in ff_cfgs_tmp['bar']
-    assert 'eval' in ff_cfgs_tmp['bar']
+    # Try again with bad type
+    write_to_cfg_dir("utopya", dict(config_set_search_dirs="not a list"))
+    with pytest.raises(TypeError, match="needs to be a list!"):
+        ff_mtc.default_config_set_search_dirs
 
-    assert 'run' not in ff_cfgs_tmp['baz']
-    assert 'eval' in ff_cfgs_tmp['baz']
 
-    assert 'run' in ff_cfgs_tmp['spam']
-    assert 'eval' not in ff_cfgs_tmp['spam']
+def test_ModelTest_get_config_set_extra_dir(tmp_utopya_cfg, tmpdir):
+    """Tests config set retrieval (except for custom search directories, which
+    are already tested separately above.
+    """
+    ff_mtc = ModelTest("ForestFire")
 
-    assert 'zab' not in ff_cfgs_tmp
+    custom_cfgs = tmpdir.mkdir("custom_configs")
+    extra_dir = custom_cfgs.mkdir("foo")
 
-    # Now, add some surplus eval file, which should fail
-    extra_eval_cfg_path = tmp_search_dir.join('baz', 'baz2eval.yml')
-    with extra_eval_cfg_path.open('w+') as f:
-        f.write("I shouldn't be here; there already is an eval config file!")
+    # Without the files existing, won't find anything
+    with pytest.raises(ValueError, match="No config set with name 'foo'"):
+        ff_mtc.get_config_set(extra_dir)
 
-    with pytest.raises(ValueError, match=r"Can have at most one `\*eval\.yml"):
-        ff_mtc.run_and_eval_cfg_paths(search_dir=tmp_search_dir)
+    # Now add the custom configuration files
+    with extra_dir.join("run.yml").open("w+") as f:
+        f.write("some run config")
+    with extra_dir.join("eval.yml").open("w+") as f:
+        f.write("some eval config")
 
-    # Remove it again, and add an extra run configuration
-    os.remove(extra_eval_cfg_path)
-    extra_run_cfg_path = tmp_search_dir.join('spam', 'spam2run.yml')
-    with extra_run_cfg_path.open('w+') as f:
-        f.write("I shouldn't be here; there already is a run config file!")
+    cfg_set = ff_mtc.get_config_set(extra_dir)
+    assert cfg_set["run"] == extra_dir.join("run.yml")
+    assert cfg_set["eval"] == extra_dir.join("eval.yml")
+    assert cfg_set["dir"] == extra_dir
 
-    with pytest.raises(ValueError, match=r"Can have at most one `\*run\.yml"):
-        ff_mtc.run_and_eval_cfg_paths(search_dir=tmp_search_dir)
+    # Can also be a relative path
+    cfg_set = ff_mtc.get_config_set(os.path.relpath(extra_dir))
+    assert cfg_set["run"] == extra_dir.join("run.yml")
+    assert cfg_set["eval"] == extra_dir.join("eval.yml")
+    assert cfg_set["dir"] == extra_dir
+
+    # Extra files are ignored
+    with extra_dir.join("also_run.yml").open("w+") as f:
+        f.write("another run config, ignored")
+    with extra_dir.join("more_eval.yml").open("w+") as f:
+        f.write("another eval config, ignored")
+
+    cfg_set = ff_mtc.get_config_set(extra_dir)
+    assert cfg_set["run"] == extra_dir.join("run.yml")
+    assert cfg_set["eval"] == extra_dir.join("eval.yml")
+    assert cfg_set["dir"] == extra_dir
+
+    # With a file removed, it no longer appears in the config set
+    os.remove(extra_dir.join("run.yml"))
+    cfg_set = ff_mtc.get_config_set(extra_dir)
+    assert "run" not in cfg_set
+    assert cfg_set["eval"] == extra_dir.join("eval.yml")
+    assert cfg_set["dir"] == extra_dir
+
+    with extra_dir.join("run.yml").open("w+") as f:
+        f.write("some run config")
+    os.remove(extra_dir.join("eval.yml"))
+    cfg_set = ff_mtc.get_config_set(extra_dir)
+    assert cfg_set["run"] == extra_dir.join("run.yml")
+    assert "eval" not in cfg_set
+    assert cfg_set["dir"] == extra_dir
+
+    # All removed again
+    os.remove(extra_dir.join("run.yml"))
+    with pytest.raises(ValueError, match="No config set with name 'foo'"):
+        ff_mtc.get_config_set(extra_dir)
+
+    # Providing a path to a directory that does not exist
+    with pytest.raises(ValueError, match="No config set .*'/some/weird/path'"):
+        ff_mtc.get_config_set("/some/weird/path")
+
+    # Providing a path to a directory that *does* exist but contains no files
+    # NOTE The error here references `i_exist` by name, because the directory
+    #      actually exists but contains no run.yml or eval.yml file
+    tmpdir.mkdir("i_exist")
+    assert os.path.isdir(tmpdir.join("i_exist"))
+    with pytest.raises(ValueError, match="No config set with name 'i_exist'"):
+        ff_mtc.get_config_set(tmpdir.join("i_exist"))
+
+    # Providing a config set with a name that already exists will yield the new
+    # one (and log a warning)
+    extra_dir = custom_cfgs.mkdir("multiverse_example")
+    with extra_dir.join("run.yml").open("w+") as f:
+        f.write("some run config")
+
+    cfg_set = ff_mtc.get_config_set(extra_dir)
+    assert cfg_set["run"] == extra_dir.join("run.yml")
+    assert "eval" not in cfg_set
+    assert cfg_set["dir"] == extra_dir

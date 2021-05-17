@@ -3,9 +3,14 @@
 import os
 import glob
 import logging
+import warnings
 from tempfile import TemporaryDirectory
-from typing import Tuple, Dict
+from typing import List, Tuple, Dict
 
+from dantro.tools import make_columns as _make_columns
+from dantro.tools import adjusted_log_levels as _adjusted_log_levels
+
+from .cfg import load_from_cfg_dir
 from .model_registry import ModelInfoBundle, get_info_bundle, load_model_cfg
 from .multiverse import Multiverse, FrozenMultiverse
 from .datamanager import DataManager
@@ -109,84 +114,50 @@ class Model:
         cfg, _, _ = load_model_cfg(info_bundle=self.info_bundle)
         return cfg
 
-    def run_and_eval_cfg_paths(self, *, search_dir: str='cfgs'
-                               ) -> Dict[str, dict]:
-        """Searches a directory, ``search_dir``, relative to the model's source
-        directory, for run- and eval configuration pairs.
-        Each pair is expected to be in a subdirectory within the given search
-        directory.
+    @property
+    def default_config_set_search_dirs(self) -> List[str]:
+        """Returns the default config set search directories for this model
+        in the order of precedence.
 
-        For each of these subdirectories, a dict entry with the paths for the
-        specified ``run`` and ``eval`` configurations is created.
-        These are detected by their file name suffix, i.e. ``*run.yml`` and
-        ``*eval.yml``, respectively. Both are optional, but if none of them
-        was found, the directory will not have an entry in the returned dict.
+        .. note::
 
-        Args:
-            search_dir (str, optional): Path to the directory to search. If
-                this is a relative path, will look relative to the directory
-                the default model configuration is located in.
-
-        Returns:
-            Dict[str, dict]: Listed under the name of each subdirectory, the
-                values of the returned dict contain at least one path to a
-                ``run`` configuration and, if available, a path to an ``eval``
-                configuration.
-                If no files were found, the dict is empty.
-
-        Raises:
-            ValueError: If more than one run or eval configuration was found
-                inside any of the subdirectories.
+            These *may* be relative paths.
         """
-        # Construct the absolute search path
-        search_dir = os.path.expanduser(search_dir)
-        if not os.path.isabs(search_dir):
-            dcfg_dir = os.path.dirname(self.info_bundle.paths['default_cfg'])
-            search_dir = os.path.join(dcfg_dir, search_dir)
+        search_dirs = []
 
-        if not os.path.isdir(search_dir):
-            # Search directory does not exist, just return an empty dict
-            return dict()
+        # User-specified search directories, potentially format strings
+        utopya_cfg = load_from_cfg_dir("utopya")
+        _cs_dirs = utopya_cfg.get("config_set_search_dirs", [])
+        if isinstance(_cs_dirs, list):
+            search_dirs += [d.format(model_name=self.name) for d in _cs_dirs]
+        else:
+            raise TypeError(
+                "The `config_set_search_dirs` key of the utopya configuration "
+                f"needs to be a list! Got: {type(_cs_dirs)} {repr(_cs_dirs)}"
+            )
 
-        # Go through subdirectories and aggregate information
-        log.info("Searching for run and eval configurations in %s ...",
-                 search_dir)
-        cfgs = dict()
-        for cfg_name in os.listdir(search_dir):
-            log.debug("Looking for run and eval configurations in '%s' "
-                      "subdirectory ...", cfg_name)
+        # Model source directory
+        _model_cfgs_dir = os.path.join(
+            os.path.dirname(self.info_bundle.paths["default_cfg"]), "cfgs"
+        )
+        search_dirs.append(_model_cfgs_dir)
 
-            subdir_abs_path = os.path.join(search_dir, cfg_name)
-            found_cfgs = dict()
+        return search_dirs
 
-            # First: run configuration
-            run_cfgs = glob.glob(os.path.join(subdir_abs_path, '*run.yml'))
+    @property
+    def default_config_sets(self) -> Dict[str, dict]:
+        """Config sets at the default search locations.
 
-            if len(run_cfgs) > 1:
-                raise ValueError("Can have at most one `*run.yml`-named file "
-                                 "for a run configuration, got: {} in {} !"
-                                 "".format(run_cfgs, subdir_abs_path))
-            elif len(run_cfgs) == 1:
-                found_cfgs['run'] = run_cfgs[0]
+        To retrieve an *individual* config set, consider using
+        :py:meth:`~utopya.model.Model.get_config_set` instead of this property.
 
-            # Now: eval configuration
-            eval_cfgs = glob.glob(os.path.join(subdir_abs_path, '*eval.yml'))
-            if len(eval_cfgs) > 1:
-                raise ValueError("Can have at most one `*eval.yml`-named file "
-                                 "for an evaluation configuration, got: {} in "
-                                 "{} !".format(eval_cfgs, subdir_abs_path))
-            elif len(eval_cfgs) == 1:
-                found_cfgs['eval'] = eval_cfgs[0]
+        For more information, see :ref:`config_sets`.
+        """
+        return self.get_config_sets(
+            search_dirs=self.default_config_set_search_dirs
+        )
 
-            # Add them
-            if found_cfgs:
-                cfgs[cfg_name] = found_cfgs
-
-        log.info("Found %d configuration entries for '%s' model.",
-                 len(cfgs), self.name)
-        return cfgs
-
-    # Public methods ..........................................................
+    # Simulation control ......................................................
 
     def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None,
                   use_tmpdir: bool=None, **update_meta_cfg) -> Multiverse:
@@ -299,6 +270,147 @@ class Model:
         return mv, mv.dm
 
 
+    # Config set retrieval ....................................................
+
+    def get_config_set(self, name: str=None) -> Dict[str, str]:
+        """Returns a configuration set: a dict containing paths to run and/or
+        eval configuration files. These are accessible via the keys ``run``
+        and ``eval``.
+
+        Config sets are retrieved from multiple locations:
+
+            *  The ``cfgs`` directory in the model's source directory
+            *  The user-specified lookup directories, specified in the utopya
+               configuration as ``config_set_search_dirs``
+            *  If ``name`` is an absolute or relative path, and a directory
+               exists at the specified location, the parent directory is
+               interpreted as a search path.
+
+        This uses :py:meth:`~utopya.model.Model.get_config_sets` to retrieve
+        all available configuration sets from the above paths and then selects
+        the one with the given ``name``.
+        Config sets that are found later overwrite those with the same name
+        found in previous searches and log a warning message (which can be
+        controlled with the ``warn`` argument); sets are *not* merged.
+
+        For more information, see :ref:`config_sets`.
+
+        Args:
+            name (str, optional): The name of the config set to retrieve. This
+                may also be a local path, which is looked up prior to the
+                default search directories.
+        """
+        search_dirs = []
+
+        # The name argument may be path-like, and we may want to include that
+        # as well, but only if the directory actually exists.
+        # In that case, the last path segment should be regarded as the name.
+        _path = os.path.normpath(os.path.expanduser(name))
+        if not os.path.isabs(_path):
+            _path = os.path.abspath(_path)
+
+        # However, we need to robustly identify the actual config set name from
+        # the path in such a case.
+        # Simplest assumption: check if such a directory actually exists, in
+        # which case the user probably wanted to search it for a config set.
+        # If there is a typo in the path, the whole directory will be searched
+        # in the error message anyway ...
+        if os.path.isdir(_path):
+            name = os.path.basename(_path)
+            search_dirs.append(os.path.dirname(_path))
+        else:
+            log.remark(
+                "Given config set name was not interpretable as an "
+                "additional search path (or the directory does not exist)."
+            )
+
+        # Append the default search directories, then start searching
+        search_dirs += self.default_config_set_search_dirs
+
+        for search_dir in search_dirs:
+            cfg_sets = self._find_config_sets(search_dir, cfg_sets={})
+
+            if name not in cfg_sets:
+                continue
+
+            cfg_set = cfg_sets[name]
+            log.note(
+                "Found config set named '%s' (contains: %s).",
+                name,
+                ", ".join(f"{k}.yml" for k in cfg_set.keys() if k != "dir"),
+            )
+            return cfg_set
+
+        # else: did not find the config set.
+        # Provide a useful error message, in which the local directory is
+        # *always* searched, such that the user does not have to check manually
+        # whether the directory exists but simply sees in this error message
+        # whether there was a typo in `name`.
+        search_dirs = (
+            [os.path.dirname(_path)] + self.default_config_set_search_dirs
+        )
+        _search_dirs = "\n".join(f"  - {s}" for s in search_dirs)
+
+        with _adjusted_log_levels(("utopya.model", logging.WARNING)):
+            _avail = self.get_config_sets(search_dirs=search_dirs, warn=False)
+
+        raise ValueError(
+            f"No config set with name '{name}' could be found in any of the "
+            f"following search directories:\n{_search_dirs}\n\n"
+            "Check that a subdirectory of the desired name exists at any of "
+            "the above locations and contains a `run.yml` and/or `eval.yml` "
+            "file.\n"
+            "Available config sets:\n"
+            f"{_make_columns(_avail) if _avail else '  (none available)'}"
+        )
+
+    def get_config_sets(
+        self,
+        *,
+        search_dirs: List[str] = None,
+        warn: bool = True,
+        cfg_sets: dict = None,
+    ) -> Dict[str, dict]:
+        """Searches for all available configuration sets in the given search
+        directories, aggregating them into one dict.
+
+        The search is done in *reverse* order of the paths given in
+        ``search_dirs``, i.e. starting from those directories with the lowest
+        precedence. If configuration sets with the same name are encountered,
+        warnings are emitted, but the one with higher precedence (appearing
+        more towards the front of ``search_dirs``, i.e. the later-searched one)
+        will take precedence.
+
+        .. note::
+
+            This will *not* merge configuration sets from different search
+            directories, e.g. if one contained only an eval configuration and
+            the other contained only a run configuration, a warning will be
+            emitted but the entry from the later-searched directory will be
+            used.
+
+        Args:
+            search_dirs (List[str], optional): The directories to search
+                sequentially for config sets. If not given, will use the
+                default config set search directories, see
+                :py:attr:`~utopya.model.Model.default_config_set_search_dirs`.
+            warn (bool, optional): Whether to warn (via log message), if the
+                search yields a config set with a name that already existed.
+            cfg_sets (dict, optional): If given, aggregate newly found config
+                sets into this dict. Otherwise, start with an empty one.
+        """
+        if search_dirs is None:
+            search_dirs = self.default_config_set_search_dirs
+
+        cfg_sets = cfg_sets if cfg_sets is not None else dict()
+
+        for search_dir in reversed(search_dirs):
+            cfg_sets = self._find_config_sets(
+                search_dir, cfg_sets=cfg_sets, warn=warn
+            )
+        return cfg_sets
+
+
     # Helpers .................................................................
 
     def _store_mv(self, mv: Multiverse, **kwargs) -> None:
@@ -309,3 +421,65 @@ class Model:
         """Create a TemporaryDirectory"""
         return TemporaryDirectory(prefix=self.name,
                                   suffix="_mv{}".format(len(self._mvs)))
+
+
+    def _find_config_sets(
+        self, search_dir: str, *, cfg_sets: dict, warn: bool = True
+    ) -> Dict[str, dict]:
+        """Looks for config sets in the given directory and aggregates them
+        into the given ``cfg_sets`` dict, warning if an entry already exists.
+
+        Args:
+            search_dir (str): The directory to search for configuration sets.
+                Can be an absolute or relative path; ``~`` is expanded.
+            cfg_sets (dict): The dict to populate with the results, each entry
+                being one config set.
+            warn (bool, optional): Whether to warn (via log message) if an
+                entry already exists.
+        """
+        # Make absolute
+        search_dir = os.path.expanduser(search_dir)
+        if not os.path.isabs(search_dir):
+            search_dir = os.path.abspath(search_dir)
+
+        log.remark("Searching for config sets in:\n  %s", search_dir)
+
+        if not os.path.isdir(search_dir):
+            log.remark("No directory found at given search path.")
+            return cfg_sets
+
+        dn = 0
+        for cs_name in os.listdir(search_dir):
+            log.debug("Inspecting subdirectory '%s' ...", cs_name)
+
+            search_subdir = os.path.join(search_dir, cs_name)
+            found_cfgs = dict()
+
+            # Run configuration
+            run_cfg = os.path.join(search_subdir, "run.yml")
+            if os.path.exists(run_cfg):
+                found_cfgs["run"] = run_cfg
+
+            # Eval configuration
+            eval_cfg = os.path.join(search_subdir, "eval.yml")
+            if os.path.exists(eval_cfg):
+                found_cfgs["eval"] = eval_cfg
+
+            # Only add entry, if configs were found
+            if found_cfgs:
+                dn += 1
+                if (
+                    warn and
+                    cs_name in cfg_sets and
+                    search_subdir != cfg_sets[cs_name]["dir"]
+                ):
+                    log.caution(
+                        "A config set named '%s' was already found at:\n  %s\n"
+                        "It will be overwritten with the one found at:\n  %s",
+                        cs_name, cfg_sets[cs_name]["dir"], search_subdir
+                    )
+
+                cfg_sets[cs_name] = dict(dir=search_subdir, **found_cfgs)
+
+        log.remark("Found %d config set%s.", dn, "s" if dn != 1 else "")
+        return cfg_sets
