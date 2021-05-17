@@ -709,7 +709,7 @@ def prompt_for_new_plot_args(*, old_argv: List[str],
                        'cluster_mode', 'suppress_data_tree', 'full_data_tree')
 
     # Create a new argument list for querying the user. For that, remove
-    # the model name, and `--interactive` from the given list of argvs.
+    # those entries from the argvs that are meant to be in the query.
     prefix_argv = ('--interactive', old_args.model_name)
     to_query = [arg for arg in old_argv if arg not in prefix_argv]
     to_query_str = " ".join(to_query) + (" " if to_query else "")
@@ -723,8 +723,8 @@ def prompt_for_new_plot_args(*, old_argv: List[str],
 
     # Generate the prompt and store the result, stripping whitespace
     prompt_str = ("\n{ansi.CYAN}${ansi.MAGENTA} "
-                  "utopia eval --interactive {} "
-                  "{ansi.RESET}".format(old_args.model_name, ansi=ANSIesc))
+                  "utopia eval -i {}"
+                  "{ansi.RESET} ".format(old_args.model_name, ansi=ANSIesc))
     input_res = input(prompt_str).strip()
     print("")
 

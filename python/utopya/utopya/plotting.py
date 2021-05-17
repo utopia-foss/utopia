@@ -9,7 +9,7 @@ import sys
 import logging
 import traceback
 import importlib
-from typing import Callable
+from typing import Callable, Union
 
 import dantro as dtr
 import dantro.plot_creators
@@ -223,6 +223,23 @@ class PlotManager(dtr.plot_mngr.PlotManager):
         If there was no plot information yet, the return value will be empty.
         """
         return os.path.commonprefix([d['target_dir'] for d in self.plot_info])
+
+    def plot_from_cfg(
+        self, *args, plots_cfg: Union[str, dict] = None, **kwargs
+    ):
+        """Thin wrapper around parent method that shows which plot
+        configuration file will be used.
+        """
+        log.hilight("Now creating plots for '%s' model ...",
+                    self._model_info_bundle.model_name)
+        if isinstance(plots_cfg, str):
+            log.note("Plots configuration:\n  %s\n", plots_cfg)
+
+        elif plots_cfg is None:
+            log.note("Using default plots configuration:\n  %s\n",
+                     self._model_info_bundle.paths.get("default_plots"))
+
+        return super().plot_from_cfg(*args, plots_cfg=plots_cfg, **kwargs)
 
     def _get_plot_creator(self, *args, **kwargs):
         """Before actually retrieving the plot creator, pre-loads the

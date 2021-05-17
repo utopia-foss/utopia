@@ -126,6 +126,20 @@ For Utopia, the following base configuration pools are made available:
 * The ``{model_name}_base`` configuration pool for the currently selected model, if available
 
 
+Configuration sets
+^^^^^^^^^^^^^^^^^^
+Same as run configurations, plot configurations can also be included in :ref:`Configuration Sets <config_sets>`, simply by adding an ``eval.yml`` file to the configuration set directory.
+This allows to define plot configurations for a specific simulation run, directly alongside it.
+
+.. hint::
+
+    To avoid excessive duplication of plot configurations when adding config sets, :ref:`plot_cfg_inheritance` can be helpful:
+
+        * put shared definitions into the base configuration
+        * in the config set, only specify those options that deviate from the default or that should better be explicitly specified
+
+
+
 .. _external_plot_creator:
 
 The :py:class:`~utopya.plotting.ExternalPlotCreator`

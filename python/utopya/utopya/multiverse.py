@@ -352,7 +352,7 @@ class Multiverse:
                 The dict-key corresponds to the part name, the value is the
                 payload which can be either a path to a cfg file or a dict
         """
-        log.debug("Reading in configuration files ...")
+        log.info("Building meta-configuration ...")
 
         # Read in the base meta configuration
         base_cfg = load_yml(self.BASE_META_CFG_PATH)
@@ -392,9 +392,13 @@ class Multiverse:
             try:
                 run_cfg = load_yml(run_cfg_path)
             except FileNotFoundError as err:
-                raise FileNotFoundError("No run config could be found at {}!"
-                                        "".format(run_cfg_path)) from err
-
+                raise FileNotFoundError(
+                    f"No run config could be found at {run_cfg_path}!"
+                ) from err
+            log.note("Run configuration:\n  %s", run_cfg_path)
+        else:
+            log.note("Using default run configuration:\n  %s\n",
+                     model_cfg_path)
         # After this point it is assumed that all values are valid.
         # Those keys or values will throw errors once they are used ...
 

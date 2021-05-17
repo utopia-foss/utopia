@@ -304,6 +304,7 @@ def test_stop_conditions(mv_kwargs):
     mv_kwargs['run_cfg_path'] = STOP_COND_CFG_PATH
     mv = Multiverse(**mv_kwargs)
     mv.run_sweep()
+    time.sleep(2)
     assert len(mv.wm.tasks) == 13
     assert len(mv.wm.stopped_tasks) == 13  # all stopped
 

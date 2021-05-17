@@ -824,12 +824,12 @@ Just as for the ``SandPile`` model, it will create and run a simulation with 4 t
 .. note::
 
   Make sure you have built the ``ForestFire`` binary before trying to run it:
-  
+
   .. code-block:: console
 
     $ cd build
     $ make ForestFire
-  
+
 
 
 Parameters

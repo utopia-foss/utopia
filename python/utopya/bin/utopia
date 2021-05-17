@@ -4,6 +4,7 @@
 import sys
 import traceback
 import argparse
+import time
 from typing import Tuple
 
 # Define helper functions -----------------------------------------------------
@@ -149,18 +150,61 @@ def parse_update_args(args: argparse.Namespace, *,
     return update_dict, update_plots_cfg
 
 
+def parse_run_and_plots_cfg(
+    args: argparse.Namespace, *,
+    model: "utopya.Model",
+    _interactive_mode: bool = False
+) -> Tuple[str, str]:
+    """Extracts paths to the run configuration and plots configuration by
+    looking at the given arguments and the model's configuration sets.
+
+    If ``_interactive_mode`` is given, will not read the run configuration but
+    only the plots configuration where it would be confusing to have the
+    corresponding log message appear. Also, this will not lead to system exit
+    if parsing failed.
+    """
+    run_cfg_path = args.run_cfg_path
+    plots_cfg = args.plots_cfg
+
+    if args.cfg_set and (run_cfg_path is None or plots_cfg is None):
+        log.info("Looking up config set '%s' ...", args.cfg_set)
+        try:
+            cfg_set = model.get_config_set(args.cfg_set)
+
+        except ValueError as err:
+            if _interactive_mode:
+                raise
+            log.error(err)
+            sys.exit(1)
+
+        # Explicitly given arguments take precedence. Also, the config set may
+        # not contain a run or eval configuration.
+        if run_cfg_path is None and cfg_set.get("run"):
+            if not _interactive_mode:
+                run_cfg_path = cfg_set["run"]
+                log.note("  Using run.yml from config set.")
+            else:
+                log.remark("  Not using run.yml in interactive plotting mode.")
+
+        if plots_cfg is None and cfg_set.get("eval"):
+            plots_cfg = cfg_set["eval"]
+            log.note("  Using eval.yml from config set.")
+
+    return run_cfg_path, plots_cfg
+
+
 def handle_interactive_plotting_exception(
     exc: Exception, *, args, context: str, remark: str = None
 ):
     """Helper function to handle exceptions during interactive plotting"""
     if args.debug:
-        log.error("An exception occured during %s!", context)
+        log.error("An exception occured during %s!\n", context)
         traceback.print_exc()
         log.note("Remove --debug flag to hide traceback.")
     else:
-        log.error("An exception occured during %s! %s: %s",
+        log.error("An exception occured during %s!\n\n%s: %s\n",
                   context, exc.__class__.__name__, str(exc))
-        log.note("Add --debug flag to show traceback.")
+        log.note("Add --debug flag to show traceback or --help for CLI help.")
 
     if remark:
         log.remark("%s", remark)
@@ -205,12 +249,14 @@ p_models_sp = p_models.add_subparsers(dest='models_mode')
 
 pm_ls  = p_models_sp.add_parser('ls',
                                 help="list registered models")
+pm_info= p_models_sp.add_parser('info',
+                                help="show model information")
 pm_reg = p_models_sp.add_parser('register',
                                 help="add a new model to the model registry")
 pm_edit= p_models_sp.add_parser('edit',
                                 help="edit an existing model registry entry")
 pm_rm  = p_models_sp.add_parser('rm',
-                                help="remove registered models")
+                                help="remove a model registry entry")
 pm_cp  = p_models_sp.add_parser('copy',
                                 help="create a new model by copying an "
                                      "existing one")
@@ -295,7 +341,7 @@ pm_reg.add_argument('--exists-action',
 
 
 # sub-subcommand: edit model registry entry  . . . . . . . . . . . . . . . . .
-# TODO Implement
+# TODO Implement properly / or delete?
 pm_edit.add_argument('model_name',
     help="Name of the model whose registry entry to edit.")
 
@@ -305,6 +351,11 @@ pm_edit.add_argument('model_name',
 pm_ls.add_argument('-l', '--long',
     action='store_true',
     help="List in long format.")
+
+# sub-subcommand: list model registry entries . . . . . . . . . . . . . . . . .
+# TODO Make more options available (low priority)
+pm_info.add_argument('model_name',
+    help="Name of the model to retrieve the info for")
 
 
 # sub-subcommand: remove model registry entries . . . . . . . . . . . . . . . .
@@ -351,6 +402,7 @@ pm_cp.add_argument('--skip-exts',
 p_cfg.add_argument('cfg_name',
     choices=[
         'user',
+        'utopya',
         'batch',
         'external_module_paths',
         'plot_module_paths',
@@ -386,6 +438,16 @@ p_run.add_argument('run_cfg_path',
     help="Path to the run configuration. If not given, the default model "
          "configuration is used.")
 
+# configuration sets
+p_run.add_argument('--cfg-set', '--cs',
+    nargs='?',
+    help="If the chosen model provides configuration sets, use the config "
+         "files from the chosen set for the `run_cfg_path` and `--plots-cfg` "
+         "arguments. Note that the specific arguments still take precedence "
+         "over the values from the config sets; to use default paths, "
+         "specify `\"\"` for those arguments.")
+
+# run mode
 p_run_mode = p_run.add_mutually_exclusive_group()
 p_run_mode.add_argument('-s', '--single',
     action='store_true',
@@ -486,6 +548,13 @@ p_run_plt.add_argument('--no-plot',
     action='store_true',
     help="If set, no plots will be created. To perform plots a later point, "
          "use the `utopia eval` subcommand.")
+p_run_plt.add_argument('-i', '--interactive',
+    action='store_true',
+    help="If set, the CLI will not exit after plotting finished, but allow to "
+         "continue plotting in an interactive session. This option is useful "
+         "for creating multiple plots in an iterative fashion, especially if "
+         "data loading time is large. Note that all Multiverse-related "
+         "configuration options can not be changed during the session.")
 p_run_plt.add_argument('--plot-only', '--po',
     default=None, nargs='*',
     help="If given, will plot only those entries of the plot configuration "
@@ -496,7 +565,7 @@ p_run_plt.add_argument('-R', '--reveal-output',
     help="If set, opens the output directory after plotting finished.")
 
 # misc
-p_run.add_argument('--use-data-tree-cache',
+p_run.add_argument('--use-data-tree-cache', '--tc',
     action='store_true',
     help="If set, uses tree file caching: If no cache file exists, creates "
          "one after loading all data; if a tree file already exists, uses "
@@ -525,6 +594,15 @@ p_eval.add_argument('run_dir_path',
          "if present) of the directory. If not given, the directory with the "
          "most recent timestamp is used.")
 
+# configuration sets
+p_eval.add_argument('--cfg-set', '--cs',
+    nargs='?',
+    help="If the chosen model provides configuration sets, use the config "
+         "files from the chosen set for the `--plots-cfg` and "
+         "`--run-cfg-path` arguments. Note that the specific arguments still "
+         "take precedence over the values from the config sets; to use "
+         "default paths, specify `\"\"` for those arguments.")
+
 # plot configuration
 p_eval_plt = p_eval.add_argument_group('plotting')
 p_eval_plt.add_argument('--plots-cfg',
@@ -545,8 +623,11 @@ p_eval_plt.add_argument('--plot-only', '--po',
          "plots that are disabled in the specified plot configuration.")
 p_eval_plt.add_argument('-i', '--interactive',
     action='store_true',
-    help="If given, the CLI will load the data and then wait for user input "
-         "to specify the plotting-related arguments. ")
+    help="If set, the CLI will not exit after plotting finished, but allow to "
+         "continue plotting in an interactive session. This option is useful "
+         "for creating multiple plots in an iterative fashion, especially if "
+         "data loading time is large. Note that all FrozenMultiverse-related "
+         "configuration options can not be changed during the session.")
 p_eval_plt.add_argument('-R', '--reveal-output',
     action='store_true',
     help="If set, opens the output directory after plotting finished.")
@@ -576,7 +657,7 @@ p_eval.add_argument('--set-cfg',
          "parameter can be set at once by separating them with a space; if a "
          "space needs to be in the argument value, put the strings into '...' "
          "or \"...\".")
-p_eval.add_argument('--use-data-tree-cache',
+p_eval.add_argument('--use-data-tree-cache', '--tc',
     action='store_true',
     help="If set, uses tree file caching: If no cache file exists, creates "
          "one after loading all data; if a tree file already exists, uses "
@@ -628,6 +709,7 @@ from dantro.logging import getLogger
 log = getLogger(__name__)  # TODO Make this controllable!
 
 from paramspace import ParamDim
+from dantro.tools import make_columns as _make_columns
 
 import utopya
 from utopya.tools import pformat, load_yml, add_item, open_folder
@@ -730,6 +812,15 @@ if __name__ == '__main__':
                              use_prompts=not args.non_interactive,
                              dry_run=args.dry_run)
 
+        elif args.models_mode == 'info':
+            model = utopya.Model(name=args.model_name)
+
+            # Config sets
+            log.info("Fetching available config sets ...")
+            cfg_sets = model.default_config_sets
+            log.note("Have %d config sets available for model '%s':\n%s",
+                     len(cfg_sets), model.name, _make_columns(cfg_sets))
+
         else:
             # Mode: ls or None
             if getattr(args, 'long', False):
@@ -762,12 +853,15 @@ if __name__ == '__main__':
     model = utopya.Model(name=args.model_name)
     # TODO Do bundle selection here
 
+    # Prepare the run and plots configuration
+    run_cfg_path, plots_cfg = parse_run_and_plots_cfg(args, model=model)
+
     # Distinguish by CLI mode whether to create Multiverse or FrozenMultiverse
-    if args.mode in ['run']:
+    if args.mode == 'run':
         # Create the Multiverse object
         # If parameter validation failed, suppress the traceback
         try:
-            mv = model.create_mv(run_cfg_path=args.run_cfg_path, **update_dict)
+            mv = model.create_mv(run_cfg_path=run_cfg_path, **update_dict)
 
         except ValidationError as err:
             log.error("%s", err)
@@ -783,17 +877,20 @@ if __name__ == '__main__':
             log.progress("Received --no-plot. Exiting now.")
             sys.exit()
 
-    elif args.mode in ['eval']:
+    elif args.mode == 'eval':
         # Create frozen Multiverse; supplies similar interface as Multiverse
         mv = model.create_frozen_mv(run_dir=args.run_dir_path,
-                                    run_cfg_path=args.run_cfg_path,
+                                    run_cfg_path=run_cfg_path,
                                     **update_dict)
 
     else:
         raise ValueError("Unexpected CLI mode: {}".format(args.mode))
 
     # Loading  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    # Either always load the tree directly from files, not creating a
+    # This can be done either without the tree cache (loading directly from
+    # the files specified by the configuration) or with the tree cache, in
+    # which case the first invocation needs to dump the cache file and any
+    # subsequent invocation needs to restore it.
     if not args.use_data_tree_cache:
         mv.dm.load_from_cfg()
 
@@ -815,7 +912,7 @@ if __name__ == '__main__':
 
     # Plotting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     if not getattr(args, 'interactive', False):
-        mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+        mv.pm.plot_from_cfg(plots_cfg=plots_cfg,
                             plot_only=args.plot_only,
                             **update_plots_cfg)
 
@@ -826,8 +923,34 @@ if __name__ == '__main__':
         sys.exit()
 
     # Interactive Plotting . . . . . . . . . . . . . . . . . . . . . . . . . .
-    # Carry over all argvs relevant for the eval subparser
-    argv = [arg for arg in sys.argv[2:]]
+    # Carry over all argvs relevant for the eval subparser.
+    # For convenience, drop a potentially given run directory path argument,
+    # which would have to be removed from the argument list manually otherwise.
+    argv = [
+        arg for arg in sys.argv[2:]
+        if arg != getattr(args, "run_dir_path", "")
+    ]
+
+    # ... and drop some other flags and combinations of shortcuts of flags
+    # that will no longer be necessary.
+    # NOTE This is a rather rudimentary approach and will probably not remove
+    #      *all* possibly offending arguments. It's purely for convenience at
+    #      this point. If there are remaining argv that are not parseable, the
+    #      parser in interactive plotting mode will complain and the input can
+    #      be adjusted at that point.
+    argv = [
+        arg for arg in argv
+        if arg not in (
+            "--single", "-s",
+            "--sweep", "-p",
+            "--note",
+            "--interactive", "-i",
+            "--use-data-tree-cache", "--tc",
+            "--suppress-data-tree",
+            "--full-data-tree",
+            "--load-parallel", "-P", "-iP", "-Pi",
+        )
+    ]
 
     # While in interactive mode, the following loop is carried out repeatedly.
     # A counter variable is used to label successive output directories.
@@ -851,18 +974,54 @@ if __name__ == '__main__':
                                                       old_args=args,
                                                       parser=p_eval)
 
-            except (KeyboardInterrupt, EOFError):
-                # Quit interactive plotting
-                # NOTE EOFError is invoked by builtins.input when the input is
-                #      read from a stream that is not the standard input stream
+            except KeyboardInterrupt:
+                # Ask for confirmation before quitting the plotting session.
+                # This is to prohibit accidentally exiting the session, which
+                # is especially relevant if loading data took a long time.
+                print("\n")
+                log.warning("Really exit interacive plotting?")
+                log.note("Confirm with Control+C ... or wait to remain in "
+                         "interactive plotting mode.")
+
+                # Want a small unexitable delay period before confirmation in
+                # order to not exit on double key-strokes.
+                t_delay = .7
+                for i in range(int(t_delay * 20)):
+                    try: time.sleep(t_delay / 20)
+                    except KeyboardInterrupt: pass
+
+                try:
+                    for i in range(3):
+                        log.caution("%d ...", 3-i)
+                        time.sleep(1)
+
+                except KeyboardInterrupt:
+                    break
+
+                log.success("Remaining in interactive plotting mode ...")
+                continue
+
+            except EOFError:
+                # EOFError is invoked by builtins.input when the input is read
+                # from a stream that is not the standard input stream
+                # In this case, can't have a confirmation
                 break
 
             except (ValueError, SystemExit):
                 # ... just prompt again; error message was already shown
                 continue
 
-        # Generate update dicts
-        _, update_plots_cfg = parse_update_args(args, mode='eval')
+        # Get updated configurations
+        try:
+            _, plots_cfg = parse_run_and_plots_cfg(args, model=model,
+                                                   _interactive_mode=True)
+            _, update_plots_cfg = parse_update_args(args, mode='eval')
+
+        except Exception as exc:
+            handle_interactive_plotting_exception(
+                exc, args=args, context="parsing of new PlotManager arguments"
+            )
+            continue
 
         if update_plots_cfg:
             log.note("Updates to plot configuration:\n\n%s",
@@ -891,14 +1050,14 @@ if __name__ == '__main__':
 
         # Now, try to plot:
         try:
-            mv.pm.plot_from_cfg(plots_cfg=args.plots_cfg,
+            mv.pm.plot_from_cfg(plots_cfg=plots_cfg,
                                 plot_only=args.plot_only,
                                 **update_plots_cfg)
 
         except KeyboardInterrupt:
             print("")
-            log.warning("Interrupted current plotting session. Remaining in "
-                        "interactive plotting mode ...")
+            log.caution("Interrupted current plotting session.")
+            log.warning("Remaining in interactive plotting mode ...")
             continue
 
         except Exception as exc:
@@ -909,7 +1068,16 @@ if __name__ == '__main__':
 
         # Done plotting, allow to show the output
         if args.reveal_output and mv.pm.common_out_dir:
-            open_folder(mv.pm.common_out_dir)
+            try:
+                open_folder(mv.pm.common_out_dir)
+
+            except Exception as exc:
+                # This may fail for certain paths; it should not lead to the
+                # plotting session being interrupted.
+                handle_interactive_plotting_exception(
+                    exc, args=args, context="opening of output directory"
+                )
+                continue
 
         # End of while loop
 

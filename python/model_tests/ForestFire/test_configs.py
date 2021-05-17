@@ -24,7 +24,7 @@ def test_run_and_eval_cfgs():
 
     See :py:meth:`~utopya.model.Model.run_and_eval_cfg_paths` for more info.
     """
-    for cfg_name, cfg_paths in mtc.run_and_eval_cfg_paths().items():
+    for cfg_name, cfg_paths in mtc.default_config_sets.items():
         print("\nRunning '{}' example ...".format(cfg_name))
 
         mv, _ = mtc.create_run_load(from_cfg=cfg_paths.get('run'),
