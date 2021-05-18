@@ -30,7 +30,7 @@ network:
   directed: !is-bool true
 
   # network model
-  model: WattsStrogatz # can be: WattsStrogatz (scale-free), ErdosRenyi (random),
+  model: KlemmEguiluz # can be: WattsStrogatz (scale-free), ErdosRenyi (random),
                        # regular, complete, BollobasRiordan (small-world, directed),
                        # BarabasiAlbert (small-world, undirected),
                        # regular, load_from_file (load a custom graph)
@@ -54,6 +54,9 @@ network:
 
   regular:
     oriented: false
+
+  KlemmEguiluz:
+    mu: 0.2
 
   edges:
     weighting: !param

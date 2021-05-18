@@ -1,11 +1,17 @@
 #ifndef UTOPIA_CORE_GRAPH_CREATION_HH
 #define UTOPIA_CORE_GRAPH_CREATION_HH
 
+#include <algorithm>
+#include <vector>
+#include <deque>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/small_world_generator.hpp>
 #include <boost/graph/random.hpp>
 #include <boost/property_map/dynamic_property_map.hpp>
+
+#include <spdlog/spdlog.h>
 
 #include "utopia/data_io/cfg_utils.hh"
 #include "utopia/data_io/filesystem.hh"
@@ -212,6 +218,366 @@ Graph create_regular_graph(const std::size_t n,
   return g;
 }
 
+/// Create a Klemm-Eguíluz scale-free small-world highly-clustered graph
+/** This function generates a graph using the Klemm-Eguíluz model (Klemm &
+ *  Eguíluz 2002). The algorithm starts with a small spawning network to which
+ *  new vertices are added one at a time. Each new vertex receives a connection
+ *  to mean_degree existing vertices with a probability that is proportional to
+ *  the number of links of the corresponding vertex. With probability mu, links
+ *  are instead rewired to a (possibly non-active) vertex, chosen with a
+ *  probability that is proportional to its degree. Thus, for mu=1 we obtain
+ *  the Barabasi-Albert linear preferential attachment model.
+ *
+ *
+ * \tparam Graph        The graph type
+ * \tparam RNG          The random number generator type
+ *
+ * \param num_vertices  The total number of vertices
+ * \param mean_degree   The mean degree
+ * \param mu            The probability of rewiring to a random vertex
+ * \param rng           The random number generator
+ *
+ * \return Graph        The scale-free graph
+ */
+
+template <typename Graph, typename RNG>
+Graph create_KlemmEguiluz_graph(const std::size_t num_vertices,
+                                const std::size_t mean_degree,
+                                const double mu,
+                                RNG& rng)
+{
+    using vertex_size_type = typename boost::graph_traits<Graph>::vertices_size_type;
+    using vertex_desc_type = typename boost::graph_traits<Graph>::vertex_descriptor;
+    using namespace boost;
+
+    if ( mu > 1. or mu < 0.) {
+        throw std::invalid_argument("The parameter 'mu' must be a probability!");
+    }
+    else if ( mean_degree <= 2 ) {
+        throw std::invalid_argument("This algorithm requires a mean degree of"
+          " 3 or more!");
+    }
+
+    // Generate complete graphs separately, since they do not allow for rewiring
+    if (mean_degree >= num_vertices-1) {
+        return create_complete_graph<Graph>(num_vertices);
+    }
+
+    // Uniform probability distribution
+    std::uniform_real_distribution<double> distr(0, 1);
+
+    // Generate an empty graph with num_vertices vertices. This avoids having to
+    // reallocate when adding vertices.
+    Graph g{num_vertices};
+
+    // Especially for low vertex counts, the original KE does not produce a
+    // network with exactly the mean_degree specified. This function corrects
+    // for the offset by calcuating an effective size for the spawning network.
+    // This has the added benefit of not neccessetating en even mean degree.
+    const std::size_t m = [&]() -> std::size_t {
+        if (is_undirected(g)) {
+            double a = sqrt(4.0*pow(num_vertices, 2)
+                            - 4.0*num_vertices*(mean_degree+1.0) +1.0);
+            a *= -0.5;
+            a += num_vertices - 0.5;
+
+            return std::round(a);
+        }
+        else {
+            return std::round(
+                num_vertices * static_cast<double>(mean_degree) / (2*(num_vertices-1))
+            );
+        }
+    }();
+
+    // Get a logger and output an info message saying what the actual mean
+    // degree of the network will be
+    const auto log = spdlog::get("core");
+    if (not log) {
+        throw std::runtime_error(
+            "Logger 'core' was not set up but is needed for "
+            "Utopia::Graph::create_KlemmEguiluz_graph !"
+        );
+    }
+
+    auto actual_mean_degree = [&](){
+        if (is_undirected(g)) {
+            return (1.0*m*(m-1)+2.0*m*(num_vertices-m))/num_vertices;
+        }
+        else {
+            return (2.0*m*(m-1)+2.0*m*(num_vertices-m))/num_vertices;
+        }
+    };
+    log->info("The desired mean degree of this graph is {}; the actual mean"
+              " degree of this graph will be {}.", mean_degree, actual_mean_degree());
+
+    // Create a container for the active vertices.
+    // Reserve enough space to avoid reallocating.
+    std::vector<vertex_desc_type> actives;
+    actives.reserve(m);
+
+    // Create a container listing all degrees in the graph, as well as the
+    // number of vertices of that degree
+    std::vector<std::pair<size_t, size_t>> degrees_and_num;
+
+    // Create a container of all vertices sorted by their degree. Reserve enough
+    // space to avoid reallocating.
+    const size_t num_deg = is_undirected(g) ? num_vertices : 2*(num_vertices);
+    std::vector<std::deque<vertex_desc_type>> vertices_by_deg(num_deg,
+        std::deque<vertex_desc_type>());
+
+    // Create a fully-connected initial subnetwork. For all except the pure BA,
+    // set all vertices as active.
+    for (vertex_size_type i = 0; i < m; ++i) {
+        if (is_undirected(g)) {
+            for (vertex_size_type k = i+1; k < m; ++k) {
+                add_edge(vertex(i, g), vertex(k, g), g);
+            }
+        }
+        else {
+            for (vertex_size_type k = 1; k < m; ++k) {
+                add_edge(vertex(i, g), vertex((i+k)%m, g), g);
+            }
+        }
+
+        // For the pure BA, add all vertices of the spawning network to the
+        // list of vertices
+        if (mu == 1) {
+            if (is_undirected(g)){
+                vertices_by_deg[m-1].emplace_back(vertex(i, g));
+            }
+            else {
+                vertices_by_deg[2*(m-1)].emplace_back(vertex(i, g));
+            }
+        }
+        else {
+            actives.emplace_back(vertex(i, g));
+        }
+    }
+
+    // For the pure BA, there are now m-1 vertices each with degree m-1
+    // (or 2(m-1) in the directed case). Add them all to the list of degrees.
+    // For quick access, place the frequent case deg = m at the beginning of the
+    // list. That way, every newly added vertex can immediately be place into the
+    // the list without needing to search for the correct index.
+    if (mu == 1 and is_undirected(g)) {
+        degrees_and_num.emplace_back(std::make_pair(m-1, m));
+        degrees_and_num.emplace_back(std::make_pair(m, 0));
+    }
+    else if (mu == 1 and is_directed(g)){
+        degrees_and_num.emplace_back(std::make_pair(m, 0));
+        degrees_and_num.emplace_back(std::make_pair(2*(m-1), m));
+    }
+
+    // Select a degree with probability proportional to its prevalence and
+    // value. Returns the degree and the index of that degree in the list.
+    auto get_degree = [&](const size_t norm) -> std::pair<std::size_t, std::size_t>
+    {
+        const double prob = distr(rng) * norm;
+        double cumulative_prob = 0;
+        std::pair<std::size_t, size_t> res = {0, 0};
+        for (std::size_t i = 0; i<degrees_and_num.size(); ++i) {
+            cumulative_prob += degrees_and_num[i].first * degrees_and_num[i].second;
+            if (cumulative_prob >= prob) {
+                res = {degrees_and_num[i].first, i};
+                break;
+            }
+        }
+        return res;
+    };
+
+    // Pure BA model
+    if (mu == 1) {
+        // Normalisation factor: sum of all vertices x their degree
+        std::size_t norm = is_undirected(g) ? m*(m-1) : m*2*(m-1);
+        for (vertex_size_type n = m; n < num_vertices; ++n) {
+            const auto v = vertex(n, g);
+            for (std::size_t i = 0; i < m; ++i) {
+                // Add an edge to a neighbor that was selected with probability
+                // proportional to its in-degree
+                auto d = get_degree(norm);
+                std::size_t idx = distr(rng) * (vertices_by_deg[d.first].size());
+                auto w = vertices_by_deg[d.first][idx];
+                while (w == v or edge(v, w, g).second){
+                    d = get_degree(norm);
+                    idx = distr(rng) * (vertices_by_deg[d.first].size());
+                    w = vertices_by_deg[d.first][idx];
+                }
+                add_edge(v, w, g);
+                // Move that neighbor to the correct spot in the
+                // list of vertices, and update the counts of the
+                // relevant degree list entries.
+                --degrees_and_num[d.second].second;
+                if (d.second < degrees_and_num.size()-1
+                    and degrees_and_num[d.second+1].first == d.first+1)
+                {
+                    ++degrees_and_num[d.second+1].second;
+                }
+                else {
+                    degrees_and_num.emplace_back(std::make_pair(d.first+1, 1));
+                    std::sort(
+                        degrees_and_num.begin(), degrees_and_num.end(),
+                        [](const auto& a, const auto& b) -> bool {
+                            return a.first < b.first;
+                        }
+                    );
+                }
+
+                // Finally, increase the norm by 1 (since the degree of one
+                // vertex was increased by 1), and move the neighbor into its
+                // new bin in the vertex list.
+                norm += 1;
+                vertices_by_deg[d.first].erase(vertices_by_deg[d.first].begin()+idx);
+                vertices_by_deg[d.first+1].emplace_back(w);
+            }
+
+            // After connecting the new vertex to m neighbors, increase the norm
+            // by m, since a vertex of degree m is added. Add the new vertex to
+            // the list of vertices.
+            norm += m;
+            vertices_by_deg[m].emplace_back(v);
+
+            // Increase the count of the deg = m entry in the degree list.
+            if (is_undirected(g)) {
+                degrees_and_num[1].second++;
+            }
+            else {
+                degrees_and_num[0].second++;
+            }
+        }
+    }
+
+    else {
+        // Collect the sum of the degree x num vertices of that degree.
+        std::size_t norm = 0;
+
+        // Add the remaining number of vertices, and add edges to m other vertices.
+        for (vertex_size_type n = m; n < num_vertices; ++n) {
+            const auto v = vertex(n, g);
+
+            // Treat the special case mu=0 (pure KE) separately
+            // to avoid unnecessarily generating random numbers.
+            if (mu == 0) {
+                for (auto const& a : actives) {
+                    add_edge(v, a, g);
+                }
+            }
+
+            // With probability mu, connect to a non-active node chosen via the linear
+            // attachment model. With probability 1-mu, connect to an active node.
+            else {
+                for (auto const& a : actives) {
+                    if (distr(rng) < mu and n != m) {
+                        // There may not be enough inactive nodes to rewire to.
+                        // Stop the while loop after finite number of attempts
+                        // to find a new neighbor. If number of attemps is
+                        // surpassed, simply connect to an active node.
+                        std::size_t max_attempts = n-m+2;
+
+                        // Add an edge to a neighbor that was selected with
+                        // probability proportional to its in-degree
+                        auto d = get_degree(norm);
+                        std::size_t idx = distr(rng) * (vertices_by_deg[d.first].size());
+                        auto w = vertices_by_deg[d.first][idx];
+                        while (edge(v, w, g).second and max_attempts > 0){
+                            d = get_degree(norm);
+                            idx = distr(rng) * (vertices_by_deg[d.first].size());
+                            w = vertices_by_deg[d.first][idx];
+                            --max_attempts;
+                        }
+
+                        // Move that neighbor to the correct spot in the
+                        // list of vertices, and update the counts of the
+                        // relevant degree list entries.
+                        if (max_attempts > 0) {
+                            add_edge(v, w, g);
+                            --degrees_and_num[d.second].second;
+                            if (d.second < degrees_and_num.size()-1
+                                and degrees_and_num[d.second+1].first == d.first+1)
+                            {
+                                ++degrees_and_num[d.second+1].second;
+                            }
+                            else {
+                                degrees_and_num.emplace_back(std::make_pair(d.first+1, 1));
+                                std::sort(
+                                    degrees_and_num.begin(), degrees_and_num.end(),
+                                    [](const auto& a, const auto& b) -> bool {
+                                        return a.first < b.first;
+                                    }
+                                );
+                            }
+
+                            // Finally, increase the norm by 1 (since the degree
+                            // of one vertex was increased by 1), and move the
+                            // neighbor into its new bin in the vertex list.
+                            norm += 1;
+                            vertices_by_deg[d.first].erase(vertices_by_deg[d.first].begin()+idx);
+                            vertices_by_deg[d.first+1].emplace_back(w);
+                        }
+                        else {
+                            add_edge(v, a, g);
+                        }
+                    }
+                    else {
+                        add_edge(v, a, g);
+                    }
+                }
+            }
+
+            // Calculate the sum of the active nodes in-degrees
+            double gamma = 0;
+            for (const auto& a : actives) {
+                gamma += in_degree(a, g);
+            }
+
+            // Activate the new node and deactivate one of the old nodes.
+            // Probability for deactivation is proportional to in degree.
+            const double prob_to_drop = distr(rng) * gamma;
+            double sum_of_probs = 0;
+
+            for (vertex_size_type i = 0; i<actives.size(); ++i) {
+                sum_of_probs += in_degree(actives[i], g);
+
+                if (sum_of_probs >= prob_to_drop) {
+                    bool deg_in_array = false;
+                    // Find the correct index for the degree of the active node
+                    // selected for deactivation. If no such index exists yet,
+                    // create a new entry
+                    for (std::size_t k = 0; k<degrees_and_num.size(); ++k) {
+                        if (degrees_and_num[k].first == degree(actives[i], g)) {
+                            ++degrees_and_num[k].second;
+                            deg_in_array = true;
+                            break;
+                        }
+                    }
+                    // Index does not exist: create new entry
+                    if (not deg_in_array) {
+                        degrees_and_num.emplace_back(std::make_pair(degree(actives[i], g), 1));
+                        sort(degrees_and_num.begin(), degrees_and_num.end(),
+                        [](const auto& a, const auto& b) -> bool {
+                            return a.first < b.first;
+                        });
+                    }
+
+                    // Increase the norm by the degree of the active node.
+                    norm += degree(actives[i], g);
+
+                    // Place the active node into the correct entry of the
+                    // vertex list
+                    vertices_by_deg[degree(actives[i], g)].emplace_back(actives[i]);
+
+                    // Activate the new node
+                    actives[i] = v;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Return the graph
+    return g;
+
+}
 
 /// Generate a Barabási-Albert scale-free graph with parallel edges
 /** This is the classic version of the generating model with a completely
@@ -308,93 +674,6 @@ Graph BarabasiAlbert_parallel_generator(std::size_t num_vertices,
     return g;
 }
 
-
-/// Generate a Barabási-Albert scale-free graph with no parallel edges
-/** This function generates a scale-free graph using the Barabási-Albert model.
- *  The algorithm starts with a small spawning network to which new vertices
- *  are added one at a time. Each new vertex receives a connection to
- *  mean_degree existing vertices with a probability that is proportional to
- *  the number of links of the corresponding vertex.
- *
- * \tparam Graph        The graph type
- * \tparam RNG          The random number generator type
- *
- * \param num_vertices  The total number of vertices
- * \param mean_degree   The mean degree
- * \param rng           The random number generator
- *
- * \return Graph        The scale-free graph
- */
-template <typename Graph, typename RNG>
-Graph BarabasiAlbert_nonparallel_generator(std::size_t num_vertices,
-                                           std::size_t mean_degree,
-                                           RNG& rng)
-{
-    // Create an empty graph
-    Graph g{};
-
-    // Define helper variables
-    std::size_t num_edges = 0;
-    std::size_t deg_ignore = 0;
-
-    // Create initial spawning network that is fully connected
-    for (std::size_t i = 0; i <= mean_degree; ++i){
-        boost::add_vertex(g);
-        for (std::size_t j = 0; j<i; ++j){
-            // Increase the number of edges only if an edge was added
-            if (boost::add_edge(boost::vertex(i,g), boost::vertex(j,g),
-                                g).second)
-            {
-                ++num_edges;
-            }
-        }
-    }
-
-    // Add i times a vertex and connect it randomly but weighted
-    // to the existing vertices
-    std::uniform_real_distribution<> distr(0, 1);
-    for (std::size_t i = 0; i<(num_vertices - mean_degree - 1); ++i){
-        // Add a new vertex
-        const auto new_vertex = boost::add_vertex(g);
-        std::size_t edges_added = 0;
-
-        // Add the desired number of edges
-        for (std::size_t edge = 0; edge<mean_degree/2; ++edge){
-            // Keep track of the probability
-            double prob = 0.;
-
-            // Loop through every vertex and look if it can be connected
-            for (auto [v, v_end] = boost::vertices(g); v!=v_end; ++v)
-            {
-                // accumulate the probability fractions
-                prob += boost::out_degree(*v, g)
-                        / ((2. * num_edges) - deg_ignore);
-
-                if (distr(rng) <= prob){
-                    // Check whether the vertices are already connected
-                    if (not boost::edge(new_vertex, *v, g).second){
-                        // create an edge between the two vertices
-                        deg_ignore = boost::out_degree(*v, g);
-                        boost::add_edge(new_vertex, *v, g);
-
-                        // Increase the number of added edges
-                        ++edges_added;
-
-                        // Leave the for loop because an edge has already
-                        // been placed. For the next edge to be places,
-                        // the accumulated probability has to be
-                        // recalculated.
-                        break;
-                    }
-                }
-            }
-        }
-        num_edges += edges_added;
-    }
-    return g;
-}
-
-
 /// Create a Barabási-Albert scale-free graph
 /** This function generates a scale-free graph using the Barabási-Albert model.
  *  The algorithm starts with a small spawning network to which new vertices
@@ -422,31 +701,31 @@ Graph create_BarabasiAlbert_graph(std::size_t num_vertices,
                                   bool parallel,
                                   RNG& rng)
 {
-    // Check for cases in which the algorithm does not work.
-    // Unfortunately, it is necessary to construct a graph object to check
-    // whether the graph is directed or not.
-    Graph g{};
-    if (boost::is_directed(g)){
-        throw std::runtime_error("This scale-free generator algorithm "
-                                 "only works for undirected graphs! "
-                                 "But the provided graph is directed.");
+    // Generate the parallel version using the Klemm-Eguíluz generator
+    if (not parallel) {
+        return create_KlemmEguiluz_graph<Graph>(num_vertices, mean_degree, 1.0, rng);
+    }
+    else {
+        // Check for cases in which the algorithm does not work.
+        // Unfortunately, it is necessary to construct a graph object to check
+        // whether the graph is directed or not.
+        Graph g{};
+        if (boost::is_directed(g)){
+            throw std::runtime_error("This scale-free generator algorithm "
+                                     "only works for undirected graphs! "
+                                     "But the provided graph is directed.");
 
-    } else if (num_vertices < mean_degree){
-        throw std::invalid_argument("The mean degree has to be smaller than "
-                                    "the total number of vertices!");
-    }
-    else if (mean_degree % 2){
-        throw std::invalid_argument("The mean degree needs to be even but "
-                                    "is not an even number!");
-    }
-    else{
-        if (parallel){
-            return BarabasiAlbert_parallel_generator<Graph>(num_vertices,
-                                                        mean_degree, rng);
+        } else if (num_vertices < mean_degree){
+            throw std::invalid_argument("The mean degree has to be smaller than "
+                                        "the total number of vertices!");
+        }
+        else if (mean_degree % 2){
+            throw std::invalid_argument("The mean degree needs to be even but "
+                                        "is not an even number!");
         }
         else{
-            return BarabasiAlbert_nonparallel_generator<Graph>(num_vertices,
-                                                        mean_degree, rng);
+            return BarabasiAlbert_parallel_generator<Graph>(num_vertices,
+                                                            mean_degree, rng);
         }
     }
 }
@@ -683,7 +962,7 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
 
   // Rewiring function
   auto add_edges = [&](vertices_size_type v,
-                       const size_t limit,
+                       const std::size_t limit,
                        const vertices_size_type& lower,
                        const vertices_size_type& upper,
                        const bool forward)
@@ -727,7 +1006,7 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
 
   // Undirected graphs
   if (is_undirected(g)){
-      const size_t limit = k/2;
+      const std::size_t limit = k/2;
       for (vertices_size_type v = 0; v < n; ++v) {
           // Forwards direction only
           lower = (v - limit + n) % n;
@@ -740,7 +1019,7 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
   else {
       // Unoriented starting graph
       if (!oriented) {
-          const size_t limit = k/2;
+          const std::size_t limit = k/2;
           for (vertices_size_type v = 0; v < n; ++v) {
               // Forwards direction
               lower = (v + n - limit) % n;
@@ -756,7 +1035,7 @@ Graph create_WattsStrogatz_graph(const std::size_t n,
 
       // Oriented starting graph
       else {
-          const size_t limit = k;
+          const std::size_t limit = k;
           for (vertices_size_type v = 0; v < n; ++v) {
               // Forwards direction only, but with neighborhood range k
               lower = v;
@@ -832,6 +1111,17 @@ Graph create_graph(const Config& cfg,
                     get_as<bool>("self_edges", cfg_ER),
                     rng);
     }
+    else if (model == "KlemmEguiluz")
+    {
+        // Get the model-specific configuration options
+        const auto& cfg_KE = get_as<Config>("KlemmEguiluz", cfg);
+
+        return create_KlemmEguiluz_graph<Graph>(
+                    get_as<std::size_t>("num_vertices", cfg),
+                    get_as<std::size_t>("mean_degree", cfg),
+                    get_as<double>("mu", cfg_KE),
+                    rng);
+    }
     else if (model == "WattsStrogatz")
     {
         // Get the model-specific configuration options
@@ -883,7 +1173,8 @@ Graph create_graph(const Config& cfg,
                                     "'does not exist! Valid options are: "
                                     "'complete', 'regular', 'ErdosRenyi', "
                                     "'WattsStrogatz', 'BarabasiAlbert', "
-                                    "'BollobasRiordan', 'load_from_file'.");
+                                    "'KlemmEguiluz','BollobasRiordan', "
+                                    "'load_from_file'.");
     }
 }
 
