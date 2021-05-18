@@ -274,7 +274,11 @@ private:
     NWType initialize_nw() const {
         this->_log->debug("Creating the network ...");
 
-        return Graph::create_graph<NWType>(this->_cfg["network"], *this->_rng);
+        auto g = Graph::create_graph<NWType>(this->_cfg["network"], *this->_rng);
+
+        this->_log->debug("Network created.");
+
+        return g;
     }
 
     // Only initialize edge weight dataset for directed graphs

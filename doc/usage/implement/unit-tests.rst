@@ -360,7 +360,7 @@ Utopia provides a set of test tools which make it easier to apply the above. Usi
 
 .. note::
 
-    Refer to the `corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ entries for more detailed information.
+    Refer to the `corresponding doxygen documentation <../../../doxygen/html/group___test_tools.html>`_ entries for more detailed information.
 
 
 The ``BaseInfrastructure`` fixture
@@ -437,7 +437,7 @@ To test that an exception not only matches a specific type, but also a specific 
     }
 
 The ``match`` string is optional; if it is not given, only the exception type will be checked.
-See `the corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ for more information.
+See `the corresponding doxygen documentation <../../../doxygen/html/group___test_tools.html>`_ for more information.
 
 .. warning::
 
@@ -515,8 +515,7 @@ The corresponding configuration (here: ``cfg``) can specify whether a certain pa
         throws: Utopia::KeyError
         match: foo
 
-Again, see `the corresponding doxygen documentation <../../doxygen/html/group___test_tools.html>`_ of the ``test_config_callable`` function for more information.
-
+Again, see the corresponding `doxygen documentation <../../../doxygen/html/group___test_tools.html>`_ of the ``test_config_callable`` function for more information.
 
 .. _Summary of the API for Writing Tests:
     https://www.boost.org/doc/libs/1_76_0/libs/test/doc/html/boost_test/

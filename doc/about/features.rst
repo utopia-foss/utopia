@@ -265,7 +265,7 @@ The ``select`` Interface – Selecting entities using some condition
 Graph Creation
 ^^^^^^^^^^^^^^
 * Create a graph with the ``create_graph`` function using a selection of generating algorithms and a configuration-based interface
-* Available algorithms for k-regular, random (Erdös-Renyi), small-world (Watts-Strogatz), undirected scale-free (Barabási-Albert), or directed scale-free (Bollobas-Riordan) graphs (see :ref:`here <graph_gen_functions>`).
+* Available algorithms for k-regular, fully-connected, random (Erdös-Renyi), small-world (Watts-Strogatz), highly clustered small-world (Klemm-Eguíluz), and scale-free (Barabási-Albert and Bollobás-Riordan) graphs (see :ref:`here <graph_gen_functions>`).
 * Load a graph directly from GraphML or DOT (Graphviz) files. See :ref:`here<loading_a_graph_from_a_file>` for more details.
 * 📚
   `Doxygen <../../doxygen/html/namespace_utopia_1_1_graph.html>`__,
