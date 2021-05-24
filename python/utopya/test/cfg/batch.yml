@@ -29,6 +29,17 @@ with_note:
 plevel_task:
   parallelization_level: task
 
+with_tree_cache_1: &with_tree_cache
+  tasks:
+    eval:
+      my_task:
+        model_name: dummy
+        use_data_tree_cache: true
+        plot_only: [state_mean]
+
+with_tree_cache_2:
+  <<: *with_tree_cache
+
 plevel_bad:
   parallelization_level: some invalid level
   _raises: ValueError
