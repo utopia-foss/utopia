@@ -50,10 +50,12 @@ def test_BatchTaskManager(tmpdir):
         # Use temporary directory for batch output
         test_cfg = recursive_update(
             test_cfg,
-            dict(paths=dict(
-                out_dir=str(tmpdir.join(test_case)),
-                note=test_case,
-            ))
+            dict(
+                paths=dict(
+                    out_dir=str(tmpdir.join(test_case)),
+                    note=test_case,
+                )
+            )
         )
 
         # Error handling

@@ -43,6 +43,7 @@ def _eval_task(
     _create_symlinks: bool,
     model_name: str,
     model_kwargs: dict = {},
+    use_data_tree_cache: bool = None,
     print_tree: Union[bool, str] = 'condensed',
     plot_only: Sequence[str] = None,
     plots_cfg: str = None,
@@ -105,9 +106,19 @@ def _eval_task(
 
     print("")
 
-    # Load the data tree
-    mv.dm.load_from_cfg()
+    # Load the data tree, potentially restoring from tree cache
+    if not use_data_tree_cache:
+        mv.dm.load_from_cfg()
 
+    else:
+        if not mv.dm.tree_cache_exists:
+            mv.dm.load_from_cfg()
+            mv.dm.dump()
+        else:
+            log.hilight("Restoring tree from cache file ...")
+            mv.dm.restore()
+
+    # Done loading
     if print_tree == 'condensed':
         print(mv.dm.tree_condensed)
 
