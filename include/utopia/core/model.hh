@@ -255,7 +255,9 @@ public:
         // Determine space and time
         _space(this->setup_space()),
         _time(0),
-        _time_max(parent_model.get_time_max()),
+        _time_max(_level == 1 ? parent_model.get_time_max()
+                  : get_as<Time>("num_steps", _cfg,
+                                 std::numeric_limits<Time>::max())),
 
         // Extract the other information from the parent model object
         _hdfgrp(parent_model.get_hdfgrp()->open_group(_name)),
@@ -369,7 +371,16 @@ public:
     }
 
     /// Return the maximum time possible for this model
+    /** \note   Will emit a warning via the logger if the this was set to
+     *          the maximum possible value, e.g. because this model is run as
+     *          a submodel of another model and the maximum time has no
+     *          relevance in such a context.
+     */
     Time get_time_max() const {
+        if (_time_max == std::numeric_limits<Time>::max()) {
+            this->_log->warn("Accessing the `time_max` of (sub-)model {} with "
+                "unlimited value!", this->get_full_name());
+        }
         return _time_max;
     }
 
@@ -525,7 +536,12 @@ public:
             _datamanager(static_cast<Derived&>(*this));
         }
 
-        _log->debug("Finished iteration: {:7d} / {:d}", _time, _time_max);
+        if (_level == 1) {
+            _log->debug("Finished iteration: {:7d} / {:d}", _time, _time_max);
+        }
+        else {
+            _log->debug("Finished iteration: {:7d}", _time);
+        }
     }
 
     /// Run the model from the current time to the maximum time
@@ -535,6 +551,14 @@ public:
       * done if ``_write_start == _time``.
       */
     void run () {
+        if (_level > 1 and get_time_max() == std::numeric_limits<Time>::max()) {
+            throw std::runtime_error(fmt::format("Cannot perform run on "
+                "(sub-)model {} with unlimited `time_max`. You need to provide "
+                "`num_steps` to the model's configuration in order to use the "
+                "`run` method. See the nested models guide for further "
+                "information!", get_full_name()));
+        }
+
         // First, attach the signal handler, such that the while loop below can
         // be left upon receiving of a signal.
         __attach_sig_handlers();

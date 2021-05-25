@@ -11,7 +11,7 @@
 ---
 seed: 42
 output_path: model_nested_test_tmpfile.h5
-num_steps: 3
+num_steps: 10
 write_every: 1
 monitor_emit_interval: 5.
 
@@ -21,23 +21,20 @@ log_levels:
   data_io: debug
 
 root: # RootModel
-  level: 0
+  stop_iterate_one: 3
+  start_iterate_another: 5
 
   one: # OneModel
-    level: 1
     log_level: trace
 
-    lazy: # DoNothingModel
-      level: 2
+    lazy: ~ # DoNothingModel
 
   another: # AnotherModel
-    level: 1
-
     one: # OneModel
-      level: 2
-
-      lazy: # DoNothingModel
-        level: 3
+      lazy: ~ # DoNothingModel
 
     lazy: # DoNothingModel
-      level: 2
+      # NOTE this model is run during prolog
+      num_steps: 20
+
+  idle: ~ #DoNothingModel

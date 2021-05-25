@@ -48,8 +48,8 @@ The configuration of model parameters and data writing remain accessible through
 
 .. note::
 
-  Do not use the ``run`` command of any sub-model, as it performs the global ``num_steps`` iterations (including ``prolog`` and ``epilog``) inherited throughout the hierarchy, rather than a model-level number of steps.
-  The ``time_max`` of a sub-model can be exceeded by iteration.
+  Avoid to use the ``run`` command of any sub-model; a ``run`` ends with the ``epilog`` and therefore no subsequential interaction with the sub-model should be performed.
+  The ``run`` of a sub-model is not possible unless the ``num_steps`` is explicitly set; if not set the ``_time_max`` is set to maximum value and a warning is issued when accessed.
   
   
 Handling interrupts (optional)
