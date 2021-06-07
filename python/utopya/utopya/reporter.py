@@ -3,11 +3,12 @@
 import os
 import sys
 import logging
+from shutil import get_terminal_size as _get_terminal_size
 from functools import partial
 from datetime import datetime as dt
 from datetime import timedelta
 from typing import Union, List, Callable, Dict
-from collections import OrderedDict, Counter
+from collections import OrderedDict, Counter, deque
 
 import numpy as np
 import paramspace as psp
@@ -17,8 +18,6 @@ from .tools import format_time, TTY_COLS
 # Initialise logger
 log = logging.getLogger(__name__)
 
-# Local constants
-TTY_MARGIN = 2
 
 # -----------------------------------------------------------------------------
 
@@ -229,7 +228,7 @@ class Reporter:
             write_to (Union[str, Dict[str, dict]], optional): The name of the
                 writer. If this is a dict of dict, the keys will be
                 interpreted as the names of the writers and the nested dict as
-                the \**kwargs to the writer function.
+                the ``**kwargs`` to the writer function.
             min_report_intv (float, optional): The minimum report interval (in
                 seconds) for this report format
             rf_kwargs (dict, optional): Further kwargs to ReportFormat.__init__
@@ -540,6 +539,16 @@ class Reporter:
 class WorkerManagerReporter(Reporter):
     """This class reports on the state of the WorkerManager."""
 
+    # Margin to use when writing to terminal
+    TTY_MARGIN = 4
+
+    # Symbols to use in progress bar parser
+    PROGRESS_BAR_SYMBOLS = dict(
+        finished="▓", active_progress="▒", active="░", space=" "
+    )
+
+    # .........................................................................
+
     def __init__(self, wm: 'utopya.workermanager.WorkerManager', *,
                  mv: 'utopya.multiverse.Multiverse'=None, **reporter_kwargs):
         """Initialize the Reporter for the WorkerManager.
@@ -580,6 +589,9 @@ class WorkerManagerReporter(Reporter):
         self.runtimes = []
         self.exit_codes = Counter()
 
+        # For retaining some information for ETA calculation
+        self._eta_info = dict()
+
         log.debug("WorkerManagerReporter initialised.")
 
     @property
@@ -591,16 +603,20 @@ class WorkerManagerReporter(Reporter):
 
     @property
     def task_counters(self) -> OrderedDict:
-        """Returns a dict of task statistics, including the following keys:
+        """Returns a dict of task counters:
 
             - ``total``: total number of registered WorkerManager tasks
-            - ``active``: number of active tasks
-            - ``finished``: number of finished tasks
+            - ``active``: number of currently active tasks
+            - ``finished``: number of finished tasks, *including* tasks that
+              were stopped via a stop condition
+            - ``stopped``: number of tasks for which stop conditions were
+              fulfilled, see :ref:`stop_conds`
         """
         num = OrderedDict()
         num['total'] = self.wm.task_count
         num['active'] = len(self.wm.active_tasks)
         num['finished'] = self.wm.num_finished_tasks
+        num['stopped'] = len(self.wm.stopped_tasks)
         return num
 
     @property
@@ -648,22 +664,11 @@ class WorkerManagerReporter(Reporter):
 
     @property
     def wm_times(self) -> dict:
-        """Return the characteristics WorkerManager times."""
-        d = dict(start=self.wm.times['start_working'],
-                 now=dt.now(), elapsed=self.wm_elapsed,
-                 est_left=None, est_end=None,
-                 end=self.wm.times['end_working'])
-
-        # Add estimate time remaining and eta, if the WorkerManager started
-        if d['start'] is not None:
-            progress = self.wm_progress
-            if progress > 0.:
-                d['est_left'] = (1-progress) / progress * d['elapsed']
-
-        if d['est_left'] is not None:
-            d['est_end'] = d['now'] + d['est_left']
-
-        return d
+        """Return the characteristics WorkerManager times. Calls
+        :py:meth:`~utopya.reporter.WorkerManagerReporter.get_progress_info`
+        without any additional arguments.
+        """
+        return self.get_progress_info()
 
     # Methods working on data .................................................
 
@@ -716,6 +721,115 @@ class WorkerManagerReporter(Reporter):
 
         return d
 
+    def get_progress_info(self, **eta_options) -> Dict[str, float]:
+        """Compiles a dict containing progress information for the current
+        work session.
+
+        Args:
+            **eta_options: Passed on to method calculating ``est_left``,
+                :py:meth:`~utopya.reporter.WorkerManagerReporter._compute_est_left`.
+
+        Returns:
+            Dict[str, float]: Progress information. Guaranteed to contain the
+                keys ``start``, ``now``, ``elapsed``, ``est_left``,
+                ``est_end``, and ``end``.
+        """
+        d = dict(
+            start=self.wm.times['start_working'],
+            now=dt.now(),
+            elapsed=self.wm_elapsed,
+            est_left=None,
+            est_end=None,
+            end=self.wm.times['end_working'],
+        )
+
+        # Add estimate time remaining and ETA, if the WorkerManager started.
+        if d['start'] is not None:
+            progress = self.wm_progress
+            if progress > 0.:
+                d['est_left'] = self._compute_est_left(progress=progress,
+                                                       elapsed=d['elapsed'],
+                                                       **eta_options)
+
+        if d['est_left'] is not None:
+            d['est_end'] = d['now'] + d['est_left']
+
+        return d
+
+    def _compute_est_left(
+        self,
+        *,
+        progress: float,
+        elapsed: timedelta,
+        mode: str = "from_start",
+        progress_buffer_size: int = 60,
+    ) -> timedelta:
+        """Computes the estimated time left until the end of the work session
+        (ETA) using the current progress value and the elapsed time.
+        Depending on ``mode``, additional information may be included in the
+        calculation.
+
+        Args:
+            progress (float): The current progress value, in (0, 1]
+            elapsed (timedelta): The elapsed time since start
+            mode (str, optional): By which mode to calculate the ETA. Available
+                modes are:
+
+                    - ``from_start``, where ETA is computed from the start of
+                        work session.
+                    - ``from_buffer``, where ETA is computed from a more
+                        recent point during the work session. This uses a
+                        buffer to keep track of recent progress and computes
+                        the ETA against the oldest record (controlled by
+                        argument ``progress_buffer_size``), giving more
+                        accurate estimates for long-running work sessions.
+
+            progress_buffer_size (int, optional): The size of the ring buffer
+                used in  ``from_buffer`` mode.
+
+        Returns:
+            timedelta: Estimate for how much time is left until the end of the
+                work session.
+        """
+        if mode is None or mode == "from_start":
+            return ((1. - progress) / progress) * elapsed
+
+        elif mode == "from_buffer":
+            # Get / set up the progress buffer: a circular buffer which holds
+            # at most ``progress_buffer_size`` elements.
+            # Each element is a (progress, elapsed) tuple.
+            try:
+                pbuf = self._eta_info["progress_buffer"]
+
+            except KeyError:
+                log.debug("Setting up progress buffer (maxlen: %d) ...",
+                          progress_buffer_size)
+                pbuf = deque([(0., timedelta(0.))],
+                             maxlen=progress_buffer_size)
+                self._eta_info["progress_buffer"] = pbuf
+
+            # Add new information to buffer
+            pbuf.append((progress, elapsed))
+
+            # Compute progress speed compared to first element of buffer
+            _progress, _elapsed = pbuf[0]
+
+            if elapsed == _elapsed:
+                # Buffer useless, fall back to estimating from beginning
+                return ((1. - progress) / progress) * elapsed
+
+            dp = (progress - _progress)
+            dp = dp if dp > 0 else progress  # fallback if no progress was made
+
+            return ((1. - progress) / dp) * (elapsed - _elapsed)
+
+        else:
+            raise ValueError(
+                f"Invalid ETA computation mode '{mode}'! "
+                "Available modes: from_start, from_buffer"
+            )
+
+
     # Parser methods ..........................................................
 
     # One-line parsers . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -751,21 +865,46 @@ class WorkerManagerReporter(Reporter):
                           digs=len(str(cntr['total'])),
                           p=cntr['finished']/cntr['total'] * 100))
 
-    def _parse_progress_bar(self, *,
-                            num_cols: int=(TTY_COLS - TTY_MARGIN),
-                            show_total: bool=False, show_times: bool=False,
-                            report_no: int=None) -> str:
+    def _parse_progress_bar(
+        self, *,
+        num_cols: Union[str, int]="fixed",
+        fstr: str="  ╠{ticks[0]:}{ticks[1]:}{ticks[2]:}{ticks[3]:}╣ {info:}{times:}",
+        info_fstr: str="{total_progress:>5.1f}% ",
+        show_times: bool=False,
+        times_fstr: str="| {elapsed:} elapsed | ~{est_left:} left ",
+        times_fstr_final: str="| finished in {elapsed:} ",
+        times_kwargs: dict={},
+        report_no: int=None,
+    ) -> str:
         """Returns a progress bar.
 
         It shows the amount of finished tasks, active tasks, and a percentage.
 
         Args:
-            num_cols (int, optional): The number of columns available for
-                creating the progress bar.
-            show_total (bool, optional): Whether to show the total number of
-                tasks alongside the percentage.
+            num_cols (Union[str, int], optional): The number of columns
+                available for creating the progress bar. Can also be a string
+                ``adaptive`` to poll terminal size upon each call, or ``fixed``
+                to use the number of columns determined at import time.
+            fstr (str, optional): The format string for the final output.
+                Should contain the ``ticks`` 4-tuple, which makes up the
+                progress bar, and can optionally contain the``info`` and
+                ``times`` segments, formatted using the respective format
+                string arguments.
+            info_fstr (str, optional): The format string for the ``info``
+                section of the final output. Available keys:
+
+                    - ``total_progress``
+                    - ``active_progress``
+                    - ``cnt``, the task counters dictionary, see:
+                        :py:meth:`~utopya.reporter.WorkerManagerReporter.task_counters`
+
             show_times (bool, optional): Whether to show a short version of the
                 results of the times parser
+            times_fstr (str, optional): Format string for times information
+            times_fstr_final (str, optional): Format string for times
+                information once the work session has ended
+            times_kwargs (dict, optional): Passed on to ``times`` parser.
+                Only used if ``show_times`` is set.
             report_no (int, optional): Passed by ReportFormat call
 
         Returns:
@@ -778,35 +917,38 @@ class WorkerManagerReporter(Reporter):
             return "(No tasks assigned to WorkerManager yet.)"
 
         # Determine the format string for the times
-        if show_times and self.wm_progress < 1.:
-            times_fstr = "| {elapsed:} elapsed | ~{est_left:} left "
-            times = self._parse_times(fstr=times_fstr)
-        elif show_times:
-            times_fstr = "| finished in {elapsed:}  "
-            times = self._parse_times(fstr=times_fstr)
+        if show_times:
+            if self.wm_progress == 1.:
+                times_fstr = times_fstr_final
+            times_str = self._parse_times(fstr=times_fstr, **times_kwargs)
+
         else:
-            times = ""
+            times_str = ""
+
+        # Determine number of available columns
+        if num_cols == "adaptive":
+            num_cols = (
+                _get_terminal_size((TTY_COLS, 20)).columns - self.TTY_MARGIN
+            )
+
+        elif num_cols == "fixed":
+            num_cols = TTY_COLS - self.TTY_MARGIN
 
         # Get the active tasks' mean progress and calculate the total progress
+        # (calling the wm_progress property would lead to inconsistencies)
         active_progress = self.wm_active_tasks_progress
         total_progress = (  cntr['finished']/cntr['total']
                           + active_progress*cntr['active']/cntr['total'])
 
-        # Define the symbols and format strings to use, calculating the
-        # progress bar width alongside
-        syms = dict(finished="▓", active_progress="▒", active="░", space=" ")
+        # Get the information string ready
+        info_str = info_fstr.format(total_progress=total_progress * 100,
+                                    active_progress=active_progress * 100,
+                                    cnt=cntr)
 
-        # Determine the format string and the progress bar width
-        if show_total:
-            fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}%  of {total:d} {times:} "
-            pb_width = num_cols - (13 + 5
-                                   + len(str(cntr['total'])) + len(times))
+        # Determine the progress bar width
+        pb_width = num_cols - (5 + len(info_str) + len(times_str))
 
-        else:
-            fstr = "  ╠{:}{:}{:}{:}╣ {p:>5.1f}% {times:} "
-            pb_width = num_cols - (8 + 5 + len(times))
-
-        # Only return percentage indicator if the width would be very short
+        # Only return percentage indicator if the width would be _very_ short
         if pb_width < 4:
             return " {:>5.1f}% ".format(cntr['finished']/cntr['total'] * 100)
 
@@ -825,13 +967,17 @@ class WorkerManagerReporter(Reporter):
         # Calculate spaces from the sum of all of the above
         ticks['space'] = pb_width - sum(ticks.values())
 
-        # Format the progress bar
-        return (fstr.format(syms['finished'] * ticks['finished'],
-                            syms['active_progress'] * ticks['active_progress'],
-                            syms['active'] * ticks['active'],
-                            syms['space'] * ticks['space'],
-                            p=total_progress * 100,
-                            total=cntr['total'], times=times))
+        # Have all info now, let's go format!
+        syms = self.PROGRESS_BAR_SYMBOLS
+        return fstr.format(
+            ticks=(
+                syms['finished'] * ticks['finished'],
+                syms['active_progress'] * ticks['active_progress'],
+                syms['active'] * ticks['active'],
+                syms['space'] * ticks['space'],
+            ),
+            info=info_str, times=times_str,
+        )
 
     def _parse_times(self, *,
                      fstr: str="Elapsed:  {elapsed:<8s}  |  Est. left:  {est_left:<8s}  |  Est. end:  {est_end:<10s}",
@@ -839,8 +985,10 @@ class WorkerManagerReporter(Reporter):
                      timefstr_full: str="%d.%m., %H:%M:%S",
                      use_relative: bool=True,
                      times: dict=None,
-                     report_no: int=None) -> str:
-        """Parses the worker manager time information and est time left
+                     report_no: int=None,
+                     **progress_info_kwargs) -> str:
+        """Parses the worker manager time information, including estimated
+        time left or others.
 
         Args:
             fstr (str, optional): The main format string; gets as keys the
@@ -855,13 +1003,15 @@ class WorkerManagerReporter(Reporter):
             times (dict, optional): A dict of times to use; this is mainly
                 for testing purposes!
             report_no (int, optional): The report number passed by ReportFormat
+            **progress_info_kwargs: Passed on to method calculating progress
+                :py:meth:`~utopya.reporter.WorkerManagerReporter.get_progress_info`
 
         Returns:
             str: A string representation of the time information
         """
-        # Get the times from the worker manager, if not given
+        # If no explicit times were given, calculate them now
         if times is None:
-            times = self.wm_times
+            times = self.get_progress_info(**progress_info_kwargs)
 
         # The dict of strings that is filled and passed to the fstr
         tstrs = dict()

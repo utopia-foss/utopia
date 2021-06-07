@@ -138,7 +138,7 @@ def test_add_report_format(rep):
     # Invalid parser
     with pytest.raises(ValueError, match="No parser named"):
         add_rf('invalid')
-    
+
     # Invalid writer
     with pytest.raises(ValueError, match="No writer named"):
         add_rf('foo', parser='progress', write_to='invalid')
@@ -206,15 +206,19 @@ def test_parsers(rf_dict, sleep_task):
     rep.min_report_intv = None
     ptc = rep._parse_task_counters
     pp = rep._parse_progress
-    ppb = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=23, **kws)
-    ppbt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=30,
-                                                     show_total=True, **kws)
-    ppbtt = lambda *a, **kws: rep._parse_progress_bar(*a, num_cols=60,
-                                                      show_total=True,
-                                                      show_times=True, **kws)
+    ppb = lambda *a, n=23, **kws: rep._parse_progress_bar(
+        *a, num_cols=n, **kws
+    )
+    ppbt = lambda *a, n=30, **kws: rep._parse_progress_bar(
+        *a, num_cols=n, **kws,
+        info_fstr="{total_progress:>5.1f}%  of {cnt[total]} "
+    )
+    ppbtt = lambda *a, n=60, **kws: rep._parse_progress_bar(
+        *a, num_cols=n, show_times=True, **kws
+    )
 
     # Test without tasks assigned
-    assert ptc() == "total: 0,  active: 0,  finished: 0"
+    assert ptc() == "total: 0,  active: 0,  finished: 0,  stopped: 0"
     assert pp() == "(No tasks assigned to WorkerManager yet.)"
     assert ppb() == "(No tasks assigned to WorkerManager yet.)"
     assert ppbt() == "(No tasks assigned to WorkerManager yet.)"
@@ -225,37 +229,58 @@ def test_parsers(rf_dict, sleep_task):
         wm.add_task(**sleep_task)
 
     # Test the initial return strings
-    assert ptc() == "total: 11,  active: 0,  finished: 0"
+    assert ptc() == "total: 11,  active: 0,  finished: 0,  stopped: 0"
     assert pp() == "Finished   0 / 11  (0.0%)"
-    assert ppb() == "  ╠          ╣   0.0%  "
-    assert ppbt() == "  ╠          ╣   0.0%  of 11  "
-    assert re.match("  ╠(.*)╣   0.0%  of 11 | * elapsed | ~* left  ", ppbtt())
+    assert ppb() == "  ╠           ╣   0.0% "
+    assert ppbt() == "  ╠           ╣   0.0%  of 11 "
+    assert re.match("  ╠(.*)╣   0.0% | * elapsed | ~* left  ", ppbtt())
 
     # For the progress bars, ensure the length matches the given num_cols
     assert len(ppb()) == 23
     assert len(ppbt()) == 30
     assert len(ppbtt()) == 60
-    
+
     # Start working and check again afterwards
     rep.wm.start_working()
-    assert ptc() == "total: 11,  active: 0,  finished: 11"
+    assert ptc() == "total: 11,  active: 0,  finished: 11,  stopped: 0"
     assert pp() == "Finished  11 / 11  (100.0%)"
-    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  "
-    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of 11  "
-    assert re.match("  ╠(▓*)╣ 100.0%  of 11 | finished in *  ",
-                    ppbtt())
+    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓▓╣ 100.0% "
+    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓▓╣ 100.0%  of 11 "
+    assert re.match("  ╠(▓*)╣ 100.0% | finished in *  ", ppbtt())
 
     # Add another task to the WorkerManager, which should change the counts
     rep.wm.add_task(**sleep_task)
-    assert ptc() == "total: 12,  active: 0,  finished: 11"
+    assert ptc() == "total: 12,  active: 0,  finished: 11,  stopped: 0"
     assert pp() == "Finished  11 / 12  (91.7%)"
-    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  "
-    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓ ╣  91.7%  of 12  "
-    assert re.match("  ╠(▓*)(.*)╣  91.7%  of 12 | * elapsed | ~* left  ",
-                    ppbtt())
+    assert ppb() == "  ╠▓▓▓▓▓▓▓▓▓▓ ╣  91.7% "
+    assert ppbt() == "  ╠▓▓▓▓▓▓▓▓▓▓ ╣  91.7%  of 12 "
+    assert re.match("  ╠(▓*)(.*)╣  91.7% | * elapsed | ~* left  ", ppbtt())
 
     # Very short progress bar should return only the percentage indicator
     assert rep._parse_progress_bar(num_cols=10) == "  91.7% "
+
+    # Can also use adaptive or fixed number of columns
+    assert re.match("  ╠(▓*)(.*)╣  91.7% ", ppb(n="fixed"))
+    assert re.match("  ╠(▓*)(.*)╣  91.7% ", ppb(n="adaptive"))
+
+    # Parsing time is fast, even for adaptive column width
+    N = 10000
+
+    t0 = dt.now()
+    for _ in range(N):
+        ppbtt(n="adaptive")
+    seconds_needed = (dt.now() - t0).total_seconds()
+    print(f"Needed {seconds_needed:.3g}s for parsing progress bar {N} times.")
+    assert float(seconds_needed/N) < 500.e-6  # very generous -> more robust
+
+    # ... or with advanced ETA estimation
+    t0 = dt.now()
+    for _ in range(N):
+        ppbtt(n="adaptive", times_kwargs=dict(mode="from_buffer"))
+    seconds_needed = (dt.now() - t0).total_seconds()
+    print(f"Needed {seconds_needed:.3g}s for parsing progress bar (with "
+          f"advanced ETA estimation) {N} times.")
+    assert float(seconds_needed/N) < 500.e-6  # very generous -> more robust
 
 def test_report(rep):
     """Tests the report method."""
@@ -409,7 +434,7 @@ def test_write_to_file(wm, rf_dict, tmpdir):
 
     # Read file content
     with open(str(report_file), 'r') as f:
-        assert f.read() == "total: 11,  active: 0,  finished: 0"
+        assert f.read() == "total: 11,  active: 0,  finished: 0,  stopped: 0"
 
     # Unset the report directory and try with relative path
     rep.report_dir = None
