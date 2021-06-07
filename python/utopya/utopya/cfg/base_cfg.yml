@@ -71,18 +71,48 @@ parameters_to_validate: {}
 reporter:
   # Define report formats, which are accessible, e.g. from the WorkerManager
   report_formats:
-    while_working: &while_working     # Name of the report format specification
+    progress_bar:                     # Name of the report format specification
       parser: progress_bar            # The parser to use
       write_to: stdout_noreturn       # The writer to use
       min_report_intv: 0.5            # Required time (in s) between writes
-      # All further kwargs on this level are passed to the parser
+
+      # -- All further kwargs on this level are passed to the parser
+      # Terminal width for the progress bar
+      # Can also be `adaptive` (poll each time), or `fixed` (poll once)
+      num_cols: adaptive
+
+      # The format string to use for progress information
+      # Available keys:
+      #   - `total_progress` (in %)
+      #   - `active_progress` (mean progress of _active_ simulations, in %)
+      #   - `cnt` (dict of counters: `total`, `finished`, `active`)
+      info_fstr: "{total_progress:>5.1f}% "
+      # Example of how to access counters in format string:
+      # info_fstr: "finished {cnt[finished]}/{cnt[total]} "
+
+      # Whether to show time information alongside the progress bar
       show_times: true
 
-    monitor_updated:
-      <<: *while_working
+      # How to display time information.
+      # Available keys: `elapsed`, `est_left`, `est_end`, `start`, `now`
+      # (see `times` parser for more information)
+      times_fstr: "| {elapsed:>7s} elapsed | ~{est_left:>7s} left "
+      times_fstr_final: "| finished in {elapsed:} "
+      times_kwargs:
+        # How to compute the estimated time left to finish the work session
+        # Available modes:
+        #   - `from_start`:  extrapolates from progress made since start
+        #   - `from_buffer`: uses a buffer to store recent progress
+        #                    information and use the oldest value for
+        #                    making the estimate; see `progress_buffer_size`
+        mode: from_buffer
 
-    after_work:
-      <<: *while_working
+        # Number of records kept for computing ETA in `from_buffer` mode.
+        # This is in units of parser invocations, so goes back *at least* a
+        # a time interval of `min_report_intv * progress_buffer_size`.
+        # If the reporter is called less frequently (e.g. because of a larger
+        # model-side `monitor_emit_interval`), this interval will be longer.
+        progress_buffer_size: 90
 
     # Creates a report file containing runtime statistics
     report_file:
@@ -158,18 +188,17 @@ worker_manager:
   # May be: `monitor_updated`, `periodic_callback`
   save_streams_on: [monitor_updated]
 
-  # Report format specifications at different points of the WM's operation
-  # These report formats were defined in the reporter and can be referred to
-  # by name here. They can also be lists, if multiple report formats should
-  # be invoked.
+  # Reporters to invoke at different points of the WorkerManager's operation.
+  # Keys refer to events, values are lists of report format names, which can be
+  # defined via the WorkerManagerReporter (see `reporter.report_formats` above)
   rf_spec:
     before_working: [sweep_info]
-    while_working: [while_working]
-    task_spawned: [while_working]
-    monitor_updated: [monitor_updated]
-    task_finished: [while_working, report_file]
-    after_work: [after_work, report_file]
-    after_abort: [after_work, report_file]
+    while_working: [progress_bar]
+    task_spawned: [progress_bar]
+    monitor_updated: [progress_bar]
+    task_finished: [progress_bar, report_file]
+    after_work: [progress_bar, report_file]
+    after_abort: [progress_bar, report_file]
 
 
 # Configuration for the WorkerManager.start_working method

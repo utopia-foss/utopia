@@ -151,3 +151,4 @@ py:meth utopya.datagroup.GraphGroup.create_graph
 
 # ... because reference is not part of API doc
 py:func utopya.task._follow
+py:meth utopya.reporter.WorkerManagerReporter._compute_est_left

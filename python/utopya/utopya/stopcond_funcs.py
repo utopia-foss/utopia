@@ -15,6 +15,9 @@ from paramspace.tools import recursive_getitem as _recursive_getitem
 # Initialise logger
 log = logging.getLogger(__name__)
 
+# To not repeatedly show warnings, keep track of failed checks
+_FAILED_MONITOR_ENTRY_CHECKS = []
+
 
 # -----------------------------------------------------------------------------
 
@@ -56,11 +59,14 @@ def check_monitor_entry(task: 'utopya.task.WorkerTask', *, entry_name: str,
         entry = _recursive_getitem(latest_monitor, keys=entry_name.split("."))
 
     except KeyError:
-        log.caution(
-            "Failed evaluating stop condition due to missing entry '%s' in "
-            "monitor output! Available monitor data: %s",
-            entry_name, latest_monitor,
-        )
+        # Only warn once
+        if entry_name not in _FAILED_MONITOR_ENTRY_CHECKS:
+            log.caution(
+                "Failed evaluating stop condition due to missing entry '%s' "
+                "in monitor output!\nAvailable monitor data: %s",
+                entry_name, latest_monitor,
+            )
+            _FAILED_MONITOR_ENTRY_CHECKS.append(entry_name)
         return False
 
     # And perform the comparison
