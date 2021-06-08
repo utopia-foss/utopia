@@ -23,20 +23,20 @@ cell_manager:
   cell_params:
     # Initial tree density, value in [0, 1]
     # With this probability, a cell is initialized as tree (instead of empty)
-    p_tree: 0
+    p_tree: !is-probability 0
 
 # --- Model Dynamics ----------------------------------------------------------
 # Probability per site and time step to transition from state empty to tree
-p_growth: 7.5e-3
+p_growth: !is-probability 7.5e-3
 
 # Probability per site and time step for a tree cell to not become infected if
 # an infected cell is in the neighborhood. This probability applies per event
 # so it does _not_ mean that an immune cell is also immune in the next
 # iteration step
-p_immunity: 0.
+p_immunity: !is-probability 0.
 
 # Probability per site and time step for a random point infection of a tree
-p_infect: 0.
+p_infect: !is-probability 0.
 # NOTE This is affected by the infection control, see below.
 
 # --- Infection Control -------------------------------------------------------
@@ -45,10 +45,10 @@ p_infect: 0.
 # beginning of an iteration step. It's effect is seen in the following
 # time step
 infection_control:
-  enabled: false
+  enabled: !is-bool false
 
   # The number of additional infections to be placed on the grid
-  num_additional_infections: 10
+  num_additional_infections: !is-unsigned 10
 
   # Add the additional infections at the given times
   # Note the the !listgen tag creates a list from the parameters 
@@ -72,17 +72,19 @@ infection_control:
 
 # Turn some cells into stones: these do not take part in any of the processes
 stones:
-  enabled: false
+  enabled: !is-bool false
   mode: clustered_simple
 
   # Clustering parameters
-  p_seed: .02                # Probability with which a cell is a cluster seed
-  p_attach: .1               # Attachment probability (per neighbor)
-  num_passes: 5              # How many attachment procedures to perform
+  # Probability with which a cell is a cluster seed
+  p_seed: !is-probability .02
+  # Attachment probability (per neighbor) 
+  p_attach: !is-probability .1
+  num_passes: !is-unsigned 5  # How many attachment procedures to perform
 
 # Set some cells to be permanently infected (invoked after stones are set)
 infection_source:
-  enabled: true
+  enabled: !is-bool true
   mode: boundary
 
   # Boundary selection parameters (requires space to be set to NON-periodic!)
@@ -91,4 +93,4 @@ infection_source:
 # --- Output Configuration ----------------------------------------------------
 # Whether to only write out the densities; useful for runs on large grids
 # where spatial information is not needed.
-write_only_densities: false
+write_only_densities: !is-bool false

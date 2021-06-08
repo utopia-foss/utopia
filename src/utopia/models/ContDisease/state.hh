@@ -42,12 +42,6 @@ struct State {
         if (cfg["p_tree"]) {
             const auto init_density = get_as<double>("p_tree", cfg);
 
-            if (init_density < 0. or init_density > 1.) {
-                throw std::invalid_argument("p_tree needs to be in "
-                    "interval [0., 1.], but was " 
-                    + std::to_string(init_density) + "!");
-            }
-
             // With this probability, the cell state is a tree
             if (std::uniform_real_distribution<double>(0., 1.)(*rng) 
                 < init_density) 

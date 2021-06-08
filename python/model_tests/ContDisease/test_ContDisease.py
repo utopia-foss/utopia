@@ -9,6 +9,7 @@ from utopya.testtools import ModelTest
 # Configure the ModelTest class for ContDisease
 mtc = ModelTest("ContDisease", test_file=__file__)
 
+
 # Tests -----------------------------------------------------------------------
 
 def test_initial_state_empty():
@@ -18,11 +19,49 @@ def test_initial_state_empty():
     """
     mv, dm = mtc.create_run_load(from_cfg="initial_state_empty.yml")
 
-    # Get data
-    grp = dm['multiverse'][0]['data/ContDisease']
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
 
-    # Check if all cells are empty
-    assert (grp["kind"] == 0).all()
+        # Check if all cells are empty
+        assert (grp["kind"] == 0).all()
+
+
+def test_initial_state_trees():
+    """
+    Test that the model runs fine with every cell is a "tree".
+    """
+    mv, dm = mtc.create_run_load(
+            from_cfg="initial_state_tree.yml")
+
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
+        data = grp["kind"]
+
+        # Check if all cells are trees.
+        assert (data == 1).all()
+
+
+def test_initial_state_source_south():
+    """
+    Initial state is 'empty', but an infection source at the southern side
+    is activated.
+    """
+    mv, dm = mtc.create_run_load(
+            from_cfg="initial_state_empty_source_south.yml")
+
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
+        data = grp["kind"]
+
+        # Check if all cells are empty, apart from the lowest horizontal row
+        assert (data.isel(y=slice(1, None)) == 0).all()
+
+        # Check if the lowest row is an infection source for all times
+        assert (data.isel(y=0) == 3).all()
+
 
 def test_initial_stones():
     """
@@ -30,28 +69,33 @@ def test_initial_stones():
     """
     mv, dm = mtc.create_run_load(from_cfg="initial_stones.yml")
 
-    # Get data
-    grp = dm['multiverse'][0]['data/ContDisease']
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
 
-    # Check if any cell is in stone state
-    assert (grp["kind"] == 4).any()
+        # Check if any cell is in stone state
+        assert (grp["kind"] == 4).any()
 
-def test_initial_state_source_south():
+
+def test_write_densities_only():
     """
-    Initial state is 'empty', but an infection source at the southern side
-    is activated.
-    """
-    _,dm = mtc.create_run_load(from_cfg="initial_state_empty_source_south.yml")
+    Test the correct behavior if the write only densities flag is set.
+    """ 
+    mv, dm = mtc.create_run_load(from_cfg="densities_only.yml")
 
-    # Get data
-    grp = dm['multiverse'][0]['data/ContDisease']
-    data = grp["kind"]
+    for uni in dm['multiverse'].values():
+        #Get data
+        data = uni['data']
+        model = data['ContDisease']
+        densities = data['ContDisease/densities']
+        
+        # Assert that only one dataset exists
+        assert len(model) == 1
 
-    # Check if all cells are empty, apart from the lowest horizontal row
-    assert (data.isel(y=slice(1, None)) == 0).all()
-
-    # Check if the lowest row is an infection source for all times
-    assert (data.isel(y=0) == 3).all()
+        # Assert that the density dataset has the correct length and dimensions
+        assert densities.sizes['time'] == 4
+        assert densities.sizes['kind']
+    
 
 def test_growing_dynamic():
     """
@@ -61,12 +105,14 @@ def test_growing_dynamic():
 
     mv, dm = mtc.create_run_load(from_cfg="growing_dynamic.yml")
 
-    # Get data
-    grp = dm['multiverse'][0]['data/ContDisease']
-    data = grp["kind"]
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
+        data = grp["kind"]
 
-    # Check that all cells are trees after one timestep
-    assert (data.isel(time=1) == 1).all()
+        # Check that all cells are trees after one timestep
+        assert (data.isel(time=1) == 1).all()
+
 
 def test_infection_dynamic():
     """
@@ -77,41 +123,43 @@ def test_infection_dynamic():
 
     mv, dm = mtc.create_run_load(from_cfg="infection_dynamic.yml")
 
-    # Get data
-    grp = dm['multiverse'][0]['data/ContDisease']
-    data = grp["kind"]
+    for uni in dm['multiverse'].values():
+        # Get data
+        grp = uni['data/ContDisease']
+        data = grp["kind"]
 
-    # Check that the last row is an infection source
-    assert (data.isel(y=0) == 3).all()
+        # Check that the last row is an infection source
+        assert (data.isel(y=0) == 3).all()
 
-    # Check that only the second row is infected after two timesteps and the
-    # first are trees.
-    assert (data.isel(time=2, y=2) == 1).all()
-    assert (data.isel(time=2, y=1) == 2).all()
-    assert (data.isel(time=2, y=0) == 3).all()
+        # Check that only the second row is infected after two timesteps and the
+        # first are trees.
+        assert (data.isel(time=2, y=2) == 1).all()
+        assert (data.isel(time=2, y=1) == 2).all()
+        assert (data.isel(time=2, y=0) == 3).all()
 
-    # Check that the second row is empty after three timesteps and the
-    # first is infected.
-    assert (data.isel(time=3, y=2) == 2).all()
-    assert (data.isel(time=3, y=1) == 0).all()
-    assert (data.isel(time=3, y=0) == 3).all()
+        # Check that the second row is empty after three timesteps and the
+        # first is infected.
+        assert (data.isel(time=3, y=2) == 2).all()
+        assert (data.isel(time=3, y=1) == 0).all()
+        assert (data.isel(time=3, y=0) == 3).all()
 
 
 def test_densities_calculation():
     mv, dm = mtc.create_run_load(from_cfg="densities_calculation.yml")
 
-    # Get the 2D densities dataset
-    densities = dm['multiverse/0/data/ContDisease/densities']
+    for uni in dm['multiverse'].values():
+        # Get the 2D densities dataset
+        densities = uni['data/ContDisease/densities']
 
-    # Assert that the added up densities are approximately equal to 1
-    assert np.isclose(densities.sum('kind'), 1.).all()
+        # Assert that the added up densities are approximately equal to 1
+        assert np.isclose(densities.sum('kind'), 1.).all()
 
-    # Densities should always be in interval [0., 1.]
-    assert (0. <= densities).all()
-    assert (densities <= 1.).all()
+        # Densities should always be in interval [0., 1.]
+        assert (0. <= densities).all()
+        assert (densities <= 1.).all()
 
-    # Initially, in this case, no tree should be infected -> density zero
-    assert densities.sel(time=0, kind="infected").item() == 0
+        # Initially, in this case, no tree should be infected -> density zero
+        assert densities.sel(time=0, kind="infected").item() == 0
 
 
 def test_infection_control_add_inf():
@@ -121,33 +169,34 @@ def test_infection_control_add_inf():
     """
     mv, dm = mtc.create_run_load(from_cfg="infection_control_add_inf.yml")
 
-    # Get the kind of the cells
-    data = dm['multiverse/0/data/ContDisease/kind']
+    for uni in dm['multiverse'].values():
+        # Get the kind of the cells
+        data = uni['data/ContDisease/kind']
 
-    for t in range(20):
-        s = data.isel(time=t)
-        
-        unique, counts = np.unique(s, return_counts=True)
-        d_counts = {u:c for u, c in zip(unique, counts)}
-        print(d_counts)
+        for t in range(20):
+            s = data.isel(time=t)
+            
+            # Extracting unique data and their abundance.
+            unique, counts = np.unique(s, return_counts=True)
+            # Redordering them to a dict
+            d_counts = {u:c for u, c in zip(unique, counts)}
+            # At the start there should only be trees and empty spots
+            if t < 5:
+                assert 2 not in unique  # no infected
+                assert 3 not in unique  # no infection source
+                assert 4 not in unique  # no stones
 
-        # At the start there should only be trees and empty spots
-        if t < 5:
-            assert 2 not in unique  # no infected
-            assert 3 not in unique  # no infection source
-            assert 4 not in unique  # no stones
+            # The time step after the infection control should have a lot fewer
+            # trees than in the previous iteration step because in every infection 
+            # control step all trees are getting infected and only the newly grown 
+            # trees remain
+            if t in [6, 11, 16]:
+                s_prev = data.isel(time=t-1)
+            
+                unique_prev, counts_prev = np.unique(s_prev, return_counts=True)
+                d_counts_prev = {u:c for u, c in zip(unique_prev, counts_prev)}
 
-        # The time step after the infection control should have a lot fewer
-        # trees than in the previous iteration step because in every infection 
-        # control step all trees are getting infected and only the newly grown 
-        # trees remain
-        if t in [6, 11, 16]:
-            s_prev = data.isel(time=t-1)
-        
-            unique_prev, counts_prev = np.unique(s_prev, return_counts=True)
-            d_counts_prev = {u:c for u, c in zip(unique_prev, counts_prev)}
-
-            assert d_counts[1] < d_counts_prev[1]
+                assert d_counts[1] < d_counts_prev[1]
 
 
 def test_infection_control_change_p_random_inf():
@@ -157,30 +206,88 @@ def test_infection_control_change_p_random_inf():
     """
     mv, dm = mtc.create_run_load(from_cfg="infection_control_change_p_random_inf.yml")
 
-    # Get the kind of the cells
-    data = dm['multiverse/0/data/ContDisease/kind']
+    for uni in dm['multiverse'].values():
+        # Get the kind of the cells
+        data = uni['data/ContDisease/kind']
 
-    for t in range(20):
-        s = data.isel(time=t)
-        
-        unique, counts = np.unique(s, return_counts=True)
-        d_counts = {u:c for u, c in zip(unique, counts)}
+        for t in range(20):
+            s = data.isel(time=t)
+            
+            # Extracting unique data and their abundance.
+            unique, counts = np.unique(s, return_counts=True)
+            # Redordering them to a dict
+            d_counts = {u:c for u, c in zip(unique, counts)}
 
-        # The probability for infection should be set to 0 the first 10 steps
-        if t < 10:
-            assert 2 not in unique
+            # The probability for infection should be set to 0 the first 10 steps
+            if t < 10:
+                assert 2 not in unique
 
-        # There are tree cells as well as infected cells for 5 time steps
-        # However, there should be more tree cells than infected once
-        if 10 < t < 15:
-            assert 2 in unique
-            assert 1 in unique
-            assert d_counts[1] > d_counts[2]
+            # There are tree cells as well as infected cells for 5 time steps
+            # However, there should be more tree cells than infected once
+            if 10 < t < 15:
+                assert 2 in unique
+                assert 1 in unique
+                assert d_counts[1] > d_counts[2]
 
-        # The infection probability now is 1, so there should be more infected
-        # cells than tree cells
-        # NOTE that this test is a bit fragile in the sense that it can potentially
-        #      be that it fails due to randomness.
-        if t == 16:
-            assert 2 in unique
-            assert d_counts[2] > d_counts[1]
+            # The infection probability now is 1, so there should be more infected
+            # cells than tree cells
+            # NOTE that this test is a bit fragile in the sense that it can potentially
+            #      be that it fails due to randomness.
+            if t == 16:
+                assert 2 in unique
+                assert d_counts[2] > d_counts[1]
+
+
+def test_invalid_argument():
+    """
+    Test if the model throws, if false or invalid arguments are given, which 
+    are not covered by parameter checks on config file side. 
+    """
+
+    with pytest.raises(SystemExit):
+        mtc.create_run_load(
+                parameter_space=dict(
+                    ContDisease=dict(
+                        infection_control=dict(
+                            enabled = True,
+                            change_p_infect = [[-1, 0.]]
+                        )
+                    )
+                )
+            )
+
+    with pytest.raises(SystemExit):
+        mtc.create_run_load(
+                parameter_space=dict(
+                    ContDisease=dict(
+                        infection_control=dict(
+                            enabled = True,
+                            change_p_infect = [[1, 2.]]
+                        )
+                    )
+                )
+            )
+
+    with pytest.raises(SystemExit):
+        mtc.create_run_load(
+                parameter_space=dict(
+                    ContDisease=dict(
+                        infection_control=dict(
+                            enabled = True,
+                            change_p_infect = ["not a pair"]
+                        )
+                    )
+                )
+            )
+
+    with pytest.raises(SystemExit):
+        mtc.create_run_load(
+                parameter_space=dict(
+                    ContDisease=dict(
+                        infection_control=dict(
+                            enabled = True,
+                            change_p_infect = "not a sequence"
+                        )
+                    )
+                )
+            )

@@ -1,0 +1,14 @@
+# Configuration file used to test that the initialization of the model is correct
+---
+
+parameter_space:
+  num_steps: 20
+
+  ContDisease:
+    infection_control:
+      enabled: true
+      num_additional_infections: 0
+      at_times: []
+      change_p_infect: 
+        - ["no pair"]
+
