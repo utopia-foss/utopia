@@ -60,19 +60,55 @@ struct InfectionContParams {
     }()},
     change_p_infect{[&](){
         // Check the parameter
-        if (not cfg["change_p_infect"] or not cfg["change_p_infect"].size()) {
-            // Key did not exist or was empty; return empty queue.
+        // For the default case, an empty list, a empty queue is returned.
+        if(cfg["change_p_infect"].IsSequence() and cfg["change_p_infect"].size() == 0){
+            // Key was empty; return empty queue.
             return TimesValuesQueue{};
         }
-        else if (not cfg["change_p_infect"].IsSequence()) {
+        // Check if given Parameter is a Sequence
+        else if(not cfg["change_p_infect"].IsSequence()){
             // Inform about bad type of the given configuration entry
             throw std::invalid_argument("Parameter change_p_infect need be "
-                "a sequence of pairs, but was not! Given infection control "
-                "parameters:\n" + DataIO::to_string(cfg));
+                "a sequence of pairs, but was not a sequence! Given infection "
+                "control parameters:\n" + DataIO::to_string(cfg));
         }
+        // Check if it is a sequence that it contains only pairs. 
+        else{ 
+            bool pairs_only = true;
+            for(const auto pair: cfg["change_p_infect"]){
+                pairs_only &= pair.size() == 2;
+            }
+            if(not pairs_only){
+                throw std::invalid_argument("Parameter change_p_infect need be "
+                    "a sequence of pairs, but contained something which was not "
+                    "a pair! Given infection control parameters:\n" 
+                    + DataIO::to_string(cfg));
+            }
+        }
+        // Getting the parameters
+        std::vector<std::pair<std::size_t, double>> cont = [&cfg](){
+            std::vector<std::pair<int, double>> val = 
+                get_as<std::vector<std::pair<int, double>>>
+                ("change_p_infect", cfg);
 
-        auto cont = get_as<std::vector<std::pair<std::size_t, double>>>(
-            "change_p_infect", cfg);
+            for_each(val.begin(), val.end(), 
+                [&cfg](auto& pair){
+                // Check for negative timesteps
+                if(pair.first < 0){
+                    throw std::invalid_argument("Timesteps from parameter "
+                    "change_p_infect needs to be larger zero. Given infection "
+                    "control parameters:\n" + DataIO::to_string(cfg));
+                }
+                // Check for probabilites outside [0, 1]
+                if(pair.second < 0 or pair.second > 1){
+                    throw std::invalid_argument("Infection chance from parameter "
+                    "change_p_infect needs to be withhin [0, 1]. Given infection "
+                    "control parameters:\n" + DataIO::to_string(cfg));
+                }
+            });
+            return get_as<std::vector<std::pair<std::size_t, double>>>
+                ("change_p_infect", cfg);
+        }();
         
         // Sort such that times low times are in the beginning of the queue
         std::sort(cont.begin(), cont.end(),
@@ -80,7 +116,7 @@ struct InfectionContParams {
                 return a.first < b.first;
             }
         );
-
+        
         // Copy elements into the queue
         TimesValuesQueue q{};
         for (const auto& v : cont){
@@ -116,22 +152,7 @@ struct Params {
         p_immunity(get_as<double>("p_immunity", cfg)),
         p_infect(get_as<double>("p_infect", cfg)),
         infection_control(get_as<DataIO::Config>("infection_control", cfg))
-    {
-        if ((p_growth > 1) or (p_growth < 0)) {
-            throw std::invalid_argument("Invalid p_growth! Need be a value "
-                "in range [0, 1] and specify the probability per time step "
-                "and cell with which an empty cell turns into a tree. Was: "
-                + std::to_string(p_growth));
-        }
-        if ((p_immunity > 1) or (p_immunity < 0)) {
-            throw std::invalid_argument("Invalid p_immunity! Need be in range "
-                "[0, 1], was " + std::to_string(p_immunity));
-        }
-        if ((p_infect > 1) or (p_infect < 0)) {
-            throw std::invalid_argument("Invalid p_infect! Need be a value "
-                "in range [0, 1], was " + std::to_string(p_infect));
-        }
-    }
+    {}
 };
 
 } // namespace Utopia::Models::ContDisease

@@ -1,0 +1,8 @@
+# Configuration file used to test correct data writing behavior if only 
+# densites are written.
+---
+parameter_space:
+  num_steps: 3
+
+  ContDisease:
+    write_only_densities: true
