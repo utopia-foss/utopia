@@ -813,13 +813,13 @@ class WorkerManagerReporter(Reporter):
 
             # Compute progress speed compared to first element of buffer
             _progress, _elapsed = pbuf[0]
+            dp = progress - _progress
 
-            if elapsed == _elapsed:
-                # Buffer useless, fall back to estimating from beginning
-                return ((1. - progress) / progress) * elapsed
-
-            dp = (progress - _progress)
-            dp = dp if dp > 0 else progress  # fallback if no progress was made
+            if elapsed == _elapsed or dp <= 1.e-16:
+                # Buffer useless or too little progress made; use simpler mode
+                return self._compute_est_left(
+                    progress=progress, elapsed=elapsed, mode="from_start"
+                )
 
             return ((1. - progress) / dp) * (elapsed - _elapsed)
 

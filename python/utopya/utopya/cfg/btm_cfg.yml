@@ -126,12 +126,12 @@ worker_manager:
   # be invoked.
   rf_spec:
     before_working: []
-    while_working: [while_working]
-    task_spawned: [while_working]
-    monitor_updated: []
-    task_finished: [while_working, report_file]
-    after_work: [after_work, report_file]
-    after_abort: [after_work, report_file]
+    while_working: [progress_bar]
+    task_spawned: [progress_bar]
+    monitor_updated: [progress_bar]
+    task_finished: [progress_bar, report_file]
+    after_work: [progress_bar, report_file]
+    after_abort: [progress_bar, report_file]
 
 # The defaults for the worker_kwargs
 # These are passed to the setup function of each MPProcessTask before spawning
@@ -166,18 +166,41 @@ worker_kwargs:
 reporter:
   # Define report formats, which are accessible, e.g. from the WorkerManager
   report_formats:
-    while_working: &while_working     # Name of the report format specification
+    progress_bar:                     # Name of the report format specification
       parser: progress_bar            # The parser to use
       write_to: stdout_noreturn       # The writer to use
-      min_report_intv: 0.9            # Required time (in s) between writes
-      # All further kwargs on this level are passed to the parser
+      min_report_intv: 0.5            # Required time (in s) between writes
+
+      # -- All further kwargs on this level are passed to the parser
+      # Terminal width for the progress bar
+      # Can also be `adaptive` (poll each time), or `fixed` (poll once)
+      num_cols: adaptive
+
+      # The format string to use for progress information
+      # Available keys:
+      #   - `total_progress` (in %)
+      #   - `active_progress` (mean progress of _active_ simulations, in %)
+      #   - `cnt` (dict of counters: `total`, `finished`, `active`)
+      info_fstr: "{total_progress:>5.1f}% "
+      # Example of how to access counters in format string:
+      # info_fstr: "finished {cnt[finished]}/{cnt[total]} "
+
+      # Whether to show time information alongside the progress bar
       show_times: true
 
-    monitor_updated:
-      <<: *while_working
-
-    after_work:
-      <<: *while_working
+      # How to display time information.
+      # Available keys: `elapsed`, `est_left`, `est_end`, `start`, `now`
+      # (see `times` parser for more information)
+      times_fstr: "| {elapsed:>7s} elapsed | ~{est_left:>7s} left "
+      times_fstr_final: "| finished in {elapsed:} "
+      times_kwargs:
+        # How to compute the estimated time left to finish the work session
+        # Available modes:
+        #   - `from_start`:  extrapolates from progress made since start
+        #   - `from_buffer`: uses a buffer to store recent progress
+        #                    information and use the oldest value for
+        #                    making the estimate; see `progress_buffer_size`
+        mode: from_start
 
     # Creates a report file containing runtime statistics
     report_file:
@@ -186,8 +209,10 @@ reporter:
         file:
           path: _report.txt
       min_report_intv: 10             # don't update this one too often
-      min_num: 4                      # min. number of batch tasks for stats
-      show_individual_runtimes: true
+      min_num: 4                      # min. number of universes for statistics
+      show_individual_runtimes: true  # for large number of universes, disable
+      task_label_singular: task
+      task_label_plural: tasks
 
 
 run_kwargs:
