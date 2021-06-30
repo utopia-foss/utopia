@@ -348,16 +348,32 @@ class ColorManager:
         """
         return self.cmap(self.norm(X))
 
-    def create_cbar(self, mappable, *, fig=None, ax=None, **cbar_kwargs):
+    def create_cbar(
+        self,
+        mappable,
+        *,
+        fig=None,
+        ax=None,
+        label: str = None,
+        label_kwargs: dict = None,
+        tick_params: dict = None,
+        **cbar_kwargs
+    ):
         """Creates a colorbar.
 
         Args:
             mappable: The matplotlib.cm.ScalarMappable described by the
                 colorbar.
-            fig (None, optional): The Figure
+            fig (None, optional): The figure
             ax (None, optional): The axis
-            \**cbar_kwargs: Passed on to
-                `fig.colorbar <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.colorbar.html>`_.
+            label (str, optional): A label for the colorbar
+            label_kwargs (dict, optional): Additional parameters passed to
+                `cb.set_label <https://matplotlib.org/stable/api/colorbar_api.html#matplotlib.colorbar.ColorbarBase.set_label>`__.
+            tick_params (dict, optional): Set colorbar tick parameters via
+                `cb.ax.tick_params <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.tick_params.html>`__
+            **cbar_kwargs: Passed on to
+                `fig.colorbar <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.colorbar.html>`__.
+            tick_params
 
         Returns:
             The created colorbar.
@@ -370,8 +386,16 @@ class ColorManager:
 
         cb = fig.colorbar(mappable, ax=ax, **cbar_kwargs)
 
+        # Colorbar label
+        if label:
+            cb.set_label(label=label, **(label_kwargs if label_kwargs else {}))
+
+        # Ticks and tick labels
         if self.labels is not None:
             cb.set_ticks(list(self.labels.keys()))
             cb.set_ticklabels(list(self.labels.values()))
+
+        if tick_params:
+            cb.ax.tick_params(**tick_params)
 
         return cb
