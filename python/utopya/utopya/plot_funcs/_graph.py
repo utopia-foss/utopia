@@ -176,6 +176,13 @@ class GraphPlot:
                     labels (dict, optional):
                         Colorbar tick-labels keyed by tick position (see
                         :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`).
+                    tick_params (dict, optional):
+                        Colorbar axis tick parameters
+                    label (str, optional):
+                        The axis label for the colorbar
+                    label_kwargs (dict, optional):
+                        Further keyword arguments to adjust the aesthetics of
+                        the colorbar label
                     further kwargs:
                         Passed on to :py:meth:`~utopya.plot_funcs._mpl_helpers.ColorManager.create_cbar`.
 
@@ -504,26 +511,27 @@ class GraphPlot:
             )
 
         if show_edge_cbar:
-            # When drawing arrows, draw_networkx_edges returns a list of
-            # FancyArrowPatches which can not be used in fig.colorbar.
             if isinstance(self._mpl_edges, list):
-                warnings.warn(
-                    "No colorbar can be shown for directed edges. To show the "
-                    "colorbar, hide the arrows by setting 'arrows=False' in "
-                    "the edge configuration.",
-                    UserWarning
-                )
+                # When drawing arrows, draw_networkx_edges returns a list of
+                # FancyArrowPatches which can not be used directly in
+                # fig.colorbar, but needs conversion to a PatchCollection and
+                # manual transfer of the chosen colormap and normalization ...
+                edge_pc = mpl.collections.PatchCollection(self._mpl_edges)
+                edge_pc.set_norm(self._edge_colormanager.norm)
+                edge_pc.set_cmap(self._edge_colormanager.cmap)
             else:
-                if remove_previous and self._mpl_edge_cbar:
-                    self._mpl_edge_cbar.remove()
+                edge_pc = self._mpl_edges
 
-                self._mpl_edge_cbar = self._edge_colormanager.create_cbar(
-                    self._mpl_edges,
-                    fig=fig,
-                    ax=ax,
-                    **self._edge_cbar_kwargs,
-                    **update_cbar_kwargs,
-                )
+            if remove_previous and self._mpl_edge_cbar:
+                self._mpl_edge_cbar.remove()
+
+            self._mpl_edge_cbar = self._edge_colormanager.create_cbar(
+                edge_pc,
+                fig=fig,
+                ax=ax,
+                **self._edge_cbar_kwargs,
+                **update_cbar_kwargs,
+            )
 
     def clear_plot(self, *, keep_colorbars: bool=False):
         """Removes all matplotlib objects associated with the GraphPlot from
@@ -540,9 +548,15 @@ class GraphPlot:
         # associated mappable.
         if not keep_colorbars:
             if self._mpl_node_cbar:
-                self._mpl_node_cbar.remove()
+                try:
+                    self._mpl_node_cbar.remove()
+                except:
+                    pass
             if self._mpl_edge_cbar:
-                self._mpl_edge_cbar.remove()
+                try:
+                    self._mpl_edge_cbar.remove()
+                except:
+                    pass
 
         # Remove nodes and edges
         if self._mpl_nodes:

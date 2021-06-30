@@ -17,6 +17,30 @@ cfg_1:
     colors:
       0: b
 
+colorbar_for_directed_edges:
+  edges:
+    colorbar:
+      enabled: True
+
+colorbar_with_additional_options:
+  nodes:
+    colorbar:
+      enabled: True
+      label: node label
+      label_kwargs:
+        fontsize: 6
+      tick_params:
+        labelsize: 6
+  edges:
+    colorbar:
+      enabled: True
+      label: edge label
+      label_kwargs:
+        fontsize: 6
+      tick_params:
+        labelsize: 6
+
+
 # -- Configurations that raise Errors or Warnings -----------------------------
 graphviz:
   positions:
@@ -38,13 +62,6 @@ boundary_norm_for_directed_edges:
       from_values:
         0: r
         1: g
-
-colorbar_for_directed_edges:
-  _warns: UserWarning
-  _match: No colorbar can be shown
-  edges:
-    colorbar:
-      enabled: True
 
 invalid_rescale_interval:
   _raises: ValueError
