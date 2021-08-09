@@ -32,8 +32,8 @@ def test_calc_pxmap_rectangles():
     # Basics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     shape = (6, 11)
     data = create_2D_data(*shape, dims=('foo', 'bar'))
-    ds, lims = cpr(x_coords=data.coords['foo'],
-                   y_coords=data.coords['bar'])
+    ds, lims = cpr(x_coords=data.coords['foo'].data,
+                   y_coords=data.coords['bar'].data)
 
     # Limits should be [0., 1.] for both dimensions
     assert lims['x'] == (0., 1.)
@@ -55,8 +55,8 @@ def test_calc_pxmap_rectangles():
     # With extended rectangles, the limits are adjusted . . . . . . . . . . . .
     shape = (4, 2)
     data = create_2D_data(*shape)
-    ds, lims = cpr(x_coords=data.coords['dim_0'],
-                   y_coords=data.coords['dim_1'],
+    ds, lims = cpr(x_coords=data.coords['dim_0'].data,
+                   y_coords=data.coords['dim_1'].data,
                    extend=True)
 
     ext_x, ext_y = .5/(shape[0]-1), .5/(shape[1]-1)
@@ -78,13 +78,13 @@ def test_calc_pxmap_rectangles():
     (lambda *args: args)(*pt['rect_spec'].item())
 
     # Should be possible to only give one coordinate . . . . . . . . . . . . .
-    ds, lims = cpr(x_coords=data.coords['dim_0'], y_coords=None,
+    ds, lims = cpr(x_coords=data.coords['dim_0'].data, y_coords=None,
                    default_distance=3.)
 
     assert lims['y'] == (-3/2, +3/2)
 
 
-    ds, lims = cpr(x_coords=data.coords['dim_0'], y_coords=None, extend=True)
+    ds, lims = cpr(x_coords=data.coords['dim_0'].data, y_coords=None, extend=True)
     assert lims['y'] == (-.5, +.5)
 
 
@@ -97,8 +97,8 @@ def test_calc_pxmap_rectangles():
 
         # Create data
         data = create_2D_data(*shape)
-        ds, lims = cpr(x_coords=data.coords['dim_0'],
-                       y_coords=data.coords['dim_1'],
+        ds, lims = cpr(x_coords=data.coords['dim_0'].data,
+                       y_coords=data.coords['dim_1'].data,
                        extend=ext)
         print("Limits:", lims[ax])
 
@@ -129,28 +129,28 @@ def test_calc_pxmap_rectangles():
     data = create_2D_data(*shape, coords_func=np.logspace, rg_args=(2, 6))
 
     # Logarithmic
-    _, _ = cpr(x_coords=data.coords['dim_0'],
-               y_coords=data.coords['dim_1'],
+    _, _ = cpr(x_coords=data.coords['dim_0'].data,
+               y_coords=data.coords['dim_1'].data,
                x_scale='lin', y_scale='log')
-    
-    _, _ = cpr(x_coords=data.coords['dim_0'],
-               y_coords=data.coords['dim_1'],
+
+    _, _ = cpr(x_coords=data.coords['dim_0'].data,
+               y_coords=data.coords['dim_1'].data,
                x_scale='log', y_scale='lin')
 
-    _, _ = cpr(x_coords=data.coords['dim_0'],
-               y_coords=data.coords['dim_1'],
+    _, _ = cpr(x_coords=data.coords['dim_0'].data,
+               y_coords=data.coords['dim_1'].data,
                x_scale='log', y_scale='log')
 
     # Categorical
-    _, _ = cpr(x_coords=data.coords['dim_0'],
-               y_coords=data.coords['dim_1'],
+    _, _ = cpr(x_coords=data.coords['dim_0'].data,
+               y_coords=data.coords['dim_1'].data,
                x_scale='cat_at_value', y_scale='categorical')
 
     # Make sure the values are as expected
-    ds, lims = cpr(x_coords=data.coords['dim_0'],
-                   y_coords=data.coords['dim_1'],
+    ds, lims = cpr(x_coords=data.coords['dim_0'].data,
+                   y_coords=data.coords['dim_1'].data,
                    x_scale='log', y_scale='log', extend=True)
-    
+
     assert np.isclose(lims['x'], [10**1.5,  10**6.5], rtol=1.e-6).all()
     assert np.isclose(lims['y'], [10**1.75, 10**6.25], rtol=1.e-6).all()
 
@@ -160,10 +160,10 @@ def test_calc_pxmap_rectangles():
     assert np.isclose(pt['len_x'], 10**2.5 - 10**1.5)
     assert np.isclose(pt['len_y'], 10**2.25 - 10**1.75)
 
-    
+
     # Errors . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
     with pytest.raises(ValueError, match="Invalid scale argument"):
-        cpr(x_coords=data.coords['dim_0'], y_coords=data.coords['dim_1'],
+        cpr(x_coords=data.coords['dim_0'].data, y_coords=data.coords['dim_1'].data,
             x_scale='foo')
 
     with pytest.raises(ValueError, match="need to be at least of length one"):

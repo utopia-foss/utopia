@@ -1,7 +1,7 @@
 """Tools that help testing models.
 
 This mainly supplies the ModelTest class, which is a specialization of the
-~:py:class:`utopya.model.Model` for usage in tests.
+:py:class:`~utopya.model.Model` for usage in tests.
 """
 
 import os
