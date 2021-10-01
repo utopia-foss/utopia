@@ -95,7 +95,7 @@ image: ${BASE_IMAGE}
 # For docserver deployment, we need SSH access. By adding a deploy key to
 # selected jobs, we are authenticated. The key is a CI/CD secret.
 .ssh-access:
-  before_script:
+  before_script: &ssh_access
     # For outside dependencies, use the "Utopia CI" deploy key
     # Instructions:
     #   https://docs.gitlab.com/ce/ci/ssh_keys/
@@ -578,11 +578,11 @@ deploy:docs_gitlab_pages:
 
 deploy:docs:
   stage: deploy
-  extends: .ssh-access
   only:
     - branches@utopia/utopia
   dependencies: ["build:docs"]
   needs: ["build:docs"]
+  before_script: *ssh_access  # NOTE `extends` causes artifact loss
   script:
     # Create the directory on the remote, removing any prior version
     - echo "Creating remote directory $DOC_REMOTE_PATH ..."
@@ -590,7 +590,7 @@ deploy:docs:
     - ssh -p $DOC_PORT $DOC_HOST "mkdir -p $DOC_REMOTE_PATH/doxygen/"
 
     # Copy sphinx & doxygen HTML documentation to remote
-    - cd build/doc
+    - cd $CI_PROJECT_DIR/build/doc
     - echo "Uploading documentation to $DOC_REMOTE_PATH/ ..."
     - scp -P $DOC_PORT -pr html         $DOC_HOST:$DOC_REMOTE_PATH/
     - scp -P $DOC_PORT -pr doxygen/html $DOC_HOST:$DOC_REMOTE_PATH/doxygen/
