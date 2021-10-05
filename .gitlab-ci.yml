@@ -95,7 +95,7 @@ image: ${BASE_IMAGE}
 # For docserver deployment, we need SSH access. By adding a deploy key to
 # selected jobs, we are authenticated. The key is a CI/CD secret.
 .ssh-access:
-  before_script: &ssh_access
+  before_script:
     # For outside dependencies, use the "Utopia CI" deploy key
     # Instructions:
     #   https://docs.gitlab.com/ce/ci/ssh_keys/
@@ -272,8 +272,8 @@ build:install:
 test:core:
   stage: test
   extends: .cobertura
-  dependencies: ["build:tests_core"]
-  needs: ["build:tests_core"]
+  needs:
+    - "build:tests_core"
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -305,8 +305,8 @@ test:core:
 # Test the data I/O library
 test:dataio:
   extends: test:core
-  dependencies: ["build:tests_dataio"]
-  needs: ["build:tests_dataio"]
+  needs:
+    - "build:tests_dataio"
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -322,8 +322,8 @@ test:dataio:
 test:models:
   stage: test
   extends: test:core
-  dependencies: ["build:models"]
-  needs: ["build:models"]
+  needs:
+    - "build:models"
   variables:
     # Exclude any paths containing 'test', should not count towards coverage
     GCOVR_PATHS:
@@ -370,8 +370,8 @@ test:models:
 test:utopya:
   stage: test
   extends: .cobertura
-  dependencies: ["build:models"]
-  needs: ["build:models"]
+  needs:
+    - "build:models"
   before_script:
     # Make model registry available (from build:models job)
     - *add_cfg_symlink
@@ -402,8 +402,8 @@ test:utopya:
 # Test the utopia command line interface
 test:cli:
   stage: test
-  dependencies: ["build:models"]
-  needs: ["build:models"]
+  needs:
+    - "build:models"
   artifacts:
     name: utopia_output
     paths:
@@ -526,8 +526,8 @@ test:cli:
 # Test if using Utopia in a downstream module works
 test:link_build_tree:
   stage: test
-  dependencies: ["build:install"]
-  needs: ["build:install"]
+  needs:
+    - "build:install"
   script:
     # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
@@ -567,8 +567,9 @@ deploy:docs_gitlab_pages:
   stage: deploy
   only:
     - master@utopia/utopia
-  dependencies: ["build:docs"]
-  needs: ["build:docs"]
+  needs:
+    - job: "build:docs"
+      artifacts: false
   script:
     - curl -X POST -F token=$DOC_DEPLOYMENT_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/25960923/trigger/pipeline
   environment:
@@ -578,11 +579,12 @@ deploy:docs_gitlab_pages:
 
 deploy:docs:
   stage: deploy
+  extends: .ssh-access
   only:
     - branches@utopia/utopia
-  dependencies: ["build:docs"]
-  needs: ["build:docs"]
-  before_script: *ssh_access  # NOTE `extends` causes artifact loss
+  needs:
+    - job: "build:docs"
+      artifacts: true
   script:
     # Create the directory on the remote, removing any prior version
     - echo "Creating remote directory $DOC_REMOTE_PATH ..."
@@ -613,10 +615,10 @@ deploy:stop_docs:
   variables:
     # Stop GitLab from checking out the commit again (branch is deleted!)
     GIT_STRATEGY: none
-  dependencies: []
-  # NOTE: Same "needs" as for "deploy:docs", because on_stop relation does not
-  #       work otherwise (this might be a bug?)
-  needs: ["build:docs"]
+  # NOTE: Same "needs" as for "deploy:docs", for on_stop relation to work
+  needs:
+    - job: "build:docs"
+      artifacts: false
 
   script:
     - echo "Removing remote directory $DOC_REMOTE_PATH ..."
