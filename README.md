@@ -496,9 +496,9 @@ These packages and their dependencies are _automatically_ installed into a virtu
 
 | Software                                                | Version    | Comments                        |
 | ------------------------------------------------------- | ---------- | ------------------------------- |
-| [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 2.0     | Builds the Utopia documentation |
-| [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.4   | Makes parameter sweeps easy     |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.16    | Handle, transform, and visualize hierarchically organized data |
+| [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 4.2     | Builds the Utopia documentation |
+| [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.8   | Makes parameter sweeps easy     |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.17    | Handle, transform, and visualize hierarchically organized data |
 
 
 ### Recommended

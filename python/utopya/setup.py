@@ -10,15 +10,18 @@ INSTALL_DEPS = [
     'coloredlogs>=10.0',
     'ruamel.yaml>=0.16.5',
 
-    'paramspace>=2.5.4',
-    'dantro>=0.16.2',
-    # NOTE Version need also be set in python/CMakeLists.txt
+    'paramspace>=2.5.8',
+    'dantro>=0.17.1',
 
     # Required for testing:
     'pytest>=6.2.1',
     'pytest-cov>=2.10.1',
     'psutil>=5.6.7'
 ]
+# NOTE To force a re-installation of the dependencies, e.g. when adding one or
+#      changing a requirement, do the following:
+#           - In utopya/__init__.py bump the patch version
+#           - In python/CMakeLists.txt, set the utopya requirement accordingly
 
 # .............................................................................
 
@@ -58,9 +61,9 @@ setup(
                   'Yunus Sevinchan '
                   '<Yunus.Sevinchan@iup.uni-heidelberg.de>'),
     classifiers=[
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Topic :: Utilities'

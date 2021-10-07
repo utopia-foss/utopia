@@ -139,6 +139,7 @@ py:class argparse.ArgumentParser
 py:class argparse.Namespace
 
 py:class BasePlotCreator
+py:class StopCondition
 py:class TDims
 
 py:exc PlotConfigError
