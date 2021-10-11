@@ -133,9 +133,9 @@ opt_chunks_target(Cont&              chunks,
     }
 
     log->debug("Starting optimization towards target size:"
-               "  {:7d}B  ({:.1f} kiB)",
+               "  {:7.0f}B  ({:.1f} kiB)",
                bytes_target,
-               bytes_target / 1024);
+               bytes_target / 1024.);
 
     // Ensure the target chunk size is between CHUNKSIZE_MIN and CHUNKSIZE_MAX
     // in order to not choose too large or too small chunks
@@ -144,18 +144,18 @@ opt_chunks_target(Cont&              chunks,
         bytes_target = CHUNKSIZE_MAX;
 
         log->debug("Target size too large! New target size:"
-                   "  {:7d}B  ({:.1f} kiB)",
+                   "  {:7.0f}B  ({:.1f} kiB)",
                    bytes_target,
-                   bytes_target / 1024);
+                   bytes_target / 1024.);
     }
     else if (bytes_target < CHUNKSIZE_MIN)
     {
         bytes_target = CHUNKSIZE_MIN;
 
         log->debug("Target size too small! New target size:"
-                   "  {:7d}B  ({:.1f} kiB)",
+                   "  {:7.0f}B  ({:.1f} kiB)",
                    bytes_target,
-                   bytes_target / 1024);
+                   bytes_target / 1024.);
     }
 
     // ... and a variable that will store the size (in bytes) of this specific
@@ -452,7 +452,7 @@ opt_chunks_with_max_extend(Cont&              chunks,
                 {
                     // Yep. Just extend this dimension to the max_extend, done.
                     log->debug("Dimension {} can be filled completely. "
-                               "(difference: {:.2e}, factor: {:.2e})",
+                               "(difference: {}, factor: {})",
                                dim,
                                max_extend[dim] - chunks[dim],
                                factor);
@@ -465,7 +465,7 @@ opt_chunks_with_max_extend(Cont&              chunks,
                     log->debug("Dimension {} cannot be extended to fill "
                                "max_extend without exceeding maximum "
                                "chunksize! "
-                               "(difference: {:.2e}, factor: {:.2e})",
+                               "(difference: {}, factor: {})",
                                dim,
                                max_extend[dim] - chunks[dim],
                                factor);
@@ -721,13 +721,13 @@ calc_chunksize(const hsize_t      typesize,
     log->debug("typesize:            {}", typesize);
     log->debug("max. chunksize:      {:7d} ({:.1f} kiB)",
                CHUNKSIZE_MAX,
-               CHUNKSIZE_MAX / 1024);
+               CHUNKSIZE_MAX / 1024.);
     log->debug("min. chunksize:      {:7d} ({:.1f} kiB)",
                CHUNKSIZE_MIN,
-               CHUNKSIZE_MIN / 1024);
+               CHUNKSIZE_MIN / 1024.);
     log->debug("base chunksize:      {:7d} ({:.1f} kiB)",
                CHUNKSIZE_BASE,
-               CHUNKSIZE_BASE / 1024);
+               CHUNKSIZE_BASE / 1024.);
 
     // .. For the simple cases, evaluate the chunksize directly ...............
 
@@ -760,7 +760,7 @@ calc_chunksize(const hsize_t      typesize,
     // Determine the size (in bytes) of a write operation with this extend
     const auto bytes_io = bytes(io_extend);
     log->debug(
-        "I/O operation size:  {:7d} ({:.1f} kiB)", bytes_io, bytes_io / 1024);
+        "I/O operation size:  {:7d} ({:.1f} kiB)", bytes_io, bytes_io / 1024.);
 
     // Determine if an I/O operation fits into a single chunk, then decide on
     // how to optimize accordingly

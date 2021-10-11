@@ -234,9 +234,11 @@ struct IntervalDecider : Decider< Model >
             else if (tmp_interval.size() != 3)
             {
                 throw Utopia::KeyError("intervals", cfg,
-                    fmt::format("Array of unexpected length {}! Expected array "
-                        "of length 2 or 3 [start, stop, step] with step "
-                        "optional (default 1)."));
+                    fmt::format("Array of unexpected length {}! "
+                        "Expected array of length 2 or 3 [start, stop, step] "
+                        "with step optional (default 1).",
+                        tmp_interval.size())
+                    );
             }
 
             std::array< std::size_t, 3 > interval;
