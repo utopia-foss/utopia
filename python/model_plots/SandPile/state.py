@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
               helper_defaults=dict(
                 set_limits=dict(x=[0., None]),
                 set_labels=dict(x="Time [Iteration Steps]",
-                                y=r"Slope $\langle n \rangle - n_c$")
+                                y=r"Slope $<n> - n_c$")
               ))
 def mean_slope(dm: DataManager, *, uni: UniverseGroup, hlpr: PlotHelper,
                show_critical_slope_value: bool=False, **plot_kwargs):
