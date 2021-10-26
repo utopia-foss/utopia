@@ -466,10 +466,8 @@ save_graph_entity_properties(const Graph&                       g,
         "Has to be either 'IterateOver::vertices' or 'IterateOver::edges'"
     );
 
-    static_assert(std::is_literal_type_v<std::decay_t<decltype(adaptor_tuple)>>,
-                  "Error, 'adaptor_tuple' has to be a literal_type. Hence all "
-                  "elements in 'adaptor_tuple' (including captured objects) "
-                  "have to be a literal_type!");
+    // NOTE Consider a check for literal types, which is more capable than
+    //      the (now removed) std::is_literal_type ...
 
     // Get a logger
     auto log = spdlog::get("data_io");
