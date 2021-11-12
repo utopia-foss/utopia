@@ -1,0 +1,5 @@
+# Base plot configuration for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file
+---
+positions: {}

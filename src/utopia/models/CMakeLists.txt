@@ -31,6 +31,7 @@ add_subdirectory(PredatorPreyPlant)
 add_subdirectory(SEIRD)
 add_subdirectory(SimpleEG)
 add_subdirectory(SandPile)
+add_subdirectory(SimpleFlocking)
 add_subdirectory(Vegetation)
 # ...
 # NOTE Add your subdirectory above (alphabetically sorted)

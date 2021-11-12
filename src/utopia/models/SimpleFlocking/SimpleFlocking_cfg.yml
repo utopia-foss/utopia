@@ -1,0 +1,32 @@
+# The model configuration for the SimpleFlocking model
+#
+# This file should ONLY contain model-specific configuration and needs to be
+# written such that it can be used by _every_ model instance, regardless
+# of the level within a model hierarchy.
+# 
+# To that end, it needs to specify the parameters at the level of the instance
+# of a Model class.
+# 
+# This file is usually handled by the frontend: usage of advanced yaml features
+# like anchors and tags is supported.
+# 
+# Note, however, that this file should hold the _default_ values for a single
+# instance. Therefore, parameter sweeps should not be specified here!
+# Furthermore, if including other models' parameters via the `!model` tag, make
+# sure that no circular includes occur.
+---
+# --- Space
+# The physical space this model is embedded in
+space:
+  periodic: true
+
+# --- Initialization parameters
+agent_manager:
+  initial_position: random
+  initial_num_agents: 100
+
+  agent_params:
+    speed: 0.001
+
+
+# --- Dynamics
