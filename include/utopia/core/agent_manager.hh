@@ -57,6 +57,12 @@ public:
     /// The type of the function that prepares the position of a new agent
     using PosFunc = std::function<SpaceVec(const SpaceVec&)>;
 
+    /// The type of a rule function acting on agents of this agent manager
+    /** This is a convenience type def that models can use to easily have this
+      * type available.
+      */
+    using RuleFunc = std::function<AgentState(const std::shared_ptr<Agent>&)>;
+
     /// The random number generator type
     using RNG = typename Model::RNG;
 
