@@ -26,8 +26,10 @@ _:
   helpers: {}
 
 .defaults.animation:
+  file_ext: .mp4
+
   animation:
-    enabled: true  # has to be manually enabled
+    enabled: true
 
     writer: frames  # assuming ffmpeg is not installed
 
@@ -39,13 +41,21 @@ _:
 
       ffmpeg:
         init:
-          fps: 10
+          fps: 30
         saving:
-          dpi: 92
+          dpi: 254
 
+.defaults.animation.ffmpeg:
+  based_on: .defaults.animation
+  animation:
+    writer: ffmpeg
+
+
+# Aggregated defaults
 .defaults:
   based_on:
     - .defaults.style_and_helpers
+
 
 # Creators ....................................................................
 # ... for DAG-based plots
@@ -67,6 +77,9 @@ _:
     base_path: *model_data_path
 
 
+
+
+
 # -----------------------------------------------------------------------------
 # Actual plot configurations --------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -74,7 +87,7 @@ _:
 agents_in_domain:
   based_on:
     - .defaults
-    - .defaults.animation
+    - .defaults.animation.ffmpeg
     - .creator.universe
 
   module: model_plots.SimpleFlocking
@@ -91,9 +104,28 @@ agents_in_domain:
       path: orientation
       transform: [.data]
 
+    space_extent:
+      path: x  # meta data is written to every other dataset as well
+      transform:
+        - getattr: [!dag_prev , attrs]
+        - getitem: [!dag_prev , space_extent]
+
   transform:
+    # Combine data into one dataset
     - xr.Dataset:
       - x: !dag_tag x
         y: !dag_tag y
         orientation: !dag_tag orientation
       tag: data
+
+  # Use a square figure
+  helpers:
+    setup_figure:
+      figsize: [6, 6]
+
+  # Pass on space extent (used for setting limits)
+  space_extent: !dag_result space_extent
+
+  # passed on to plt.scatter
+  s: 12
+  cmap: hsv  # TODO Is there a better cyclic one?

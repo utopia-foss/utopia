@@ -2,6 +2,7 @@
 
 import logging
 
+import numpy as np
 import xarray as xr
 
 from utopya.plotting import is_plot_func, PlotHelper
@@ -19,14 +20,22 @@ def draw_agents(
     """Expects an xr.Dataset and draws a single frame of agents in a domain"""
     if not collection:
         # Create collection
-        collection = hlpr.ax.scatter(ds["x"], ds["y"], **plot_kwargs)
+        collection = hlpr.ax.scatter(
+            ds["x"], ds["y"],
+            c=ds["orientation"],
+            vmin=-np.pi, vmax=+np.pi,
+            **plot_kwargs,
+        )
 
     else:
-        # Update collection
-        # TODO Make this more efficient
+        # Update the collection's offsets ...
+        # TODO Make this more efficient?
         da = ds.to_array()
         pos = da.sel(variable=["x", "y"]).transpose()
         collection.set_offsets(pos)
+
+        # ... and colors
+        collection.set_array(da.sel(variable="orientation"))
 
     return collection
 
@@ -39,9 +48,11 @@ def draw_agents(
 def agents_in_domain(
     *, data: dict,
     hlpr: PlotHelper,
+    space_extent: tuple,
     x: str = "x",
     y: str = "y",
     orientation: str = "orientation",
+    title_fstr: str = "$t$ = {time:5d}",
     **plot_kwargs,
 ):
     """Plots agent positions and orientations in the domain"""
@@ -59,20 +70,28 @@ def agents_in_domain(
     })
 
     # Extract space information and set axis and aspect ratio accordingly
-    # TODO
+    hlpr.ax.set_xlim(0, space_extent[0])
+    hlpr.ax.set_ylim(0, space_extent[1])
+    hlpr.ax.set_aspect("equal")
 
     # Draw initial frame
-    # draw_agents(ds.isel(time=0), hlpr=hlpr, **plot_kwargs)  # FIXME ?
+    # draw_agents(ds.isel(time=0), hlpr=hlpr, **plot_kwargs)  # FIXME Needed?
 
     def update_position_and_orientation():
         collection = None
         for _t, _ds in ds.groupby("time"):
+            hlpr.ax.set_title(
+                title_fstr.format(time=_t.item()),
+                fontfamily="monospace",
+            )
+
             collection = draw_agents(
                 _ds,
                 hlpr=hlpr,
                 collection=collection,
                 **plot_kwargs
             )
+
             # Done with this frame; yield control to the animation framework
             # which will grab the frame...
             yield

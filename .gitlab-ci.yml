@@ -360,6 +360,7 @@ test:models:
     - utopia run SandPile --debug -N 100
     - utopia run SEIRD --debug -N 50
     - utopia run SimpleEG --debug
+    - utopia run SimpleFlocking --debug
     - utopia run Vegetation --debug
 
   artifacts:

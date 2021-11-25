@@ -16,7 +16,10 @@ class AgentState {
     /// Agent speed
     double speed;
 
-    /// Orientation (in radians)
+    /// Orientation in radians, [-π, +π)
+    /** Orientation zero points in positive x direction while ±π/2 points
+     *  in ±y direction.
+     */
     double orientation;
 
     /// The current displacement vector, updated upon any changes
@@ -35,8 +38,8 @@ public:
     template<typename RNGType>
     AgentState(const Config& cfg, const std::shared_ptr<RNGType>& rng)
     :
-        speed(get_as<double>("speed", cfg, 1.e-3))
-    ,   orientation(random_orientation(rng))
+        speed(get_as<double>("speed", cfg))
+    ,   orientation(random_angle(rng))
     ,   displacement({0., 0.})
     {
         update_displacement();
@@ -48,32 +51,42 @@ public:
         return speed;
     }
 
+    /// Returns the current orientation in radians, [-π, +π)
+    /** Orientation zero points in positive x direction while ±π/2 points
+     *  in ±y direction.
+     */
     auto get_orientation () const {
         return orientation;
     }
 
+    /// The current value of the displacement vector
     const auto& get_displacement () const {
         return displacement;
     }
 
     // .. Setters .............................................................
 
+    /// Sets the speed and subsequently updates the displacement vector
     auto set_speed (double new_speed) {
         speed = new_speed;
         update_displacement();
     }
 
+    /// Sets the orientation and subsequently updates the displacement vector
+    /** This also makes sure the new orientation is within a valid range
+      */
     auto set_orientation (double new_orientation) {
-        orientation = new_orientation;
+        orientation = constrain_angle(new_orientation);
         update_displacement();
     }
 
 protected:
     // .. Helpers .............................................................
 
+    /// Updates the displacement vector using current speed and orientation
     void update_displacement () {
-        displacement[0] = speed * std::sin(orientation);
-        displacement[1] = speed * std::cos(orientation);
+        displacement[0] = speed * std::cos(orientation);
+        displacement[1] = speed * std::sin(orientation);
     }
 };
 

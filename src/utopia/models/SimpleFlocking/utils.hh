@@ -12,17 +12,21 @@ namespace Utopia::Models::SimpleFlocking {
 
 constexpr double TAU = 2*M_PI;
 
-/// Regularizes agent orientation to interval [0, 2π]
+/// Constrains an angle value to interval [-π, +π)
 template<class T>
-T fmod_orientation (T orientation) {  // TODO find better name
-    return std::fmod(orientation, TAU);
+T constrain_angle (T angle) {  // TODO find better name
+    angle = std::fmod(angle + M_PI, TAU);
+    while (angle < 0.) {
+        angle += TAU;
+    }
+    return angle - M_PI;
 }
 
+/// Returns a uniformly random angle value in [-π, +π)
 template<class RNG, class T=double>
-T random_orientation (const std::shared_ptr<RNG>& rng) {
-    return std::uniform_real_distribution<T>(0., TAU)(*rng);
+T random_angle (const std::shared_ptr<RNG>& rng) {
+    return std::uniform_real_distribution<T>(-M_PI, +M_PI)(*rng);
 }
-
 
 
 

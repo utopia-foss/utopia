@@ -1,0 +1,4 @@
+# Test configuration file for SimpleFlocking state tests
+---
+agent_state:
+  speed: .1
