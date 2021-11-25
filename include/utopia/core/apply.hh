@@ -432,13 +432,25 @@ template<
 std::enable_if_t<sync, void>
     apply_rule(const Rule& rule, const Container& container)
 {
-    // Apply the rule
-    std::for_each(
-        std::begin(container), std::end(container),
-        [&rule](const auto& entity){ entity->state_new() = rule(entity); }
-    );
-    
-    // Update the state, moving it from the buffer state to the actual state
+    // Apply the rule, distinguishing by return type of the rule
+    using ReturnType =
+        std::invoke_result_t<Rule, typename Container::value_type>;
+
+    if constexpr(std::is_same_v<ReturnType, void>) {
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& entity){ rule(entity); }
+        );
+    }
+    else {
+        std::for_each(
+            std::begin(container), std::end(container),
+            [&rule](const auto& entity){ entity->state_new() = rule(entity); }
+        );
+    }
+
+    // Let the entity update its state, moving it from the buffer state to the
+    // actual state and potentially applying other updating operations
     std::for_each(
         std::begin(container), std::end(container),
         [](const auto& entity){ entity->update(); }
@@ -466,15 +478,13 @@ std::enable_if_t<not sync && not shuffle, void>
     using ReturnType =
         std::invoke_result_t<Rule, typename Container::value_type>;
 
-    if constexpr(std::is_same_v<ReturnType, void>)
-    {
+    if constexpr(std::is_same_v<ReturnType, void>) {
         std::for_each(
             std::begin(container), std::end(container),
             [&rule](const auto& entity){ rule(entity); }
         );
     }
-    else
-    {
+    else {
         std::for_each(
             std::begin(container), std::end(container),
             [&rule](const auto& entity){ entity->state() = rule(entity); }
