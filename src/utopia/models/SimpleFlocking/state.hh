@@ -19,7 +19,7 @@ class AgentState {
     /// Orientation (in radians)
     double orientation;
 
-    /// The current displacement vector, updated alongside  change
+    /// The current displacement vector, updated upon any changes
     SpaceVecType<2> displacement;
 
 public:
@@ -37,7 +37,10 @@ public:
     :
         speed(get_as<double>("speed", cfg, 1.e-3))
     ,   orientation(random_orientation(rng))
-    {}
+    ,   displacement({0., 0.})
+    {
+        update_displacement();
+    }
 
     // .. Getters .............................................................
 
@@ -49,7 +52,7 @@ public:
         return orientation;
     }
 
-    auto get_displacement () const {
+    const auto& get_displacement () const {
         return displacement;
     }
 
@@ -65,6 +68,7 @@ public:
         update_displacement();
     }
 
+protected:
     // .. Helpers .............................................................
 
     void update_displacement () {

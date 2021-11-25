@@ -26,7 +26,7 @@ agent_manager:
   initial_num_agents: 100
 
   agent_params:
-    speed: 0.001
+    speed: 0.01
 
 
 # --- Dynamics

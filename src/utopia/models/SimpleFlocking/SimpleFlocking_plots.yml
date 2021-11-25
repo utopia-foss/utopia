@@ -3,5 +3,5 @@
 # These can use the `based_on` feature with configurations specified in the
 # accompanying *_base_plots.yml file and in the utopya base plot configs.
 ---
-positions:
-  based_on: positions
+agents_in_domain:
+  based_on: agents_in_domain

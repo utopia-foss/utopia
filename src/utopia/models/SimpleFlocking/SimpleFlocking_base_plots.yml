@@ -2,4 +2,98 @@
 #
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
-positions: {}
+_:
+  model_data_path:      &model_data_path      data/SimpleFlocking
+
+# -----------------------------------------------------------------------------
+# Plot configuration defaults -------------------------------------------------
+# -----------------------------------------------------------------------------
+# ... For all plots
+.defaults.style_and_helpers:
+  based_on: .default_style_and_helpers
+
+  style:
+    # https://matplotlib.org/gallery/style_sheets/style_sheets_reference.html
+    # https://matplotlib.org/stable/tutorials/introductory/customizing.html
+
+    # -- Style Sheet
+    base_style: seaborn-notebook
+
+    # -- Figure layouting etc.
+    # figure.constrained_layout.use: true
+    figure.dpi: 254       # important also for PDF to avoid rasterization bugs
+
+  helpers: {}
+
+.defaults.animation:
+  animation:
+    enabled: true  # has to be manually enabled
+
+    writer: frames  # assuming ffmpeg is not installed
+
+    # Configuration for each writer
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 92
+
+      ffmpeg:
+        init:
+          fps: 10
+        saving:
+          dpi: 92
+
+.defaults:
+  based_on:
+    - .defaults.style_and_helpers
+
+# Creators ....................................................................
+# ... for DAG-based plots
+
+.creator.universe:
+  creator: universe
+  universes: all
+
+  select:
+    _model_base: "."
+
+  dag_options:
+    select_path_prefix: *model_data_path
+
+.creator.multiverse:
+  creator: multiverse
+
+  select_and_combine:
+    base_path: *model_data_path
+
+
+# -----------------------------------------------------------------------------
+# Actual plot configurations --------------------------------------------------
+# -----------------------------------------------------------------------------
+
+agents_in_domain:
+  based_on:
+    - .defaults
+    - .defaults.animation
+    - .creator.universe
+
+  module: model_plots.SimpleFlocking
+  plot_func: agents_in_domain
+
+  select:
+    x:
+      path: x
+      transform: [.data]
+    y:
+      path: y
+      transform: [.data]
+    orientation:
+      path: orientation
+      transform: [.data]
+
+  transform:
+    - xr.Dataset:
+      - x: !dag_tag x
+        y: !dag_tag y
+        orientation: !dag_tag orientation
+      tag: data
