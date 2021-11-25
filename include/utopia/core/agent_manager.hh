@@ -236,8 +236,8 @@ public:
      *  \param state the state of the agent that is to be added
      *  \param pos the position of the agent that is to be added
     */
-    const std::shared_ptr<Agent>&
-        add_agent (const AgentState& state, SpaceVec pos)
+    const std::shared_ptr<Agent>& add_agent (const AgentState& state,
+                                             const SpaceVec& pos)
     {
         _log->trace("Creating agent with ID {:d} ...", _id_counter);
         _agents.emplace_back(
@@ -258,8 +258,8 @@ public:
       * \param custom_cfg A custom configuration. If not given, will use the
       *         configuration given at initialization.
       */
-    const std::shared_ptr<Agent>&
-        add_agent (SpaceVec pos, const DataIO::Config& custom_cfg = {})
+    const std::shared_ptr<Agent>& add_agent (const SpaceVec& pos,
+                                             const Config& custom_cfg = {})
     {
         // Check if flag for default constructor was set
         if constexpr (AgentTraits::use_default_state_constructor) {
@@ -303,9 +303,7 @@ public:
       *         if the flag was set in the AgentTraits or config constructed
       *         with or without use of the RNG.
       */
-    const std::shared_ptr<Agent>&
-        add_agent (const DataIO::Config& custom_cfg = {})
-    {
+    const std::shared_ptr<Agent>& add_agent (const Config& custom_cfg = {}) {
         return add_agent(random_pos(), custom_cfg);
     }
 
@@ -390,8 +388,48 @@ public:
       * \param  sel_cfg  The configuration node containing the expected
       *                  key-value pairs specifying the selection.
       */
-    AgentContainer<Agent> select_agents(const DataIO::Config& sel_cfg) {
+    AgentContainer<Agent> select_agents(const Config& sel_cfg) {
         return select_entities(*this, sel_cfg);
+    }
+
+    // .. Utility functions ...................................................
+
+    /// Returns the (shortest) distance vector between two agents
+    /** The returned vector points from agent `a` to agent `b`.
+      *
+      * In periodic space, this will also check across boundaries to return
+      * the shortest vector.
+      */
+    SpaceVec get_distance_vector(const std::shared_ptr<Agent>& a,
+                                 const std::shared_ptr<Agent>& b) const
+    {
+        SpaceVec dpos = b->position() - a->position();
+
+        if (not _space->periodic) {
+            return dpos;
+        }
+        // else: periodic space, need to check component-wise against extent
+
+        for (auto i = 0u; i < dpos.n_elem; i++) {
+            if (dpos[i] > 0.5 * _space->extent[i]) {
+                dpos[i] -= _space->extent[i];
+            }
+            else if (dpos[i] < -0.5 * _space->extent[i]) {
+                dpos[i] += _space->extent[i];
+            }
+            // else: already is the shortest connection
+        }
+
+        return dpos;
+    }
+
+    /// Returns the (shortest) distance between two agents
+    /** First computes the distance vector, then returns its 2-norm.
+      */
+    double get_distance(const std::shared_ptr<Agent>& a,
+                        const std::shared_ptr<Agent>& b)
+    {
+        return arma::norm(get_distance_vector(a, b), 2);
     }
 
 
