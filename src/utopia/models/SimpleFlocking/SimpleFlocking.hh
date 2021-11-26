@@ -186,7 +186,7 @@ public:
         // TODO This leads to quadratic complexity in agent number!
         //      Find a better approach (on the level of AgentManager).
         for (const auto& a : this->_am.agents()) {
-            if (this->_am.get_distance(a, agent) > this->_interaction_radius) {
+            if (this->_am.distance(a, agent) > this->_interaction_radius) {
                 continue;
             }
             // else: is within interaction radius

@@ -42,7 +42,7 @@ struct Space {
     /** \param cfg  The config node to read the `periodic` and `extent` entries
       *             from.
       */
-    Space(const DataIO::Config& cfg)
+    Space(const Config& cfg)
     :
         periodic(setup_periodic(cfg)),
         extent(setup_extent(cfg))
@@ -91,9 +91,9 @@ struct Space {
     }
 
     /// Map a position (potentially outside space's extent) back into space
-    /** \details This is intended for use with periodic grids. It will also work
-      *         with non-periodic grids, but the input value should not have
-      *         been permitted in the first place.
+    /** This is intended for use with periodic space. It will also work with
+      * non-periodic space, but the input value should not have been permitted
+      * in the first place.
       *
       * \note   The high-value boundary is is mapped back to the low-value
       *         boundary, such that all points are well-defined.
@@ -110,12 +110,12 @@ struct Space {
     }
 
     
-    /// The displacement between 2 coordinates
-    /** \details Calculates vector pointing from pos_0 to pos_1.
-     *           In periodic boundary it calculates the shorter displacement.
+    /// Compute the displacement vector between two coordinates
+    /** Calculates vector pointing from pos_0 to pos_1.
+     *  In periodic space, it calculates the shorter displacement.
      *  
-     *  \warning The displacement of two coordinates in periodic boundary can be
-     *           maximum of half the domain size, i.e. moving away from a
+     *  \warning The displacement of two coordinates in periodic boundary can
+     *           be maximum of half the domain size, i.e. moving away from a
      *           coordinate in a certain direction will decrease the
      *           displacement once reached half the domain size.
      */
@@ -127,22 +127,22 @@ struct Space {
         }
         // else: Need to get shortest distance
 
-
         return dx - arma::round(dx / extent) % extent;
     }
 
-    /// The distance of 2 coordinates in space
-    /** \details Calculates the distance of 2 coordinates using the norm
-     *           implemented within Armadillo.
-     *           In periodic boundary it calculates the shorter distance.
+    /// The distance of two coordinates in space
+    /** Calculates the distance of two coordinates using the norm implemented
+     *  within Armadillo.
+     *  In periodic boundary it calculates the shorter distance.
      * 
      *  \warning The distance of two coordinates in periodic boundary can be
      *           maximum of half the domain size wrt every dimension,
      *           i.e. moving away from a coordinate in a certain direction will
      *           decrease the distance once reached half the domain size.
      * 
-     *  \param   p   The norm used to compute the distance, see arma::norm(X, p).
-     *               Can be either an integer >= 1 or one of "-inf", "inf", "fro"
+     *  \param   p   The norm used to compute the distance, see arma::norm.
+     *               Can be either an integer >= 1 or one of:
+     *               "-inf", "inf", "fro"
      */
     template<class NormType=std::size_t>
     auto distance(const SpaceVec& pos_0, const SpaceVec& pos_1,
@@ -155,7 +155,7 @@ struct Space {
 private:
     // -- Setup functions -----------------------------------------------------
     /// Setup the member `periodic` from a config node
-    bool setup_periodic(const DataIO::Config& cfg) {
+    bool setup_periodic(const Config& cfg) {
         if (not cfg["periodic"]) {
             throw std::invalid_argument("Missing config entry `periodic` to "
                                         "set up a Space object!");
@@ -174,7 +174,7 @@ private:
     /** \param cfg  The config node to read the `extent` parameter from. If
       *             that entry is missing, the default extent is used.
       */
-    SpaceVec setup_extent(const DataIO::Config& cfg) {
+    SpaceVec setup_extent(const Config& cfg) {
         if (cfg["extent"]) {
             return get_as_SpaceVec<dim>("extent", cfg);
         }

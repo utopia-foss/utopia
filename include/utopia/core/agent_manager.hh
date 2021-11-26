@@ -391,42 +391,27 @@ public:
 
     // .. Agent relations .....................................................
 
-    /// Returns the (shortest) distance vector between two agents
+    /// Returns the (shortest) displacement vector between two agents
     /** The returned vector points from agent `a` to agent `b`.
       *
       * In periodic space, this will also check across boundaries to return
       * the shortest vector.
       */
-    SpaceVec get_distance_vector(const std::shared_ptr<Agent>& a,
-                                 const std::shared_ptr<Agent>& b) const
+    SpaceVec displacement(const std::shared_ptr<Agent>& a,
+                          const std::shared_ptr<Agent>& b) const
     {
-        SpaceVec dpos = b->position() - a->position();
-
-        if (not _space->periodic) {
-            return dpos;
-        }
-        // else: periodic space, need to check component-wise against extent
-
-        for (auto i = 0u; i < dpos.n_elem; i++) {
-            if (dpos[i] > 0.5 * _space->extent[i]) {
-                dpos[i] -= _space->extent[i];
-            }
-            else if (dpos[i] < -0.5 * _space->extent[i]) {
-                dpos[i] += _space->extent[i];
-            }
-            // else: already is the shortest connection
-        }
-
-        return dpos;
+        return this->_space->displacement(a->position(), b->position());
     }
 
     /// Returns the (shortest) distance between two agents
-    /** First computes the distance vector, then returns its 2-norm.
+    /** By default, uses the 2-norm.
       */
-    double get_distance(const std::shared_ptr<Agent>& a,
-                        const std::shared_ptr<Agent>& b)
+    template<class NormType=std::size_t>
+    double distance(const std::shared_ptr<Agent>& a,
+                    const std::shared_ptr<Agent>& b,
+                    const NormType p = 2) const
     {
-        return arma::norm(get_distance_vector(a, b), 2);
+        return this->_space->distance(a->position(), b->position(), p);
     }
 
 
