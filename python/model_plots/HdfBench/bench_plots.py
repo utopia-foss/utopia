@@ -38,7 +38,7 @@ def _plot_times(*, times, bench_names: list, out_path: str, save_kwargs: dict=No
                          label=bname, **plot_kwargs)
 
     # Apply plot settings, labels, legend, ...
-    plt.gca().set_yscale('log', nonposy='clip')
+    plt.gca().set_yscale('log', nonpositive='clip')
 
     plt.xlabel("Time step")
     plt.ylabel("Execution time per step [s]")
