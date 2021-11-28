@@ -5,7 +5,7 @@ message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
 # NOTE Different utopya version could be installed if utopia-env already exists
-python_find_package(PACKAGE utopya VERSION 0.8.7)
+python_find_package(PACKAGE utopya VERSION 0.8.8)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
