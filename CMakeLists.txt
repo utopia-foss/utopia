@@ -84,13 +84,12 @@ target_compile_definitions(utopia INTERFACE
 # Multithreading dependencies
 if (MULTITHREADING)
     target_link_libraries(utopia INTERFACE
-        $<$<BOOL:${ParallelSTL_FOUND}>:pstl::ParallelSTL>
+        $<$<BOOL:${oneDPL_FOUND}>:oneDPL>
         $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:TBB::tbb>
     )
     # Propagate availability of PSTL definitions
     target_compile_definitions(utopia INTERFACE
-        $<$<BOOL:${ParallelSTL_FOUND}>:HAVE_EXTERNAL_PSTL>
-        $<$<BOOL:${INTERNAL_PSTL}>:HAVE_INTERNAL_PSTL>
+        $<$<BOOL:${oneDPL_FOUND}>:HAVE_ONEDPL>
         $<$<BOOL:${INTERNAL_PSTL_WITH_TBB}>:USE_INTERNAL_PSTL>
     )
 endif()

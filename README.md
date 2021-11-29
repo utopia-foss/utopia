@@ -247,16 +247,20 @@ The following instructions will enable additional, *optional* features of Utopia
 
 1. Install the optional dependencies for multithreading.
 
-    * On **Ubuntu**:
+    * On **Ubuntu**, we recommend using the GCC compiler with Intel TBB:
 
         ```bash
         apt update && apt install libtbb-dev
         ```
 
+        Alternatively, one may install the Intel oneAPI base toolkit following these [installation instructions](https://www.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html).
+        The only required package is `intel-basekit`.
+        It includes the oneDPL library we use for parallelization.
+
     * On **macOS**, with **Homebrew** (please mind the note below!):
 
         ```bash
-        brew update && brew install parallelstl
+        brew update && brew install onedpl
         ```
 
     * On **macOS** with **MacPorts**, we are [currently unsure](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/-/issues/254) whether multithreading is workable.
@@ -267,17 +271,6 @@ The following instructions will enable additional, *optional* features of Utopia
     cd build
     cmake -DMULTITHREADING=On ..
     ```
-
-    **Note:** If you installed ParallelSTL on **macOS** via **Homebrew**, additionally specify the path to the installation in `/usr/local/Cellar/`:
-
-    ```bash
-    cmake -DMULTITHREADING=On -DParallelSTL_ROOT=/usr/local/Cellar/parallelstl/<version>/ ..
-    ```
-
-    Make sure to replace `<version>` with the version installed on your machine; use `brew list parallelstl` to find the correct path.
-
-    You will only have to add the additional options to the CMake call **once**.
-    They will be stored until you delete the contents of the build directory.
 
     At the end of its output, CMake should now report that the "Multithreading" feature has been enabled.
     If the requirements for multithreading are not met, however, the build will fail.
@@ -510,8 +503,8 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 | [doxygen](http://www.doxygen.nl)                      | >= 1.8  | Builds the C++ code documentation |
 | [graphviz](https://graphviz.gitlab.io)                | >= 2.40 | Used by doxygen to create dependency diagrams |
 | [ffmpeg](https://www.ffmpeg.org)                      | >= 4.1  | Used for creating videos |
-| [ParallelSTL](https://github.com/oneapi-src/oneDPL)   |         | Parallelization of STL algorithms (included in GCC >= 9) |
-| [TBB](https://github.com/oneapi-src/oneTBB)           | >= 2018.5  | Intel parallelization library required by ParallelSTL |
+| [Intel oneDPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-library.html) |  | Intel parallelization library |
+| [TBB](https://github.com/oneapi-src/oneTBB)           | >= 2018.5  | Intel multithreading library |
 
 
 <!-- ###################################################################### -->
