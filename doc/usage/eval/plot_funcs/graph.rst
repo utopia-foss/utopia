@@ -1,11 +1,6 @@
 Graph Plots
 ===========
 
-.. automodule:: utopya.plot_funcs.dag.graph
-   :noindex:
-
-For detailed descriptions of the networkx plot functions that are used here, refer to the `networkx docs <https://networkx.github.io/documentation/stable/reference/drawing.html>`_.
-
 .. contents::
     :local:
     :depth: 2
@@ -33,6 +28,52 @@ Check out an exemplary single graph plot configuration for the ``CopyMeGraph`` m
     :language: yaml
     :start-after: ### Start -- graph_plot_cfg
     :end-before:  ### End ---- graph_plot_cfg
+
+
+.. note::
+
+    If you have all ``node_props`` or ``edge_props`` in *one* container (HDF5 dataset) respectively, there are two possibilities to make subselections in the containers:
+
+    1. When you only use *either* node *or* edge properties, or you want to make the same subselection on *both* your node *and* your edge dataset, you can simply do a ``.sel: {property: my_prop}``, where ``property`` is your dataset dimension, and ``my_prop`` the coordinate, or you can do the respective ``.isel``
+
+    2. When you need to perform different subselections on your node and edge datasets—say you want node betweenness centrality and edge weight—you need to specify them via the DAG's select interface, and the procedure needs to include the following steps:
+
+    .. code-block:: yaml
+
+        select:
+            betw:
+              path: network/vertex_metrics
+              transform:
+                - .sel: [!dag_prev , {property: betweenness}]
+                - .squeeze: !dag_prev
+                  kwargs: {drop: true}
+            wei: network/edge_properties
+                - .sel: [!dag_prev , {property: weight}]
+                - .squeeze: !dag_prev
+                  kwargs: {drop: true}
+            graph_group: g_static
+        register_property_maps:
+            - betw
+            - wei
+        compute_only: [graph_group, betw, wei]
+        # clear_existing_property_maps: false
+        graph_creation:
+            at_time_idx: 0
+            edge_props: [wei]
+            node_props: [betw]
+            # sel: { time: 0 } # applied to both properties
+        graph_drawing:
+            edges:
+              edge_color: k
+              width:
+                from_property: wei
+                scale_to_interval: [.1, 2.]
+            nodes:
+              node_color:
+                from_property: betw
+
+
+
 
 
 ColorManager configuration
@@ -67,3 +108,12 @@ For a nonlinear color-mapping, adjust the ``cmap_norm``:
 
 .. autofunction:: utopya.plot_funcs.dag.graph.draw_graph
     :noindex:
+
+
+Detailed API Reference
+----------------------
+
+.. automodule:: utopya.plot_funcs.dag.graph
+   :noindex:
+
+For detailed descriptions of the networkx plot functions that are used here, refer to the `networkx docs <https://networkx.github.io/documentation/stable/reference/drawing.html>`_.
