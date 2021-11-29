@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <armadillo>
+#include <spdlog/spdlog.h>  // for fmt
 
 #include "../data_io/cfg_utils.hh"
 #include "types.hh"
@@ -50,9 +51,9 @@ struct Space {
         static_assert(dim > 0, "Space::dim needs to be >= 1");
     }
 
-    /// Constructor without any arguments, i.e. constructing a default space
-    /** \details The default space is non-periodic and has default extent of 1.
-      *         into each dimension.
+    /// Default constructor i.e. constructing a space with default parameters
+    /** The default space is non-periodic and has default extent of 1. into
+      * each dimension.
       */
     Space()
     :
@@ -163,24 +164,53 @@ private:
         return get_as<bool>("periodic", cfg);
     }
 
-    /// Setup the extent type if no config parameter was available
+    /// Setup space extent to
     SpaceVec setup_extent() {
-        SpaceVec extent;
-        extent.fill(1.);
-        return extent;
+        SpaceVec ext;
+        ext.fill(1.);
+        return ext;
     }
 
     /// Setup the extent member from a config node
     /** \param cfg  The config node to read the `extent` parameter from. If
-      *             that entry is missing, the default extent is used.
+      *             that entry is missing, the default extent (1) is used.
+      *             If the entry is a scalar, space will be set up to have
+      *             equal extent in all dimensions. Otherwise, it is expected
+      *             to be a sequence node.
       */
     SpaceVec setup_extent(const Config& cfg) {
         if (cfg["extent"]) {
-            return get_as_SpaceVec<dim>("extent", cfg);
-        }
+            SpaceVec ext;
 
-        // Return the default extent
-        return setup_extent();
+            if (cfg["extent"].IsScalar()) {
+                ext.fill(get_as<double>("extent", cfg));
+            }
+            else {
+                if (dim != cfg["extent"].size()) {
+                    throw std::invalid_argument(fmt::format(
+                        "Invalid size of `space.extent` sequence ({}) for "
+                        "selected space dimensionality ({})!",
+                        cfg["extent"].size(), dim
+                    ));
+                }
+                ext = get_as_SpaceVec<dim>("extent", cfg);
+            }
+
+            if (ext.min() <= 0.) {
+                ext.print("Invalid `space.extent`:");
+                throw std::invalid_argument(
+                    "The space extent needs to be strictly positive in "
+                    "all entries, but it contained at least one element <= 0! "
+                    "Check the `space.extent` config node to address this."
+                );
+            }
+
+            return ext;
+        }
+        else {
+            // Return the default extent, needs no check
+            return setup_extent();
+        }
     }
 };
 
