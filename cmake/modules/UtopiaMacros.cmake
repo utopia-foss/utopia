@@ -49,90 +49,64 @@ find_package(yaml-cpp 0.6.2 REQUIRED)
 
 # --- Multithreading Capabilities ---
 #
-# We cover three cases:
-# 1. The standard library has PSTL definitions and requires TBB externally.
-# 2. The standard library has no PSTL definitions and we search for ParallelSTL.
-# 3. The standard library has PSTL definitions but the user wants to use
-#    an external ParallelSTL package, which they indicate by setting
-#    ParallelSTL_ROOT. In this case, we also check for TBB again if ParallelSTL
-#    could not be found.
-#
-# Result variables:
-# - HAVE_PSTL : If TRUE, multithreading is enabled.
-# - ParallelSTL_FOUND: If TRUE, ParallelSTL is found and used.
-# - INTERNAL_PSTL: If TRUE, ParallelSTL definitions are natively available.
-# - INTERNAL_PSTL_WITH_TBB: If TRUE, INTERNAL_PSTL is TRUE and the native
-#                           definitions are used with the external TBB library.
-#
 # NOTE: Multithreading will only be enabled if MULTITHREADING is ON.
 #       But dependencies are always checked. This must be reflected in the
 #       UtopiaConfig.cmake.in file!
 #
+# We cover two cases in the following order of importance:
+# 1. Intel oneDPL is installed. then we use it exclusively.
+# 2. Intel oneDPL is not installed, but the standard library has PSTL
+#    definitions and TBB is installed.
+#
+# The latter does not apply to macOS where incompatibilities have been found for
+# macOS 11 "Big Sur" and AppleClang 11.
+#
+# Result variables:
+# - HAVE_PSTL : If TRUE, multithreading is enabled.
+# - oneDPL_FOUND: If TRUE, oneDPL is found and used.
+# - INTERNAL_PSTL: If TRUE, PSTL definitions are natively available.
+# - INTERNAL_PSTL_WITH_TBB: If TRUE, INTERNAL_PSTL is true and TBB is found
+#                           (this variable is used for correct linking)
+#
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(SYSTEM_IS_MACOS TRUE)
+# --- Intel oneDPL ---
+# Required for macOS (see above)
+if (MULTITHREADING AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(MAYBE_REQUIRED REQUIRED)
 endif()
-
-if (SYSTEM_IS_MACOS
-    OR DEFINED ENV{ParallelSTL_ROOT}
-    OR DEFINED CACHE{ParallelSTL_ROOT}
-)
-    set(PRIORITIZE_ParallelSTL TRUE)
-endif()
-
-# Check PSTL availability from standard library
-include(CheckIncludeFileCXX)
-check_include_file_cxx(execution INTERNAL_PSTL)
-
-# --- ParallelSTL ---
-# Search alternative definition of <execution>
-# NOTE: ParallelSTL requires TBB and will search for it
-if(NOT INTERNAL_PSTL OR PRIORITIZE_ParallelSTL)
-    find_package(ParallelSTL)
-
-    # NOTE: Default installation of ParallelSTL through Homebrew is faulty.
-    #       Therefore, check if the header can actually be included.
-    if (ParallelSTL_FOUND)
-        get_target_property(PSTL_INCLUDE_DIRS
-            pstl::ParallelSTL INTERFACE_INCLUDE_DIRECTORIES)
-
-        include(UtopiaCheckPath)
-        check_path(EXIST_VAR PSTL_INCLUDE_EXISTS
-                   DIRECTORIES ${PSTL_INCLUDE_DIRS})
-
-        if (NOT PSTL_INCLUDE_EXISTS)
-            message(WARNING "ParallelSTL was detected but could NOT be "
-                            "included! This can happen with Homebrew "
-                            "installations. Please consult the README.md")
-
-            # Undo effects of "find_package()"
-            unset(ParallelSTL_FOUND)
-            unset(ParallelSTL_DIR CACHE)
-        endif()
-    endif()
-endif()
+find_package(oneDPL ${MAYBE_REQUIRED})
 
 # --- Thread Building Blocks (TBB) ---
 # Required for parallel policies if execution header is natively available
-if (MULTITHREADING)
+# NOTE: Check this before testing for internal execution header because
+#       GCC 11 cannot include the header without linking to TBB
+if (MULTITHREADING AND NOT oneDPL_FOUND)
     set(MAYBE_REQUIRED REQUIRED)
 endif()
 find_package(TBB 2018.5 ${MAYBE_REQUIRED})
 
+# Check PSTL availability from standard library
+include(CheckIncludeFileCXX)
+cmake_policy(PUSH)
+cmake_policy(SET CMP0075 NEW)
+if(TBB_FOUND)
+    # Link test executable with TBB header for GCC 11 compatibility
+    set(CMAKE_REQUIRED_LIBRARIES TBB::tbb)
+endif()
+check_include_file_cxx(execution INTERNAL_PSTL)
+cmake_policy(POP)
+
 # Multithreading summary variables
 if (MULTITHREADING)
-    if (INTERNAL_PSTL AND TBB_FOUND AND NOT ParallelSTL_FOUND)
-        # NOTE: Disallow TBB with internal PSTL on macOS because it does not
-        #       seem to work (macOS 11 "Big Sur", AppleClang 11)
-        if (SYSTEM_IS_MACOS)
-            message(WARNING "Please install 'parallelstl' via Homebrew to use "
-                            "multithreading!")
-        else ()
-            set(INTERNAL_PSTL_WITH_TBB TRUE)
-        endif()
-    endif()
-    if (INTERNAL_PSTL_WITH_TBB OR ParallelSTL_FOUND)
+    if (oneDPL_FOUND)
         set(HAVE_PSTL TRUE)
+    elseif (TBB_FOUND AND INTERNAL_PSTL)
+        set(HAVE_PSTL TRUE)
+        set(INTERNAL_PSTL_WITH_TBB TRUE)
+    elseif (TBB_FOUND AND NOT INTERNAL_PSTL)
+        message(SEND_ERROR "Multithreading is ON and TBB was found but the "
+                           "standard library does not provide PSTL "
+                           "definitions. Consider installing Intel oneDPL.")
     else ()
         message(SEND_ERROR "Multithreading is ON but dependencies could not "
                            "be found!")

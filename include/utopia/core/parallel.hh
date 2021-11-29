@@ -1,20 +1,16 @@
 #ifndef UTOPIA_CORE_PARALLEL_HH
 #define UTOPIA_CORE_PARALLEL_HH
 
-#include <algorithm>
-#include <exception>
-#include <tuple>
-
 // Include one of the available headers, preferring the external one
-#if defined(HAVE_EXTERNAL_PSTL)
-#include <pstl/execution>
-#include <pstl/algorithm>
+#if defined(HAVE_ONEDPL)
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/algorithm>
 #elif defined(USE_INTERNAL_PSTL)
 #include <execution>
 #endif
 
 // PSTL is available
-#if defined(HAVE_EXTERNAL_PSTL) || defined(USE_INTERNAL_PSTL)
+#if defined(HAVE_ONEDPL) || defined(USE_INTERNAL_PSTL)
 #define HAVE_PSTL
 #endif
 
@@ -23,18 +19,21 @@
 #define UTOPIA_PARALLEL // Now we're cookin'!
 #define MAYBE_UNUSED    // Make sure to get proper warnings for unused parameter
 
-// NOTE: If both definitions are available, we use the external ones. In this
-//       case, they reside in another namespace, which we inject into the
-//       STL namespace.
-#if defined(HAVE_EXTERNAL_PSTL) && defined(HAVE_INTERNAL_PSTL)
+// Inject oneDPL execution policies into std namespace to have agnostic client
+// code
+#if defined(HAVE_ONEDPL)
 namespace std::execution {
-    using namespace pstl::execution;
+    using namespace oneapi::dpl::execution;
 }
 #endif
 
 #else
 #define MAYBE_UNUSED [[maybe_unused]]  // Avoid warning for unused parameter
 #endif
+
+#include <algorithm>
+#include <exception>
+#include <tuple>
 
 #include <utopia/core/logging.hh>
 #include <utopia/data_io/cfg_utils.hh>

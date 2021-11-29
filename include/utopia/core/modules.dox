@@ -351,7 +351,10 @@ type is callable or not.
 C++17 introduced [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) for running STL algorithms in parallel, on multiple threads and/or vectorized instructions.
 The decision of executing an algorithm is thereby taken at compile time because this optimizes performance and, depending on the particular policy chosen, poses restrictions on the algorithm and underlying data due to [data races](https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races).
 However, most large STL libraries still do not support parallel execution policies.
-Utopia therefore relies on Intel's [ParallelSTL](https://software.intel.com/content/www/us/en/develop/articles/get-started-with-parallel-stl.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+ISNMain+%28Intel+Developer+Zone+Articles+Feed%29) bundled into the [TBB](https://software.intel.com/content/www/us/en/develop/tools/threading-building-blocks.html) library which is an optional dependency.
+Utopia therefore relies on optional third party software to implement multithreading.
+The [Intel oneAPI toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) is a complete software suite for developing high-performance software on heterogeneous, parallel computer architectures.
+Users of Utopia can either install the complete oneAPI toolkit, or only the [Thread-Building Blocks (TBB)](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onetbb.html) component to enable multithreading support in Utopia, depending on the used operating system.
+Please refer to the Utopia installation instructions for further information.
 
 The goal of the parallel facilities in Utopia is to shift the compile-time decision to a runtime decision.
 Developers only *indicate* that their algorithms can be run in parallel and take all necessary precautions for that.
@@ -446,15 +449,9 @@ The parallel.hh header therefore requires information on the setup passed throug
 
 Macro Defined         | Meaning and Use
 --------------------- | ---------------
-`HAVE_INTERNAL_PSTL`  | Parallel policy definitions are available through the used standard library via `<execution>`.
-`USE_INTERNAL_PSTL`   | The setup should rely on the internal parallel policy definitions. This currently implies that the TBB package is installed and available.
-`HAVE_EXTERNAL_PSTL`  | An external ParallelSTL package has been found and should be used.
-`ENABLE_PARALLEL_STL` | Parallel features of Utopia are enabled. Does nothing if neither `USE_INTERNAL_PSTL` nor `HAVE_EXTERNAL_PSTL` are set.
-
-We distinguish having and using internal PSTL definitions because of a corner case where both internal and external definitions are available.
-In this case, the external definitions should be used.
-However, they then reside in a different namespace to avoid re-definition of certain functions and objects.
-The parallel.hh header has to be aware of that and inject the external definitions into the "correct" namespace.
+`USE_INTERNAL_PSTL`   | The setup should rely on the standard library parallel policy definitions. This currently implies that the TBB package is installed and available.
+`HAVE_ONEDPL`         | Intel oneDPL library has been found and is used.
+`ENABLE_PARALLEL_STL` | Parallel features of Utopia are enabled. Does nothing if neither `USE_INTERNAL_PSTL` nor `HAVE_ONEDPL` are set.
 
 \}
 
