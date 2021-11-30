@@ -5,3 +5,6 @@
 ---
 agents_in_domain:
   based_on: agents_in_domain
+
+time_series/orientation:
+  based_on: time_series/orientation

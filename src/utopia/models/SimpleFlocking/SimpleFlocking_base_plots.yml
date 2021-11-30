@@ -5,6 +5,14 @@
 _:
   model_data_path:      &model_data_path      data/SimpleFlocking
 
+  aesthetics:
+    hvline: &style_hvline
+      linestyle: solid
+      color: grey
+      alpha: .4
+      linewidth: 2.
+      zorder: -42
+
 # -----------------------------------------------------------------------------
 # Plot configuration defaults -------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -50,11 +58,20 @@ _:
   animation:
     writer: ffmpeg
 
+.defaults.dag:
+  dag_options:
+    define:
+      # Can be invoked as fallback to skip a plot in a controlled fashion
+      _skip_plot:
+        - operation: raise_SkipPlot
+          args: [true]
+
 
 # Aggregated defaults
 .defaults:
   based_on:
     - .defaults.style_and_helpers
+    - .defaults.dag
 
 
 # Creators ....................................................................
@@ -77,6 +94,28 @@ _:
     base_path: *model_data_path
 
 
+# Plot types ..................................................................
+
+.plot.facet_grid:
+  based_on:
+    - .dag.generic.facet_grid
+    - .defaults
+
+  # Explicitly set individual facet size and aspect ratio
+  size: 4
+  aspect: 1.5
+
+  # May want to use a custom suptitle format string
+  suptitle_kwargs:
+    # title: "{dim:} = {value:.3g}"   # ... for numeric values
+    title: "{dim:} = {value:}"      # ... allowing non-numeric values
+
+.plot.facet_grid.with_auto_encoding:
+  based_on: .plot.facet_grid
+
+  auto_encoding: true
+  col_wrap: auto
+
 
 
 
@@ -84,6 +123,7 @@ _:
 # Actual plot configurations --------------------------------------------------
 # -----------------------------------------------------------------------------
 
+# A spatial plot of agent positions and orientations
 agents_in_domain:
   based_on:
     - .defaults
@@ -95,17 +135,19 @@ agents_in_domain:
 
   select:
     x:
-      path: x
+      path: agent/x
       transform: [.data]
+      allow_failure: silent
+      fallback: !dag_tag _skip_plot
     y:
-      path: y
+      path: agent/y
       transform: [.data]
     orientation:
-      path: orientation
+      path: agent/orientation
       transform: [.data]
 
     space_extent:
-      path: x  # meta data is written to every other dataset as well
+      path: agent/x  # meta data is written to every other dataset as well
       transform:
         - getattr: [!dag_prev , attrs]
         - getitem: [!dag_prev , space_extent]
@@ -129,3 +171,76 @@ agents_in_domain:
   # passed on to plt.scatter
   s: 12
   cmap: hsv  # TODO Is there a better cyclic one?
+
+
+# A time series plot of the circular mean and std of the agent orientation
+time_series/orientation:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+
+  # -- Data selection
+  # This is a bit more complicated, because we need to address the
+  # discontinuity in the orientation value to avoid perpendicular lines in the
+  # plots. To that end, the time series for each universe are processed and
+  # NaN values are set at each jump, such that the plot line is broken.
+  dag_options:
+    meta_operations:
+      get_mean_and_std_orientation:
+        - define: !arg 0
+          tag: model_data
+
+        - getitem: [!dag_tag model_data, orientation_circmean]
+        - .data: !dag_prev
+          tag: mean_data
+        - getitem: [!dag_tag model_data, orientation_circstd]
+        - .data: !dag_prev
+          tag: std_data
+
+        - xr.Dataset:
+          - mean: !dag_tag mean_data
+            std: !dag_tag std_data
+
+  select_and_combine:
+    fields:
+      mean_and_std_orientation:
+        path: ./
+        transform:
+          - get_mean_and_std_orientation
+
+          # Remove discontinuities; see operations.py for implementation
+          # NOTE An alternative operation that preserves data points is
+          #      `insert_nan_at_discontinuities`. However, this will introduce
+          #      new dummy time coordinates into *all* data dimensions, thus
+          #      carrying through the discontinuity into the rest of the data.
+          - set_nan_at_discontinuities: !dag_prev
+            kwargs:
+              variable: mean
+              threshold: 3.14159
+
+  transform:
+    - define: !dag_tag mean_and_std_orientation
+      tag: data
+
+  # -- Plot config
+  kind: errorbars
+  use_bands: true
+  fill_between_kwargs:
+    interpolate: true
+
+  x: time
+  y: mean
+  yerr: std
+
+  helpers:
+    set_limits:
+      x: [0, max]
+      y: [-3.14159, +3.14159]
+
+    set_hv_lines:
+      hlines:
+        - pos: 0.
+          <<: *style_hvline
+
+    set_labels:
+      y: orientation (circ. mean and std.)

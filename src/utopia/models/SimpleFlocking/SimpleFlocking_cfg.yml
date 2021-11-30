@@ -23,3 +23,10 @@ interaction_radius: 1.
 
 # The (double) amplitude of the directional noise
 noise_level: 0.1
+
+
+# --- Output
+# Whether to store agent-specific data
+# Not storing agent-specific data improves simulation speed and reduces the
+# size of the output data.
+store_agent_data: false

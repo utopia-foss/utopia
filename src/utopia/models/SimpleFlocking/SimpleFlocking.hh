@@ -42,6 +42,12 @@ public:
     /// The type of the agent manager
     using AgentManager = Utopia::AgentManager<AgentTraits, SimpleFlocking>;
 
+    /// Agent type
+    using Agent = AgentManager::Agent;
+
+    /// Pointer to agent
+    using AgentPtr = std::shared_ptr<Agent>;
+
     /// Type of the update rules for agents
     using Rule = typename AgentManager::RuleFunc;
 
@@ -76,10 +82,18 @@ private:
     std::uniform_real_distribution<double> _noise_distr;
 
 
-    // .. Datasets ............................................................
-    std::shared_ptr<DataSet> _dset_x;
-    std::shared_ptr<DataSet> _dset_y;
-    std::shared_ptr<DataSet> _dset_orientation;
+    // .. Output-related ......................................................
+    /// Whether to store agent-specific data
+    bool _store_agent_data;
+
+    // Agent-specific datasets
+    std::shared_ptr<DataSet> _dset_agent_x;
+    std::shared_ptr<DataSet> _dset_agent_y;
+    std::shared_ptr<DataSet> _dset_agent_orientation;
+
+    // Global observables
+    std::shared_ptr<DataSet> _dset_orientation_circmean;
+    std::shared_ptr<DataSet> _dset_orientation_circstd;
 
 
 public:
@@ -110,10 +124,22 @@ public:
 
     ,   _noise_distr(-_noise_level/2., +_noise_level/2.)
 
-    ,   _dset_x(this->create_am_dset("x", _am))
-    ,   _dset_y(this->create_am_dset("y", _am))
-    ,   _dset_orientation(this->create_am_dset("orientation", _am))
-    {}
+    // .. Output-related ......................................................
+    ,   _store_agent_data(get_as<bool>("store_agent_data", this->_cfg))
+
+    ,   _dset_agent_x(this->create_am_dset("agent/x", _am))
+    ,   _dset_agent_y(this->create_am_dset("agent/y", _am))
+    ,   _dset_agent_orientation(this->create_am_dset("agent/orientation", _am))
+
+    ,   _dset_orientation_circmean(
+            this->create_dset("orientation_circmean", {})
+        )
+    ,   _dset_orientation_circstd(
+            this->create_dset("orientation_circstd", {})
+        )
+    {
+        this->_log->info("Store agent data?  {}", _store_agent_data);
+    }
 
 
 private:
@@ -132,9 +158,18 @@ public:
     }
 
 
-    /// Monitor model information
+    /// Monitor the model state
+    /** This monitor provides information about the current orientation's
+      * (circular) mean and standard deviation.
+      */
     void monitor () {
-        // this->_monitor.set_entry("orientation_stddev", nan);  // TODO
+        const auto orientations = get_from_agents([](const auto& agent){
+            return agent->state().get_orientation();
+        });
+
+        const auto [circ_mean, circ_std] = circular_mean_and_std(orientations);
+        this->_monitor.set_entry("orientation_mean", circ_mean);
+        this->_monitor.set_entry("orientation_std", circ_std);
     }
 
 
@@ -143,22 +178,34 @@ public:
         using WriteT = float;
         const auto& agents = _am.agents();
 
-        _dset_x->write(
+        // -- Global observables
+        const auto orientations = get_from_agents([](const auto& agent){
+            return agent->state().get_orientation();
+        });
+
+        const auto [circ_mean, circ_std] = circular_mean_and_std(orientations);
+        _dset_orientation_circmean->write(circ_mean);
+        _dset_orientation_circstd->write(circ_std);
+
+        if (not _store_agent_data) return;
+
+        // -- Agent-specific data
+        _dset_agent_x->write(
             agents.begin(), agents.end(),
             [](const auto& agent) {
                 return static_cast<WriteT>(agent->position()[0]);
         });
 
-        _dset_y->write(
+        _dset_agent_y->write(
             agents.begin(), agents.end(),
             [](const auto& agent) {
                 return static_cast<WriteT>(agent->position()[1]);
         });
 
-        _dset_orientation->write(
-            agents.begin(), agents.end(),
-            [](const auto& agent) {
-                return static_cast<WriteT>(agent->state().get_orientation());
+        _dset_agent_orientation->write(
+            orientations.begin(), orientations.end(),
+            [](const auto& orientation) {
+                return static_cast<WriteT>(orientation);
         });
     }
 
@@ -167,6 +214,22 @@ public:
 
     std::size_t num_agents () const {
         return _am.agents().size();
+    }
+
+    /// Aggregate agent properties into a container
+    template<
+        class Adapter,
+        class ValueType = std::invoke_result_t<Adapter, const AgentPtr&>
+    >
+    std::vector<ValueType> get_from_agents (const Adapter& adapter) const {
+        std::vector<ValueType> cont;
+        cont.reserve(num_agents());
+
+        std::transform(
+            this->_am.agents().begin(), this->_am.agents().end(),
+            std::back_inserter(cont), adapter
+        );
+        return cont;
     }
 
 
