@@ -7,6 +7,7 @@
 #include <vector>
 #include <limits>
 
+#include <armadillo>
 #include <spdlog/spdlog.h>
 
 #include <utopia/core/types.hh>
@@ -18,7 +19,7 @@ constexpr double TAU = 2*M_PI;
 constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
 
 
-// ----------------------------------------------------------------------------
+// -- Angle-related tools -----------------------------------------------------
 
 /// Returns a uniformly random angle value in [-π, +π)
 template<class RNG, class T=double>
@@ -43,6 +44,30 @@ void constrain_angles (Container& angles) {
         angles.begin(), angles.end(), angles.begin(),
         [](auto angle){ return constrain_angle(angle); }
     );
+}
+
+
+// -- Geometry ----------------------------------------------------------------
+
+/// Computes the absolute group velocity from a container of velocity vectors
+/** Essentially: the 2-norm of the sum of all velocity vectors, divided by the
+  * number of vectors.
+  * Returns NaN if the given container is empty.
+  */
+template<class Container>
+double absolute_group_velocity (const Container& velocities) {
+    if (velocities.empty()) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    using Vec = typename Container::value_type;
+    Vec zero = velocities[0];
+    zero.fill(0.);
+
+    const Vec group_velocity = std::accumulate(
+        velocities.begin(), velocities.end(), zero
+    );
+    return arma::norm(group_velocity, 2) / velocities.size();
 }
 
 

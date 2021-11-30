@@ -1,0 +1,18 @@
+# A run configuration that yields flocking groups of agents
+#
+# This corresponds to figure 1b) in the Vicsek et al., 1995, paper
+---
+
+paths:
+  model_note: flocking
+
+parameter_space:
+  SimpleFlocking:
+    space:
+      extent: 25
+
+    agent_manager:
+      initial_num_agents: 300
+
+    speed: 0.03
+    noise_level: 0.1

@@ -1,0 +1,49 @@
+# A run configuration that reproduces Fig. 2a, of Vicsek et al., 1995.
+---
+perform_sweep: true
+
+paths:
+  model_note: noise_sweep
+
+parameter_space:
+  num_steps: 5000  # TODO Check if sufficient for large system sizes
+  write_every: 10
+
+  seed: !sweep
+    default: 42
+    range: [16]
+    order: !expr -np.inf  # always first
+
+  SimpleFlocking:
+    agent_manager:
+      initial_num_agents: !sweep
+        name: "N"
+        default: 300
+        values:
+          - 40
+          - 100
+          - 400
+          #
+          # These are very costly; enable selectively and adjust coupled-sweep
+          # - 4000
+          # - 10000
+        order: 99999  # last, such that it's iterated over most frequently
+
+    space:
+      extent: !coupled-sweep
+        target_name: "N"
+        default: 25
+        values:       # N:
+          - 3.1       # 40
+          - 5.0       # 100
+          - 10.0      # 400
+          # - 31.6      # 4000
+          # - 50.       # 10000
+
+    speed: 0.03
+    noise_level: !sweep
+      order: 0
+      default: 0.1
+      linspace: [0., 5., 21]
+
+    store_agent_data: false

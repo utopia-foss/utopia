@@ -1,0 +1,20 @@
+# A run configuration that yields a globally ordered motion
+#
+# This corresponds to figure 1d) in the Vicsek et al., 1995, paper
+---
+
+paths:
+  model_note: ordered
+
+parameter_space:
+  num_steps: 1000
+
+  SimpleFlocking:
+    space:
+      extent: 5
+
+    agent_manager:
+      initial_num_agents: 300
+
+    speed: 0.03
+    noise_level: 0.1

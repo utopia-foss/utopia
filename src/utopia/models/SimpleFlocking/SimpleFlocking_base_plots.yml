@@ -94,6 +94,19 @@ _:
     base_path: *model_data_path
 
 
+# Helper shortcuts ............................................................
+
+.hlpr.limits.x_min_max:
+  helpers:
+    set_limits:
+      x: [min, max]
+
+.hlpr.limits.y_positive:
+  helpers:
+    set_limits:
+      y: [0, ~]
+
+
 # Plot types ..................................................................
 
 .plot.facet_grid:
@@ -110,6 +123,7 @@ _:
     # title: "{dim:} = {value:.3g}"   # ... for numeric values
     title: "{dim:} = {value:}"      # ... allowing non-numeric values
 
+
 .plot.facet_grid.with_auto_encoding:
   based_on: .plot.facet_grid
 
@@ -117,12 +131,19 @@ _:
   col_wrap: auto
 
 
+.plot.facet_grid.type.time_series:
+  based_on:
+    - .plot.facet_grid.with_auto_encoding
+    - .hlpr.limits.x_min_max
+
+  x: time
 
 
 # -----------------------------------------------------------------------------
 # Actual plot configurations --------------------------------------------------
 # -----------------------------------------------------------------------------
 
+# .. Spatial plots ............................................................
 # A spatial plot of agent positions and orientations
 agents_in_domain:
   based_on:
@@ -173,11 +194,70 @@ agents_in_domain:
   cmap: hsv  # TODO Is there a better cyclic one?
 
 
+# .. Time series ..............................................................
+
+# A time series plot of the normalized absolute group velocity
+time_series/norm_group_velocity:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.type.time_series
+    - .hlpr.limits.y_positive
+
+  select_and_combine:
+    fields:
+      data: norm_group_velocity
+
+  helpers:
+    set_title:
+      title: normalized absolute group velocity
+
+time_series/final_group_velocity:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .hlpr.limits.x_min_max
+    - .hlpr.limits.y_positive
+
+  expected_multiverse_ndim: [1, 2, 3, 4, 5]
+
+  select_and_combine:
+    fields:
+      _data:
+        path: norm_group_velocity
+        transform:
+          - .isel.item: [!dag_prev , {time: -1}]  # TODO Consider averaging
+
+  transform:
+    - define: !dag_tag _data
+      tag: data
+
+  helpers:
+    set_title:
+      title: final absolute group velocity
+    set_limits:
+      x: [0, ~]
+
+# A time series plot of the orientation's circular std. dev.
+time_series/orientation_circstd:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.type.time_series
+    - .hlpr.limits.y_positive
+
+  select_and_combine:
+    fields:
+      data: orientation_circstd
+
+  helpers:
+    set_title:
+      title: circular std. of agent orientation
+
+
 # A time series plot of the circular mean and std of the agent orientation
 time_series/orientation:
   based_on:
     - .creator.multiverse
-    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.type.time_series
 
   # -- Data selection
   # This is a bit more complicated, because we need to address the
@@ -234,7 +314,6 @@ time_series/orientation:
 
   helpers:
     set_limits:
-      x: [0, max]
       y: [-3.14159, +3.14159]
 
     set_hv_lines:
@@ -244,3 +323,4 @@ time_series/orientation:
 
     set_labels:
       y: orientation (circ. mean and std.)
+

@@ -69,6 +69,9 @@ private:
 
     // .. Global parameters ...................................................
 
+    /// The global speed value, set for all agents
+    double _speed;
+
     /// The radius within which agents interact with each other
     double _interaction_radius;
 
@@ -94,6 +97,7 @@ private:
     // Global observables
     std::shared_ptr<DataSet> _dset_orientation_circmean;
     std::shared_ptr<DataSet> _dset_orientation_circstd;
+    std::shared_ptr<DataSet> _dset_norm_group_velocity;
 
 
 public:
@@ -119,6 +123,7 @@ public:
 
     ,   _am(*this)
 
+    ,   _speed(get_as<double>("speed", this->_cfg))
     ,   _interaction_radius(get_as<double>("interaction_radius", this->_cfg))
     ,   _noise_level(get_as<double>("noise_level", this->_cfg))
 
@@ -137,8 +142,22 @@ public:
     ,   _dset_orientation_circstd(
             this->create_dset("orientation_circstd", {})
         )
+    ,   _dset_norm_group_velocity(
+            this->create_dset("norm_group_velocity", {})
+        )
     {
-        this->_log->info("Store agent data?  {}", _store_agent_data);
+        this->_log->info("Setting all agent's speed to {} ...", _speed);
+        apply_rule(
+            [speed=this->_speed](const auto& agent){
+                auto state = agent->state();
+                state.set_speed(speed);
+                return state;
+            },
+            this->_am.agents()
+        );
+
+        this->_log->info("{} all set up.", this->_name);
+        this->_log->info("  Store agent data?  {}", _store_agent_data);
     }
 
 
@@ -161,6 +180,7 @@ public:
     /// Monitor the model state
     /** This monitor provides information about the current orientation's
       * (circular) mean and standard deviation.
+      * In addition,
       */
     void monitor () {
         const auto orientations = get_from_agents([](const auto& agent){
@@ -170,6 +190,13 @@ public:
         const auto [circ_mean, circ_std] = circular_mean_and_std(orientations);
         this->_monitor.set_entry("orientation_mean", circ_mean);
         this->_monitor.set_entry("orientation_std", circ_std);
+
+
+        const auto velocities = get_from_agents([](const auto& agent){
+            return agent->state().get_displacement();
+        });
+        this->_monitor.set_entry("norm_group_velocity",
+                                 absolute_group_velocity(velocities) / _speed);
     }
 
 
@@ -187,9 +214,17 @@ public:
         _dset_orientation_circmean->write(circ_mean);
         _dset_orientation_circstd->write(circ_std);
 
-        if (not _store_agent_data) return;
+        const auto velocities = get_from_agents([](const auto& agent){
+            return agent->state().get_displacement();
+        });
+        _dset_norm_group_velocity->write(
+            absolute_group_velocity(velocities) / _speed
+        );
 
         // -- Agent-specific data
+        // ... only stored optionally
+        if (not _store_agent_data) return;
+
         _dset_agent_x->write(
             agents.begin(), agents.end(),
             [](const auto& agent) {

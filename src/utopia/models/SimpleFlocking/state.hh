@@ -29,7 +29,7 @@ public:
     /// Default constructor
     AgentState()
     :
-        speed(1.e-3)
+        speed(0.)
     ,   orientation(0.)
     ,   displacement({0., 0.})
     {}
@@ -38,7 +38,7 @@ public:
     template<typename RNGType>
     AgentState(const Config& cfg, const std::shared_ptr<RNGType>& rng)
     :
-        speed(get_as<double>("speed", cfg))
+        speed(get_as<double>("speed", cfg, 0.))
     ,   orientation(random_angle(rng))
     ,   displacement({0., 0.})
     {

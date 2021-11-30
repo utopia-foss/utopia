@@ -33,7 +33,7 @@ BOOST_FIXTURE_TEST_CASE(test_state_interface, Infrastructure,
 {
     // Default construction
     auto state = AgentState();
-    BOOST_TEST(state.get_speed() > 0.);
+    BOOST_TEST(state.get_speed() == 0.);
     BOOST_TEST(state.get_orientation() == 0.);
     BOOST_TEST(arma::norm(state.get_displacement(), 2) == 0.);
 
@@ -57,6 +57,10 @@ BOOST_FIXTURE_TEST_CASE(test_state_interface, Infrastructure,
 
     // Displacement vector is normalized, but scaled with speed
     BOOST_TEST(arma::norm(state.get_displacement(), 2) == 23.);
+
+    // Construction also works without speed specified
+    state = AgentState(agent_cfg["i_do_not_exist"], rng);
+    BOOST_TEST(state.get_speed() == 0.);
 }
 
 
