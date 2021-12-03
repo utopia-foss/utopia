@@ -17,7 +17,9 @@ What are these trait objects needed for manager setup?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``Utopia::CellTraits`` and ``Utopia::AgentTraits`` are structs that define the properties and behaviour of the cells or agents, respectively.
-They are passed to the managers to allow them to set up these entities in the desired way. Only two properties need to always be defined: the state type of the entity, and whether it is to be updated synchronously (all agents of a manager at once), or asynchronously (states change directly, regardless of other agents):
+They are passed to the managers to allow them to set up these entities in the desired way.
+Only two properties need to always be defined: the state type of the entity and its update mode.
+A trait definition can then look like this:
 
 .. code-block :: c++
 
@@ -29,6 +31,35 @@ They are passed to the managers to allow them to set up these entities in the de
 
   /// Traits for cells with determination of update via apply_rule call
   using MyManualCell = Utopia::CellTraits<MyCellState, Update::manual>;
+
+Here, ``MyCellState`` can be any type that is to be associated with an entity (a cell or an agent).
+
+The update modes behave as follows:
+
+* (always) **synchronously**: all agents of a manager are updated "at once"
+
+    * Internally, these entities have a buffer for their *new* state, where all changes are written to.
+      Only after all state buffers have been updated, the actual state is updated.
+    * This two-step process emulates an update process where a state change happens at the same time for all agents.
+
+* (always) **asynchronously**: all agents change their state directly
+
+    * These entities do *not* have a state buffer; all changes are applied directly.
+    * This emulates a process where state changes occur sequentially.
+
+* **manually**: whether the state is updated synchronously or asynchronously is determined by arguments to the ``apply_rule`` call
+
+    * This allows for more flexibility in the ``apply_rule`` calls
+    * Downside: creates some memory allocation overhead when using synchronous ``apply_rule`` calls, because the buffer needs to be stored anew
+
+
+.. hint:: Which ``Update`` mode should I choose in the entity state?
+
+    To decide, which ``Update`` mode to use in the entity *state*, the following can help:
+
+    * If your model will use only few rules and their update mode is always the same: use ``sync`` or ``async``.
+    * If you desire more flexibility and need to mix different update rules, use ``manual``.
+
 
 
 Initialize cells and agents

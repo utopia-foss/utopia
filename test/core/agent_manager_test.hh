@@ -128,26 +128,32 @@ public:
 
     // -- Constructors -- //
     /// Basic constructor
-    MockModel(const std::string model_name, const Config& cfg)
+    MockModel(
+        const std::string model_name,
+        const Config& cfg,
+        const Config& custom_am_cfg = {})
     :
         _name(model_name),
         _cfg(cfg),
         _rng(std::make_shared<RNG>(42)),
         _log(setup_logger(model_name)),
         _space(setup_space()),
-        _am(*this)
+        _am(*this, custom_am_cfg)
     {}
 
     /// Constructor with initial agent state
-    MockModel(const std::string model_name, const Config& cfg,
-              const AgentStateType agent_initial_state)
+    MockModel(
+        const std::string model_name,
+        const Config& cfg,
+        const AgentStateType agent_initial_state,
+        const Config& custom_am_cfg = {})
     :
         _name(model_name),
         _cfg(cfg),
         _rng(std::make_shared<RNG>(42)),
         _log(setup_logger(model_name)),
         _space(setup_space()),
-        _am(*this, agent_initial_state)
+        _am(*this, agent_initial_state, custom_am_cfg)
     {}
 
 

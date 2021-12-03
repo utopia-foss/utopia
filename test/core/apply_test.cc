@@ -415,7 +415,7 @@ BOOST_AUTO_TEST_CASE(verify_no_copy)
 
 BOOST_AUTO_TEST_SUITE_END() // multiple arguments
 
-/// Check that async rules can also return void
+/// Check that rules can also return void
 // NOTE This does not check the shuffled update order, because it is already
 //      asserted by the other tests.
 BOOST_FIXTURE_TEST_CASE(void_rule, ModelFixture)
@@ -426,12 +426,26 @@ BOOST_FIXTURE_TEST_CASE(void_rule, ModelFixture)
     auto& rng = *mm_manual._rng;
 
     // Define void rules that alter the cell state
+    auto rule_sync = [](const auto& cell) {
+        cell->state_new() = cell->state() + 42;
+    };
     auto rule_async = [](const auto& cell) {
         cell->state() += 42;
     };
     auto rule_manual = [](const auto& cell) {
         cell->state += 42;
     };
+
+    // For the sync state update
+    {
+    auto& cm = mm_sync._cm;
+    Utopia::apply_rule(rule_sync, cm.cells());
+
+    const auto num_incorrect =
+        std::count_if(cm.cells().begin(), cm.cells().end(),
+            [](const auto& cell) { return cell->state() != 42; });
+    BOOST_TEST(num_incorrect == 0);
+    }
 
     // For the async state update -- without shuffle
     {

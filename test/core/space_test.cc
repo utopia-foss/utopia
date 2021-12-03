@@ -45,6 +45,7 @@ BOOST_FIXTURE_TEST_CASE(test_space_basics, Infrastructure) {
     BOOST_CHECK_CLOSE(space.distance({0.1}, {0.3}), 0.2, precision);
     BOOST_CHECK_CLOSE(space_periodic.distance({0.1}, {0.9}), 0.2, precision);
 
+    // check wrapping around boundary
     BOOST_CHECK_CLOSE(space_2d_periodic.displacement({0., 0.1}, 
                                                      {0., 1.2}).at(1), -0.9,
                       precision);

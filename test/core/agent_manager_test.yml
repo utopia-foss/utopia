@@ -44,8 +44,19 @@ explicit:
     initial_num_agents: 42
 
 
+# For passing custom config
+custom:
+  initial_num_agents: 123
+
+  agent_params:
+    a_double: 2.34
+    a_string: foobar
+    a_bool: true
+
+
 # -----------------------------------------------------------------------------
-# Initialization
+# Agent initialization
+
 init_test1:
   space:
     periodic: true
@@ -57,7 +68,7 @@ init_test1:
 
 
 # -----------------------------------------------------------------------------
-# Dynamics
+# Space embedding
 mm_dyn_sync_periodic_test:
   space:
     periodic: true

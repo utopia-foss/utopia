@@ -182,7 +182,7 @@ void apply_rule(const Utopia::ExecPolicy policy,
     using std::begin, std::end;
 
     // Apply the rule
-    // NOTE: Capute by reference is fine because rule is a temporary
+    // NOTE: Capture by reference is fine because rule is a temporary
     std::transform(policy,
                    begin(range),
                    end(range),
@@ -421,9 +421,6 @@ apply_rule(const Utopia::ExecPolicy policy,
  *
  *  \param rule       An application rule, see \ref rule
  *  \param Container  A container with the entities upon whom rule is applied
- *
- *  \warning Using this overload is discouraged because the type of update
- *           is determined by the StateContainer. See \ref Rules for details.
  */
 template<
     class Rule,
@@ -462,9 +459,6 @@ std::enable_if_t<sync, void>
 /// Apply a rule on asynchronous states without prior shuffling
 /** \param rule       An application rule, see \ref rule
  *  \param Container  A container with the entities upon whom rule is applied
- *
- *  \warning Using this overload is discouraged because the type of update
- *           is determined by the StateContainer. See \ref Rules for details.
  */
 template<
     bool shuffle=true,
@@ -496,9 +490,6 @@ std::enable_if_t<not sync && not shuffle, void>
 /// Apply a rule on asynchronous states with prior shuffling
 /** \param rule       An application rule, see \ref rule
  *  \param Container  A container with the entities upon whom rule is applied
- *
- *  \warning Using this overload is discouraged because the type of update
- *           is determined by the StateContainer. See \ref Rules for details.
  */
 template<
     bool shuffle=true,
