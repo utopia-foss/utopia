@@ -120,7 +120,7 @@ public:
     const std::shared_ptr<RNG> _rng;
     std::shared_ptr<spdlog::logger> _log;
 
-    Space _space;
+    std::shared_ptr<Space> _space;
 
     // The public agent manager (for easier testing access)
     Utopia::AgentManager<AgentTraits, MockModel> _am;
@@ -153,7 +153,8 @@ public:
 
     // -- Setup functions (needed because pseudo parent is not used) -- //
 
-    std::shared_ptr<spdlog::logger> setup_logger(const std::string name) {
+    std::shared_ptr<spdlog::logger> setup_logger(const std::string name) const
+    {
         auto logger = spdlog::get(name);
     
         if (not logger) {
@@ -166,26 +167,26 @@ public:
     }
 
 
-    Space setup_space() const {
+    std::shared_ptr<Space> setup_space() const {
         if (_cfg["space"]) {
             // Build a space with the given parameters
-            return Space(_cfg["space"]);
+            return std::make_shared<Space>(_cfg["space"]);
         }
         else {
             // Use the default space
-            return Space();
+            return std::make_shared<Space>();
         }
     }
 
     // -- Other functions, mirroring model interface -- //
     /// Return a mock logger
-    std::shared_ptr<spdlog::logger> get_logger() {
+    std::shared_ptr<spdlog::logger> get_logger() const {
         return _log;
     }
 
     /// Return the space this model resides in
-    std::shared_ptr<Space> get_space() {
-        return std::make_shared<Space>(_space);
+    std::shared_ptr<Space> get_space() const {
+        return _space;
     }
 
     /// Return the config node of this model

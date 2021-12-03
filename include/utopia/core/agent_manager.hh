@@ -117,7 +117,7 @@ public:
       *                         configuration is used to extract the required
       *                         entries.
      */
-    AgentManager(Model& model,
+    AgentManager(const Model& model,
                  const DataIO::Config& custom_cfg = {})
     :
         _id_counter(0),
@@ -142,7 +142,7 @@ public:
       *                         configuration is used to extract the required
       *                         entries.
       */
-    AgentManager(Model& model,
+    AgentManager(const Model& model,
                  const AgentState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
@@ -459,7 +459,7 @@ private:
     /** Determines whether to use a custom configuration or the one provided
      *  by the model this AgentManager belongs to
      */
-    Config setup_cfg(Model& model, const Config& custom_cfg) {
+    Config setup_cfg(const Model& model, const Config& custom_cfg) {
         Config cfg;
 
         if (custom_cfg.size() > 0) {
@@ -512,8 +512,7 @@ private:
      * \param num_agents     The number of agents
 
      */
-    void setup_agents(const AgentState initial_state) {
-
+    void setup_agents(const AgentState& initial_state) {
         // Extract parameters from the configuration
         if (not _cfg["initial_num_agents"]) {
             throw std::invalid_argument("AgentManager is missing the "

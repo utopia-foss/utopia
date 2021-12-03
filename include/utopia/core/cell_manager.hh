@@ -138,7 +138,7 @@ public:
       *                     cell setup. If not given, the model's configuration
       *                     is used to extract the required entries.
       */
-    CellManager (Model& model,
+    CellManager (const Model& model,
                  const Config& custom_cfg = {})
     :
         _log(model.get_logger()),
@@ -167,7 +167,7 @@ public:
       *                        configuration is used to extract the required
       *                        entries.
       */
-    CellManager (Model& model,
+    CellManager (const Model& model,
                  const CellState initial_state,
                  const Config& custom_cfg = {})
     :
@@ -211,7 +211,7 @@ public:
     }
 
     /// Return const reference to the grid
-    std::shared_ptr<const GridType> grid () const {
+    const std::shared_ptr<GridType>& grid () const {
         return _grid;
     }
 
@@ -281,8 +281,7 @@ public:
     /** \note Consult the documentation of the selected grid discretization to
       *       learn about the order of the returned values.
       */
-    std::vector<SpaceVec>
-        vertices_of(const std::shared_ptr<Cell>& cell) const
+    std::vector<SpaceVec> vertices_of(const std::shared_ptr<Cell>& cell) const
     {
         return _grid->vertices_of(cell->id());
     }
@@ -340,7 +339,7 @@ public:
       * \args    args    Forwarded to \ref Utopia::select_entities
       */
     template<SelectionMode mode, class... Args>
-    CellContainer<Cell> select_cells(Args&&... args) {
+    CellContainer<Cell> select_cells(Args&&... args) const {
         return select_entities<mode>(*this, std::forward<Args>(args)...);
     }
 
@@ -354,7 +353,7 @@ public:
       * \param  sel_cfg  The configuration node containing the expected
       *                  key-value pairs specifying the selection.
       */
-    CellContainer<Cell> select_cells(const Config& sel_cfg) {
+    CellContainer<Cell> select_cells(const Config& sel_cfg) const {
         return select_entities(*this, sel_cfg);
     }
 
@@ -655,7 +654,7 @@ private:
     /** This function determines whether to use a custom configuration or the
       * one provided by the model this CellManager belongs to
       */
-    Config setup_cfg(Model& model, const Config& custom_cfg) {
+    Config setup_cfg(const Model& model, const Config& custom_cfg) const {
         Config cfg;
 
         if (custom_cfg.size() > 0) {
@@ -678,7 +677,7 @@ private:
     }
 
     /// Set up the grid discretization
-    std::shared_ptr<GridType> setup_grid() {
+    std::shared_ptr<GridType> setup_grid() const {
         // Check if the required parameter nodes are available
         // TODO Throw KeyErrors here instead!
         if (not _cfg["grid"]) {
@@ -718,7 +717,7 @@ private:
     }
 
     /// Set up the cells container using an explicitly passed initial state
-    CellContainer<Cell> setup_cells(const CellState initial_state) {
+    CellContainer<Cell> setup_cells(const CellState& initial_state) const {
         CellContainer<Cell> cont;
 
         // Construct all the cells
@@ -750,7 +749,7 @@ private:
       *         it is called anew for _each_ cell; otherwise, an initial state
       *         is constructed _once_ and used for all cells.
       */
-    CellContainer<Cell> setup_cells() {
+    CellContainer<Cell> setup_cells() const {
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (CellTraits::use_default_state_constructor) {

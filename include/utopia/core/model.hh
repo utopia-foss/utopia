@@ -385,7 +385,7 @@ public:
     // -- Getters -------------------------------------------------------------
 
     /// Return the space this model resides in
-    std::shared_ptr<Space> get_space() const {
+    const std::shared_ptr<Space>& get_space() const {
         return _space;
     }
 
