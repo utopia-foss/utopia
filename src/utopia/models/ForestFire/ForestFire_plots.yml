@@ -34,6 +34,16 @@ tree_density_facet_grid_imshow:
   col: p_lightning
   row: seed
 
+# ... Tree density facet-grid example: auto-encoding ..........................
+# Automatically determines axis encoding for sweep plots
+tree_density_facet_grid:
+  based_on: tree_density_facet_grid
+  expected_multiverse_ndim: [0, 1, 2, 3]
+  auto_encoding: true
+  kind: line
+  x: time
+
+
 # ... Asymptotic tree density .................................................
 tree_density_asymptotic_over_p_lightning:
   based_on: tree_density_asymptotic
