@@ -274,6 +274,8 @@ class Multiverse:
                 the value will be read from the ``perform_sweep`` key of the
                 meta-configuration.
         """
+        log.info("Preparing for simulation run ...")
+
         # Add tasks, then prevent adding further tasks to disallow further runs
         self._add_sim_tasks(sweep=sweep)
         self.wm.tasks.lock()
@@ -623,6 +625,13 @@ class Multiverse:
             Any changes to the meta configuration made *after* initialization
             of the Multiverse will not be reflected in these backups.
 
+            In particular, the ``perform_sweep`` and ``parameter_space``
+            entries of the meta configuration may not reflect which form of
+            parameter space iteration was actually performed, because the
+            ``run_single`` and ``run_sweep`` methods overwrite this behavior.
+            To that end, that information is separately stored once the ``run``
+            methods are invoked.
+
         Args:
             cfg_parts (dict): A dict of either paths to configuration files or
                 dict-like data that is to be dumped into a configuration file.
@@ -640,14 +649,14 @@ class Multiverse:
                   path=os.path.join(cfg_dir, "meta_cfg.yml"))
         log.note("  Backed up meta configuration.")
 
-        # Separately, store the parameter space and its metadata
-        pspace = self.meta_cfg['parameter_space']
-        write_yml(pspace,
-                  path=os.path.join(cfg_dir, "parameter_space.yml"))
-        write_yml(dict(**pspace.get_info_dict(),
-                       perform_sweep=self.meta_cfg.get('perform_sweep')),
-                  path=os.path.join(cfg_dir, "parameter_space_info.yml"))
-        log.note("  Backed up parameter space and metadata.")
+        # Store the *full* parameter space and its metadata
+        # NOTE This data may not be equivalent to the parameter space that is
+        #      used for a simulation run; another backup is performed when
+        #      adding the corresponding simulation tasks.
+        _pspace_info = dict(perform_sweep=self.meta_cfg.get('perform_sweep'))
+        self._perform_pspace_backup(self.meta_cfg['parameter_space'],
+                                    filename="full_parameter_space",
+                                    **_pspace_info)
 
         # If configured, backup the other cfg files one by one.
         if backup_cfg_files:
@@ -677,6 +686,45 @@ class Multiverse:
             copy2(self.model_binpath,
                   os.path.join(backup_dir, self.model_name))
             log.note("  Backed up executable.")
+
+    def _perform_pspace_backup(self, pspace: psp.ParamSpace, *,
+                               filename: str = "parameter_space",
+                               **info_kwargs):
+        """Stores the given parameter space and its metadata into the
+        ``config`` directory.
+        Two files will be produced:
+
+            - ``config/{filename}.yml``: the passed ``pspace`` object
+            - ``config/{filename}_info.yml``: the passed ``pspace`` object's
+                info dictionary containing relevant metadata (and the
+                additionally passed ``info_kwargs``)
+
+        .. note::
+
+            This method is separated from the regular backup method
+            :py:`~utopya.multiverse.Multiverse._perform_backup` because the
+            parameter space that is *used* during a simulation run may be a
+            lower-dimensional version of the one the Multiverse was
+            initialized with.
+            To that end, :py:`~utopya.multiverse.Multiverse.run` will invoke
+            this backup function again once the relevant information is fully
+            determined. This is important because it is needed to communicate
+            the correct information about the sweep to objects downstream in
+            the pipeline (e.g. :py:`~utopya.plotting.MultiversePlotCreator`).
+
+        Args:
+            pspace (psp.ParamSpace): The ParamSpace object to save
+            filename (str, optional): The filename (without extension!) to use.
+                (Also used for the log message, with underscores changed to
+                spaces.)
+            **info_kwargs: Additional kwargs that are to be stored in the meta-
+                data dict.
+        """
+        cfg_dir = self.dirs["config"]
+        write_yml(pspace, path=os.path.join(cfg_dir, f"{filename}.yml"))
+        write_yml(dict(**pspace.get_info_dict(), **info_kwargs),
+                  path=os.path.join(cfg_dir, f"{filename}_info.yml"))
+        log.note("  Backed up %s and metadata.", filename.replace("_", " "))
 
     def _prepare_executable(self, *, run_from_tmpdir: bool=False) -> None:
         """Prepares the model executable, potentially copying it to a temporary
@@ -949,6 +997,11 @@ class Multiverse:
             # Only need the default state of the parameter space
             uni_cfg = pspace.default
 
+            # Make a backup of the parameter space that is *actually* used
+            self._perform_pspace_backup(psp.ParamSpace(uni_cfg),
+                                        filename="parameter_space",
+                                        perform_sweep=False)
+
             # Add the task to the worker manager.
             log.progress("Adding task for simulation of a single universe ...")
             self._add_sim_task(uni_id_str="0", uni_cfg=uni_cfg, is_sweep=False)
@@ -969,6 +1022,11 @@ class Multiverse:
 
         # Distinguish whether to do a regular sweep or we are in cluster mode
         if not self.cluster_mode:
+            # Make a backup of the parameter space that is *actually* used
+            self._perform_pspace_backup(pspace,
+                                        filename="parameter_space",
+                                        perform_sweep=True)
+
             # Do a sweep over the whole activated parameter space
             log.progress("Adding tasks for simulation of %d universes ...",
                          pspace.volume)
@@ -991,6 +1049,13 @@ class Multiverse:
             rcps = self.resolved_cluster_params
             num_nodes = rcps['num_nodes']
             node_index = rcps['node_index']
+
+            # Back up the actually-used parameter space. Do this only on the
+            # first node to avoid file-writing conflicts between nodes
+            if node_index == 0:
+                self._perform_pspace_backup(pspace,
+                                            filename="parameter_space",
+                                            perform_sweep=True)
 
             # Inform about the number of universes to be simulated
             log.progress("Adding tasks for cluster-mode simulation of "

@@ -497,6 +497,11 @@ test:cli:
     - utopia run dummy --set-params num_steps=3 write_every=2
     - utopia run dummy --set-cfg parameter_space.seed=23
 
+    # Test run configs with a parameter space of >0 dimensions which is then
+    # reduced to 0 dimensions -- data retrieval and plotting should still work
+    - utopia run ForestFire --debug --num-seeds=3 --note some_sweep
+    - utopia run ForestFire --debug --num-seeds=3 --single --note not_a_sweep
+
     # Test batch evaluation
     - utopia batch python/utopya/test/cfg/batch_file.yml --single-worker --debug --note batch-CLI-test
 
