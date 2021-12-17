@@ -27,7 +27,7 @@ cluster_size_distribution:
     # name of an operation (if there are no arguments needed for the
     # operation) or a dict where the only key refers to the name of the
     # operation and the content of the dict is passed to that function
-  
+
     # First, Select the last index along the time dimension
     - isel:
         time: -1
@@ -130,6 +130,7 @@ tree_density:
 # ... For a parameter sweep over seed and p_lightning .........................
 tree_density_over_p_lightning:
   based_on: .basic_mv.errorbar
+  expected_multiverse_ndim: [1, 2, 3]
   select:
     field: data/ForestFire/tree_density
 
@@ -206,7 +207,7 @@ tree_density_asymptotic:
 forest_snapshot:
   based_on: .ca.state
   model_name: ForestFire
-  
+
   to_plot:
     kind:
       title: Forest State
@@ -250,8 +251,9 @@ clusters_snapshot:
 # ... Facet Grid Plot .........................................................
 tree_density_facet_grid:
   based_on: .dag.generic.facet_grid
+  expected_multiverse_ndim: [1, 2, 3]
   creator: multiverse
-  
+
   select_and_combine:
     fields:
       data: tree_density
