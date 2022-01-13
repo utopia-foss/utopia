@@ -73,6 +73,7 @@ Where to next?
    models/SandPile
    models/SEIRD
    models/SimpleEG
+   models/SimpleFlocking
    ... and more <models/index>
 
 .. NOTE If adding models above, also adjust models/index
