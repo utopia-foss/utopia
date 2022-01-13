@@ -107,14 +107,13 @@ BOOST_FIXTURE_TEST_CASE(test_agent_init, Infrastructure) {
     for (const auto& rp : rel_positions) {
         dev_acc += pow((rp - mean_rel_pos), 2);
     }
-    const auto std_rel_pos = arma::sqrt(dev_acc / (rel_positions.size()-1));
+    const SpaceVec std_rel_pos =
+        arma::sqrt(dev_acc / (rel_positions.size()-1));
     std_rel_pos.print("Standard deviation of relative agent position");
 
     const auto expected_std = 1./sqrt(12.);
-    const double std_rel_pos_x = std_rel_pos[0];
-    const double std_rel_pos_y = std_rel_pos[1];
-    BOOST_CHECK_CLOSE(std_rel_pos_x, expected_std, 10.);
-    BOOST_CHECK_CLOSE(std_rel_pos_y, expected_std, 10.);
+    BOOST_CHECK_CLOSE(std_rel_pos[0], expected_std, 10.);
+    BOOST_CHECK_CLOSE(std_rel_pos[1], expected_std, 10.);
 }
 
 
