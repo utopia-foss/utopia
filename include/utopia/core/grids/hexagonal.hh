@@ -116,10 +116,12 @@ public:
                 "The required aspect ratio of sqrt(3) / 2 is violated by {} "
                 "(> `aspect_ratio_tolerance` = {})! \n"
                 "With the given resolution, set the space extent to : \n"
-                + required_space_ss.str() +
-                "or increase the resolution.",
+                "{} or increase the resolution.",
                 fabs(_cell_extent[0] / _cell_extent[1] - sqrt(3.) / 2.),
-                get_as<double>("aspect_ratio_tolerance", cfg, 0.02)));
+                get_as<double>("aspect_ratio_tolerance", cfg, 0.02),
+                required_space_ss.str()
+            ));
+
         }
     }
 
