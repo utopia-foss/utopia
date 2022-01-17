@@ -48,9 +48,12 @@ py:class logging.Logger
 py:class subprocess.Popen
 py:class queue.Queue
 py:class TextIO
+py:class typing.TextIO
 py:class tempfile.TemporaryDirectory
 py:class datetime.timedelta
 py:class timedelta
+
+py:obj typing.TextIO
 
 # Exceptions, both as exception reference and type reference
 py:exc Exception
