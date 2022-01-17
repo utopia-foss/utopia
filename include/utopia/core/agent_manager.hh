@@ -455,8 +455,6 @@ private:
 
      */
     void setup_agents(const AgentState initial_state) {
-        // The agent container that is to be populated
-        AgentContainer<Agent> _agents;
 
         // Extract parameters from the configuration
         if (not _cfg["initial_num_agents"]) {
@@ -465,7 +463,6 @@ private:
                 "number of agents to set up!");
         }
         const auto num_agents = get_as<IndexType>("initial_num_agents", _cfg);
-
 
         // Construct all the agents with incremented IDs, the initial state
         // and a random position
