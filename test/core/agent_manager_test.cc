@@ -433,6 +433,68 @@ BOOST_FIXTURE_TEST_CASE(test_displacement_and_distance, AgentManagers,
     test_approx_equal(am.displacement(a0, a1), -am.displacement(a1, a0));
 }
 
+
+/// Test the spatial neighborhood of agents is correctly represented
+BOOST_FIXTURE_TEST_CASE(test_neighbors, AgentManagers, *utf::tolerance(1.e-10))
+{
+    MockModel<AgentTraitsCC_sync> mm("mm", cfg["mm_dyn_sync_periodic_test"]);
+
+    // consistency check: Have two agents with component-wise unequal positions
+    auto& am = mm._am;
+    auto& agents = am.agents();
+    BOOST_TEST(agents.size() == 2);
+    auto& a0 = agents[0];
+    auto& a1 = agents[1];
+
+    BOOST_TEST(a0->position()[0] != a1->position()[0]);
+    BOOST_TEST(a0->position()[1] != a1->position()[1]);
+
+    BOOST_TEST(am.space()->extent[0] == 2.);
+    BOOST_TEST(am.space()->extent[1] == 3.);
+
+    // check neighborhood relations hold (also across boundaries)
+    // .. set position to specific values
+    am.move_to(a0, {0.1, 0.1});
+    am.move_to(a1, {1.9, 0.1});
+    am.update_agents();
+    BOOST_TEST(am.distance(a0, a1) == 0.2);
+
+    // .. now check they are in each other's neighborhood for a sufficiently
+    //    large radius
+    auto nbs0 = am.neighbors_of(a0, 0.25);
+    auto nbs1 = am.neighbors_of(a1, 0.25);
+
+    BOOST_TEST(nbs0.size() == 1);
+    BOOST_TEST(nbs1.size() == 1);
+
+    BOOST_TEST(nbs0[0]->id() == a1->id());
+    BOOST_TEST(nbs1[0]->id() == a0->id());
+
+    // .. how about a smaller radius, though? Should have an empty neighborhood
+    BOOST_TEST(am.neighbors_of(a0, 0.1).size() == 0);
+    BOOST_TEST(am.neighbors_of(a1, 0.1).size() == 0);
+
+    // .. check again for a different position in space, not across a boundary
+    am.move_to(a0, {1.0, 1.0});
+    am.move_to(a1, {1.5, 1.5});
+    am.update_agents();
+
+    auto distance = am.distance(a0, a1);
+    BOOST_TEST(am.neighbors_of(a0, distance).size() == 1);
+    BOOST_TEST(am.neighbors_of(a1, distance).size() == 1);
+
+    BOOST_TEST(am.neighbors_of(a0, distance - 0.01).size() == 0);
+    BOOST_TEST(am.neighbors_of(a1, distance - 0.01).size() == 0);
+
+    // .. once more with many agents
+    for (auto i = 0u; i < 98; i++) {
+        am.add_agent();
+    }
+    BOOST_TEST(am.agents().size() == (2 + 98));
+    BOOST_TEST(am.neighbors_of(am.agents()[0], 10000.).size() == 100 - 1);
+    BOOST_TEST(am.neighbors_of(am.agents()[0], 0.).size() == 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()  // space-embedding
 
 }  // namespace

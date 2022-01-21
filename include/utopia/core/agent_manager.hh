@@ -426,13 +426,17 @@ public:
       *
       * \todo    This should be parallelized or a lookup-grid should be used to
       *          constrain the number of possible neighbors to a smaller number
+      *
+      * \param   agent  The agent whose neighborhood is to be constructed
+      * \param   radius The radius within which agents other than `agent` are
+      *                 considered to be part of the neighborhood
       */
     AgentContainer<Agent> neighbors_of(const std::shared_ptr<Agent>& agent,
                                        const double radius) const
     {
         AgentContainer<Agent> nbs{};
         for (const auto& a : agents()) {
-            if (get_distance(a, agent) <= radius and a != agent) {
+            if (distance(a, agent) <= radius and a != agent) {
                 nbs.push_back(a);
             }
         }

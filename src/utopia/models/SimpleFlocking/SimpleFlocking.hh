@@ -292,6 +292,8 @@ public:
     /// Rule that sets agent orientation to the mean orientation (in a radius)
     /** The orientation of the current agent is included into the calculation
      *  of the mean orientation.
+     *
+     *  Currently uses a
      */
     const Rule _adjust_orientation = [this](const auto& agent){
         auto state = agent->state();
@@ -300,19 +302,19 @@ public:
         // average orientation, including (!) the current agent.
         // To find an average orientation, we need to separate the x- and y-
         // components and later combine them back into an angle.
-        auto agg_sin = 0.;
-        auto agg_cos = 0.;
+        auto agg_sin = std::sin(agent->state().get_orientation());
+        auto agg_cos = std::cos(agent->state().get_orientation());
 
-        // TODO This leads to quadratic complexity in agent number!
-        //      Find a better approach (on the level of AgentManager).
-        for (const auto& a : this->_am.agents()) {
-            if (this->_am.distance(a, agent) > this->_interaction_radius) {
-                continue;
-            }
-            // else: is within interaction radius
-
-            agg_sin += std::sin(a->state().get_orientation());
-            agg_cos += std::cos(a->state().get_orientation());
+        // NOTE The AgentManager::neighbors_of method finds neighbors with
+        //      linear complexity in agent number, leading to an overall
+        //      quadratic complexity in agent number for this search.
+        //      This can be mitigated (on the level of the AgentManager!) by
+        //      using a spatially restricted search or a lookup grid.
+        for (const auto& nb :
+             this->_am.neighbors_of(agent, this->_interaction_radius))
+        {
+            agg_sin += std::sin(nb->state().get_orientation());
+            agg_cos += std::cos(nb->state().get_orientation());
         }
 
         // Can now set the orientation, including noise
