@@ -30,7 +30,11 @@ using AgentTraits = Utopia::AgentTraits<AgentState, Update::sync>;
 
 // ++ Model definition ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 /// The SimpleFlocking Model
-/** TODO
+/** An agent-based model of spatial collective dynamics, akin to those observed
+ *  in bird flocks or fish schools.
+ *
+ *  These dynamics arise as a result of agents adjusting their orientation
+ *  according to that of nearby agents.
  */
 class SimpleFlocking:
     public Model<SimpleFlocking, ModelTypes>
@@ -69,7 +73,7 @@ private:
 
     // .. Global parameters ...................................................
 
-    /// The global speed value, set for all agents
+    /// The global speed value, used as the uniform speed of all agents
     double _speed;
 
     /// The radius within which agents interact with each other
@@ -103,7 +107,7 @@ private:
 public:
     // -- Model Setup ---------------------------------------------------------
 
-    /// Construct the SimpleFlocking model
+    /// Construct the SimpleFlocking model instance
     /** \param name             Name of this model instance; is used to extract
      *                          the configuration from the parent model and
      *                          set up a HDFGroup for this instance
@@ -146,15 +150,7 @@ public:
             this->create_dset("norm_group_velocity", {})
         )
     {
-        this->_log->info("Setting all agent's speed to {} ...", _speed);
-        apply_rule(
-            [speed=this->_speed](const auto& agent){
-                auto state = agent->state();
-                state.set_speed(speed);
-                return state;
-            },
-            this->_am.agents()
-        );
+        set_agent_speed(_speed);
 
         this->_log->info("{} all set up.", this->_name);
         this->_log->info("  Store agent data?  {}", _store_agent_data);
@@ -170,7 +166,9 @@ public:
     // -- Public Interface ----------------------------------------------------
     // .. Simulation Control ..................................................
 
-    /// Iterate a single step
+    /// Iterate a single step: adjust agent orientation, then move all agents
+    /** These rules are both applied synchronously to all agents.
+     */
     void perform_step () {
         apply_rule(_adjust_orientation, _am.agents());
         apply_rule(_move, _am.agents());
@@ -180,7 +178,8 @@ public:
     /// Monitor the model state
     /** This monitor provides information about the current orientation's
       * (circular) mean and standard deviation.
-      * In addition,
+      * In addition, the normalized group velocity is monitored, which
+      * represents the system's order parameter.
       */
     void monitor () {
         const auto orientations = get_from_agents([](const auto& agent){
@@ -190,13 +189,7 @@ public:
         const auto [circ_mean, circ_std] = circular_mean_and_std(orientations);
         this->_monitor.set_entry("orientation_mean", circ_mean);
         this->_monitor.set_entry("orientation_std", circ_std);
-
-
-        const auto velocities = get_from_agents([](const auto& agent){
-            return agent->state().get_displacement();
-        });
-        this->_monitor.set_entry("norm_group_velocity",
-                                 absolute_group_velocity(velocities) / _speed);
+        this->_monitor.set_entry("norm_group_velocity", norm_group_velocity());
     }
 
 
@@ -214,12 +207,7 @@ public:
         _dset_orientation_circmean->write(circ_mean);
         _dset_orientation_circstd->write(circ_std);
 
-        const auto velocities = get_from_agents([](const auto& agent){
-            return agent->state().get_displacement();
-        });
-        _dset_norm_group_velocity->write(
-            absolute_group_velocity(velocities) / _speed
-        );
+        _dset_norm_group_velocity->write(norm_group_velocity());
 
         // -- Agent-specific data
         // ... only stored optionally
@@ -247,8 +235,39 @@ public:
 
     // Getters and setters ....................................................
 
+    /// The number of agents in the system (typically constant)
     std::size_t num_agents () const {
         return _am.agents().size();
+    }
+
+    /// Sets the speed value of all agents
+    void set_agent_speed (const double new_speed) {
+        this->_log->info("Setting all agent's speed to {} ...", new_speed);
+        apply_rule(
+            [speed=new_speed](const auto& agent){
+                auto state = agent->state();
+                state.set_speed(speed);
+                return state;
+            },
+            this->_am.agents()
+        );
+    }
+
+    /// The normalized absolute group velocity
+    /** Computed by dividing the absolute group velocity of all agents by the
+     *  absolute speed.
+     *  This represents the order parameter of the system.
+     *
+     *  \note   The computation assumes that all agents have the same speed
+     *          (as indicated by the `_speed` member). If this is not the
+     *          case, the result will be erroneous! For performance reasons, no
+     *          check for uniform agent velocities is carried out.
+     */
+    double norm_group_velocity () const {
+        const auto velocities = get_from_agents([](const auto& agent){
+            return agent->state().get_displacement();
+        });
+        return absolute_group_velocity(velocities) / std::fabs(_speed);
     }
 
     /// Aggregate agent properties into a container
@@ -271,6 +290,9 @@ public:
     // Rules ..................................................................
 
     /// Rule that sets agent orientation to the mean orientation (in a radius)
+    /** The orientation of the current agent is included into the calculation
+     *  of the mean orientation.
+     */
     const Rule _adjust_orientation = [this](const auto& agent){
         auto state = agent->state();
 
@@ -304,7 +326,7 @@ public:
         return state;
     };
 
-    /// Rule that applies the current displacement vector to agent position
+    /// Rule that applies the current displacement vector to the agent position
     const VoidRule _move = [this](const auto& agent){
         this->_am.move_by(agent, agent->state().get_displacement());
     };

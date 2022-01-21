@@ -7,6 +7,9 @@ paths:
   model_note: flocking
 
 parameter_space:
+  num_steps: 500
+  write_every: 2
+
   SimpleFlocking:
     space:
       extent: 25

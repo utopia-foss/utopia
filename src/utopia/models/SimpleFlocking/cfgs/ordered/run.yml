@@ -7,7 +7,7 @@ paths:
   model_note: ordered
 
 parameter_space:
-  num_steps: 1000
+  num_steps: 150
 
   SimpleFlocking:
     space:

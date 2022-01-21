@@ -26,7 +26,7 @@ class AgentState {
     SpaceVecType<2> displacement;
 
 public:
-    /// Default constructor
+    /// Default constructor with zero-initialized members
     AgentState()
     :
         speed(0.)
@@ -47,13 +47,14 @@ public:
 
     // .. Getters .............................................................
 
+    /// Returns the current speed of this agent
     auto get_speed () const {
         return speed;
     }
 
     /// Returns the current orientation in radians, [-π, +π)
-    /** Orientation zero points in positive x direction while ±π/2 points
-     *  in ±y direction.
+    /** An orientation value of zero points in positive x direction while a
+     *  value of ±π/2 points in ±y direction.
      */
     auto get_orientation () const {
         return orientation;
