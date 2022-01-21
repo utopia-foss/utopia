@@ -17,8 +17,9 @@ namespace Utopia {
  */
 
 /// The Space bundles properties about the physical space a model resides in
-/** \details It is, for example, used by the CellManager and its Grid
-  *         discretization.
+/** It is, for example, used by the CellManager and its Grid discretization and
+  * by the AgentManager to properly map agent positions and movements within
+  * the spatial domain.
   *
   * \tparam num_dims  The dimensionality of the space
   */
@@ -156,7 +157,7 @@ struct Space {
 private:
     // -- Setup functions -----------------------------------------------------
     /// Setup the member `periodic` from a config node
-    bool setup_periodic(const Config& cfg) {
+    bool setup_periodic(const Config& cfg) const {
         if (not cfg["periodic"]) {
             throw std::invalid_argument("Missing config entry `periodic` to "
                                         "set up a Space object!");
@@ -164,21 +165,21 @@ private:
         return get_as<bool>("periodic", cfg);
     }
 
-    /// Setup space extent to
-    SpaceVec setup_extent() {
+    /// Construct a default space extent vector (valued 1 in each dimension)
+    SpaceVec setup_extent() const {
         SpaceVec ext;
         ext.fill(1.);
         return ext;
     }
 
-    /// Setup the extent member from a config node
+    /// Construct a space extent vector from a config node
     /** \param cfg  The config node to read the `extent` parameter from. If
       *             that entry is missing, the default extent (1) is used.
       *             If the entry is a scalar, space will be set up to have
       *             equal extent in all dimensions. Otherwise, it is expected
       *             to be a sequence node.
       */
-    SpaceVec setup_extent(const Config& cfg) {
+    SpaceVec setup_extent(const Config& cfg) const {
         if (cfg["extent"]) {
             SpaceVec ext;
 

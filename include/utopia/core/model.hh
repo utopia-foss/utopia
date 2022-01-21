@@ -888,16 +888,24 @@ public:
      * both data from the model and the AgentManager. Additionally, dimension
      * and coordinate labels are added.
      *
-     * @note   For the time dimension, the coordinates assume that data is
-     *         written the first time at time 0 and then every _write_every.
-     *         Time coordinates will be wrong if the model does not write the
-     *         data this way. For such cases, it is advised to suppress writing
-     *         of attributes by setting the _cfg['write_dim_labels_and_coords']
-     *         entry to false.
+     * Agents are also labelled with a (trivial) ID, starting from zero.
      *
-     * @param name The name of the dataset
-     * @param am   The AgentManager whose agents' states are to be stored in
-     *             the dataset
+     * @note    For the time dimension, the coordinates assume that data is
+     *          written the first time at time 0 and then every _write_every.
+     *          Time coordinates will be wrong if the model does not write the
+     *          data this way. For such cases, it is advised to suppress
+     *          writing of attributes by setting the config entry
+     *          `write_dim_labels_and_coords` entry to false.
+     *
+     * @warning The number of agents present at the time this method is called
+     *          determine the dataset's capacity. If the agent number increases
+     *          beyond that point during the runtime of the simulation, data
+     *          writing will fail because the datasets capacity will be too
+     *          small!
+     *
+     * @param name               The name of the dataset
+     * @param am                 The AgentManager whose agents' states are to
+     *                           be stored in the dataset
      * @param compression_level  The compression level
      * @param chunksize          The chunk size
 
@@ -921,7 +929,6 @@ public:
 
         // Set attribute to store the agent managers' extent of space
         dset->add_attribute("space_extent", am.space()->extent);
-        
         _log->debug("Added attribute to dataset '{}' to store space extent",
                     name);
         
@@ -957,7 +964,7 @@ private:
       * this simulation are all fulfilled. It will likewise lead to the
       * invocation of the default_signal_handler.
       */
-    void __attach_sig_handlers() {
+    void __attach_sig_handlers() const {
         _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
 
         attach_signal_handler(SIGINT);
