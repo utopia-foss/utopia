@@ -724,14 +724,13 @@ class WorkerManager:
 
     # Non-public API ..........................................................
 
-    def _invoke_report(self, rf_spec_name: str, *args, **kwargs):
+    def _invoke_report(self, rf_spec_name: str, *args, **kwargs) -> None:
         """Helper function to invoke the reporter's report function"""
         if self.reporter is None:
             return
 
-        # Check whether to suppress this rf_spec
+        # Whether to suppress this invocation
         if self._suppress_rf_specs and rf_spec_name in self._suppress_rf_specs:
-            # Do not report this one
             return
 
         # Resolve the spec name
@@ -740,8 +739,21 @@ class WorkerManager:
         if not isinstance(rfs, list):
             rfs = [rfs]
 
+        # ... and invoke the reporter for all listed report formats
         for rf in rfs:
-            self.reporter.report(rf, *args, **kwargs)
+            try:
+                self.reporter.report(rf, *args, **kwargs)
+
+            except Exception as exc:
+                log.error("Reporting '%s' failed with %s: %s",
+                          rf_spec_name, exc.__class__.__name__, exc)
+
+                # To allow a traceback, piggy-back onto the exit handling flag
+                # to determine whether to re-raise the error. There is no other
+                # debug flag available for the WorkerManager, the reporter or
+                # the Multiverse, unfortunately ...
+                if self.nonzero_exit_handling == "raise":
+                    raise
 
     def _grab_task(self) -> WorkerTask:
         """Will initiate that a task is gotten from the queue and that it

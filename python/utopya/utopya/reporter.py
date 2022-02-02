@@ -85,7 +85,7 @@ class ReportFormat:
             return False
 
         # Generate the report
-        log.debug("Creating report using parser %s ...", self.parser)
+        log.debug("Creating report using parser '%s' ...", self.parser)
         report = self.parser(report_no=self.num_reports,
                              **(parser_kwargs if parser_kwargs else {}))
         log.debug("Created report of length %d.", len(report))

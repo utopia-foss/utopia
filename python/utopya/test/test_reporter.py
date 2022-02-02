@@ -302,6 +302,30 @@ def test_report(rep):
     with pytest.raises(ValueError, match="Either a default format needs"):
         rep.report()
 
+def test_invoke_reporter_from_wm(wm, rf_dict):
+    """Tests reporter invocation *via the WorkerManager* does not lead to an
+    error when there is something wrong with reporting.
+    """
+    rep = WorkerManagerReporter(wm, report_formats=rf_dict,
+                                default_format='progress')
+    wm._invoke_report("before_working")
+    wm._invoke_report("while_working")
+    wm._invoke_report("after_work")
+
+    # Now, provoke an error in reporting to see whether it raises
+    def mock_report_func(*_, **__):
+        raise ValueError("mock error")
+    wm.reporter.report = mock_report_func
+
+    # ... this should not raise
+    wm.nonzero_exit_handling = "ignore"
+    wm._invoke_report("while_working")
+
+    # ... this should raise:
+    wm.nonzero_exit_handling = "raise"
+    with pytest.raises(ValueError, match="mock error"):
+        wm._invoke_report("while_working")
+
 def test_min_report_intv(wm, rf_dict):
     """Test correct behaviour of the minimum report interval"""
     rep = WorkerManagerReporter(wm, report_formats=rf_dict,
