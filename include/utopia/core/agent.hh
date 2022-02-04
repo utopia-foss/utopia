@@ -87,16 +87,16 @@ public:
         _pos(initial_pos)
     {}
 
-    /// Return a copy of the current position of the agent
-    Position position() const {
+    /// Return a const reference of the current position of the agent
+    const Position& position() const {
         return _pos;
     };
 
 
 protected:
     /// Set the position of the agent
-    /** \details This function allows befriended classes to set the position of
-     *          this agent.
+    /** This function allows befriended classes to set the position of this
+     *  agent.
      *
      *  \note   No check is carried out whether the new position is valid; this
      *          needs to happen in the construct that is aware of the space the
@@ -156,19 +156,18 @@ public:
     {}
 
     /// Return the current position of the agent
-    Position position() const {
+    const Position& position() const {
         return _pos;
     }
 
     /// Return the position buffer of the agent
-    Position position_new() const {
+    const Position& position_new() const {
         return _pos_new;
     }
 
     /// Update the position and the state
-    /** \details Writes the buffer of state and position to the current state
-     *          and position. This is necessary for the synchronous update mode
-     *          only.
+    /** Writes the buffer of state and position to the current state and
+     *  position. This is necessary for the synchronous update mode only.
      */
     void update () {
         // Update the state as defined in the Entity class
@@ -180,8 +179,8 @@ public:
 
 protected:
     /// Set the position buffer of the (synchronously updated) agent
-    /** \details This function allows befriended classes to set the position of
-     *          this agent.
+    /** This function allows befriended classes to set the position of this
+     *  agent.
      *
      *  \note   No check is carried out whether the new position is valid; this
      *          needs to happen in the construct that is aware of the space the

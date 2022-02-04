@@ -1,0 +1,67 @@
+# A run configuration that reproduces Fig. 2b, of Vicsek et al., 1995.
+---
+perform_sweep: true
+
+paths:
+  model_note: density_sweep
+
+parameter_space:
+  num_steps: 5000  # TODO Check if sufficient for large system sizes
+  write_every: 50
+
+  seed: !sweep
+    default: 42
+    range: [10]
+    order: !expr -np.inf  # always first
+
+  SimpleFlocking:
+    space:
+      # Constant space extent
+      extent: 20
+
+    agent_manager:
+      initial_num_agents: !sweep
+        name: "N"
+        default: 300
+        values:  # estimated from Figure 2b) with N = L^2 * \rho
+          - 10
+          - 20
+          - 30
+          - 40
+          - 50
+          - 75
+          - 100
+          - 150
+          - 200
+          - 250
+          - 300
+          - 350
+          - 400
+          - 450
+          - 500
+          - 600
+          - 700
+          - 800
+          - 900
+          - 1000
+          # - 1100
+          - !expr 3  * 400
+          # - !expr 4  * 400
+          # - !expr 5  * 400
+          # - !expr 6  * 400
+          # - !expr 8  * 400
+          # - !expr 10 * 400
+        as_type: int
+        order: 99999  # last, such that it's iterated over most frequently
+
+    # Constant noise level
+    # NOTE It's not clear from the paper, which noise value is selected for
+    #      the shown plot. It appears to be somewhere between 1 and 3, though.
+    #      With 3b) using L=20, mu = 2.0, choosing 2.0 makes most sense.
+    noise_level: 2.
+
+    # Constant speed (as always)
+    speed: 0.03
+
+    # Don't need agent-specific data here
+    store_agent_data: false

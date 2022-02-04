@@ -114,11 +114,6 @@ Model parameters
    <details>
    <summary><a>See the model config</a></summary>
 
-.. literalinclude: .. raw:: html
-
-   <details>
-   <summary><a>big code</a></summary>
-
 .. literalinclude:: ../../src/utopia/models/Opinionet/Opinionet_cfg.yml
    :language: yaml
    :start-after: ---

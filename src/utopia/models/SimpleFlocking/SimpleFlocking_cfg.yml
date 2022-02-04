@@ -1,0 +1,32 @@
+# The model configuration for the SimpleFlocking model
+---
+# --- Space
+# The physical space this model is embedded in
+space:
+  periodic: true
+  extent: 25
+
+# --- Initialization parameters
+agent_manager:
+  initial_position: random
+  initial_num_agents: 300
+  agent_params: {}
+
+
+# --- Dynamics
+
+# Global movement speed in absolute spatial distance / time step
+speed: 0.03
+
+# The interaction radius (in absolute distance)
+interaction_radius: 1.
+
+# The (double) amplitude of the directional noise
+noise_level: 0.1
+
+
+# --- Output
+# Whether to store agent-specific data
+# Not storing agent-specific data improves simulation speed and reduces the
+# size of the output data.
+store_agent_data: true

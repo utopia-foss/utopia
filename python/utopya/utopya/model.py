@@ -159,7 +159,10 @@ class Model:
 
     # Simulation control ......................................................
 
-    def create_mv(self, *, from_cfg: str=None, run_cfg_path: str=None,
+    def create_mv(self, *,
+                  from_cfg: str=None,
+                  from_cfg_set: str=None,
+                  run_cfg_path: str=None,
                   use_tmpdir: bool=None, **update_meta_cfg) -> Multiverse:
         """Creates a :class:`utopya.multiverse.Multiverse` for this model,
         optionally loading a configuration from a file and updating it with
@@ -168,33 +171,45 @@ class Model:
         Args:
             from_cfg (str, optional): The name of the config file (relative to
                 the base directory) to be used.
-            run_cfg_path (str, optional): The path of the run_cfg to use. Can
-                not be passed if from_cfg argument evaluates to True.
+            from_cfg_set (str, optional): Name of the config set to retrieve
+                the run config from. Mutually exclusive with ``from_cfg`` and
+                ``run_cfg_path``.
+            run_cfg_path (str, optional): The path of the run config to use.
+                Can not be passed if ``from_cfg`` or ``from_cfg_set`` arguments
+                were given.
             use_tmpdir (bool, optional): Whether to use a temporary directory
                 to write the data to. If not given, uses default value set
                 at initialization.
             **update_meta_cfg: Can be used to update the meta configuration
 
         Returns:
-            utopya.multiverse.Multiverse: The created Multiverse object
+            Multiverse: The created Multiverse object
 
         Raises:
-            ValueError: If both ``from_cfg`` and ``run_cfg_path`` were given
+            ValueError: If more than one of the run config selecting arguments
+                (``from_cfg``, ``from_cfg_set``, ``run_cfg_path``) were given.
         """
         # A dict that can be filled with objects to store in self._mvs
         objs_to_store = dict()
 
-        # May want to use config file relative to base directory
-        if from_cfg:
-            if run_cfg_path:
-                raise ValueError("Can only pass either argument `from_cfg` OR "
-                                 "`run_cfg_path`, but got both!")
+        # May want to use config file relative to base directory or a run
+        # directory from a config set. Need to check that only one of them
+        # was given.
+        if bool(from_cfg) + bool(from_cfg_set) + bool(run_cfg_path) > 1:
+            raise ValueError(
+                "Can pass at most one of the arguments `from_cfg`, "
+                "`from_cfg_set`, or `run_cfg_path` but got more than one!"
+            )
 
-            elif os.path.isabs(from_cfg) and not self.base_dir:
+        if from_cfg:
+            if os.path.isabs(from_cfg) and not self.base_dir:
                 raise ValueError("Missing base_dir to handle relative path in "
                                  "`from_cfg` argument.")
 
             run_cfg_path = os.path.join(self.base_dir, from_cfg)
+
+        elif from_cfg_set:
+            run_cfg_path = self.get_config_set(from_cfg_set)["run"]
 
         # Check whether a temporary directory is desired
         use_tmpdir = use_tmpdir if use_tmpdir is not None else self._use_tmpdir
@@ -241,7 +256,10 @@ class Model:
 
         return mv
 
-    def create_run_load(self, *, from_cfg: str=None, run_cfg_path: str=None,
+    def create_run_load(self, *,
+                        from_cfg: str=None,
+                        run_cfg_path: str=None,
+                        from_cfg_set: str=None,
                         use_tmpdir: bool=None, print_tree: bool=True,
                         **update_meta_cfg) -> Tuple[Multiverse, DataManager]:
         """Chains the create_mv, mv.run, and mv.dm.load_from_cfg
@@ -250,8 +268,12 @@ class Model:
         Args:
             from_cfg (str, optional): The name of the config file (relative to
                 the base directory) to be used.
-            run_cfg_path (str, optional): The path of the run_cfg to use. Can
-                not be passed if from_cfg argument evaluates to True.
+            from_cfg_set (str, optional): Name of the config set to retrieve
+                the run config from. Mutually exclusive with ``from_cfg`` and
+                ``run_cfg_path``.
+            run_cfg_path (str, optional): The path of the run config to use.
+                Can not be passed if ``from_cfg`` or ``from_cfg_set`` arguments
+                were given.
             use_tmpdir (bool, optional): Whether to use a temporary directory
                 to write the data to. If not given, uses default value set
                 at initialization.
@@ -262,6 +284,7 @@ class Model:
             Tuple[Multiverse, DataManager]:
         """
         mv = self.create_mv(from_cfg=from_cfg,
+                            from_cfg_set=from_cfg_set,
                             run_cfg_path=run_cfg_path,
                             use_tmpdir=use_tmpdir,
                             **update_meta_cfg)

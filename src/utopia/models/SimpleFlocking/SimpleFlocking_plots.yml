@@ -1,0 +1,22 @@
+# The default plots of this model
+#
+# These can use the `based_on` feature with configurations specified in the
+# accompanying *_base_plots.yml file and in the utopya base plot configs.
+---
+# .. Time series plots ........................................................
+
+time_series/norm_group_velocity:
+  based_on: time_series/norm_group_velocity
+
+time_series/orientation_circstd:
+  based_on: time_series/orientation_circstd
+
+time_series/orientation:
+  based_on: time_series/orientation
+
+
+# .. Spatial plots ............................................................
+
+agents_in_domain:
+  based_on: agents_in_domain
+

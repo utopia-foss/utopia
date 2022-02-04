@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <armadillo>
+#include <spdlog/spdlog.h>  // for fmt
 
 #include "../data_io/cfg_utils.hh"
 #include "types.hh"
@@ -16,8 +17,9 @@ namespace Utopia {
  */
 
 /// The Space bundles properties about the physical space a model resides in
-/** \details It is, for example, used by the CellManager and its Grid
-  *         discretization.
+/** It is, for example, used by the CellManager and its Grid discretization and
+  * by the AgentManager to properly map agent positions and movements within
+  * the spatial domain.
   *
   * \tparam num_dims  The dimensionality of the space
   */
@@ -42,7 +44,7 @@ struct Space {
     /** \param cfg  The config node to read the `periodic` and `extent` entries
       *             from.
       */
-    Space(const DataIO::Config& cfg)
+    Space(const Config& cfg)
     :
         periodic(setup_periodic(cfg)),
         extent(setup_extent(cfg))
@@ -50,9 +52,9 @@ struct Space {
         static_assert(dim > 0, "Space::dim needs to be >= 1");
     }
 
-    /// Constructor without any arguments, i.e. constructing a default space
-    /** \details The default space is non-periodic and has default extent of 1.
-      *         into each dimension.
+    /// Default constructor i.e. constructing a space with default parameters
+    /** The default space is non-periodic and has default extent of 1. into
+      * each dimension.
       */
     Space()
     :
@@ -91,9 +93,9 @@ struct Space {
     }
 
     /// Map a position (potentially outside space's extent) back into space
-    /** \details This is intended for use with periodic grids. It will also work
-      *         with non-periodic grids, but the input value should not have
-      *         been permitted in the first place.
+    /** This is intended for use with periodic space. It will also work with
+      * non-periodic space, but the input value should not have been permitted
+      * in the first place.
       *
       * \note   The high-value boundary is is mapped back to the low-value
       *         boundary, such that all points are well-defined.
@@ -110,12 +112,12 @@ struct Space {
     }
 
     
-    /// The displacement between 2 coordinates
-    /** \details Calculates vector pointing from pos_0 to pos_1.
-     *           In periodic boundary it calculates the shorter displacement.
+    /// Compute the displacement vector between two coordinates
+    /** Calculates vector pointing from pos_0 to pos_1.
+     *  In periodic space, it calculates the shorter displacement.
      *  
-     *  \warning The displacement of two coordinates in periodic boundary can be
-     *           maximum of half the domain size, i.e. moving away from a
+     *  \warning The displacement of two coordinates in periodic boundary can
+     *           be maximum of half the domain size, i.e. moving away from a
      *           coordinate in a certain direction will decrease the
      *           displacement once reached half the domain size.
      */
@@ -127,22 +129,22 @@ struct Space {
         }
         // else: Need to get shortest distance
 
-
         return dx - arma::round(dx / extent) % extent;
     }
 
-    /// The distance of 2 coordinates in space
-    /** \details Calculates the distance of 2 coordinates using the norm
-     *           implemented within Armadillo.
-     *           In periodic boundary it calculates the shorter distance.
+    /// The distance of two coordinates in space
+    /** Calculates the distance of two coordinates using the norm implemented
+     *  within Armadillo.
+     *  In periodic boundary it calculates the shorter distance.
      * 
      *  \warning The distance of two coordinates in periodic boundary can be
      *           maximum of half the domain size wrt every dimension,
      *           i.e. moving away from a coordinate in a certain direction will
      *           decrease the distance once reached half the domain size.
      * 
-     *  \param   p   The norm used to compute the distance, see arma::norm(X, p).
-     *               Can be either an integer >= 1 or one of "-inf", "inf", "fro"
+     *  \param   p   The norm used to compute the distance, see arma::norm.
+     *               Can be either an integer >= 1 or one of:
+     *               "-inf", "inf", "fro"
      */
     template<class NormType=std::size_t>
     auto distance(const SpaceVec& pos_0, const SpaceVec& pos_1,
@@ -155,7 +157,7 @@ struct Space {
 private:
     // -- Setup functions -----------------------------------------------------
     /// Setup the member `periodic` from a config node
-    bool setup_periodic(const DataIO::Config& cfg) {
+    bool setup_periodic(const Config& cfg) const {
         if (not cfg["periodic"]) {
             throw std::invalid_argument("Missing config entry `periodic` to "
                                         "set up a Space object!");
@@ -163,24 +165,53 @@ private:
         return get_as<bool>("periodic", cfg);
     }
 
-    /// Setup the extent type if no config parameter was available
-    SpaceVec setup_extent() {
-        SpaceVec extent;
-        extent.fill(1.);
-        return extent;
+    /// Construct a default space extent vector (valued 1 in each dimension)
+    SpaceVec setup_extent() const {
+        SpaceVec ext;
+        ext.fill(1.);
+        return ext;
     }
 
-    /// Setup the extent member from a config node
+    /// Construct a space extent vector from a config node
     /** \param cfg  The config node to read the `extent` parameter from. If
-      *             that entry is missing, the default extent is used.
+      *             that entry is missing, the default extent (1) is used.
+      *             If the entry is a scalar, space will be set up to have
+      *             equal extent in all dimensions. Otherwise, it is expected
+      *             to be a sequence node.
       */
-    SpaceVec setup_extent(const DataIO::Config& cfg) {
+    SpaceVec setup_extent(const Config& cfg) const {
         if (cfg["extent"]) {
-            return get_as_SpaceVec<dim>("extent", cfg);
-        }
+            SpaceVec ext;
 
-        // Return the default extent
-        return setup_extent();
+            if (cfg["extent"].IsScalar()) {
+                ext.fill(get_as<double>("extent", cfg));
+            }
+            else {
+                if (dim != cfg["extent"].size()) {
+                    throw std::invalid_argument(fmt::format(
+                        "Invalid size of `space.extent` sequence ({}) for "
+                        "selected space dimensionality ({})!",
+                        cfg["extent"].size(), dim
+                    ));
+                }
+                ext = get_as_SpaceVec<dim>("extent", cfg);
+            }
+
+            if (ext.min() <= 0.) {
+                ext.print("Invalid `space.extent`:");
+                throw std::invalid_argument(
+                    "The space extent needs to be strictly positive in "
+                    "all entries, but it contained at least one element <= 0! "
+                    "Check the `space.extent` config node to address this."
+                );
+            }
+
+            return ext;
+        }
+        else {
+            // Return the default extent, needs no check
+            return setup_extent();
+        }
     }
 };
 

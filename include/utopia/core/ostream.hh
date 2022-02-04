@@ -3,10 +3,7 @@
 
 #include "type_traits.hh"
 
-namespace Utopia
-{
-
-namespace Utils{
+namespace Utopia::Utils {
 
 /**
  * @brief pretty print a pair
@@ -172,6 +169,6 @@ str(T&& t)
 }
 
 
-}
-}
+} // namespace Utopia::Utils
+
 #endif

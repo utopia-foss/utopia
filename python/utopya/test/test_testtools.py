@@ -1,4 +1,4 @@
-"""Tests the utopya.testtools modules and the Model class
+"""Tests the utopya.testtools and utopya.model modules.
 
 The reason why the Model class is tested alongside the ModelTest class is
 partly historical; however, the overlap is large and the ModelTest class has
@@ -76,24 +76,40 @@ def test_ModelTest_create_mv():
     assert isinstance(mv2, utopya.Multiverse)
     assert mv2.wm.num_workers == 1
 
+    # Can also use a model's config sets
+    mtc = ModelTest("ForestFire", test_file=__file__)
+    mv3 = mtc.create_mv(from_cfg_set="universe_example")
+    assert isinstance(mv3, utopya.Multiverse)
+    assert mv3.meta_cfg["parameter_space"].default["write_every"] == 5
+
 def test_ModelTest_create_run_load():
     """Tests the chained version of create_mv"""
     mtc = ModelTest("dummy", test_file=__file__)
 
-    # Run with different arguments:
+    # Run with different argument combinations:
     # Without
     mtc.create_run_load()
 
     # With a config file in the test directory
     mtc.create_run_load(from_cfg="cfg/run_cfg.yml")
 
+    # With a config set (failing because it does not exist for dummy)
+    with pytest.raises(ValueError, match="No config set with name 'foobar'"):
+        mtc.create_run_load(from_cfg_set="foobar")
+
     # With run_cfg_path
     mtc.create_run_load(run_cfg_path=os.path.join(mtc.base_dir,
                                                   "cfg", "run_cfg.yml"))
 
-    # With both
-    with pytest.raises(ValueError, match="Can only pass either"):
+    # More than one argument is not possible
+    with pytest.raises(ValueError, match="Can pass at most one of the arg"):
         mtc.create_run_load(from_cfg="foo", run_cfg_path="bar")
+
+    with pytest.raises(ValueError, match="Can pass at most one of the arg"):
+        mtc.create_run_load(from_cfg_set="foo", run_cfg_path="bar")
+
+    with pytest.raises(ValueError, match="Can pass at most one of the arg"):
+        mtc.create_run_load(from_cfg="foo", from_cfg_set="bar")
 
 def test_ModelTest_create_frozen_mv():
     """Tests the creation of a FrozenMultiverse using the ModelTest class"""

@@ -16,12 +16,12 @@ namespace Utopia {
  */
 
 /// The agent manager manages the agents living in a model
-/** \details The agent manager holds a container with all agents that live in
- *          a model space. It provides dynamic functions such as to move models
- *          within a space and ensures that the agents move correctly and
- *          are never allowed to leave the allowed space.
- *          Further, all agents get an id that is unique among all existing
- *          agents (also with respect to multiple agent managers).
+/** The agent manager holds a container with all agents that live in a model
+ *  space. It provides dynamic functions such as to move models within a space
+ *  and ensures that the agents move correctly and are never allowed to leave
+ *  the allowed space.
+ *  Further, all agents get an ID that is unique among all existing agents
+ *  (also with respect to multiple agent managers).
  *
  *  \tparam AgentTraits  Specialized Utopia::AgentTraits describing the kind of
  *                       agents this manager should manage
@@ -56,6 +56,18 @@ public:
 
     /// The type of the function that prepares the position of a new agent
     using PosFunc = std::function<SpaceVec(const SpaceVec&)>;
+
+    /// The type of a rule function acting on agents of this agent manager
+    /** This is a convenience type def that models can use to easily have this
+      * type available.
+      */
+    using RuleFunc = std::function<AgentState(const std::shared_ptr<Agent>&)>;
+
+    /// The type of a void rule function acting on agents of this agent manager
+    /** This is a convenience type def that models can use to easily have this
+      * type available. Unlike RuleFunc, this
+      */
+    using VoidRuleFunc = std::function<void(const std::shared_ptr<Agent>&)>;
 
     /// The random number generator type
     using RNG = typename Model::RNG;
@@ -92,12 +104,12 @@ public:
     // -- Constructors --------------------------------------------------------
 
     /// Construct an agent manager
-    /** \details With the model available, the AgentManager can extract the
-      *         required information from the model without the need to pass
-      *         it explicitly. Furthermore, this constructor differs to the
-      *         one with the `initial_state` and `num_agents` parameters such
-      *         that the way the initial state of the agents is determined can
-      *         be controlled via the configuration.
+    /** With the model available, the AgentManager can extract the required
+      * information from the model without the need to pass it explicitly.
+      * Furthermore, this constructor differs to the one with the
+      * `initial_state` and `num_agents` parameters such that the way the
+      * initial state of the agents is determined can be controlled via the
+      * configuration.
       *
       * \param  model           The model this AgentManager belongs to
       * \param  custom_cfg      A custom config node to use to use for grid and
@@ -105,7 +117,7 @@ public:
       *                         configuration is used to extract the required
       *                         entries.
      */
-    AgentManager(Model& model,
+    AgentManager(const Model& model,
                  const DataIO::Config& custom_cfg = {})
     :
         _id_counter(0),
@@ -122,17 +134,15 @@ public:
     }
 
     /// Construct an agent manager, using the same initial state for all agents
-    /** \details The initial state of the agents is explicitly passed to the
-      *         constructor.
-      *
+    /**
       * \param  model           The model this AgentManager belongs to
-      * \param  initial_state   The initial state of the agents
+      * \param  initial_state   The initial state of all agents
       * \param  custom_cfg      A custom config node to use to use for grid and
       *                         agent setup. If not given, the model's
       *                         configuration is used to extract the required
       *                         entries.
-     */
-    AgentManager(Model& model,
+      */
+    AgentManager(const Model& model,
                  const AgentState initial_state,
                  const DataIO::Config& custom_cfg = {})
     :
@@ -216,16 +226,15 @@ public:
 
 
     /// Create an agent and associate it with this AgentManager
-    /** \details Adds an agent with the specified state to the managed
-     *          container of agents. It is checked whether the given position
-     *          is valid; if space is periodic, any position outside the space
-     *          is mapped back into the space.
+    /** Adds an agent with the specified state to the managed container of
+     *  agents. It is checked whether the given position is valid; if space is
+     *  periodic, any position outside the space is mapped back into the space.
      *
-     *  \param state the state of the agent that is to be added
-     *  \param pos the position of the agent that is to be added
+     *  \param state  The state of the agent that is to be added
+     *  \param pos    The position of the agent that is to be added
     */
-    const std::shared_ptr<Agent>&
-        add_agent (const AgentState& state, SpaceVec pos)
+    const std::shared_ptr<Agent>& add_agent (const AgentState& state,
+                                             const SpaceVec& pos)
     {
         _log->trace("Creating agent with ID {:d} ...", _id_counter);
         _agents.emplace_back(
@@ -237,17 +246,17 @@ public:
     }
 
     /// add_agent overload for auto-constructed agent states
-    /** \details Adds an agent with a specified position and an auto-constructed
-      *         AgentState depending on the setup, either default-constructed
-      *         if the flag was set in the AgentTraits or config-constructed
-      *         with or without use of the RNG.
+    /** Adds an agent with a specified position and an auto-constructed
+      * AgentState depending on the setup, either default-constructed if the
+      * flag was set in the AgentTraits or config-constructed with or without
+      * use of the RNG.
       *
       * \param pos        The position of the newly created agent
       * \param custom_cfg A custom configuration. If not given, will use the
       *         configuration given at initialization.
       */
-    const std::shared_ptr<Agent>&
-        add_agent (SpaceVec pos, const DataIO::Config& custom_cfg = {})
+    const std::shared_ptr<Agent>& add_agent (const SpaceVec& pos,
+                                             const Config& custom_cfg = {})
     {
         // Check if flag for default constructor was set
         if constexpr (AgentTraits::use_default_state_constructor) {
@@ -286,14 +295,12 @@ public:
 
     }
     /// add_agent overload for auto constructed states and random position
-    /** \details Add an agent with a random position and an auto-constructed
-      *         AgentState depending on the setup, either default constructed
-      *         if the flag was set in the AgentTraits or config constructed
-      *         with or without use of the RNG.
-      */
-    const std::shared_ptr<Agent>&
-        add_agent (const DataIO::Config& custom_cfg = {})
-    {
+    /** Add an agent with a random position and an auto-constructed AgentState
+     *  depending on the setup:
+     *  Either default constructed if the flag was set in the AgentTraits or
+     *  config-constructed with or without use of the RNG.
+     */
+    const std::shared_ptr<Agent>& add_agent (const Config& custom_cfg = {}) {
         return add_agent(random_pos(), custom_cfg);
     }
 
@@ -313,7 +320,7 @@ public:
     }
 
     /// Remove agents if the given condition is met
-    /** \details Uses the erase-remove idiom
+    /** Uses the erase-remove idiom
      *
      *  \tparam UnaryPredicate type of the UnaryPredicate
      *
@@ -331,13 +338,13 @@ public:
 
 
     /// Update the agents
-    /** \details This function is needed in the case of synchronous update.
-     *          It updates the state and position from the agent's state
-     *          and position cache variables.
+    /** This method is used in the case of synchronous update.
+     *  It updates the state and position from the agent's state
+     *  and position cache variables.
      *
      * \note In the case of asynchronous agent update this function will throw
-     *       an error. There is no need to update these agent traits because
-     *       there is no cached trait.
+     *       an error during compilation. There is no need to update these
+     *       agent traits because there is no cached trait.
      */
     void update_agents() {
         // Assert that the agents update synchronously
@@ -378,15 +385,70 @@ public:
       * \param  sel_cfg  The configuration node containing the expected
       *                  key-value pairs specifying the selection.
       */
-    AgentContainer<Agent> select_agents(const DataIO::Config& sel_cfg) {
+    AgentContainer<Agent> select_agents(const Config& sel_cfg) {
         return select_entities(*this, sel_cfg);
     }
+
+    // .. Agent relations .....................................................
+
+    /// Returns the (shortest) displacement vector between two agents
+    /** The returned vector points from agent `a` to agent `b`.
+      *
+      * In periodic space, this will also check across boundaries to return
+      * the shortest vector.
+      */
+    SpaceVec displacement(const std::shared_ptr<Agent>& a,
+                          const std::shared_ptr<Agent>& b) const
+    {
+        return this->_space->displacement(a->position(), b->position());
+    }
+
+    /// Returns the (shortest) distance between two agents
+    /** By default, uses the 2-norm.
+      */
+    template<class NormType=std::size_t>
+    double distance(const std::shared_ptr<Agent>& a,
+                    const std::shared_ptr<Agent>& b,
+                    const NormType p = 2) const
+    {
+        return this->_space->distance(a->position(), b->position(), p);
+    }
+
+
+    // .. Agent neighborhood ..................................................
+
+    /// Returns a container of all agents within a certain radius
+    /** This does *not* include the agent itself
+      *
+      * \warning Neighbors are found simply by iterating over all available
+      *          agents, thus scaling linearly with the number of agents for
+      *          *each* lookup (or: quadratically if using this on all agents).
+      *
+      * \todo    This should be parallelized or a lookup-grid should be used to
+      *          constrain the number of possible neighbors to a smaller number
+      *
+      * \param   agent  The agent whose neighborhood is to be constructed
+      * \param   radius The radius within which agents other than `agent` are
+      *                 considered to be part of the neighborhood
+      */
+    AgentContainer<Agent> neighbors_of(const std::shared_ptr<Agent>& agent,
+                                       const double radius) const
+    {
+        AgentContainer<Agent> nbs{};
+        for (const auto& a : agents()) {
+            if (distance(a, agent) <= radius and a != agent) {
+                nbs.push_back(a);
+            }
+        }
+        return nbs;
+    }
+
 
 
 private:
     // -- Helper functions ----------------------------------------------------
     /// Returns a valid (uniformly) random position in space
-    SpaceVec random_pos() {
+    SpaceVec random_pos() const {
         // Create a space vector with random relative positions [0, 1), and
         // calculate the absolute position by multiplying element-wise with the
         // extent of the space
@@ -398,11 +460,11 @@ private:
     // -- Setup functions -----------------------------------------------------
 
     /// Set up the agent manager configuration member
-    /** \details This function determines whether to use a custom configuration
-      *         or the one provided by the model this AgentManager belongs to
-      */
-    DataIO::Config setup_cfg(Model& model, const DataIO::Config& custom_cfg) {
-        DataIO::Config cfg;
+    /** Determines whether to use a custom configuration or the one provided
+     *  by the model this AgentManager belongs to
+     */
+    Config setup_cfg(const Model& model, const Config& custom_cfg) {
+        Config cfg;
 
         if (custom_cfg.size() > 0) {
             _log->debug("Using custom config for agent manager setup ...");
@@ -446,16 +508,15 @@ private:
     }
 
 
-    /// Set up the agents container with initial states
-    /** \details This function creates a container with agents that get an
-     *          initial state and are set up with a random position.
+    /// Set up the manager's agent container with initial states
+    /** Creates a container with agents that get an initial state and are set
+     *  up with a random position.
      *
      * \param initial_state  The initial state of the agents
      * \param num_agents     The number of agents
 
      */
-    void setup_agents(const AgentState initial_state) {
-
+    void setup_agents(const AgentState& initial_state) {
         // Extract parameters from the configuration
         if (not _cfg["initial_num_agents"]) {
             throw std::invalid_argument("AgentManager is missing the "
@@ -478,29 +539,30 @@ private:
 
 
     /// Set up agents container via config or default constructor
-    /** \details If no explicit initial state is given, this setup function is
-      *         called.
-      *         There are three modes: If the Utopia::AgentTraits are set such
-      *         that the default constructor of the agent state is to be used,
-      *         that constructor is required and is called for each agent.
-      *         Otherwise, the AgentState needs to be constructible via a
-      *         `const DataIO::Config&` argument, which gets passed the config
-      *         entry `agent_params` from the AgentManager's configuration.
-      *         If a constructor with the signature
-      *         `(const DataIO::Config&, const std::shared_ptr<RNG>&)` is
-      *         supported, that constructor is called instead.
+    /** If no explicit initial state is given, this setup function is called.
+      * There are three modes: If the Utopia::AgentTraits are set such
+      * that the default constructor of the agent state is to be used, that
+      * constructor is required and is called for each agent.
+      *
+      * Otherwise, the AgentState needs to be constructible via a
+      * `const DataIO::Config&` argument, which gets passed the config entry
+      * `agent_params` from the AgentManager's configuration.
+      *
+      * If a constructor with the signature
+      * `(const DataIO::Config&, const std::shared_ptr<RNG>&)` is supported,
+      * that constructor is called instead.
       *
       * \note   If the constructor for the agent state has an RNG available
-      *         it is called anew for _each_ agent; otherwise, an initial state
-      *         is constructed _once_ and used for all agents.
+      *         it is called anew for *each* agent; otherwise, an initial state
+      *         is constructed *once* and used for all agents.
       */
     void setup_agents() {
         // Distinguish depending on constructor.
         // Is the default constructor to be used?
         if constexpr (AgentTraits::use_default_state_constructor) {
             static_assert(std::is_default_constructible<AgentState>(),
-                "AgentTraits were configured to use the default constructor to "
-                "create agent states, but the AgentState is not "
+                "AgentTraits were configured to use the default constructor "
+                "to create agent states, but the AgentState is not "
                 "default-constructible! Either implement such a constructor, "
                 "unset the flag in the AgentTraits, or pass an explicit "
                 "initial agent state to the AgentManager.");
@@ -534,7 +596,8 @@ private:
                     "agents!"
                     );
             }
-            const auto initial_num_agents = get_as<IndexType>("initial_num_agents", _cfg);
+            const auto initial_num_agents =
+                get_as<IndexType>("initial_num_agents", _cfg);
 
             // Populate the container, creating the agent state anew each time
             for (IndexType i=0; i<initial_num_agents; i++) {
@@ -575,11 +638,11 @@ private:
 
 
     /// Depending on periodicity, return the function to move agents in space
-    /** \details The function that is used to move an agent to a new position in
-     *          space depends on whether the space is periodic or not.
-     *          In the case of a periodic space the position is automatically
-     *          mapped into space again across the borders. For a nonperiodic
-     *          space a position outside of the borders will throw an error.
+    /** The function that is used to move an agent to a new position in
+     *  space depends on whether the space is periodic or not.
+     *  In the case of a periodic space the position is automatically
+     *  mapped into space again across the borders. For a nonperiodic
+     *  space a position outside of the borders will throw an error.
      */
     MoveFunc setup_move_to_func() const {
         // Need to distinguish by periodicity of the space the agents live in
@@ -605,13 +668,13 @@ private:
 
     /// Depending on periodicity, return the function to prepare positions of
     /// agents before they are added
-    /** \details The function that is used to prepare a position before an
-     *          agent is added (if passed explicitly) depends on whether the
-     *          space is periodic or not.
-     *          In the case of a periodic space the position is automatically
-     *          mapped into space again across the borders.
-     *          For a nonperiodic space a position outside of the borders will
-     *          throw an error.
+    /** The function that is used to prepare a position before an agent is
+     *  added (if passed explicitly) depends on whether the space is periodic
+     *  or not.
+     *  In the case of a periodic space the position is automatically mapped
+     *  into space again across the borders.
+     *  For a nonperiodic space a position outside of the borders will throw
+     *  an error.
      */
     PosFunc setup_prepare_pos_func() const {
         // If periodic, map the position back into space

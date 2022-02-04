@@ -1,0 +1,326 @@
+# Base plot configuration for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file
+---
+_:
+  model_data_path:      &model_data_path      data/SimpleFlocking
+
+  aesthetics:
+    hvline: &style_hvline
+      linestyle: solid
+      color: grey
+      alpha: .4
+      linewidth: 2.
+      zorder: -42
+
+# -----------------------------------------------------------------------------
+# Plot configuration defaults -------------------------------------------------
+# -----------------------------------------------------------------------------
+# ... For all plots
+.defaults.style_and_helpers:
+  based_on: .default_style_and_helpers
+
+  style:
+    # https://matplotlib.org/gallery/style_sheets/style_sheets_reference.html
+    # https://matplotlib.org/stable/tutorials/introductory/customizing.html
+
+    # -- Style Sheet
+    base_style: seaborn-notebook
+
+    # -- Figure layouting etc.
+    # figure.constrained_layout.use: true
+    figure.dpi: 254       # important also for PDF to avoid rasterization bugs
+
+  helpers: {}
+
+.defaults.animation:
+  file_ext: .mp4
+
+  animation:
+    enabled: true
+
+    writer: frames  # assuming ffmpeg is not installed
+
+    # Configuration for each writer
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 92
+
+      ffmpeg:
+        init:
+          fps: 30
+        saving:
+          dpi: 254
+
+.defaults.animation.ffmpeg:
+  based_on: .defaults.animation
+  animation:
+    writer: ffmpeg
+
+.defaults.dag:
+  dag_options:
+    define:
+      # Can be invoked as fallback to skip a plot in a controlled fashion
+      _skip_plot:
+        - operation: raise_SkipPlot
+          args: [true]
+
+
+# Aggregated defaults
+.defaults:
+  based_on:
+    - .defaults.style_and_helpers
+    - .defaults.dag
+
+
+# Creators ....................................................................
+# ... for DAG-based plots
+
+.creator.universe:
+  creator: universe
+  universes: all
+
+  select:
+    _model_base: "."
+
+  dag_options:
+    select_path_prefix: *model_data_path
+
+.creator.multiverse:
+  creator: multiverse
+
+  select_and_combine:
+    base_path: *model_data_path
+
+
+# Helper shortcuts ............................................................
+
+.hlpr.limits.x_min_max:
+  helpers:
+    set_limits:
+      x: [min, max]
+
+.hlpr.limits.y_positive:
+  helpers:
+    set_limits:
+      y: [0, ~]
+
+
+# Plot types ..................................................................
+
+.plot.facet_grid:
+  based_on:
+    - .dag.generic.facet_grid
+    - .defaults
+
+  # Explicitly set individual facet size and aspect ratio
+  size: 4
+  aspect: 1.5
+
+  # May want to use a custom suptitle format string
+  suptitle_kwargs:
+    # title: "{dim:} = {value:.3g}"   # ... for numeric values
+    title: "{dim:} = {value:}"      # ... allowing non-numeric values
+
+
+.plot.facet_grid.with_auto_encoding:
+  based_on: .plot.facet_grid
+
+  auto_encoding: true
+  col_wrap: auto
+
+
+.plot.facet_grid.type.time_series:
+  based_on:
+    - .plot.facet_grid.with_auto_encoding
+    - .hlpr.limits.x_min_max
+
+  x: time
+
+
+# -----------------------------------------------------------------------------
+# Actual plot configurations --------------------------------------------------
+# -----------------------------------------------------------------------------
+
+# .. Spatial plots ............................................................
+# A spatial plot of agent positions and orientations
+agents_in_domain:
+  based_on:
+    - .defaults
+    - .defaults.animation.ffmpeg
+    - .creator.universe
+
+  module: model_plots.SimpleFlocking
+  plot_func: agents_in_domain
+
+  select:
+    x:
+      path: agent/x
+      transform: [.data]
+      allow_failure: silent
+      fallback: !dag_tag _skip_plot
+    y:
+      path: agent/y
+      transform: [.data]
+    orientation:
+      path: agent/orientation
+      transform: [.data]
+
+    space_extent:
+      path: agent/x  # meta data is written to every other dataset as well
+      transform:
+        - getattr: [!dag_prev , attrs]
+        - getitem: [!dag_prev , space_extent]
+
+  transform:
+    # Combine data into one dataset
+    - xr.Dataset:
+      - x: !dag_tag x
+        y: !dag_tag y
+        orientation: !dag_tag orientation
+      tag: data
+
+  # Use a square figure
+  helpers:
+    setup_figure:
+      figsize: [6, 6]
+
+  # Pass on space extent (used for setting limits)
+  space_extent: !dag_result space_extent
+
+  # passed on to plt.scatter
+  s: 12
+  cmap: hsv  # TODO Is there a better cyclic one?
+
+
+# .. Time series ..............................................................
+
+# A time series plot of the normalized absolute group velocity
+time_series/norm_group_velocity:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.type.time_series
+    - .hlpr.limits.y_positive
+
+  select_and_combine:
+    fields:
+      data: norm_group_velocity
+
+  helpers:
+    set_title:
+      title: normalized absolute group velocity
+
+time_series/final_group_velocity:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .hlpr.limits.x_min_max
+    - .hlpr.limits.y_positive
+
+  expected_multiverse_ndim: [1, 2, 3, 4, 5]
+
+  select_and_combine:
+    fields:
+      _data:
+        path: norm_group_velocity
+        transform:
+          - .isel.item: [!dag_prev , {time: -1}]  # TODO Consider averaging
+
+  transform:
+    - define: !dag_tag _data
+      tag: data
+
+  helpers:
+    set_title:
+      title: final absolute group velocity
+    set_limits:
+      x: [0, ~]
+
+# A time series plot of the orientation's circular std. dev.
+time_series/orientation_circstd:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.type.time_series
+    - .hlpr.limits.y_positive
+
+  select_and_combine:
+    fields:
+      data: orientation_circstd
+
+  helpers:
+    set_title:
+      title: circular std. of agent orientation
+
+
+# A time series plot of the circular mean and std of the agent orientation
+time_series/orientation:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.type.time_series
+
+  # -- Data selection
+  # This is a bit more complicated, because we need to address the
+  # discontinuity in the orientation value to avoid perpendicular lines in the
+  # plots. To that end, the time series for each universe are processed and
+  # NaN values are set at each jump, such that the plot line is broken.
+  dag_options:
+    meta_operations:
+      get_mean_and_std_orientation:
+        - define: !arg 0
+          tag: model_data
+
+        - getitem: [!dag_tag model_data, orientation_circmean]
+        - .data: !dag_prev
+          tag: mean_data
+        - getitem: [!dag_tag model_data, orientation_circstd]
+        - .data: !dag_prev
+          tag: std_data
+
+        - xr.Dataset:
+          - mean: !dag_tag mean_data
+            std: !dag_tag std_data
+
+  select_and_combine:
+    fields:
+      mean_and_std_orientation:
+        path: ./
+        transform:
+          - get_mean_and_std_orientation
+
+          # Remove discontinuities; see operations.py for implementation
+          # NOTE An alternative operation that preserves data points is
+          #      `insert_nan_at_discontinuities`. However, this will introduce
+          #      new dummy time coordinates into *all* data dimensions, thus
+          #      carrying through the discontinuity into the rest of the data.
+          - set_nan_at_discontinuities: !dag_prev
+            kwargs:
+              variable: mean
+              threshold: 3.14159
+
+  transform:
+    - define: !dag_tag mean_and_std_orientation
+      tag: data
+
+  # -- Plot config
+  kind: errorbars
+  use_bands: true
+  fill_between_kwargs:
+    interpolate: true
+
+  x: time
+  y: mean
+  yerr: std
+
+  helpers:
+    set_limits:
+      y: [-3.14159, +3.14159]
+
+    set_hv_lines:
+      hlines:
+        - pos: 0.
+          <<: *style_hvline
+
+    set_labels:
+      y: orientation (circ. mean and std.)
+

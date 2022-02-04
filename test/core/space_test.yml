@@ -10,3 +10,86 @@
   simple_periodic:
     extent: [1., 2.]
     periodic: true
+
+extent:
+  1:
+    explicit:
+      params:
+        space: {periodic: true, extent: [2.]}
+        expected_extent: [2.]
+    from_scalar:
+      params:
+        space: {periodic: true, extent: 3.}
+        expected_extent: [3.]
+    bad_dimensionality:
+      params:
+        space: {periodic: true, extent: [2, 3, 4]}
+      throws: std::invalid_argument
+      match: Invalid size of `space.extent` sequence (3)
+    bad_value:
+      params:
+        space: {periodic: true, extent: [0.]}
+      throws: std::invalid_argument
+      match: needs to be strictly positive
+    no_periodicity_param:
+      params:
+        space: {extent: 1.}
+      throws: std::invalid_argument
+      match: Missing config entry `periodic`
+  2:
+    explicit:
+      params:
+        space: {periodic: true, extent: [2., 3.]}
+        expected_extent: [2., 3.]
+    from_scalar:
+      params:
+        space: {periodic: true, extent: 4.}
+        expected_extent: [4., 4.]
+    bad_dimensionality:
+      params:
+        space: {periodic: true, extent: [2]}
+      throws: std::invalid_argument
+      match: Invalid size of `space.extent` sequence (1)
+    bad_value:
+      params:
+        space: {periodic: true, extent: [1., -1.]}
+      throws: std::invalid_argument
+      match: needs to be strictly positive
+  3:
+    explicit:
+      params:
+        space: {periodic: true, extent: [2., 3., 4.5]}
+        expected_extent: [2., 3., 4.5]
+    from_scalar:
+      params:
+        space: {periodic: true, extent: 6.}
+        expected_extent: [6, 6, 6]
+    bad_dimensionality:
+      params:
+        space: {periodic: true, extent: [2, 3, -1, 0]}  # -1 would raise later
+      throws: std::invalid_argument
+      match: Invalid size of `space.extent` sequence (4)
+    bad_value:
+      params:
+        space: {periodic: true, extent: [1., 0.1, -0.1]}
+      throws: std::invalid_argument
+      match: needs to be strictly positive
+  5:
+    explicit:
+      params:
+        space: {periodic: true, extent: [2., 3., 4.5, 6.7, 8.9]}
+        expected_extent: [2., 3., 4.5, 6.7, 8.9]
+    from_scalar:
+      params:
+        space: {periodic: true, extent: 2.}
+        expected_extent: [2, 2, 2, 2, 2]
+    bad_dimensionality:
+      params:
+        space: {periodic: true, extent: [2, 3, -1, 0]}  # -1 would raise later
+      throws: std::invalid_argument
+      match: Invalid size of `space.extent` sequence (4)
+    bad_value:
+      params:
+        space: {periodic: true, extent: [1., 1., 1., 0., 1.]}
+      throws: std::invalid_argument
+      match: needs to be strictly positive

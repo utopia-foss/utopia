@@ -5,6 +5,7 @@
 
 #include "exceptions.hh"
 #include "signal.hh"
+#include "ostream.hh"
 #include "logging.hh"
 #include "space.hh"
 #include "parallel.hh"
@@ -156,6 +157,12 @@ protected:
     /// Config node belonging to this model instance
     const Config _cfg;
 
+    /// The RNG shared between models
+    const std::shared_ptr<RNG> _rng;
+
+    /// The (model) logger
+    const std::shared_ptr<spdlog::logger> _log;
+
     /// The space this model resides in
     std::shared_ptr<Space> _space;
 
@@ -177,12 +184,6 @@ protected:
     /// How often to call write_data from iterate
     const Time _write_every;
 
-    /// The RNG shared between models
-    const std::shared_ptr<RNG> _rng;
-
-    /// The (model) logger
-    const std::shared_ptr<spdlog::logger> _log;
-
     /// The monitor
     Monitor _monitor;
 
@@ -193,14 +194,47 @@ protected:
     DataManager _datamanager;
 
 private:
-    // TODO Consider doing this in constructor directly
-    auto setup_space() const {
-        if (_cfg["space"]) {
-            // Build a space with the given parameters
-            return std::make_shared<Space>(_cfg["space"]);
+    // .. Construction helpers ................................................
+
+    /// Constructs this models logger instance from the parent
+    /** Also directly sets the log level from the `log_level` config entry.
+      */
+    template<class Parent>
+    auto setup_logger(const Parent& parent_model) const {
+        auto log = spdlog::stdout_color_mt(
+            parent_model.get_logger()->name() + "." + _name
+        );
+
+        // Set this model instance's log level
+        if (_cfg["log_level"]) {
+            // Via value given in configuration
+            const auto lvl = get_as<std::string>("log_level", _cfg);
+            log->debug("Setting log level to '{}' ...", lvl);
+            log->set_level(spdlog::level::from_str(lvl));
         }
         else {
-            // Use the default space
+            // No config value given; use the level of the parent's logger
+            log->set_level(parent_model.get_logger()->level());
+        }
+
+        log->info("Model logger initialized.");
+        return log;
+    }
+
+    /// Constructs the Space from configuration or uses the default Space
+    auto setup_space() const {
+        if (_cfg["space"]) {
+            auto space = std::make_shared<Space>(_cfg["space"]);
+            _log->info(
+                "Using {}periodic space with extent {}.",
+                space->periodic ? "" : "non-", Utils::str(space->extent)
+            );
+            return space;
+        }
+        else {
+            _log->debug(
+                "No model-level space configured; using default space."
+            );
             return std::make_shared<Space>();
         }
     }
@@ -233,7 +267,8 @@ public:
      *                      factory()::shared_ptr<Trigger<Derived>>
      */
     template < class ParentModel, class... WriterArgs >
-    Model(const std::string& name,
+    Model(
+        const std::string& name,
         const ParentModel& parent_model,
         const Config& custom_cfg = {},
         std::tuple< WriterArgs... > w_args = {},
@@ -252,8 +287,12 @@ public:
         _cfg(custom_cfg.size() ? custom_cfg
              : get_as<Config>(_name, parent_model.get_cfg())),
 
+        // Construct infrastructure objects using information from parent
+        _rng(parent_model.get_rng()),
+        _log(setup_logger(parent_model)),
+
         // Determine space and time
-        _space(this->setup_space()),
+        _space(setup_space()),
         _time(0),
         _time_max(_level == 1 ? parent_model.get_time_max()
                   : get_as<Time>("num_steps", _cfg,
@@ -265,9 +304,6 @@ public:
                                   parent_model.get_write_start())),
         _write_every(get_as<Time>("write_every", _cfg,
                                   parent_model.get_write_every())),
-        _rng(parent_model.get_rng()),
-        _log(spdlog::stdout_color_mt(parent_model.get_logger()->name() + "."
-                                     + _name)),
 
         // Set up the monitor, using the parent model's monitor to place it in
         // a hierarchy equivalent to the model hierarchy
@@ -276,18 +312,6 @@ public:
         // Default-construct the data maanger; only used if needed, see below.
         _datamanager()
     {
-        // Set this model instance's log level
-        if (_cfg["log_level"]) {
-            // Via value given in configuration
-            const auto lvl = get_as<std::string>("log_level", _cfg);
-            _log->debug("Setting log level to '{}' ...", lvl);
-            _log->set_level(spdlog::level::from_str(lvl));
-        }
-        else {
-            // No config value given; use the level of the parent's logger
-            _log->set_level(parent_model.get_logger()->level());
-        }
-
         // Provide some information, also depending on write mode
         _log->info("Model base constructor for '{}' finished.", _name);
         _log->info("  full_name:   {}", _full_name);
@@ -361,7 +385,7 @@ public:
     // -- Getters -------------------------------------------------------------
 
     /// Return the space this model resides in
-    std::shared_ptr<Space> get_space() const {
+    const std::shared_ptr<Space>& get_space() const {
         return _space;
     }
 
@@ -426,14 +450,12 @@ public:
       * operations at times 42 and 43
       */
     hsize_t get_remaining_num_writes() const {
-
-        static_assert(_write_mode == WriteMode::basic
-                     or
-                     _write_mode == WriteMode::manual
-                     or
-                     _write_mode == WriteMode::off
-                     or
-                     _write_mode == WriteMode::managed);
+        static_assert(
+            _write_mode == WriteMode::basic or
+            _write_mode == WriteMode::manual or
+            _write_mode == WriteMode::off or
+            _write_mode == WriteMode::managed
+        );
 
         if constexpr (_write_mode == WriteMode::basic) {
             return (  (_time_max - std::max(_time, _write_start))
@@ -442,7 +464,7 @@ public:
         else if constexpr (_write_mode == WriteMode::manual) {
             return _time_max - _time + 1;
         }
-        else{
+        else {
             return 0;
         }
 
@@ -843,7 +865,7 @@ public:
         // Write additional attributes, if not specifically suppressed.
         if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
             // We know that the dimensions here refer to (time, cell ids). The
-            // time  information is already aded in create_dset; add the ID
+            // time  information is already added in create_dset; add the ID
             // information here
             dset->add_attribute("dim_name__1", "ids");
 
@@ -854,6 +876,75 @@ public:
 
             _log->debug("Added cell ID dimension labels and coordinates to "
                         "dataset '{}'.", name);
+        }
+
+        return dset;
+    }
+    
+    
+    /** @brief Create a dataset storing data from a AgentManager
+     *
+     * The required capacity - the shape of the dataset - is calculated using
+     * both data from the model and the AgentManager. Additionally, dimension
+     * and coordinate labels are added.
+     *
+     * Agents are also labelled with a (trivial) ID, starting from zero.
+     *
+     * @note    For the time dimension, the coordinates assume that data is
+     *          written the first time at time 0 and then every _write_every.
+     *          Time coordinates will be wrong if the model does not write the
+     *          data this way. For such cases, it is advised to suppress
+     *          writing of attributes by setting the config entry
+     *          `write_dim_labels_and_coords` entry to false.
+     *
+     * @warning The number of agents present at the time this method is called
+     *          determine the dataset's capacity. If the agent number increases
+     *          beyond that point during the runtime of the simulation, data
+     *          writing will fail because the datasets capacity will be too
+     *          small!
+     *
+     * @param name               The name of the dataset
+     * @param am                 The AgentManager whose agents' states are to
+     *                           be stored in the dataset
+     * @param compression_level  The compression level
+     * @param chunksize          The chunk size
+
+     * @return std::shared_ptr<DataSet> The newly created HDFDataset
+     */ 
+    template<class AgentManager>
+    std::shared_ptr<DataSet> 
+        create_am_dset(const std::string name,
+                       const AgentManager& am, 
+                       const std::size_t compression_level=1,
+                       const std::vector<hsize_t> chunksize = {})    
+    {
+        // Forward to the main create_dset function
+        const auto dset = create_dset(
+            name,
+            _hdfgrp,
+            {am.agents().size()},  // --> 2D: time, agents
+            compression_level,
+            chunksize
+        );
+
+        // Set attribute to store the agent managers' extent of space
+        dset->add_attribute("space_extent", am.space()->extent);
+        _log->debug("Added attribute to dataset '{}' to store space extent",
+                    name);
+        
+        // Write additional attributes, if not specifically suppressed.
+        if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
+            // We know that the dimensions here refer to (time, agent ids). The
+            // time information is already added in create_dset; add only ID
+            // information here. Note that this assumes trivial and constant
+            // agent IDs!
+            dset->add_attribute("dim_name__1", "ids");
+
+            // For ids, the dimensions are trivial
+            dset->add_attribute("coords_mode__ids", "trivial");
+                                 
+           _log->debug("Added agent index dimension labels and coordinates "
+                       "to dataset '{}'.", name);
         }
 
         return dset;
@@ -873,7 +964,7 @@ private:
       * this simulation are all fulfilled. It will likewise lead to the
       * invocation of the default_signal_handler.
       */
-    void __attach_sig_handlers() {
+    void __attach_sig_handlers() const {
         _log->debug("Attaching signal handlers for SIGINT and SIGTERM ...");
 
         attach_signal_handler(SIGINT);

@@ -14,6 +14,7 @@ These models are shipped alongside Utopia:
 * :ref:`model_SandPile`
 * :ref:`model_SEIRD`
 * :ref:`model_SimpleEG`
+* :ref:`model_SimpleFlocking`
 
 .. toctree::
     :maxdepth: 1

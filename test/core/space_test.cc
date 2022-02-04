@@ -1,39 +1,33 @@
 #define BOOST_TEST_MODULE space test
 
-#include <assert.h>
 #include <iostream>
-#include <boost/test/unit_test.hpp>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include <tuple>
 
+#include <boost/test/unit_test.hpp>
+#include <utopia/core/testtools.hh>
 #include <utopia/core/space.hh>
 
+namespace Utopia {
 
-using namespace Utopia;
+using namespace Utopia::TestTools;
 
-const double precision = 1e-12;
+constexpr double precision = 1e-12;
+using SpaceTypes = std::tuple<Space<1>, Space<2>, Space<3>, Space<5>>;
 
 // -- Fixtures ----------------------------------------------------------------
 
-struct Fixture {
-    DataIO::Config cfg;
-    Space<1> space;
-    Space<1> space_periodic;
-
-    Space<2> space_2d_periodic;
-
-    Fixture ()
-    :
-        cfg(YAML::LoadFile("space_test.yml")),
-        space(cfg["1D"]["simple"]),
-        space_periodic(cfg["1D"]["simple_periodic"]),
-        space_2d_periodic(cfg["2D"]["simple_periodic"])
-    {}
+struct Infrastructure : public BaseInfrastructure<> {
+    Infrastructure() : BaseInfrastructure<>("space_test.yml") {};
 };
 
+
 // ++ Tests +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-BOOST_FIXTURE_TEST_CASE(test_space, Fixture)
-{
+
+BOOST_FIXTURE_TEST_CASE(test_space_basics, Infrastructure) {
+    auto space = Space<1>(cfg["1D"]["simple"]);
+    auto space_periodic = Space<1>(cfg["1D"]["simple_periodic"]);
+    auto space_2d_periodic = Space<2>(cfg["2D"]["simple_periodic"]);
+
     BOOST_TEST(space.contains<false>({0.1}));
     BOOST_TEST(not space.contains<false>({1.1}));
 
@@ -51,7 +45,30 @@ BOOST_FIXTURE_TEST_CASE(test_space, Fixture)
     BOOST_CHECK_CLOSE(space.distance({0.1}, {0.3}), 0.2, precision);
     BOOST_CHECK_CLOSE(space_periodic.distance({0.1}, {0.9}), 0.2, precision);
 
+    // check wrapping around boundary
     BOOST_CHECK_CLOSE(space_2d_periodic.displacement({0., 0.1}, 
                                                      {0., 1.2}).at(1), -0.9,
                       precision);
+}
+
+
+/// Test that setup of spaces with different extent works
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(test_space_extent, Space, SpaceTypes,
+                                 Infrastructure)
+{
+    test_config_callable(
+        [](const auto params){
+            auto space = Space(params["space"]);
+
+            const auto expected_extent =
+                get_as_SpaceVec<Space::dim>("expected_extent", params);
+            BOOST_TEST(space.extent == expected_extent, tt::per_element());
+        },
+        cfg["extent"][Space::dim],
+        "Test cases with different extent and dimensionality",
+        {__LINE__, __FILE__}
+    );
+}
+
+
 }
