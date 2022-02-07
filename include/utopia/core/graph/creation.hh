@@ -355,10 +355,10 @@ Graph create_KlemmEguiluz_graph(const std::size_t num_vertices,
         }
     }
 
-    // For the pure BA, there are now m-1 vertices each with degree m-1
+    // For the pure BA, there are now m vertices each with degree m-1
     // (or 2(m-1) in the directed case). Add them all to the list of degrees.
     // For quick access, place the frequent case deg = m at the beginning of the
-    // list. That way, every newly added vertex can immediately be place into the
+    // list. That way, every newly added vertex can immediately be placed into the
     // the list without needing to search for the correct index.
     if (mu == 1 and is_undirected(g)) {
         degrees_and_num.emplace_back(std::make_pair(m-1, m));
