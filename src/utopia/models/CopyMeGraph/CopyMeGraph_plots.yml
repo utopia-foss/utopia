@@ -176,16 +176,21 @@ some_universe_plot:
 
 # ... Specilization for multiverse data
 some_multiverse_plot:
+  creator: multiverse
   based_on: some_dag_based_CopyMeGraph_plot
   enabled: false   # manually enable for a multiverse plot
 
-  creator: multiverse
-
-  # specify further arguments here
+  select_and_combine:
+    fields: {}  # TODO requires further arguments here, will not work otherwise
 
 # Facet Grid plot for a sweep over some_parameter' and another dimension
 some_facet_grid_state_plot:
   based_on: some_facet_grid_plot
   enabled: false
 
-  col: some_parameter
+  select_and_combine:
+    base_path: data/CopyMeGraph
+    fields:
+      data: g_static/some_state
+
+  hue: vertex_idx

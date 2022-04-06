@@ -72,6 +72,4 @@ some_facet_grid_plot:
   creator: multiverse  # you can use this for 'universe', too :)
   
   select_and_combine:
-    fields:
-      data: state
     base_path: data/CopyMeGrid

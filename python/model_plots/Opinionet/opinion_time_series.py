@@ -1,8 +1,9 @@
 import numpy as np
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from utopya.plotting import is_plot_func, PlotHelper
+from utopya.eval import is_plot_func, PlotHelper
 
 # -----------------------------------------------------------------------------
 

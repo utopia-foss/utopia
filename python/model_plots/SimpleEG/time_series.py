@@ -6,12 +6,10 @@ from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
-from utopya.datagroup import UniverseGroup
+from utopya.eval import UniverseGroup, DataManager
 
 from ..tools import save_and_close
 
-# Get a logger
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------

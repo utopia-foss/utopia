@@ -25,7 +25,7 @@ mean_slope:
 
 
 # --- Plot the avalanche area fraction time series ----------------------------
-area_fraction:
+area_fraction:  # FIXME Migrate plot
   based_on: .time_series.density
 
   # Adjust helpers
@@ -62,7 +62,7 @@ area_fraction:
 
 
 # --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:
+cluster_size_distribution:  # FIXME Migrate plot
   based_on: .distribution.histogram
 
   # Specify which data to calculate the histogram of
@@ -97,7 +97,7 @@ cluster_size_distribution:
 
 
 # --- A plot of the complementary cumulative probability distribution ---------
-compl_cum_prob_dist:
+compl_cum_prob_dist:  # FIXME Migrate plot
   based_on: .distribution.histogram.complementary_cumulative
 
   # Specify basic configuration for this model

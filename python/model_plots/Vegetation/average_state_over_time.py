@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager
-from utopya.datagroup import UniverseGroup
+from utopya.eval import UniverseGroup, DataManager
 
 import logging
 log = logging.getLogger(__name__)

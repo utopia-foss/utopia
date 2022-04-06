@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import find_peaks
 
-from utopya.plotting import register_operation
+from utopya.eval import register_operation
 
 # .. Helper functions .........................................................
 

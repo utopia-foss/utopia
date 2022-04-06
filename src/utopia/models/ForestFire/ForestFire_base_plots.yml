@@ -1,7 +1,7 @@
 # Default base plots for the ForestFire model
 ---
 # --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:
+cluster_size_distribution:  # FIXME Migrate plot
   based_on: .distribution.histogram
 
   # Specify which data to calculate the histogram of
@@ -45,7 +45,7 @@ cluster_size_distribution:
   # ...
 
 # --- Complementary Cumulative Cluster Size Distribution ----------------------
-compl_cum_cluster_size_dist:
+compl_cum_cluster_size_dist:  # FIXME Migrate plot
   based_on: .distribution.histogram.complementary_cumulative
 
   # Specify which data to calculate the histogram of
@@ -77,7 +77,7 @@ compl_cum_cluster_size_dist:
 
 
 # --- Tree age plots ----------------------------------------------------------
-mean_tree_age:
+mean_tree_age:   # FIXME Migrate plot
   based_on: .basic_uni.errorbar
 
   model_name: ForestFire
@@ -230,7 +230,7 @@ forest_age_snapshot:
       cmap: YlGn
 
 # ... The clusters ............................................................
-clusters_snapshot:
+clusters_snapshot:  # FIXME Migrate plot
   based_on: .ca.state
   model_name: ForestFire
 

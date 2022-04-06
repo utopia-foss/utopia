@@ -2,8 +2,9 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager, UniverseGroup
-from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+from utopya.eval import (
+    DataManager, UniverseGroup, is_plot_func, PlotHelper, UniversePlotCreator
+)
 
 log = logging.getLogger(__name__)
 logging.getLogger('matplotlib.animation').setLevel(logging.WARNING)

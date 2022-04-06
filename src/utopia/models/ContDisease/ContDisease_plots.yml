@@ -1,7 +1,7 @@
 # Default plots for the ContDisease model
 ---
 # --- Plot of all densities over time -----------------------------------------
-densities:
+densities:  # FIXME Migrate
   based_on: densities
   
 # --- Create a phase plot of two densities ------------------------------------
@@ -48,12 +48,12 @@ forest_age:
   based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
 
 # ... The clusters ............................................................
-clusters_snapshot:
+clusters_snapshot:  # FIXME Migrate
   based_on: clusters_snapshot
   enabled: false
   time_idx: -1
 
-clusters:
+clusters:  # FIXME Migrate
   based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
 # --- Miscellaneous -----------------------------------------------------------

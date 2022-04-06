@@ -2,8 +2,9 @@
 
 import numpy as np
 
-from utopya import DataManager, UniverseGroup
-from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+from utopya.eval import (
+    is_plot_func, PlotHelper, UniversePlotCreator, DataManager, UniverseGroup
+)
 
 # -----------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 # Base configs for PredatorPrey model plots
 ---
 # -- Plot of the predator density against the prey density --------------------
-phase_space:
+phase_space:  # FIXME Migrate plot
   based_on: .time_series.phase_space
 
   model_name: PredatorPrey
@@ -24,7 +24,7 @@ phase_space:
 
 
 # -- Time series of the predator and prey densities ---------------------------
-species_densities:
+species_densities:  # FIXME Migrate plot
   based_on: .time_series.densities
 
   helpers:
@@ -52,7 +52,7 @@ species_densities:
       label: Prey
 
 # -- Time series of the predator and prey resources ---------------------------
-mean_resources:
+mean_resources:  # FIXME Migrate plot
   based_on: .basic_uni.lineplots
 
   helpers:

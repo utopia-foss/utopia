@@ -4,8 +4,9 @@ import copy
 
 import matplotlib.pyplot as plt
 
-from utopya import DataManager, UniverseGroup
-from utopya.plotting import is_plot_func, PlotHelper, UniversePlotCreator
+from utopya.eval import (
+    is_plot_func, PlotHelper, UniversePlotCreator, DataManager, UniverseGroup
+)
 from utopya.tools import recursive_update
 
 

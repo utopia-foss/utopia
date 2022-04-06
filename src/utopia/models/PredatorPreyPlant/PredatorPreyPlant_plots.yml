@@ -1,5 +1,6 @@
 # --- Phase Space Plots -------------------------------------------------------
-phase_space/predator_prey:
+phase_space/predator_prey:  # FIXME Migrate plot
+  enabled: false
   based_on: phase_space
 
   x: predator
@@ -10,7 +11,8 @@ phase_space/predator_prey:
       x: Predator Density $[1/A]$
       y: Prey Density $[1/A]$
 
-phase_space/prey_plant:
+phase_space/prey_plant:  # FIXME Migrate plot
+  enabled: false
   based_on: phase_space
   
   x: prey
@@ -23,10 +25,12 @@ phase_space/prey_plant:
 
 
 # --- Time series of mean values ----------------------------------------------
-species_densities:
+species_densities:  # FIXME Migrate plot
+  enabled: false
   based_on: species_densities
 
-mean_resources:
+mean_resources:  # FIXME Migrate plot
+  enabled: false
   based_on: mean_resources
 
 # --- Animation of the spatial resource development of prey and predators -----

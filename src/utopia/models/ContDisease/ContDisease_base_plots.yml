@@ -18,7 +18,7 @@ phase_diagram:
 
 
 # -- Densities plot -----------------------------------------------------------
-densities:
+densities:  # FIXME Migrate
   based_on: .basic_uni.lineplots
 
   model_name: ContDisease
@@ -101,7 +101,7 @@ forest_age_snapshot:
       cmap: YlGn
 
 # ... The clusters ............................................................
-clusters_snapshot:
+clusters_snapshot:  # FIXME Migrate
   based_on: .ca.state
   model_name: ContDisease
 

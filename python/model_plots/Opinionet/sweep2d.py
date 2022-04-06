@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from utopya.plotting import is_plot_func, PlotHelper
+
+from utopya.eval import is_plot_func, PlotHelper
 
 log = logging.getLogger(__name__)
 
-#-------------------------------------------------------------------------------
-@is_plot_func(
-    use_dag=True, required_dag_tags=('data',))
+# -----------------------------------------------------------------------------
+
+@is_plot_func(use_dag=True, required_dag_tags=('data',))
 def sweep2d(data,
             hlpr: PlotHelper,
             x: str,

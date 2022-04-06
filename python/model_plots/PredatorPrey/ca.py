@@ -2,10 +2,12 @@
 
 import numpy as np
 
-from utopya import DataManager, UniverseGroup
-from utopya.plotting import UniversePlotCreator, PlotHelper, is_plot_func
-from utopya.datacontainer import XarrayDC
-import utopya.plot_funcs.ca
+from utopya.eval import (
+    DataManager, UniverseGroup, is_plot_func, PlotHelper, UniversePlotCreator,
+    XarrayDC,
+)
+
+from utopya.eval.plots.ca import state as ca_state_plot
 
 # -----------------------------------------------------------------------------
 
@@ -41,4 +43,4 @@ def combine_pred_and_prey(dm: DataManager, *,
 
     # Call the actual plotting function, which takes care of the rest, and has
     # the 'combined' entry available.
-    utopya.plot_funcs.ca.state(dm, uni=uni, model_name=model_name, **kwargs)
+    ca_state_plot(dm, uni=uni, model_name=model_name, **kwargs)

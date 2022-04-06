@@ -1,12 +1,14 @@
 # Default plots for the ForestFire model
 ---
 # --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:
+cluster_size_distribution:  # FIXME Migrate plot
+  enabled: false
   based_on: cluster_size_distribution
 
 
 # --- The complementary cumulative cluster size distribution ------------------
-compl_cum_cluster_size_dist:
+compl_cum_cluster_size_dist:  # FIXME Migrate plot
+  enabled: false
   based_on: compl_cum_cluster_size_dist
 
 
@@ -66,7 +68,8 @@ tree_density_asymptotic_over_p_lightning:
 
 
 # --- Tree age ----------------------------------------------------------------
-mean_tree_age:
+mean_tree_age:  # FIXME Migrate plot
+  enabled: false
   based_on: mean_tree_age
 
 
@@ -99,7 +102,8 @@ clusters_snapshot:
   enabled: false
   time_idx: -1
 
-clusters:
+clusters:  # FIXME Migrate plot
+  enabled: false
   based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
 # --- Miscellaneous -----------------------------------------------------------

@@ -1,9 +1,9 @@
-"""Dummy-model specific plot function for the state"""
+"""Dummy-model specific plot function for the model state"""
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utopya import DataManager, UniverseGroup
+from utopya.eval import DataManager, UniverseGroup
 
 from ..tools import save_and_close
 

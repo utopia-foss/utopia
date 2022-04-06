@@ -1,7 +1,8 @@
 # Default plots for the SEIRD model
 ---
 # --- Plot of all densities over time -----------------------------------------
-densities:
+densities:  # FIXME Migrate plot
+  enabled: false
   based_on: densities
 
 
@@ -100,7 +101,8 @@ movement:
 
 
 # --- Distribution plots ------------------------------------------------------
-age_distribution/final:
+age_distribution/final:  # FIXME Migrate plot
+  enabled: false
   based_on: [age_distribution, style.prop_cycle.seird]
   transform:
     - SEIRD.compute_age_distribution:
@@ -116,7 +118,8 @@ age_distribution/final:
       title: Final Age Distribution
 
 
-age_distribution/time_series:
+age_distribution/time_series:  # FIXME Migrate plot
+  enabled: false
   based_on: [age_distribution, style.prop_cycle.seird, .animation.ffmpeg]
   transform:
     - SEIRD.compute_age_distribution:
@@ -130,7 +133,8 @@ age_distribution/time_series:
   frames: time
 
 
-age_distribution/deceased:
+age_distribution/deceased:  # FIXME Migrate plot
+  enabled: false
   based_on: [age_distribution, style.prop_cycle.deceased]
   transform:
     - SEIRD.compute_age_distribution:
@@ -218,7 +222,8 @@ clusters_snapshot:
   enabled: false
   time_idx: -1
 
-clusters:
+clusters:  # FIXME Migrate plot
+  enabled: false
   based_on: [clusters_snapshot, .ca.state.anim_ffmpeg, animation]
 
 

@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import xarray as xr
 
-from utopya.plotting import is_plot_func, PlotHelper
+from utopya.eval import is_plot_func, PlotHelper
 
 log = logging.getLogger(__name__)
 

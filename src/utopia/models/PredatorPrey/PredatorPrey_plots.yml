@@ -1,15 +1,18 @@
 # This defines the default plots for the PredatorPrey model
 ---
 # --- Plot of the predator density against the prey density -------------------
-phase_space:
+phase_space:  # FIXME Migrate plot
+  enabled: false
   based_on: phase_space
 
 
 # --- Time series of the predator and prey spatial densities and resources ----
-species_densities:
+species_densities:  # FIXME Migrate plot
+  enabled: false
   based_on: species_densities
 
-mean_resources:
+mean_resources:  # FIXME Migrate plot
+  enabled: false
   based_on: mean_resources
 
 

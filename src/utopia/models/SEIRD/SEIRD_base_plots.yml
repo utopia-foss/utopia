@@ -76,7 +76,7 @@ phase_diagram:
 
 
 # -- Densities plot -----------------------------------------------------------
-densities:
+densities:  # FIXME Migrate plot
   based_on: .basic_uni.lineplots
 
   model_name: SEIRD
@@ -186,7 +186,7 @@ counters:
 
 # --- Distributions -----------------------------------------------------------
 
-age_distribution:
+age_distribution:  # FIXME Migrate plot
   based_on:
     - .default_style_and_helpers
     - .creator.universe

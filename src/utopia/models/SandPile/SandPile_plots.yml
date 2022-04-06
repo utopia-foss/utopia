@@ -9,17 +9,20 @@ mean_slope:
 # Depending on the number of cells, you will perhaps need to adjust the
 # y limits of the plot accordingly. Set the minimum smaller or equal to
 # 1/num_cells
-area_fraction:
+area_fraction:  # FIXME Migrate plot
+  enabled: false
   based_on: area_fraction
 
 
 # --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:
+cluster_size_distribution:  # FIXME Migrate plot
+  enabled: false
   based_on: cluster_size_distribution
 
 
 # --- A plot the complementary cumulative probability distribution ------------
-compl_cum_prob_dist:
+compl_cum_prob_dist:  # FIXME Migrate plot
+  enabled: false
   based_on: compl_cum_prob_dist
 
 

@@ -2,7 +2,8 @@
 ---
 
 # plot the spatial development in the CA 
-map_animation:
+map_animation:  # FIXME Migrate plot
+  enabled: false
   based_on: .ca.state.anim_ffmpeg
 
   # Select the model
