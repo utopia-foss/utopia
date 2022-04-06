@@ -489,6 +489,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | [utopya](https://gitlab.com/utopia-project/utopya)          | >= 1.0   | The (outsourced) Utopia frontend package |
 | [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro)          | >= 0.17  | Handle, transform, and visualize hierarchically organized data |
 | [paramspace](https://gitlab.com/blsqr/paramspace)  | >= 2.5.8 | Makes parameter sweeps easy     |
+| [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
 | [Sphinx](https://www.sphinx-doc.org/en/master/)          | >= 4.2   | Builds the Utopia documentation |
 
 

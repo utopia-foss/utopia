@@ -2,7 +2,7 @@
 # Find a python package using pip freeze
 #
 # .. cmake_function:: python_find_package
-#       
+#
 #       .. cmake_param:: REQUIRED
 #          :option:
 #          :optional:
@@ -55,7 +55,7 @@ function(python_find_package)
         message(${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}")
         return()
     endif ()
-    
+
     # else: Package is installed.
     # Find out the version number using a regex
     if (PIP_OUTPUT MATCHES "Version: ([^\n]+)")
@@ -146,7 +146,7 @@ function(python_install_package)
     execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
                     RESULT_VARIABLE RETURN_VALUE
                     OUTPUT_QUIET)
-    
+
     if (NOT RETURN_VALUE EQUAL "0")
         message(SEND_ERROR "Error installing package: ${RETURN_VALUE}")
     endif ()
@@ -207,4 +207,45 @@ function(python_install_package_remote)
     if (NOT RETURN_VALUE EQUAL "0")
         message(SEND_ERROR "Error installing remote package: ${RETURN_VALUE}")
     endif ()
+endfunction()
+
+
+# Install a python package from pip
+#
+# .. cmake_function:: python_install_package_pip
+#
+#       .. cmake_param:: PACKAGE
+#          :required:
+#          :single:
+#
+#   Install a python package using pip into the utopia-env
+#
+function(python_install_package_pip)
+    # parse function arguments
+    set(OPTION)
+    set(SINGLE PACKAGE)
+    set(MULTI)
+    include(CMakeParseArguments)
+    cmake_parse_arguments(RINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
+    if(RINST_UNPARSED_ARGUMENTS)
+        message(WARNING
+            "Encountered unparsed arguments in python_install_package_pip!"
+        )
+    endif()
+
+    message(STATUS "Installing or upgrading ${RINST_PACKAGE} ...")
+
+    execute_process(
+        COMMAND ${UTOPIA_ENV_PIP} install --upgrade ${RINST_PACKAGE}
+        RESULT_VARIABLE RETURN_VALUE
+        OUTPUT_QUIET
+    )
+    if (NOT RETURN_VALUE EQUAL "0")
+        message(SEND_ERROR
+            "Error installing or upgrading ${RINST_PACKAGE} inside "
+            "utopia-env: ${RETURN_VALUE}"
+        )
+    endif ()
+
+    message(STATUS "Installed ${RINST_PACKAGE}.")
 endfunction()

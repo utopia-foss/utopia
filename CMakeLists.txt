@@ -115,7 +115,6 @@ add_custom_target(test_all)
 add_dependencies(test_all
                     test_core
                     test_dataio
-                    test_utopya
                     test_models)
 
 # --- Summary ---

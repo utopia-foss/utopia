@@ -4,6 +4,7 @@
 message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
+# -- utopya
 python_find_package(PACKAGE utopya VERSION 1.0.0a3)  # TODO Update version
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
@@ -18,6 +19,24 @@ python_find_package(PACKAGE dantro)
 file(CREATE_LINK utopya ${UTOPIA_ENV_DIR}/bin/utopia SYMBOLIC)
 # TODO Consider installing a custom wrapper script that advertises the CLI not
 #      as "utopya" but as Utopia ...
+
+# -- custom python dependencies
+message(STATUS "")
+message(STATUS "Installing custom python dependencies ...")
+execute_process(
+    COMMAND
+        ${RUN_IN_UTOPIA_ENV}
+        pip install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
+    RESULT_VARIABLE exit_code
+    OUTPUT_VARIABLE output
+    ERROR_VARIABLE output
+                )
+if (NOT ${exit_code} STREQUAL "0")
+    message(WARNING "Error ${exit_code} in installing additional python "
+                    "requirements! Install the packages defined in the "
+                    "python/requirements.txt file manually to remove this "
+                    "warning.\nOutput of pip install was:\n${output}")
+endif()
 
 
 # Pass info to utopya  ........................................................

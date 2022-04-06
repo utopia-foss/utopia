@@ -26,6 +26,7 @@ set (UTOPIA_ENV_DIR ${CMAKE_BINARY_DIR}/utopia-env)
 set (UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
 set (UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
 
+message(STATUS "")
 message(STATUS "Setting up the Utopia Python virtual environment ...")
 
 execute_process(
@@ -64,48 +65,41 @@ set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 # _should_ be taken care of by pip itself, it is sometimes not done on Ubuntu
 # systems, leading to failure to install wheel-requiring downstream packages
 
-# pip
 python_find_package(PACKAGE pip VERSION 22.0)
 if (NOT PYTHON_PACKAGE_pip_FOUND)
-    message(STATUS "Installing or upgrading pip ...")
-
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade pip
-                    RESULT_VARIABLE RETURN_VALUE
-                    OUTPUT_QUIET)
-
-    # FIXME does not fail, e.g. without internet connection
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(WARNING
-                    "Error upgrading pip inside utopia-env: ${RETURN_VALUE}")
-    endif ()
+    python_install_package_pip(PACKAGE pip)
 endif()
 
-# setuptools
 python_find_package(PACKAGE setuptools VERSION 51.1)
 if (NOT PYTHON_PACKAGE_setuptools_FOUND)
-    message(STATUS "Installing or upgrading setuptools ...")
-
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade setuptools
-                    RESULT_VARIABLE RETURN_VALUE
-                    OUTPUT_QUIET)
-
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(WARNING
-                    "Error upgrading setuptools inside utopia-env: ${RETURN_VALUE}")
-    endif ()
+    python_install_package_pip(PACKAGE setuptools)
 endif()
 
-# wheel
 python_find_package(PACKAGE wheel VERSION 0.35)
 if (NOT PYTHON_PACKAGE_wheel_FOUND)
-    message(STATUS "Installing or upgrading wheel ...")
-
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} install --upgrade wheel
-                    RESULT_VARIABLE RETURN_VALUE
-                    OUTPUT_QUIET)
-
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(WARNING
-                    "Error upgrading setuptools inside utopia-env: ${RETURN_VALUE}")
-    endif ()
+    python_install_package_pip(PACKAGE wheel)
 endif()
+
+
+message(STATUS "")
+message(STATUS "Setting up pre-commit hooks ...")
+
+python_find_package(PACKAGE pre-commit VERSION 2.18)
+if (NOT PYTHON_PACKAGE_pre-commit_FOUND)
+    python_install_package_pip(PACKAGE pre-commit)
+endif()
+
+# Let pre-commit install its git hook
+execute_process(
+    COMMAND ${RUN_IN_UTOPIA_ENV} pre-commit install
+    RESULT_VARIABLE RETURN_VALUE
+    OUTPUT_QUIET
+)
+if (NOT RETURN_VALUE EQUAL "0")
+    message(SEND_ERROR "Failed setting up pre-commit hooks: ${RETURN_VALUE}")
+endif ()
+
+
+
+message(STATUS "")
+message(STATUS "utopia-env fully set up now.")
