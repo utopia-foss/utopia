@@ -1,7 +1,6 @@
 """Tests of the output of the SimpleFlocking model"""
 
 import numpy as np
-
 import pytest
 
 from utopya.testtools import ModelTest
@@ -15,6 +14,7 @@ mtc = ModelTest("SimpleFlocking", test_file=__file__)
 
 
 # Tests -----------------------------------------------------------------------
+
 
 def test_that_it_runs():
     """Tests that the model runs through with the default settings"""
@@ -69,8 +69,9 @@ def test_run_and_eval_cfgs():
     for cfg_name, cfg_paths in mtc.default_config_sets.items():
         print(f"\nRunning '{cfg_name}' example ...")
 
-        mv, _ = mtc.create_run_load(from_cfg=cfg_paths.get('run'),
-                                    parameter_space=dict(num_steps=3))
-        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get('eval'))
+        mv, _ = mtc.create_run_load(
+            from_cfg=cfg_paths.get("run"), parameter_space=dict(num_steps=3)
+        )
+        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get("eval"))
 
         print(f"Succeeded running and evaluating '{cfg_name}'.\n")

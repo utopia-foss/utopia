@@ -1,7 +1,6 @@
 """Tests of the output of the SEIRD model"""
 
 import numpy as np
-
 import pytest
 
 from utopya.testtools import ModelTest
@@ -11,6 +10,7 @@ mtc = ModelTest("SEIRD", test_file=__file__)
 
 # Tests -----------------------------------------------------------------------
 
+
 def test_initial_state_empty():
     """
     Tests that the initial states are all empty,
@@ -19,10 +19,11 @@ def test_initial_state_empty():
     mv, dm = mtc.create_run_load(from_cfg="initial_state_empty.yml")
 
     # Get data
-    grp = dm['multiverse'][0]['data/SEIRD']
+    grp = dm["multiverse"][0]["data/SEIRD"]
 
     # Check if all cells are empty
     assert (grp["kind"] == 0).all()
+
 
 def test_initial_inert():
     """
@@ -31,20 +32,23 @@ def test_initial_inert():
     mv, dm = mtc.create_run_load(from_cfg="initial_inert.yml")
 
     # Get data
-    grp = dm['multiverse'][0]['data/SEIRD']
+    grp = dm["multiverse"][0]["data/SEIRD"]
 
     # Check if any cell is in inert state
     assert (grp["kind"] == 7).any()
+
 
 def test_initial_state_source_south():
     """
     Initial state is 'empty', but an infection source at the southern side
     is activated.
     """
-    _,dm = mtc.create_run_load(from_cfg="initial_state_empty_source_south.yml")
+    _, dm = mtc.create_run_load(
+        from_cfg="initial_state_empty_source_south.yml"
+    )
 
     # Get data
-    grp = dm['multiverse'][0]['data/SEIRD']
+    grp = dm["multiverse"][0]["data/SEIRD"]
     data = grp["kind"]
 
     # Check if all cells are empty, apart from the lowest horizontal row
@@ -52,6 +56,7 @@ def test_initial_state_source_south():
 
     # Check if the lowest row is an infection source for all times
     assert (data.isel(y=0) == 6).all()
+
 
 def test_growing_dynamic():
     """
@@ -62,11 +67,12 @@ def test_growing_dynamic():
     mv, dm = mtc.create_run_load(from_cfg="growing_dynamic.yml")
 
     # Get data
-    grp = dm['multiverse'][0]['data/SEIRD']
+    grp = dm["multiverse"][0]["data/SEIRD"]
     data = grp["kind"]
 
     # Check that all cells are susceptible after one timestep
     assert (data.isel(time=1) == 1).all()
+
 
 def test_infection_dynamic():
     """
@@ -79,7 +85,7 @@ def test_infection_dynamic():
     mv, dm = mtc.create_run_load(from_cfg="infection_dynamic.yml")
 
     # Get data
-    grp = dm['multiverse'][0]['data/SEIRD']
+    grp = dm["multiverse"][0]["data/SEIRD"]
     data = grp["kind"]
 
     # Set kinds
@@ -113,14 +119,14 @@ def test_densities_calculation():
     mv, dm = mtc.create_run_load(from_cfg="densities_calculation.yml")
 
     # Get the 2D densities dataset
-    densities = dm['multiverse/0/data/SEIRD/densities']
+    densities = dm["multiverse/0/data/SEIRD/densities"]
 
     # Assert that the added up densities are approximately equal to 1
-    assert np.isclose(densities.sum('kind'), 1.).all()
+    assert np.isclose(densities.sum("kind"), 1.0).all()
 
     # Densities should always be in interval [0., 1.]
-    assert (0. <= densities).all()
-    assert (densities <= 1.).all()
+    assert (0.0 <= densities).all()
+    assert (densities <= 1.0).all()
 
     # Initially, in this case, no cell should be exposed or infected
     assert densities.sel(time=0, kind="exposed").item() == 0
@@ -131,21 +137,22 @@ def test_counters():
     mv, dm = mtc.create_run_load(from_cfg="counters.yml")
 
     # Get the 2D counters
-    counters = dm['multiverse/0/data/SEIRD/counts']
+    counters = dm["multiverse/0/data/SEIRD/counts"]
 
     # There should be 11 counters
-    assert counters.coords['label'].size == 11
+    assert counters.coords["label"].size == 11
     # NOTE If this fails, make sure to adapt not only this test, but also the
     #      model documentation and make sure that the Counters struct contains
     #      the correct labels!
 
     # Counters should be non-negative and grow only monotonically
     assert (counters >= 0).all()
-    assert (counters.diff('time') >= 0).all()
+    assert (counters.diff("time") >= 0).all()
 
     # For this configuration, some counters can only have specific values
-    assert np.isin(counters.sel(label='susceptible_to_exposed_controlled'),
-                   [0, 3]).all()
+    assert np.isin(
+        counters.sel(label="susceptible_to_exposed_controlled"), [0, 3]
+    ).all()
 
 
 def test_exposure_control_add_inf():
@@ -156,7 +163,7 @@ def test_exposure_control_add_inf():
     mv, dm = mtc.create_run_load(from_cfg="exposure_control_add_inf.yml")
 
     # Get the kind of the cells
-    data = dm['multiverse/0/data/SEIRD/kind']
+    data = dm["multiverse/0/data/SEIRD/kind"]
 
     # Set kinds
     empty = 0
@@ -172,7 +179,7 @@ def test_exposure_control_add_inf():
         s = data.isel(time=t)
 
         unique, counts = np.unique(s, return_counts=True)
-        d_counts = {u:c for u, c in zip(unique, counts)}
+        d_counts = {u: c for u, c in zip(unique, counts)}
         print(d_counts)
 
         # At the start there should only be susceptible cells and empty spots
@@ -189,10 +196,10 @@ def test_exposure_control_add_inf():
         # exposure control step all susceptible cells are getting infected
         # and only the newly appearing susceptible cells remain
         if t in [6, 21, 41]:
-            s_prev = data.isel(time=t-1)
+            s_prev = data.isel(time=t - 1)
 
             unique_prev, counts_prev = np.unique(s_prev, return_counts=True)
-            d_counts_prev = {u:c for u, c in zip(unique_prev, counts_prev)}
+            d_counts_prev = {u: c for u, c in zip(unique_prev, counts_prev)}
 
             assert d_counts[susceptible] < d_counts_prev[susceptible]
 
@@ -202,10 +209,12 @@ def test_exposure_control_change_p_random_inf():
     Test that the exposure control via change of the random
     exposure probability works correctly.
     """
-    mv, dm = mtc.create_run_load(from_cfg="exposure_control_change_p_random_inf.yml")
+    mv, dm = mtc.create_run_load(
+        from_cfg="exposure_control_change_p_random_inf.yml"
+    )
 
     # Get the kind of the cells
-    data = dm['multiverse/0/data/SEIRD/kind']
+    data = dm["multiverse/0/data/SEIRD/kind"]
 
     # Set the relevant kinds
     empty = 0
@@ -217,7 +226,7 @@ def test_exposure_control_change_p_random_inf():
         s = data.isel(time=t)
 
         unique, counts = np.unique(s, return_counts=True)
-        d_counts = {u:c for u, c in zip(unique, counts)}
+        d_counts = {u: c for u, c in zip(unique, counts)}
 
         # The probability for infection should be set to 0 the first 10 steps
         if t < 10:
@@ -239,7 +248,10 @@ def test_exposure_control_change_p_random_inf():
         #      be that it fails due to randomness.
         if t == 16:
             assert exposed in unique
-            assert (d_counts[exposed] + d_counts[infected]) > d_counts[susceptible]
+            assert (d_counts[exposed] + d_counts[infected]) > d_counts[
+                susceptible
+            ]
+
 
 def test_transmission_control():
     """
@@ -249,7 +261,7 @@ def test_transmission_control():
     mv, dm = mtc.create_run_load(from_cfg="transmission_control.yml")
 
     # Get the kind of the cells
-    data = dm['multiverse/0/data/SEIRD/kind']
+    data = dm["multiverse/0/data/SEIRD/kind"]
 
     # Set the relevant kinds
     empty = 0
@@ -269,6 +281,7 @@ def test_transmission_control():
         if t == 6:
             assert infected not in unique
 
+
 def test_random_movement():
     """
     Test that cells move randomly around
@@ -276,7 +289,7 @@ def test_random_movement():
     mv, dm = mtc.create_run_load(from_cfg="movement_random.yml")
 
     # Get the kind of the cells
-    data = dm['multiverse/0/data/SEIRD/kind']
+    data = dm["multiverse/0/data/SEIRD/kind"]
 
     # Set the relevant kinds
     empty = 0
@@ -293,6 +306,7 @@ def test_random_movement():
     assert (data.isel(time=1) == data.isel(time=2)).any()
     assert (data.isel(time=2) == data.isel(time=3)).any()
 
+
 def test_directed_movement():
     """
     Test that cells move directed away from infected cells around them.
@@ -300,7 +314,7 @@ def test_directed_movement():
     mv, dm = mtc.create_run_load(from_cfg="movement_directed.yml")
 
     # Get the kind of the cells
-    data = dm['multiverse/0/data/SEIRD/kind']
+    data = dm["multiverse/0/data/SEIRD/kind"]
 
     infected = 3
 
@@ -308,4 +322,4 @@ def test_directed_movement():
         if (data.isel(time=t) == infected).any():
             # If there are infected ones, there should be movement in the
             # high density population
-            assert (data.isel(time=t) != data.isel(time=t+1)).any()
+            assert (data.isel(time=t) != data.isel(time=t + 1)).any()

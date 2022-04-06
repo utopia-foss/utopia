@@ -3,21 +3,29 @@
 import matplotlib.pyplot as plt
 
 from utopya.eval import (
-    is_plot_func, PlotHelper, UniversePlotCreator, DataManager, UniverseGroup
+    DataManager,
+    PlotHelper,
+    UniverseGroup,
+    UniversePlotCreator,
+    is_plot_func,
 )
 
 from ..tools import colorline
 
 # -----------------------------------------------------------------------------
 
+
 @is_plot_func(creator_type=UniversePlotCreator)
-def phase_diagram(dm: DataManager, *,
-                  uni: UniverseGroup,
-                  hlpr: PlotHelper,
-                  x: str,
-                  y: str,
-                  cmap: str=None,
-                  **plot_kwargs):
+def phase_diagram(
+    dm: DataManager,
+    *,
+    uni: UniverseGroup,
+    hlpr: PlotHelper,
+    x: str,
+    y: str,
+    cmap: str = None,
+    **plot_kwargs,
+):
     """Plots the the phase diagram of tree and infected tree densities
 
     Args:
@@ -30,18 +38,27 @@ def phase_diagram(dm: DataManager, *,
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the group that all datasets are in
-    densities = uni['data/ContDisease/densities']
+    densities = uni["data/ContDisease/densities"]
 
     # If a colormap was given, use it to color-code the time
-    cc_kwargs = ({} if cmap is None
-                 else dict(c=densities.coords['time'], cmap=cmap))
-    
+    cc_kwargs = (
+        {} if cmap is None else dict(c=densities.coords["time"], cmap=cmap)
+    )
+
     # Plot the phase space
-    sc = hlpr.ax.scatter(densities.sel(kind=x),
-                         densities.sel(kind=y),
-                         **cc_kwargs, **plot_kwargs)
+    sc = hlpr.ax.scatter(
+        densities.sel(kind=x),
+        densities.sel(kind=y),
+        **cc_kwargs,
+        **plot_kwargs,
+    )
 
     # Add a colorbar
     if cc_kwargs:
-        hlpr.fig.colorbar(sc, ax=hlpr.ax, fraction=0.05, pad=0.02,
-                          label="Time [Iteration Steps]")
+        hlpr.fig.colorbar(
+            sc,
+            ax=hlpr.ax,
+            fraction=0.05,
+            pad=0.02,
+            label="Time [Iteration Steps]",
+        )

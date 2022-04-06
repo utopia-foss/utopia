@@ -1,19 +1,25 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-from utopya.eval import UniverseGroup, DataManager
-
 import logging
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from utopya.eval import DataManager, UniverseGroup
+
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
-def average_state_over_time(dm: DataManager, *, 
-                            out_path: str, 
-                            uni: UniverseGroup,
-                            save_kwargs: dict=None, **plot_kwargs):
+
+def average_state_over_time(
+    dm: DataManager,
+    *,
+    out_path: str,
+    uni: UniverseGroup,
+    save_kwargs: dict = None,
+    **plot_kwargs,
+):
     """Calculates the state mean and performs a lineplot
-    
+
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
@@ -22,7 +28,7 @@ def average_state_over_time(dm: DataManager, *,
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the dataset
-    dset = uni['data']['Vegetation/plant_mass']
+    dset = uni["data"]["Vegetation/plant_mass"]
 
     # Extract the y data which is 'state' avaraged over all grid cells for every time step
     y_data = np.mean(dset, axis=(1, 2))

@@ -3,7 +3,6 @@
 from itertools import chain
 
 import numpy as np
-
 import pytest
 
 from utopya.testtools import ModelTest
@@ -18,21 +17,26 @@ mtc = ModelTest("SimpleEG", test_file=__file__)
 # Helpers ---------------------------------------------------------------------
 # NOTE These helpers are also imported by other test modules for SimpleEG
 
+
 def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the SimpleEG model"""
     return dict(parameter_space=dict(SimpleEG=dict(**kwargs)))
+
 
 def ia_matrix_from_b(b):
     """Creates an interaction matrix from the benefit parameter b"""
     return [[1, 0], [b, 0]]
 
+
 def ia_matrix_from_bc(*, b, c):
     """Creates an itneraction matrix from a bc-pair"""
-    return [[b-c, -c], [b, 0]]
+    return [[b - c, -c], [b, 0]]
+
 
 def assert_eq(a, b, *, epsilon=1e-6):
     """Assert that two quantities are equal within a numerical epsilon range"""
-    assert(abs(a-b) < epsilon)
+    assert abs(a - b) < epsilon
+
 
 def check_ia_matrices(m1, m2):
     """Check that the matrix elements are equal"""
@@ -41,7 +45,9 @@ def check_ia_matrices(m1, m2):
     assert_eq(m1[1][0], m2[1][0])
     assert_eq(m1[1][1], m2[1][1])
 
+
 # Tests -----------------------------------------------------------------------
+
 
 def test_basics():
     """Test the most basic features of the model, e.g. that it runs"""
@@ -52,50 +58,52 @@ def test_basics():
     assert len(dm)
 
 
-def test_initial_state_random(): 
+def test_initial_state_random():
     """Test that the initial states are random.
 
     This also tests for the correct array shape, something that is not done in
     the other tests.
     """
     # Use the config file for common settings, change via additional kwargs
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(initial_state='random'))
+    mv, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml",
+        perform_sweep=True,
+        **model_cfg(initial_state="random"),
+    )
 
     # For all universes, perform checks on the payoff and strategy data
-    for uni in dm['multiverse'].values():
-        data = uni['data']['SimpleEG']
+    for uni in dm["multiverse"].values():
+        data = uni["data"]["SimpleEG"]
 
         # Check that only a single step was written
-        assert data['payoff'].shape[0] == 1
-        assert data['strategy'].shape[0] == 1
+        assert data["payoff"].shape[0] == 1
+        assert data["strategy"].shape[0] == 1
 
         # All payoffs should be zero
-        assert not np.any(data['payoff'])
+        assert not np.any(data["payoff"])
 
         # Strategies should be random; calculate the ratio and check limits
-        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
-        s1_fraction = np.sum(data['strategy'])/(shape[0] * shape[1])
+        shape = (data["strategy"].shape[1], data["strategy"].shape[2])
+        s1_fraction = np.sum(data["strategy"]) / (shape[0] * shape[1])
         assert 0.45 <= s1_fraction <= 0.55
-
 
     # Test again for another probability value
     s1_prob = 0.2
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(s1_prob=s1_prob,
-                                             initial_state='random'))
+    mv, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml",
+        perform_sweep=True,
+        **model_cfg(s1_prob=s1_prob, initial_state="random"),
+    )
 
-    for uni in dm['multiverse'].values():
-        data = uni['data']['SimpleEG']
+    for uni in dm["multiverse"].values():
+        data = uni["data"]["SimpleEG"]
 
         # All payoffs should be zero
-        assert not np.any(data['payoff'])
+        assert not np.any(data["payoff"])
 
         # Calculate fraction and compare to desired probability
-        shape = data['strategy'].shape[1:]
-        s1_fraction = np.sum(data['strategy']) / (shape[0] * shape[1])
+        shape = data["strategy"].shape[1:]
+        s1_fraction = np.sum(data["strategy"]) / (shape[0] * shape[1])
         assert s1_prob - 0.05 <= s1_fraction <= s1_prob + 0.05
 
 
@@ -105,79 +113,86 @@ def test_initial_state_fraction():
     s1_fraction = 0.1
 
     # Use the config file for common settings, change via additional kwargs
-    mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                 perform_sweep=True,
-                                 **model_cfg(initial_state='fraction', 
-                                             s1_fraction=s1_fraction))
+    mv, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml",
+        perform_sweep=True,
+        **model_cfg(initial_state="fraction", s1_fraction=s1_fraction),
+    )
 
     # For all universes, check that the fraction is met
-    for uni in dm['multiverse'].values():
-        data = uni['data']['SimpleEG']
+    for uni in dm["multiverse"].values():
+        data = uni["data"]["SimpleEG"]
 
         # All payoffs should be zero
-        assert not np.any(data['payoff'])
+        assert not np.any(data["payoff"])
 
         # Print the data (useful if something fails)
-        print(data['strategy'].data)
+        print(data["strategy"].data)
 
         # Count the cells with strategy 1
-        num_s1 = np.sum(data['strategy'])
-        shape = (data['strategy'].shape[1], data['strategy'].shape[2])
-        assert num_s1-5 <= int(s1_fraction * shape[0] * shape[1]) <= num_s1+5 # floor
+        num_s1 = np.sum(data["strategy"])
+        shape = (data["strategy"].shape[1], data["strategy"].shape[2])
+        assert (
+            num_s1 - 5 <= int(s1_fraction * shape[0] * shape[1]) <= num_s1 + 5
+        )  # floor
 
 
-def test_initial_state_single(): 
+def test_initial_state_single():
     """Test initial state for cases single_s0 and single_s1"""
     # Create a few Multiverses with different initial states and store the
     # resulting DataManagers
     dms = []
 
-    for initial_state in ['single_s0', 'single_s1']:
-        _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                    **model_cfg(initial_state=initial_state))
+    for initial_state in ["single_s0", "single_s1"]:
+        _, dm = mtc.create_run_load(
+            from_cfg="initial_state.yml",
+            **model_cfg(initial_state=initial_state),
+        )
         dms.append(dm)
 
     # For all multiverses, go over all universes and check that all cells are
     # of the desired strategy
-    for uni in chain(*[dm['multiverse'].values() for dm in dms]):
+    for uni in chain(*[dm["multiverse"].values() for dm in dms]):
         # Get the data
-        data = uni['data']['SimpleEG']
+        data = uni["data"]["SimpleEG"]
 
         print("Strategy data:")
-        print(data['strategy'].data, end="\n\n")
+        print(data["strategy"].data, end="\n\n")
 
         # Get the shape
-        shape = data['strategy'].shape
+        shape = data["strategy"].shape
 
         # Check the center cell strategy, depending on what the strategy ought
         # to be
-        if uni['cfg']['SimpleEG']['initial_state'] == "single_s0":
+        if uni["cfg"]["SimpleEG"]["initial_state"] == "single_s0":
             # Central 0, all others 1
-            assert data['strategy'][0, shape[1]//2, shape[2]//2] == 0
-            assert np.sum(data['strategy']) == shape[1] * shape[2] - 1
-        
+            assert data["strategy"][0, shape[1] // 2, shape[2] // 2] == 0
+            assert np.sum(data["strategy"]) == shape[1] * shape[2] - 1
+
         else:
             # Central 1, all others 0
-            assert data['strategy'][0, shape[1]//2, shape[2]//2] == 1
-            assert np.sum(data['strategy']) == 1
-        
+            assert data["strategy"][0, shape[1] // 2, shape[2] // 2] == 1
+            assert np.sum(data["strategy"]) == 1
+
         # Finally, all payoffs should be zero
-        assert not np.any(data['payoff'])
+        assert not np.any(data["payoff"])
 
     # Make sure that even-valued cell extensions throw an error
     with pytest.raises(SystemExit) as pytest_wrapped_e:
-        mv, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                     **model_cfg(
-                                        initial_state="single_s0",
-                                        cell_manager=dict(
-                                            grid=dict(resolution=10))))
+        mv, dm = mtc.create_run_load(
+            from_cfg="initial_state.yml",
+            **model_cfg(
+                initial_state="single_s0",
+                cell_manager=dict(grid=dict(resolution=10)),
+            ),
+        )
 
     assert pytest_wrapped_e.type is SystemExit
 
 
 def test_ia_matrix_extraction():
     """Test that the ia_matrix is extracted correctly from the config"""
-    
+
     # Test all possible combinations of specifying input parameters
     # The different yaml config files provide the following different cases:
     #   0:        ia_matrix: [[1, 2], [3, 4]]
@@ -198,14 +213,14 @@ def test_ia_matrix_extraction():
 
     # Define the interaction matrix values to test against
     ia_matrices = []
-    ia_matrices.append([[1,2],[3,4]])                 # case 0 
-    ia_matrices.append(ia_matrix_from_bc(b=4,c=5))    # case 1
-    ia_matrices.append(ia_matrix_from_b(1.9))         # case 2
-    ia_matrices.append(ia_matrix_from_bc(b=4,c=5))    # case 3
-    ia_matrices.append([[1,2],[3,4]])                 # case 4  
-    ia_matrices.append([[1,2],[3,4]])                 # case 5 
-    ia_matrices.append([[1,2],[3,4]])                 # case 6
-    ia_matrices.append(ia_matrix_from_b(1.58))        # case 7
+    ia_matrices.append([[1, 2], [3, 4]])  # case 0
+    ia_matrices.append(ia_matrix_from_bc(b=4, c=5))  # case 1
+    ia_matrices.append(ia_matrix_from_b(1.9))  # case 2
+    ia_matrices.append(ia_matrix_from_bc(b=4, c=5))  # case 3
+    ia_matrices.append([[1, 2], [3, 4]])  # case 4
+    ia_matrices.append([[1, 2], [3, 4]])  # case 5
+    ia_matrices.append([[1, 2], [3, 4]])  # case 6
+    ia_matrices.append(ia_matrix_from_b(1.58))  # case 7
 
     # For each of these cases, create, run, and load a Multiverse; then test
     # against the expected ia_matrices above.
@@ -213,8 +228,9 @@ def test_ia_matrix_extraction():
         _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
 
         # Get default universe from multiverse
-        uni = dm['multiverse'][0]
+        uni = dm["multiverse"][0]
 
         # Now, check whether the ia_matrix is correct
-        check_ia_matrices(uni['data']['SimpleEG'].attrs['ia_matrix'],
-                          expected_matrix)
+        check_ia_matrices(
+            uni["data"]["SimpleEG"].attrs["ia_matrix"], expected_matrix
+        )

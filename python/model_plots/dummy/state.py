@@ -1,7 +1,7 @@
 """Dummy-model specific plot function for the model state"""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from utopya.eval import DataManager, UniverseGroup
 
@@ -9,9 +9,19 @@ from ..tools import save_and_close
 
 # -----------------------------------------------------------------------------
 
-def single_state(dm: DataManager, *, out_path: str, uni: UniverseGroup, step: int, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+
+def single_state(
+    dm: DataManager,
+    *,
+    out_path: str,
+    uni: UniverseGroup,
+    step: int,
+    fmt: str = None,
+    save_kwargs: dict = None,
+    **plot_kwargs,
+):
     """Plots the state for a single time step
-    
+
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
@@ -22,7 +32,7 @@ def single_state(dm: DataManager, *, out_path: str, uni: UniverseGroup, step: in
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = uni['data/dummy/state']
+    state = uni["data/dummy/state"]
 
     # Select the time step
     state_at_step = state[step, :]
@@ -39,9 +49,17 @@ def single_state(dm: DataManager, *, out_path: str, uni: UniverseGroup, step: in
     save_and_close(out_path, save_kwargs=save_kwargs)
 
 
-def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=None, save_kwargs: dict=None, **plot_kwargs):
+def state_mean(
+    dm: DataManager,
+    *,
+    out_path: str,
+    uni: UniverseGroup,
+    fmt: str = None,
+    save_kwargs: dict = None,
+    **plot_kwargs,
+):
     """Plots the state mean over time.
-    
+
     Args:
         dm (DataManager): The data manager from which to retrieve the data
         out_path (str): Where to store the plot to
@@ -51,7 +69,7 @@ def state_mean(dm: DataManager, *, out_path: str, uni: UniverseGroup, fmt: str=N
         **plot_kwargs: Passed on to plt.plot
     """
     # Get the state dataset
-    state = uni['data/dummy/state']
+    state = uni["data/dummy/state"]
 
     # Calculate the mean by averaging over the columns
     y_data = np.mean(state, axis=1)

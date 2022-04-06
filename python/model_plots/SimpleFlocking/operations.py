@@ -36,10 +36,12 @@ def set_nan_at_discontinuities(
         v[pos] = np.nan
 
     # Reconstruct the xr.Dataset
-    return xr.Dataset({
-        k: xr.DataArray(v, name=k, coords=coords)
-        for k, v in data_vars.items()
-    })
+    return xr.Dataset(
+        {
+            k: xr.DataArray(v, name=k, coords=coords)
+            for k, v in data_vars.items()
+        }
+    )
 
 
 def insert_nan_at_discontinuities(
@@ -74,7 +76,7 @@ def insert_nan_at_discontinuities(
     # Find positions of discontinuities, then insert data *after* that
     # position (hence the +1)
     pos = np.where(np.abs(np.diff(data_vars[variable])) >= threshold)[0]
-    insert_nan = lambda d: np.insert(d, pos+1, np.nan)
+    insert_nan = lambda d: np.insert(d, pos + 1, np.nan)
 
     data_vars = {k: insert_nan(v) for k, v in data_vars.items()}
 
@@ -82,13 +84,20 @@ def insert_nan_at_discontinuities(
     # to not have duplicate coordinate values later on
     coords_name = list(coords.dims)[0]
     coords_data = list(coords.values())[0].data
-    coords_data = xr.DataArray(insert_nan(coords_data.astype(float)),
-                               dims=(coords_name,))
+    coords_data = xr.DataArray(
+        insert_nan(coords_data.astype(float)), dims=(coords_name,)
+    )
     coords_data = coords_data.interpolate_na(coords_name)
 
     # Reconstruct the xr.Dataset
-    return xr.Dataset({
-        k: xr.DataArray(v, name=k, dims=(coords_name,),
-                        coords={coords_name: coords_data})
-        for k, v in data_vars.items()
-    })
+    return xr.Dataset(
+        {
+            k: xr.DataArray(
+                v,
+                name=k,
+                dims=(coords_name,),
+                coords={coords_name: coords_data},
+            )
+            for k, v in data_vars.items()
+        }
+    )

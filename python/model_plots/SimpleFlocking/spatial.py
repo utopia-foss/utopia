@@ -5,25 +5,29 @@ import logging
 import numpy as np
 import xarray as xr
 
-from utopya.eval import is_plot_func, PlotHelper
+from utopya.eval import PlotHelper, is_plot_func
 
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
+
 def draw_agents(
-    ds: xr.Dataset, *,
+    ds: xr.Dataset,
+    *,
     hlpr: PlotHelper,
-    collection = None,
+    collection=None,
     **plot_kwargs,
 ):
     """Expects an xr.Dataset and draws a single frame of agents in a domain"""
     if not collection:
         # Create collection
         collection = hlpr.ax.scatter(
-            ds["x"], ds["y"],
+            ds["x"],
+            ds["y"],
             c=ds["orientation"],
-            vmin=-np.pi, vmax=+np.pi,
+            vmin=-np.pi,
+            vmax=+np.pi,
             **plot_kwargs,
         )
 
@@ -42,11 +46,13 @@ def draw_agents(
 
 # -----------------------------------------------------------------------------
 
+
 @is_plot_func(
-    use_dag=True, required_dag_tags=('data',), supports_animation=True
+    use_dag=True, required_dag_tags=("data",), supports_animation=True
 )
 def agents_in_domain(
-    *, data: dict,
+    *,
+    data: dict,
     hlpr: PlotHelper,
     space_extent: tuple,
     x: str = "x",
@@ -63,11 +69,13 @@ def agents_in_domain(
         raise TypeError(f"Expected xr.Dataset, got {type(ds)}!")
 
     # Apply encoding
-    ds = ds.rename({
-        x: "x",
-        y: "y",
-        orientation: "orientation",
-    })
+    ds = ds.rename(
+        {
+            x: "x",
+            y: "y",
+            orientation: "orientation",
+        }
+    )
 
     # Extract space information and set axis and aspect ratio accordingly
     hlpr.ax.set_xlim(0, space_extent[0])
@@ -86,10 +94,7 @@ def agents_in_domain(
             )
 
             collection = draw_agents(
-                _ds,
-                hlpr=hlpr,
-                collection=collection,
-                **plot_kwargs
+                _ds, hlpr=hlpr, collection=collection, **plot_kwargs
             )
 
             # Done with this frame; yield control to the animation framework
