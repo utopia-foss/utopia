@@ -38,23 +38,9 @@ if (NOT RETURN_VALUE EQUAL "0")
 endif ()
 
 # create a symlink to the activation script
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
-    file (CREATE_LINK ${UTOPIA_ENV_DIR}/bin/activate
-                      ${CMAKE_BINARY_DIR}/activate
-          SYMBOLIC)
-else ()
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-            ${UTOPIA_ENV_DIR}/bin/activate
-            ${CMAKE_BINARY_DIR}/activate
-        RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET
-    )
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error creating a symlink to activate: "
-                           "${RETURN_VALUE}")
-    endif ()
-endif ()
+file (CREATE_LINK ${UTOPIA_ENV_DIR}/bin/activate
+                  ${CMAKE_BINARY_DIR}/activate
+      SYMBOLIC)
 
 # write the convenience bash script
 # configure the script
@@ -79,7 +65,7 @@ set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 # systems, leading to failure to install wheel-requiring downstream packages
 
 # pip
-python_find_package(PACKAGE pip VERSION 20.3)
+python_find_package(PACKAGE pip VERSION 22.0)
 if (NOT PYTHON_PACKAGE_pip_FOUND)
     message(STATUS "Installing or upgrading pip ...")
 

@@ -460,7 +460,7 @@ Follow the instructions in [the `models_template` project][models_template] for 
 | GCC                                            | >= 9                | 10              | Full C++17 support required |
 | _or:_ clang                                    | >= 9                | 10.0            | Full C++17 support required |
 | _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
-| [CMake](https://cmake.org/)                    | >= 3.13             | 3.16            | |
+| [CMake](https://cmake.org/)                    | >= 3.16             | 3.16            | |
 | pkg-config                                     | >= 0.29             | 0.29            | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4           | 1.10.4          | |
 | [Boost](http://www.boost.org/)                 | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |

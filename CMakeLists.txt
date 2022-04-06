@@ -1,5 +1,5 @@
-# Set minimum CMake version to the one supplied with Ubuntu 18.04
-cmake_minimum_required(VERSION 3.13)
+# Set minimum CMake version to the one supplied with Ubuntu 20.04
+cmake_minimum_required(VERSION 3.16)
 
 # Start the project
 project(Utopia
