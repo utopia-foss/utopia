@@ -25,7 +25,7 @@ import sphinx.ext.apidoc
 # -- Project information ------------------------------------------------------
 
 project = "Utopia"
-copyright = "2016 – 2021, Utopia Developers"
+copyright = "2016 – 2022, Utopia Developers"
 author = "Utopia Developers"
 
 # TODO
@@ -38,7 +38,7 @@ release = ""
 # -- General configuration ----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = "3.5"
+needs_sphinx = "4.2"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named "sphinx.ext.*") or your custom ones.
@@ -408,6 +408,8 @@ def run_apidoc(app):
     ignore_paths = []
 
     # Get the required directory paths
+    # FIXME That directory no longer exists
+    # TODO Find a way to still build the utopya API alongside
     cur_dir = "@CMAKE_CURRENT_SOURCE_DIR@"
     out_dir = os.path.join(cur_dir, "api", "utopya")
     module_dir = os.path.join(cur_dir, "..", "python", "utopya", "utopya")
@@ -427,7 +429,7 @@ def run_apidoc(app):
 
 def setup(app):
     # Run the apidoc builder
-    app.connect("builder-inited", run_apidoc)
+    # app.connect("builder-inited", run_apidoc)  # FIXME see above
 
     # Handle some events manually
     app.connect("source-read", manipulate_source_read)
