@@ -1,9 +1,0 @@
-# Configuration for pytest-cov coverage reports
-# For syntax, see here: https://coverage.readthedocs.io/en/latest/config.html
-
-[report]
-# Increase precision (from default 0) to be able to discern changes
-precision = 2
-
-# Sort by number of lines that are _not_ covered
-sort = Miss
