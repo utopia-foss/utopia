@@ -4,7 +4,6 @@
 message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
-# NOTE Different utopya version could be installed if utopia-env already exists
 python_find_package(PACKAGE utopya VERSION 1.0.0a3)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
@@ -14,6 +13,11 @@ endif()
 
 # Inform about dantro version (installation happened via utopya dependencies)
 python_find_package(PACKAGE dantro)
+
+# Create a (relative) symlink in the utopia-env: utopia -> utopya
+file(CREATE_LINK utopya ${UTOPIA_ENV_DIR}/bin/utopia SYMBOLIC)
+# TODO Consider installing a custom wrapper script that advertises the CLI not
+#      as "utopya" but as Utopia ...
 
 
 # Pass info to utopya  ........................................................
