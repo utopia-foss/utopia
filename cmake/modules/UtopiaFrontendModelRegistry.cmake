@@ -11,45 +11,42 @@
 function(register_models_with_frontend)
     # Check how many models are available. Only continue if there are models
     # available ...
-    list(LENGTH UTOPIA_MODEL_TARGETS num_model_targets)
+    list(LENGTH UTOPIA_MODEL_TARGETS num_models)
 
-    if (${num_model_targets} EQUAL 0)
+    if (${num_models} EQUAL 0)
         message(STATUS "No models available to register with frontend.")
         return()
     endif()
 
-    # NOTE Consider searching for utopia cli via find_program. Will perhaps be
-    #      necessary once the utopia-env is no longer available ...
-    execute_process(COMMAND
-                        ${RUN_IN_UTOPIA_ENV}
-                        utopia models register
-                        "${UTOPIA_MODEL_TARGETS}"
-                        --bin-path "${UTOPIA_MODEL_BINPATHS}"
-                        --src-dir "${UTOPIA_MODEL_SRC_DIRS}"
-                        --base-bin-dir "${CMAKE_BINARY_DIR}"
-                        --base-src-dir "${CMAKE_SOURCE_DIR}"
-                        --separator ";"
-                        --label added_by_cmake
-                        --overwrite-label
-                        --exists-action validate
-                        --project-name "${CMAKE_PROJECT_NAME}"
-                        --update-project-info
-                        --project-base-dir "${CMAKE_SOURCE_DIR}"
-                        --project-models-dir "${UTOPIA_MODELS_DIR}"
-                        --project-python-model-tests-dir "${UTOPIA_PYTHON_MODEL_TESTS_DIR}"
-                        --project-python-model-plots-dir "${UTOPIA_PYTHON_MODEL_PLOTS_DIR}"
-                    RESULT_VARIABLE exit_code
-                    OUTPUT_VARIABLE output
-                    ERROR_VARIABLE output
-                    )
+    find_program(UTOPYA_CLI utopya)
+    execute_process(
+        COMMAND
+            ${UTOPYA_CLI} models register from-list
+            "${UTOPIA_MODEL_TARGETS}"
+            --executables "${UTOPIA_MODEL_BINPATHS}"
+            --source-dirs "${UTOPIA_MODEL_SRC_DIRS}"
+            --base-executable-dir "${CMAKE_BINARY_DIR}"
+            --base-source-dir "${CMAKE_SOURCE_DIR}"
+            --separator ";"
+            --label added_by_cmake
+            --exists-action validate
+            --project-name "${CMAKE_PROJECT_NAME}"
+            --py-tests-dir-fstr "${UTOPIA_PYTHON_MODEL_TESTS_DIR}/{model_name}"
+            --py-plots-dir-fstr "${UTOPIA_PYTHON_MODEL_PLOTS_DIR}/{model_name}"
+        RESULT_VARIABLE exit_code
+        OUTPUT_VARIABLE output
+        ERROR_VARIABLE output
+    )
 
     if (NOT ${exit_code} STREQUAL "0")
-        message(STATUS "Output of utopya CLI:\n${output}")
+        message(STATUS "Output of utopya CLI call:\n\n${output}")
         message(SEND_ERROR "Error ${exit_code} in adding models to registry!")
     endif()
 
-    message(STATUS "Added or updated model registry entries for "
-                   "${num_model_targets} models.")
+    message(
+        STATUS "Added or updated model registry entries for ${num_models} "
+               "models in project '${CMAKE_PROJECT_NAME}'."
+    )
 endfunction()
 
 
@@ -73,18 +70,19 @@ function(register_python_module)
     endif()
 
     # Invoke the CLI
-    execute_process(COMMAND
-                        ${RUN_IN_UTOPIA_ENV}
-                        utopia config external_module_paths
-                        --get
-                        --set "${ARG_NAME}=${ARG_MODULE_PATH}"
-                    RESULT_VARIABLE exit_code
-                    OUTPUT_VARIABLE output
-                    ERROR_VARIABLE output
-                    )
+    execute_process(
+        COMMAND
+            ${RUN_IN_UTOPIA_ENV}
+            utopia config external_module_paths
+            --get
+            --set "${ARG_NAME}=${ARG_MODULE_PATH}"
+        RESULT_VARIABLE exit_code
+        OUTPUT_VARIABLE output
+        ERROR_VARIABLE output
+    )
 
     if (NOT ${exit_code} STREQUAL "0")
-        message(STATUS "Output of utopya CLI:\n${output}")
+        message(STATUS "Output of utopya CLI call:\n\n${output}")
         message(SEND_ERROR "Error ${exit_code} in registering external python "
                            "modules with Utopia frontend!")
     endif()
@@ -112,18 +110,19 @@ function(register_plot_module)
     endif()
 
     # Invoke the CLI
-    execute_process(COMMAND
-                        ${RUN_IN_UTOPIA_ENV}
-                        utopia config plot_module_paths
-                        --get
-                        --set "${ARG_NAME}=${ARG_MODULE_PATH}"
-                    RESULT_VARIABLE exit_code
-                    OUTPUT_VARIABLE output
-                    ERROR_VARIABLE output
-                    )
+    execute_process(
+        COMMAND
+            ${RUN_IN_UTOPIA_ENV}
+            utopia config plot_module_paths
+            --get
+            --set "${ARG_NAME}=${ARG_MODULE_PATH}"
+        RESULT_VARIABLE exit_code
+        OUTPUT_VARIABLE output
+        ERROR_VARIABLE output
+    )
 
     if (NOT ${exit_code} STREQUAL "0")
-        message(STATUS "Output of utopya CLI:\n${output}")
+        message(STATUS "Output of utopya CLI call:\n\n${output}")
         message(SEND_ERROR "Error ${exit_code} in registering plot module "
                            "with Utopia frontend!")
     endif()

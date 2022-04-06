@@ -5,14 +5,11 @@ message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
 # NOTE Different utopya version could be installed if utopia-env already exists
-python_find_package(PACKAGE utopya VERSION 0.8.8)
+python_find_package(PACKAGE utopya VERSION 1.0.0a3)
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
-
-    # For easier development: install using symlinks to the local package
-    set(UTOPIA_PYTHON_INSTALL_EDITABLE True)
-    python_install_package(PATH utopya)
+    python_install_package_remote(URL https://gitlab.com/utopia-project/utopya)
 endif()
 
 # Inform about dantro version (installation happened via utopya dependencies)
@@ -21,7 +18,7 @@ python_find_package(PACKAGE dantro)
 
 # Pass info to utopya  ........................................................
 message(STATUS "")
-message(STATUS "Providing model information to Utopia frontend ...")
+message(STATUS "Providing model information to utopya ...")
 
 # Declare the directories containing the models tests and plots
 set(UTOPIA_PYTHON_MODEL_TESTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/model_tests

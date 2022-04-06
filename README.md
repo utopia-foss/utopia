@@ -484,11 +484,12 @@ If you encounter difficulties with the installation procedure for any of these d
 Utopia's frontend, `utopya`, uses some additional python packages.
 These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#3-configure-and-build).
 
-| Software                                                | Version    | Comments                        |
-| ------------------------------------------------------- | ---------- | ------------------------------- |
-| [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 4.2     | Builds the Utopia documentation |
-| [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.8   | Makes parameter sweeps easy     |
-| [dantro](https://gitlab.com/utopia-project/dantro) | >= 0.17    | Handle, transform, and visualize hierarchically organized data |
+| Software                  | Version  | Comments                        |
+| ------------------------- | -------- | ------------------------------- |
+| [utopya](https://gitlab.com/utopia-project/utopya)          | >= 1.0   | The (outsourced) Utopia frontend package |
+| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro)          | >= 0.17  | Handle, transform, and visualize hierarchically organized data |
+| [paramspace](https://gitlab.com/blsqr/paramspace)  | >= 2.5.8 | Makes parameter sweeps easy     |
+| [Sphinx](https://www.sphinx-doc.org/en/master/)          | >= 4.2   | Builds the Utopia documentation |
 
 
 ### Recommended
@@ -554,6 +555,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
+[utopya]: https://gitlab.com/utopia-project/utopya
 [paramspace]: https://gitlab.com/blsqr/paramspace
 [dantro]: https://gitlab.com/utopia-project/dantro
 
@@ -565,6 +567,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [Anaconda]: https://www.anaconda.com/
 
 <!-- These shortlinks are used in the text but cannot be used in the table (due to this file being embedded via sphinx) -->
+<!-- TODO Check if this is still the case -->
 [CMake]: https://cmake.org/
 [HDF5]: https://www.hdfgroup.org/solutions/hdf5/
 [Boost]: http://www.boost.org/
