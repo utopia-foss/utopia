@@ -55,8 +55,8 @@ def state_mean(
 
     # Provide the plot helper with some information that is then used when
     # the helpers are invoked
-    hlpr.provide_defaults("set_title", title="Mean '{}'".format(mean_of))
-    hlpr.provide_defaults("set_labels", y="<{}>".format(mean_of))
+    hlpr.provide_defaults("set_title", title=f"Mean '{mean_of}'")
+    hlpr.provide_defaults("set_labels", y=f"<{mean_of}>")
     # NOTE Providing defaults recursively updates an existing configuration
     #      and marks the helper as 'enabled'
 

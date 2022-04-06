@@ -63,7 +63,7 @@ def mean_slope(
         hlpr.ax.text(
             1,
             1,
-            "$n_c = {}$".format(critical_slope),
+            f"$n_c = {critical_slope}$",
             transform=hlpr.ax.transAxes,
             verticalalignment="top",
             horizontalalignment="right",

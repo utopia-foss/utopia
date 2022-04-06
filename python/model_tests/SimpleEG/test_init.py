@@ -225,7 +225,7 @@ def test_ia_matrix_extraction():
     # For each of these cases, create, run, and load a Multiverse; then test
     # against the expected ia_matrices above.
     for i, expected_matrix in enumerate(ia_matrices):
-        _, dm = mtc.create_run_load(from_cfg="ia_matrix_case{}.yml".format(i))
+        _, dm = mtc.create_run_load(from_cfg=f"ia_matrix_case{i}.yml")
 
         # Get default universe from multiverse
         uni = dm["multiverse"][0]

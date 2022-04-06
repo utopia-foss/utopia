@@ -58,7 +58,7 @@ def _plot_times(
 
     title = "Hdf5 Benchmark Results"
     if std is not None:
-        title += " (mean ± std of {} runs)".format(num_seeds)
+        title += f" (mean ± std of {num_seeds} runs)"
 
     plt.title(title)
 
