@@ -373,41 +373,6 @@ test:models:
     name: review/coverage/$CI_COMMIT_REF_NAME/models
 
 
-# Test the utopya package
-test:utopya:
-  stage: test
-  extends:
-    - .coverage_report
-    - .use_multicore_group_runners
-  needs:
-    - "build:models"
-  before_script:
-    # Make model registry available (from build:models job)
-    - *add_cfg_symlink
-  script:
-    - cd build
-    - make test_utopya
-
-  # In rare cases, this job fails due to race conditions on job executors with
-  # a high load. To cover those cases, simply retry the job ...
-  retry:
-    max: 2
-    when: script_failure
-
-  # Post-process the coverage report for cobertura MR visualization
-  coverage: '/^TOTAL.*?(\d+.?\d*\%)$/'
-  after_script:
-    # Copy the coverage XML file produced by `make test_utopya` into the
-    # expected coverage report directory ...
-    - cd $CI_PROJECT_DIR/build && mkdir coverage
-    - cp $CI_PROJECT_DIR/python/utopya/test/coverage.xml coverage/cobertura.xml
-
-    # Apply patch against: https://gitlab.com/gitlab-org/gitlab/-/issues/217664
-    # … as suggested here: https://forum.gitlab.com/t/enabling-cobertura/36918
-    - sed -i "s=<source>.*</source>=<source>$CI_PROJECT_DIR</source>=g" coverage/cobertura.xml
-    - sed -i "s;filename=\"$CI_PROJECT_DIR/;filename=\";g" coverage/cobertura.xml
-
-
 # Test the utopia command line interface
 test:cli:
   stage: test

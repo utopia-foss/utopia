@@ -1,10 +1,10 @@
-# Handle configuration and installation of python packages and tests here
+# -- Handle configuration and installation of python packages and tests here --
 
 # Installations ...............................................................
 message(STATUS "")
 message(STATUS "Installing required Python packages ...")
 
-python_find_package(PACKAGE utopya VERSION 1.0.0a3)
+python_find_package(PACKAGE utopya VERSION 1.0.0a3)  # TODO Update version
 
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     message(STATUS "Installing utopya ...")
@@ -38,15 +38,6 @@ register_models_with_frontend()
 message(STATUS "")
 message(STATUS "Adding python test targets ...")
 
-# Add test for utopya, accessible via `make test_utopya`
-add_custom_target(test_utopya
-                  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/utopya/test &&
-                    ${CMAKE_BINARY_DIR}/run-in-utopia-env
-                    python ../run_test.py ./ -vv
-                    --cov=utopya --cov-config=.coveragerc
-                    --cov-report=term-missing --cov-report=xml
-)
-
 # Add tests for models, accessible via `make test_models_python`
 add_custom_target(test_models_python
                   COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} &&
@@ -56,7 +47,7 @@ add_custom_target(test_models_python
 
 # For running all python model tests, it is required that all models are built
 # add_dependencies(test_models_python all)  # FIXME somehow, all is not defined
-# NOTE There are no targets for inidivdual model tests; has to be done manually
+# TODO Add targets for inidivdual python model tests (elsewhere)
 
 # Add the python model tests as a dependency for the test_models target
 add_dependencies(test_models test_models_python)
