@@ -27,7 +27,7 @@ set (UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
 set (UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
 
 message(STATUS "")
-message(STATUS "Setting up the Utopia Python virtual environment ...")
+message(STATUS "Setting up the utopia-env ...")
 
 execute_process(
     COMMAND ${Python_EXECUTABLE} -m venv ${UTOPIA_ENV_DIR}
@@ -35,7 +35,7 @@ execute_process(
     OUTPUT_QUIET
 )
 if (NOT RETURN_VALUE EQUAL "0")
-    message(FATAL_ERROR "Error creating the utopia-env: ${RETURN_VALUE}")
+    message(FATAL_ERROR "Error creating the utopia-env:  ${RETURN_VALUE}")
 endif ()
 
 # create a symlink to the activation script
@@ -58,29 +58,62 @@ file (COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
 set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 
 
-# -- virtual environment fully set up now -------------------------------------
+# -- virtual environment installed now, but remains to be populated -----------
 
 # update pip and installation packages only if they are below a certain version
 # number; updating everytime is unnecessary and takes too long... while this
 # _should_ be taken care of by pip itself, it is sometimes not done on Ubuntu
 # systems, leading to failure to install wheel-requiring downstream packages
 
+# -- pip
 python_find_package(PACKAGE pip VERSION 22.0)
 if (NOT PYTHON_PACKAGE_pip_FOUND)
     python_install_package_pip(PACKAGE pip)
 endif()
 
+# -- setuptools
 python_find_package(PACKAGE setuptools VERSION 51.1)
 if (NOT PYTHON_PACKAGE_setuptools_FOUND)
     python_install_package_pip(PACKAGE setuptools)
 endif()
 
+# -- wheel
 python_find_package(PACKAGE wheel VERSION 0.35)
 if (NOT PYTHON_PACKAGE_wheel_FOUND)
     python_install_package_pip(PACKAGE wheel)
 endif()
 
+# -- utopya
+# TODO Move these to a more sensible spot
+set(UTOPYA_URL https://gitlab.com/utopia-project/utopya.git)
+set(UTOPYA_BRANCH smoothe-out-integration-into-utopia)  # FIXME update
+set(UTOPYA_MIN_VERSION 1.0.0a3)   # FIXME Update
 
+python_find_package(PACKAGE utopya VERSION ${UTOPYA_MIN_VERSION})
+if(NOT PYTHON_PACKAGE_utopya_FOUND)
+    python_install_package_remote(
+        URL ${UTOPYA_URL}
+        BRANCH ${UTOPYA_BRANCH}
+        EGG_NAME utopya
+    )
+    # TODO Make versioning possible, e.g. via defaulted environment variable
+    # TODO Consider replacing with requirements file? ... but need to avoid
+    #      repetitive version checks on each cmake call!
+endif()
+
+# Create a (relative) symlink in the utopia-env: utopia -> utopya
+if (NOT IS_SYMLINK ${UTOPIA_ENV_DIR}/bin/utopia)
+    file(CREATE_LINK utopya ${UTOPIA_ENV_DIR}/bin/utopia SYMBOLIC)
+endif()
+# TODO Consider installing a custom wrapper script that advertises the CLI not
+#      as "utopya" but as Utopia ...
+
+# -- dantro
+# Inform about dantro version (installation happened via utopya dependencies)
+python_find_package(PACKAGE dantro)
+
+
+# -- pre-commit and hooks
 message(STATUS "")
 message(STATUS "Setting up pre-commit hooks ...")
 
@@ -89,7 +122,6 @@ if (NOT PYTHON_PACKAGE_pre-commit_FOUND)
     python_install_package_pip(PACKAGE pre-commit)
 endif()
 
-# Let pre-commit install its git hook
 execute_process(
     COMMAND ${RUN_IN_UTOPIA_ENV} pre-commit install
     RESULT_VARIABLE RETURN_VALUE
@@ -102,4 +134,4 @@ endif ()
 
 
 message(STATUS "")
-message(STATUS "utopia-env fully set up now.")
+message(STATUS "utopia-env fully set up now.\n")

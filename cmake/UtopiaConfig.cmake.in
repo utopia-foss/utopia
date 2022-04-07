@@ -17,7 +17,7 @@ list(APPEND CMAKE_MODULE_PATH ${cmake_modules_dir})
 
 # Include all modules (manually because UtopiaMacros also does other stuff ...)
 include(UtopiaPython)
-include(UtopiaFrontendModelRegistry)
+include(UtopiaUtopyaCalls)
 
 include(UtopiaAddCoverageFlags)
 include(UtopiaEnableParallel)

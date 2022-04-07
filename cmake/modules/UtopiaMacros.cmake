@@ -132,7 +132,7 @@ find_package(Doxygen
 # --- Include Utopia macros ---
 include(UtopiaPython)
 include(UtopiaEnv)
-include(UtopiaFrontendModelRegistry)
+include(UtopiaUtopyaCalls)
 
 include(UtopiaAddCoverageFlags)
 include(UtopiaEnableParallel)

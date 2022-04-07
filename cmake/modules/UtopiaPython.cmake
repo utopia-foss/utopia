@@ -112,6 +112,8 @@ endfunction()
 #
 #   - UTOPIA_PYTHON_INSTALL_EDITABLE    Install the package in editable mode.
 #
+# TODO Remove if not needed
+#
 function(python_install_package)
     # parse function arguments
     set(OPTION)
@@ -143,12 +145,14 @@ function(python_install_package)
     # perform the actual installation
     message (STATUS "Installing python package at ${PACKAGE_PATH} "
                     "into the virtual environment ...")
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
-                    RESULT_VARIABLE RETURN_VALUE
-                    OUTPUT_QUIET)
+    execute_process(
+        COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
+        RESULT_VARIABLE RETURN_VALUE
+        OUTPUT_VARIABLE PIP_OUTPUT
+    )
 
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing package: ${RETURN_VALUE}")
+        message(SEND_ERROR "Error installing package:\n${PIP_OUTPUT}")
     endif ()
 
 endfunction()
@@ -177,7 +181,7 @@ endfunction()
 function(python_install_package_remote)
     # parse function arguments
     set(OPTION)
-    set(SINGLE URL TRUSTED_HOST)
+    set(SINGLE URL TRUSTED_HOST EGG_NAME BRANCH)
     set(MULTI)
     include(CMakeParseArguments)
     cmake_parse_arguments(RINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
@@ -186,10 +190,24 @@ function(python_install_package_remote)
             python_install_package_remote!")
     endif()
 
-    message(STATUS "Installing package at ${RINST_URL} into the virtualenv")
+    if (RINST_EGG_NAME)
+        message(STATUS "Installing python package ${RINST_EGG_NAME} ...")
+        message(STATUS "  URL:     ${RINST_URL}")
+    else()
+        message(STATUS "Installing package from ${RINST_URL} ...")
+    endif()
 
-    # set 'git' in front of URL
+    # Need 'git' in front of URL
     set(RINST_FULL_PATH git+${RINST_URL})
+
+    # if branch and egg name are given, add those
+    if (RINST_BRANCH)
+        message(STATUS "  Branch:  ${RINST_BRANCH}")
+        set(RINST_FULL_PATH ${RINST_FULL_PATH}@${RINST_BRANCH})
+    endif()
+    if (RINST_EGG_NAME)
+        set(RINST_FULL_PATH ${RINST_FULL_PATH}\#${RINST_EGG_NAME})
+    endif()
 
     # add trusted-host command
     set(TRUSTED_HOST_CMD "")
@@ -200,12 +218,13 @@ function(python_install_package_remote)
     # execute command
     set(INSTALL_CMD install ${TRUSTED_HOST_CMD} --upgrade
         ${RINST_FULL_PATH})
-    execute_process(COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
+    execute_process(
+        COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
         RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET
+        OUTPUT_VARIABLE PIP_OUTPUT
     )
     if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing remote package: ${RETURN_VALUE}")
+        message(SEND_ERROR "Error installing remote package:\n${PIP_OUTPUT}")
     endif ()
 endfunction()
 
@@ -219,6 +238,8 @@ endfunction()
 #          :single:
 #
 #   Install a python package using pip into the utopia-env
+#
+#   TODO Consolidate into python_install_package
 #
 function(python_install_package_pip)
     # parse function arguments
@@ -238,12 +259,12 @@ function(python_install_package_pip)
     execute_process(
         COMMAND ${UTOPIA_ENV_PIP} install --upgrade ${RINST_PACKAGE}
         RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET
+        OUTPUT_VARIABLE PIP_OUTPUT
     )
     if (NOT RETURN_VALUE EQUAL "0")
         message(SEND_ERROR
             "Error installing or upgrading ${RINST_PACKAGE} inside "
-            "utopia-env: ${RETURN_VALUE}"
+            "utopia-env:\n${PIP_OUTPUT}"
         )
     endif ()
 
