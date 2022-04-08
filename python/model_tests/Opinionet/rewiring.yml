@@ -6,9 +6,7 @@ parameter_space:
   num_steps: 500
   write_every: 500
 
-  Opinionet: !model
-    model_name: Opinionet
-
+  Opinionet:
     opinion_space:
       type: continuous
 

@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import pytest
 
-from utopya.plot_funcs._graph import GraphPlot
+from utopya.eval.plots._graph import GraphPlot  # FIXME Should not be used here
 from utopya.testtools import ModelTest
 
 # Configure the ModelTest class for Opinionet

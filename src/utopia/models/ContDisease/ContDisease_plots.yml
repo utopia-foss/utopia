@@ -2,6 +2,7 @@
 ---
 # --- Plot of all densities over time -----------------------------------------
 densities:  # FIXME Migrate
+  enabled: false
   based_on: densities
   
 # --- Create a phase plot of two densities ------------------------------------
@@ -54,6 +55,7 @@ clusters_snapshot:  # FIXME Migrate
   time_idx: -1
 
 clusters:  # FIXME Migrate
+  enabled: false
   based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
 # --- Miscellaneous -----------------------------------------------------------

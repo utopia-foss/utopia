@@ -6,9 +6,7 @@ parameter_space:
   perform_sweep: true
   num_steps: 2
 
-  Opinionet: !model
-    model_name: Opinionet
-
+  Opinionet:
     opinion_space:
       type: !sweep
         default: continuous
