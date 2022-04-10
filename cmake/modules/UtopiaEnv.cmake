@@ -84,10 +84,20 @@ if (NOT PYTHON_PACKAGE_wheel_FOUND)
 endif()
 
 # -- utopya
-# TODO Move these to a more sensible spot
-set(UTOPYA_URL https://gitlab.com/utopia-project/utopya.git)
-set(UTOPYA_BRANCH smoothe-out-integration-into-utopia)  # FIXME update
-set(UTOPYA_MIN_VERSION 1.0.0a3)   # FIXME Update
+# TODO Check if there is a more sensible spot to define these defaults
+# TODO Is this the correct way to check for no values being set?
+
+if("${UTOPYA_URL}" STREQUAL "")
+    set(UTOPYA_URL https://gitlab.com/utopia-project/utopya.git)
+endif()
+
+if("${UTOPYA_BRANCH}" STREQUAL "")
+    set(UTOPYA_BRANCH smoothe-out-integration-into-utopia)  # FIXME set to main
+endif()
+
+if("${UTOPYA_MIN_VERSION}" STREQUAL "")
+    set(UTOPYA_MIN_VERSION 1.0.0a3)   # FIXME Update
+endif()
 
 python_find_package(PACKAGE utopya VERSION ${UTOPYA_MIN_VERSION})
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
@@ -96,11 +106,11 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
         BRANCH ${UTOPYA_BRANCH}
         EGG_NAME utopya
     )
-    # TODO Make versioning possible, e.g. via defaulted environment variable
     # TODO Consider replacing with requirements file? ... but need to avoid
     #      repetitive version checks on each cmake call!
 endif()
 
+# -- utopya CLI
 # Create a (relative) symlink in the utopia-env: utopia -> utopya
 if (NOT IS_SYMLINK ${UTOPIA_ENV_DIR}/bin/utopia)
     file(CREATE_LINK utopya ${UTOPIA_ENV_DIR}/bin/utopia SYMBOLIC)

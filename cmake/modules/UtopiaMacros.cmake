@@ -129,11 +129,13 @@ find_package(Doxygen
              OPTIONAL_COMPONENTS dot)
 
 
-# --- Include Utopia macros ---
+# --- Python setup and utopia-env ---
 include(UtopiaPython)
-include(UtopiaEnv)
 include(UtopiaUtopyaCalls)
+include(UtopiaEnv)
 
+
+# --- Include remaining Utopia macros ---
 include(UtopiaAddCoverageFlags)
 include(UtopiaEnableParallel)
 include(UtopiaAddUnitTest)
