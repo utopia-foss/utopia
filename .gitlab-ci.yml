@@ -128,6 +128,10 @@ setup:utopia-base:
 build:docs:
   stage: build
   allow_failure: true
+  before_script:
+    # This is a workaround allowing to build the utopya docs alongside
+    # TODO Find a better, sphinx-based way of doing this
+    - git clone https://gitlab.com/utopia-project/utopya.git python/utopya
   script:
     - mkdir build && cd build
     - cmake ..
