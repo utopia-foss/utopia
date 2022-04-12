@@ -1,5 +1,7 @@
 # A project information file for use with the utopya project registry
 ---
+# The name under which the models inside this project can be grouped.
+# The project name needs to be exactly the same as the CMAKE_PROJECT_NAME
 project_name: Utopia
 
 paths:

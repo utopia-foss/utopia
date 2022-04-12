@@ -63,7 +63,6 @@ endfunction()
 #   This function calls the utopya CLI to register this project.
 #
 #   TODO Make it possible to optionally pass a path to an info file
-#   TODO Enforce project name matches that in the info file
 #
 function(register_project_with_utopya)
     message(STATUS "Providing project information to utopya ...")
@@ -72,6 +71,7 @@ function(register_project_with_utopya)
             ${RUN_IN_UTOPIA_ENV}
             utopya projects register "${PROJECT_SOURCE_DIR}"
             --custom-name "${CMAKE_PROJECT_NAME}"
+            --require-matching-names
             --exists-action update
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE CLI_OUTPUT
