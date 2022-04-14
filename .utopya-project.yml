@@ -4,14 +4,24 @@
 # The project name needs to be exactly the same as the CMAKE_PROJECT_NAME
 project_name: Utopia
 
+# The name of the framework this project uses, which is simply a project name.
+# For Utopia itself, the framework is Utopia.
+framework_name: Utopia
+
 paths:
   models_dir: src/utopia/models
+
+  # Python models tests and model plots directories
   py_tests_dir: python/model_tests
   py_plots_dir: python/model_plots
 
+  # Project-level multiverse configuration and base plots file
+  mv_project_cfg: python/utopia_mv_cfg.yml
+  project_base_plots: python/utopia_base_plots.yml
+
 metadata:
-  description: A comprehensive modeling framework for complex and adaptive systems.
   # long_name: ""
+  description: A comprehensive modeling framework for complex and adaptive systems.
   long_description: Utopia provides the tools to conveniently implement computer models, perform simulation runs, and evaluate the resulting data.
   language: c++
   website: https://utopia-project.org/

@@ -125,6 +125,98 @@ For Utopia, the following base configuration pools are made available:
 * The ``utopya`` base configuration pool, see :ref:`utopya_base_cfg`
 * The ``{model_name}_base`` configuration pool for the currently selected model, if available
 
+Custom or additional base config pools
+""""""""""""""""""""""""""""""""""""""
+Which base config pools are used can be adjusted via the meta configuration.
+This allows to introduce additional config pools, thereby allowing a more versatile plot configuration inheritance.
+For instance, an additional base config pool may be used to adjust a commonly used style, which can be very helpful when desiring to create publication-ready figures without redundantly defining plots.
+
+By default, only the two aforementioned pools are available.
+In the meta config, this looks like this, using a shortcut syntax:
+
+.. code-block:: yaml
+
+    plot_manager:
+      base_cfg_pools:
+        - utopya_base
+        - framework_base
+        - project_base
+        - model_base
+
+Additional entries in that list are expected to be 2-tuples of the form ``(name, path)``, where each string can be a format string.
+For example, the list may be amended to include two additional pools:
+
+.. code-block:: yaml
+
+    plot_manager:
+      base_cfg_pools:
+        - utopya_base
+        - model_base
+        - ["{model_name}_extd", "{paths[source_dir]}/{model_name}_extd.yml"]
+        - ["{model_name}_custom", "~/some/path/{model_name}/custom_base.yml"]
+
+The example shows how there is access to the model name and the model-specific paths dict (only in the second entry of the tuple).
+In the first case, a file within the model source directory (alongside the other config files) is added as an additional base pool; in the second example, an arbitrary directory is used.
+
+.. note::
+
+    If no file exists at the specified pool path, a warning will be emitted in the log and an empty pool will be used (having no effect on any plot).
+    This allows for more flexibility if only some models have additional plot config pools defined.
+
+Now, how can this be used during plot config inheritance?
+Consider the case where a plot ``my_plot`` for model ``MyModel`` is meant to have a certain style which is optimized for publication e.g. by using TeX labels or a larger font size.
+This can be achieved by adding an additional config pool and, importantly, *without touching the default plot configuration or the plot definition itself*.
+
+.. code-block:: yaml
+
+    # (0) -- utopya_base
+    .default_style_and_helpers:
+      # ...
+
+    # (1) -- MyModel_base_plots.yml
+    # Define model-specific default style
+    .default_style:
+      based_on: .default_style_and_helpers  # inherit from (0)
+
+      style:
+        base_style: default
+        font.size: 8.0
+
+    # (2) -- MyModel_extd.yml
+    .default_style:
+      based_on: .default_style  # inherit from (1)
+
+      # Overwrite some parts
+      style:
+        base_style: seaborn-paper
+
+        font.family: serif
+        font.size: 10.0
+        text.usetex: true
+        # ...
+
+    # (3) -- MyModel/custom_base.yml
+    # no relevant changes here
+
+    # (4) -- MyModel_plots.yml
+    my_plot:
+      based_on:
+        - my_plot_definition  # defined somewhere
+        - .default_style      # inherit from (2)
+
+As you can see above, this builds a multi-stage inheritance chain.
+The important part is that the custom-added base pool (2) inherits the default plot style from (1) and extends it.
+The lookup of ``based_on`` in (4) now inherits not from (1) but from (2), thus using the adjusted style.
+
+And with that, the style (or other properties) of the default plots defined in (4) can be adjusted without touching that configuration or the model base plots config.
+Yay.
+
+.. hint::
+
+    While this is a powerful tool, be aware that this may quickly escalate and may become hard to maintain.
+    Use responsibly.
+
+
 
 Configuration sets
 ^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,59 @@
+# The Utopia framework's Multiverse framework-level configuration
+#
+# This recursively updates the utopya base configuration.
+---
+# Output directory configuration
+paths:
+  out_dir: ~/utopia_output
+
+
+# Plotting configuration
+plot_manager:
+  creator_init_kwargs:
+    universe:
+      style: &default_style
+        figure.figsize: [8., 5.]  # (16:10 instead of 4:3)
+
+    multiverse:
+      style:
+        <<: *default_style
+
+
+# Additional parameter space configuration, passed to backend
+parameter_space:
+  # Default PRNG seed
+  seed: 42
+
+  # Time stepping defaults
+  num_steps: 3
+  write_start: 0
+  write_every: 1
+  # NOTE `write_start` and `write_every` are passed along to sub-models. Every
+  #       sub model can overwrite this entry by adding an entry in their model
+  #       configuration level (analogous to `log_levels`.)
+
+  # How frequently to emit monitoring information
+  monitor_emit_interval: 2.
+
+  # Parallel features of Utopia (need appropriate dependencies installed)
+  parallel_execution:
+    enabled: false
+
+  # Default logging pattern and level defaults
+  log_pattern: "[%T.%e] [%^%l%$] [%n]  %v"
+  log_levels:
+    # level for backend internal operations
+    core: warning
+
+    # level for general I/O operations
+    data_io: warning
+
+    # level for the DataManager in WriteMode::managed
+    data_mngr: warning
+
+    # level for the root model, inherited by sub-models if they don't set their
+    # own log level
+    model: info
+
+  # File mode to use for the output HDF5 file
+  output_file_mode: w
