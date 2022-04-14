@@ -16,6 +16,34 @@ metadata:
   language: c++
   website: https://utopia-project.org/
   license: LGPLv3+
-  authors: [Utopia Developers]  # TODO
+  authors:
+    # NOTE Also update the list in COPYING.md if making changes here
+    #
+    # Maintainers
+    - Thomas Gaskin
+    - Benjamin Herdeanu
+    - Harald Mack
+    - Lukas Riedel
+    - Yunus Sevinchan
+    - Julian Weninger
+    #
+    # Contributors
+    - Narek Baghumian
+    - Lorenzo Biasi
+    - Unai Fischer Abaigar
+    - Leonhard Holtmann
+    - Christian Kobrow
+    - Fabian Krautgasser
+    - Daniel Lake
+    - Hendrik Leusmann
+    - Peter Manshausen
+    - Robert Rauschen
+    - Soeren Rubner
+    - Laila Pilar Schmidt
+    - Simeon Schreib
+    - Lukas Siebert
+    - Jeremias Traub
+    - Josephine Westermann
+    - Paul Wiesemeyer
 
 run_cfg_format: yaml

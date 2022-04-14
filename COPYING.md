@@ -30,6 +30,8 @@ the source code of this program.
 The copyright holders of the Utopia software package are collectively referred
 to as "Utopia Developers" in the respective copyright notices.
 
+<!-- NOTE Also update the list in .utopya-project.yml if making changes here -->
+
 ### Maintainers
 
 * Thomas Gaskin
