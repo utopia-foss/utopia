@@ -11,7 +11,7 @@
 set(UTOPIA_MODELS_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     CACHE STRING "the directory containing all model source directories" FORCE)
 
-message(STATUS "Starting Utopia model registration ...")
+message(STATUS "Registering Utopia models ...")
 
 # Register the model directories
 add_subdirectory(ContDisease)
@@ -33,7 +33,6 @@ add_subdirectory(SimpleEG)
 add_subdirectory(SimpleFlocking)
 add_subdirectory(Vegetation)
 # ...
-# NOTE Add your subdirectory above (alphabetically sorted)
+# NOTE Add your model subdirectory above (alphabetically sorted)
 
 message(STATUS "Model registration finished.\n")
-# The

@@ -1,6 +1,0 @@
-# Basic test requirements
-pytest
-pytest-cov
-
-
-# Additional requirements for model tests or model plots can be specified below

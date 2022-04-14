@@ -1,0 +1,13 @@
+# Python packages that are installed into the utopia-env
+# ------------------------------------------------------
+
+# Requirements for repository infrastructure
+pre-commit>=2.18
+
+
+# Requirements for Python model tests
+pytest
+pytest-cov
+
+
+# Requirements for Python model plots

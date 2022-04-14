@@ -1,13 +1,15 @@
 #
 # Create the utopia-env, a Python virtual environment for Utopia
 #
-# This module set the following variables:
+# This module sets the following variables:
 #
 #   - UTOPIA_ENV_DIR            Path to the venv installation
 #   - UTOPIA_ENV_EXECUTABLE     Python interpreter executable inside the venv
 #   - UTOPIA_ENV_PIP            Pip module executable inside the venv
 #   - RUN_IN_UTOPIA_ENV         Binary for executing a single command in a
 #                               shell configured with the virtual env.
+#   - UTOPYA_URL                The URL from which to install utopya
+#   - UTOPYA_BRANCH             The branch from which to install utopya
 #
 
 # Search for Python
@@ -68,19 +70,19 @@ set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 # -- pip
 python_find_package(PACKAGE pip VERSION 22.0)
 if (NOT PYTHON_PACKAGE_pip_FOUND)
-    python_install_package_pip(PACKAGE pip)
+    python_pip_install(PACKAGE pip UPGRADE)
 endif()
 
 # -- setuptools
 python_find_package(PACKAGE setuptools VERSION 51.1)
 if (NOT PYTHON_PACKAGE_setuptools_FOUND)
-    python_install_package_pip(PACKAGE setuptools)
+    python_pip_install(PACKAGE setuptools UPGRADE)
 endif()
 
 # -- wheel
 python_find_package(PACKAGE wheel VERSION 0.35)
 if (NOT PYTHON_PACKAGE_wheel_FOUND)
-    python_install_package_pip(PACKAGE wheel)
+    python_pip_install(PACKAGE wheel UPGRADE)
 endif()
 
 # -- utopya
@@ -95,11 +97,7 @@ if("${UTOPYA_BRANCH}" STREQUAL "")
     set(UTOPYA_BRANCH smoothe-out-integration-into-utopia)  # FIXME set to main
 endif()
 
-if("${UTOPYA_MIN_VERSION}" STREQUAL "")
-    set(UTOPYA_MIN_VERSION 1.0.0a3)   # FIXME Update
-endif()
-
-python_find_package(PACKAGE utopya VERSION ${UTOPYA_MIN_VERSION})
+python_find_package(PACKAGE utopya VERSION 1.0.0a3)  # FIXME Update version
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     python_install_package_remote(
         URL ${UTOPYA_URL}
@@ -123,14 +121,20 @@ endif()
 python_find_package(PACKAGE dantro)
 
 
-# -- pre-commit and hooks
+# -- additional dependencies
+message(STATUS "")
+message(STATUS "Installing Python packages from requirements file ...")
+
+python_pip_install(
+    INSTALL_OPTIONS -r ${CMAKE_SOURCE_DIR}/.utopia-env-requirements.txt
+    ERROR_HINT
+        "Try installing the packages defined in .utopia-env-requirements.txt manually to address this error."
+)
+
+
+# -- pre-commit hooks
 message(STATUS "")
 message(STATUS "Setting up pre-commit hooks ...")
-
-python_find_package(PACKAGE pre-commit VERSION 2.18)
-if (NOT PYTHON_PACKAGE_pre-commit_FOUND)
-    python_install_package_pip(PACKAGE pre-commit)
-endif()
 
 execute_process(
     COMMAND ${RUN_IN_UTOPIA_ENV} pre-commit install
@@ -138,10 +142,13 @@ execute_process(
     OUTPUT_QUIET
 )
 if (NOT RETURN_VALUE EQUAL "0")
+    python_find_package(PACKAGE pre-commit)  # to provide package information
     message(SEND_ERROR "Failed setting up pre-commit hooks: ${RETURN_VALUE}")
+else()
+    message(STATUS "Installed pre-commit hooks.")
 endif ()
 
 
 
 message(STATUS "")
-message(STATUS "utopia-env fully set up now.\n")
+message(STATUS "Successfully set up the utopia-env.\n")

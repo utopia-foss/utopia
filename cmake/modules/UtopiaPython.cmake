@@ -48,11 +48,14 @@ function(python_find_package)
     execute_process(COMMAND ${UTOPIA_ENV_PIP} show ${ARG_PACKAGE}
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE PIP_OUTPUT
+        ERROR_VARIABLE PIP_OUTPUT
     )
 
     # If this failed, a package with that name is not available
     if (NOT RETURN_VALUE EQUAL "0")
-        message(${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}")
+        message(
+            ${ERROR_SWITCH} "Could not find Python package ${ARG_PACKAGE}."
+        )
         return()
     endif ()
 
@@ -158,6 +161,74 @@ function(python_install_package)
 endfunction()
 
 
+
+# Call python `pip install` command inside Utopia's virtual environment
+#
+# .. cmake_function:: python_pip_install
+#
+#       .. cmake_param:: PACKAGE
+#          :optional:
+#          :single:
+#
+#          The name of the package to install
+#
+#       .. cmake_param:: UPGRADE
+#          :option:
+#
+#          If given, adds the --upgrade flag to the command
+#
+#       .. cmake_param:: INSTALL_OPTIONS
+#          :optional:
+#          :multi:
+#
+#          Additional installation parameters
+#
+#       .. cmake_param:: ERROR_HINT
+#          :optional:
+#          :single:
+#
+#          A string that is emitted alongside an error message and hints at a
+#          resolution of the error
+#
+function(python_pip_install)
+    set(OPTION UPGRADE)
+    set(SINGLE PACKAGE ERROR_HINT)
+    set(MULTI INSTALL_OPTIONS)
+    include(CMakeParseArguments)
+    cmake_parse_arguments(PYINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
+    if(PYINST_UNPARSED_ARGUMENTS)
+        message(
+            WARNING "Encountered unparsed arguments in python_pip_install!"
+        )
+    endif()
+
+    set(INSTALL_ARGS)
+    if(PYINST_PACKAGE)
+        message(STATUS "Installing Python package ${PYINST_PACKAGE} ...")
+        set(INSTALL_ARGS ${PYINST_PACKAGE})
+    endif()
+
+    if(PYINST_UPGRADE)
+        set(PYINST_INSTALL_OPTIONS ${PYINST_INSTALL_OPTIONS} --upgrade)
+    endif()
+    set(INSTALL_ARGS ${PYINST_INSTALL_OPTIONS} ${INSTALL_ARGS})
+
+    execute_process(
+        COMMAND ${UTOPIA_ENV_PIP} install ${INSTALL_ARGS}
+        RESULT_VARIABLE RETURN_VALUE
+        OUTPUT_VARIABLE PIP_OUTPUT
+        ERROR_VARIABLE PIP_OUTPUT
+    )
+    if (NOT RETURN_VALUE EQUAL "0")
+        string(JOIN " " _INSTALL_ARGS ${INSTALL_ARGS})
+        message(
+            SEND_ERROR "Call to `pip install ${_INSTALL_ARGS}` failed:\n${PIP_OUTPUT}\n${PYINST_ERROR_HINT}"
+        )
+        return()
+    endif ()
+endfunction()
+
+
 # Install a python package located in a remote git repository
 #
 # .. cmake_function:: python_install_package_remote
@@ -166,17 +237,28 @@ endfunction()
 #          :required:
 #          :single:
 #
-#          (HTTPS) URL to the git repository. May be appended with '@'
-#          and a brach or tag identifier.
+#          (HTTPS) URL to the git repository. To select a branch or egg, use
+#          the respective other commands
 #
 #       .. cmake_param:: TRUSTED_HOST
 #          :optional:
 #          :single:
 #
-#          URL of the respective trusted host.
+#          URL of the trusted host.
 #
-#   Install a remote python package located in a git repository
-#   into the Utopia venv.
+#       .. cmake_param:: EGG_NAME
+#          :optional:
+#          :single:
+#
+#          Name of the egg (typically: the package name) that is appended to
+#          the given URL, separated by a `#`.
+#
+#       .. cmake_param:: BRANCH
+#          :optional:
+#          :single:
+#
+#          Name of the branch from which to install the package; is appended
+#          to the URL, separated by a `@`.
 #
 function(python_install_package_remote)
     # parse function arguments
@@ -229,44 +311,3 @@ function(python_install_package_remote)
 endfunction()
 
 
-# Install a python package from pip
-#
-# .. cmake_function:: python_install_package_pip
-#
-#       .. cmake_param:: PACKAGE
-#          :required:
-#          :single:
-#
-#   Install a python package using pip into the utopia-env
-#
-#   TODO Consolidate into python_install_package
-#
-function(python_install_package_pip)
-    # parse function arguments
-    set(OPTION)
-    set(SINGLE PACKAGE)
-    set(MULTI)
-    include(CMakeParseArguments)
-    cmake_parse_arguments(RINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
-    if(RINST_UNPARSED_ARGUMENTS)
-        message(WARNING
-            "Encountered unparsed arguments in python_install_package_pip!"
-        )
-    endif()
-
-    message(STATUS "Installing or upgrading ${RINST_PACKAGE} ...")
-
-    execute_process(
-        COMMAND ${UTOPIA_ENV_PIP} install --upgrade ${RINST_PACKAGE}
-        RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_VARIABLE PIP_OUTPUT
-    )
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR
-            "Error installing or upgrading ${RINST_PACKAGE} inside "
-            "utopia-env:\n${PIP_OUTPUT}"
-        )
-    endif ()
-
-    message(STATUS "Installed ${RINST_PACKAGE}.")
-endfunction()

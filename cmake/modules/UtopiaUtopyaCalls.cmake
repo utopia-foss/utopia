@@ -38,7 +38,7 @@ function(register_models_with_utopya)
             --py-plots-dir-fstr "${UTOPIA_PYTHON_MODEL_PLOTS_DIR}/{model_name}"
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE CLI_OUTPUT
-        ERROR_QUIET
+        ERROR_VARIABLE CLI_OUTPUT
 )
     if (NOT RETURN_VALUE EQUAL "0")
         message(
@@ -75,7 +75,7 @@ function(register_project_with_utopya)
             --exists-action update
         RESULT_VARIABLE RETURN_VALUE
         OUTPUT_VARIABLE CLI_OUTPUT
-        ERROR_QUIET
+        ERROR_VARIABLE CLI_OUTPUT
 )
 if (NOT RETURN_VALUE EQUAL "0")
         message(
