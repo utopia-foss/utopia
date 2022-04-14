@@ -1,5 +1,17 @@
 # Base configuration for ContDisease model plots
 ---
+.colors:
+  empty: &color_empty darkkhaki
+  tree: &color_tree forestgreen
+  infected: &color_infected firebrick
+  source: &color_source orange
+  stone: &color_stone slategray
+
+  cycler: &cycler 'cycler(
+      "color",
+      ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
+  )'
+
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
   based_on: .default_style_and_helpers
@@ -18,46 +30,22 @@ phase_diagram:
 
 
 # -- Densities plot -----------------------------------------------------------
-densities:  # FIXME Migrate
-  based_on: .basic_uni.lineplots
+densities:
+  based_on:
+    - .creator.universe
+    - .dag.generic.facet_grid
 
-  model_name: ContDisease
+  select:
+    data:
+      path: data/ContDisease/densities
+      transform:
+        - .data
 
-  to_plot:
-    empty:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: empty }
-      label: empty
-      color: &color_empty darkkhaki
+  x: time
+  hue: kind
 
-    tree:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: tree }
-      label: tree
-      color: &color_tree forestgreen
-
-    infected:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: infected }
-      label: infected
-      color: &color_infected firebrick
-
-    source:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: source }
-      label: source
-      color: &color_source orange
-
-    stone:
-      transform_data:
-        - sel: { kind: stone }
-      path_to_data: densities
-      label: stone
-      color: &color_stone slategray
+  style:
+    axes.prop_cycle: *cycler
 
   helpers:
     set_limits:
@@ -70,6 +58,8 @@ densities:  # FIXME Migrate
       title: Densities
     set_legend:
       loc: best
+
+# TODO Facet grid version?
 
 
 # --- Grid Snapshots ----------------------------------------------------------

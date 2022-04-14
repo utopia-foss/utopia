@@ -1,8 +1,7 @@
 # Default plots for the ContDisease model
 ---
 # --- Plot of all densities over time -----------------------------------------
-densities:  # FIXME Migrate
-  enabled: false
+densities:
   based_on: densities
   
 # --- Create a phase plot of two densities ------------------------------------

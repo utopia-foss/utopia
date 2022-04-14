@@ -1,4 +1,4 @@
-"""ContDisease-model specific plot function for spatial figures"""
+"""ContDisease-model specific plot function for state-based figures"""
 
 import matplotlib.pyplot as plt
 
@@ -27,6 +27,10 @@ def phase_diagram(
     **plot_kwargs,
 ):
     """Plots the the phase diagram of tree and infected tree densities
+
+    .. TODO::
+
+        Migrate to use DAG framework
 
     Args:
         dm (DataManager): The data manager
