@@ -97,7 +97,6 @@ image: ${BASE_IMAGE}
     - $DOCKER_HUB_LOGIN
 
 
-
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # -- Setup stage --------------------------------------------------------------
 # This stage takes care to build the utopia base testing image
@@ -121,17 +120,11 @@ setup:utopia-base:
 # -- Build stage --------------------------------------------------------------
 # In this stage, the tests, models, and documentation is built
 # The artifacts of the tests and models jobs are needed in the test stage
-# TODO Consider adding a prep stage before that sets up the utopia-env, even if
-#      this potentially requires reconfiguring
 
 # Build the documentation and expose it as a review environment
 build:docs:
   stage: build
   allow_failure: true
-  before_script:
-    # This is a workaround allowing to build the utopya docs alongside
-    # TODO Find a better, sphinx-based way of doing this
-    - git clone https://gitlab.com/utopia-project/utopya.git python/utopya
   script:
     - mkdir build && cd build
     - cmake ..
@@ -190,7 +183,7 @@ build:models:
     - make $MAKE_FLAGS_BUILD build_tests_models
   after_script:
     # Copy the frontend configuration to the project dir such that it is part
-    # of the artifacts and can be re-used in the test stages
+    # of the artifacts and can be re-used in the test jobs
     - cp -r ~/.config $CI_PROJECT_DIR/
 
 
@@ -241,7 +234,7 @@ build:install:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build
-      - $CI_PROJECT_DIR/install # installation directory
+      - $CI_PROJECT_DIR/install  # installation directory
     expire_in: 3 hours
   script:
     - mkdir build && cd build
@@ -273,9 +266,10 @@ test:core:
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
-  after_script:  # NOTE: This will always execute, even if the script fails
+  after_script:
+    - $ENTER_UTOPIA_ENV
+
     # Install gcvor
-    - source $CI_PROJECT_DIR/build/activate
     - pip3 install gcovr
     - cd $CI_PROJECT_DIR/build
     - mkdir coverage
