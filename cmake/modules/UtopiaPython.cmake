@@ -100,68 +100,6 @@ function(python_find_package)
 endfunction()
 
 
-
-# Install a local Python package into the Utopia virtual environment
-#
-# This function takes the following arguments:
-#
-#   - PATH (single)     Path to the Python package. Relative paths will
-#                       be interpreted as relative from the call site
-#                       of this function.
-#
-#   - PIP_PARAMS (multi)    Additional parameters passed to pip.
-#
-# This function uses the following global variables (if defined):
-#
-#   - UTOPIA_PYTHON_INSTALL_EDITABLE    Install the package in editable mode.
-#
-# TODO Remove if not needed
-#
-function(python_install_package)
-    # parse function arguments
-    set(OPTION)
-    set(SINGLE PATH)
-    set(MULTI PIP_PARAMS)
-    include(CMakeParseArguments)
-    cmake_parse_arguments(PYINST "${OPTION}" "${SINGLE}" "${MULTI}" "${ARGN}")
-    if(PYINST_UNPARSED_ARGUMENTS)
-        message(WARNING "Encountered unparsed arguments in "
-                        "python_install_package!")
-    endif()
-
-    # determine the full path to the Python package
-    set (PACKAGE_PATH ${PYINST_PATH})
-    if (NOT IS_ABSOLUTE ${PYINST_PATH})
-        set (PACKAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/${PYINST_PATH})
-    endif ()
-
-    # apply the global editable option
-    set (EDIT_OPTION "")
-    if (UTOPIA_PYTHON_INSTALL_EDITABLE)
-        set (EDIT_OPTION "-e")
-    endif ()
-
-    # define the installation command
-    set(INSTALL_CMD install --upgrade ${EDIT_OPTION} ${PYINST_PIP_PARAMS}
-                    ${PACKAGE_PATH})
-
-    # perform the actual installation
-    message (STATUS "Installing python package at ${PACKAGE_PATH} "
-                    "into the virtual environment ...")
-    execute_process(
-        COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
-        RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_VARIABLE PIP_OUTPUT
-    )
-
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing package:\n${PIP_OUTPUT}")
-    endif ()
-
-endfunction()
-
-
-
 # Call python `pip install` command inside Utopia's virtual environment
 #
 # .. cmake_function:: python_pip_install
