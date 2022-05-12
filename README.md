@@ -449,6 +449,12 @@ Working inside a clone or a fork of this repository is generally *not* a good id
 To make setting up such a project repository as easy as possible, we provide a template repository, which can be used to start a new Utopia project!
 Follow the instructions in [the `models_template` project][models_template] for more information.
 
+Call the following command to export package information to the CMake project registry:
+
+```
+cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..`
+```
+
 
 
 <!-- ###################################################################### -->

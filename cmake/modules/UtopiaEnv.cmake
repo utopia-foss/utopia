@@ -86,27 +86,26 @@ if (NOT PYTHON_PACKAGE_wheel_FOUND)
 endif()
 
 # -- utopya
-# TODO Check if there is a more sensible spot to define these defaults
-# TODO Is this the correct way to check for no values being set?
 
-if("${UTOPYA_URL}" STREQUAL "")
+if(NOT UTOPYA_URL)
     set(UTOPYA_URL https://gitlab.com/utopia-project/utopya.git)
 endif()
 
-if("${UTOPYA_BRANCH}" STREQUAL "")
-    set(UTOPYA_BRANCH smoothe-out-integration-into-utopia)  # FIXME set to main
+if(NOT UTOPYA_BRANCH)
+    set(UTOPYA_BRANCH utopia-integration)  # FIXME set to main
 endif()
 
-python_find_package(PACKAGE utopya VERSION 1.0.0a3)  # FIXME Update version
+python_find_package(PACKAGE utopya VERSION 1.0.0)
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     python_install_package_remote(
         URL ${UTOPYA_URL}
         BRANCH ${UTOPYA_BRANCH}
         EGG_NAME utopya
     )
-    # TODO Consider replacing with requirements file? ... but need to avoid
-    #      repetitive version checks on each cmake call!
 endif()
+# TODO Once utopya is on PyPI, consider replacing with requirements file?
+#      ... but need to avoid repetitive version checks on each cmake call!
+
 
 # -- utopya CLI
 # Create a (relative) symlink in the utopia-env: utopia -> utopya

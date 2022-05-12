@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # Start the project
 project(Utopia
-    DESCRIPTION "Library for exploring complex & evolving model systems."
+    DESCRIPTION "Framework for studying models of complex & adaptive systems."
     LANGUAGES C CXX
     VERSION 0.1
 )
@@ -212,11 +212,7 @@ install(
     TARGETS utopia
     # register this name as the target export
     EXPORT ${targets_export_name}
-    # NOTE: Trivial DESTINATIONS are not required for CMake >=v3.14
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    RUNTIME PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                         GROUP_READ GROUP_WRITE GROUP_EXECUTE
                         WORLD_READ WORLD_WRITE WORLD_EXECUTE
 )

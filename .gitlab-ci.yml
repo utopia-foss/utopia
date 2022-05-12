@@ -224,7 +224,6 @@ build:debug-clang:
 
 
 # Build for installation tests
-# FIXME Why is the package registry export not on by default?!
 # TODO Consider making this a test-stage job to avoid duplicate compilation
 build:install:
   stage: build
