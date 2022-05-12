@@ -1,5 +1,7 @@
 # Evaluate the example multiverse run of the ForestFire model
 # Plot only the tree_density and forest state animation
+#
+# FIXME Migrate
 ---
 # --- Tree density ------------------------------------------------------------
 # ... Of the single universes .................................................

@@ -1,12 +1,48 @@
 # Default base plots for the ForestFire model
 ---
-# --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:  # FIXME Migrate plot
-  based_on: .distribution.histogram
+.variables:
+  base_path: &base_path  data/ForestFire
+
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert ForestFire-specific settings
+
+.creator.universe:
+  based_on: .creator.universe
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on: .creator.multiverse
+
+  select_and_combine:
+    base_path: *base_path
+
+
+# #############################################################################
+# -- PLOTS --------------------------------------------------------------------
+# #############################################################################
+
+# -- Cluster size distribution ------------------------------------------------
+cluster_size_distribution:
+  based_on:
+    - .creator.universe
+    - .facet_grid.hist  # wraps xarray.plot.hist
 
   # Specify which data to calculate the histogram of
-  model_name: ForestFire
-  path_to_data: cluster_id
+  select:
+    cluster_size: &select_cluster_size
+      path: cluster_id
+      transform:
+        # Look only at the last time step
+        - .isel: [!dag_prev , {time: -1}]
+        # Count unique cluster IDs, i.e.: the cluster sizes
+        - count_unique
+
+  transform:
+    # We are interested in the log-scaled cluster sizes
+    - log10: !dag_tag cluster_size
+      tag: data
 
   # Set scales, limits, and title
   helpers:
@@ -19,43 +55,57 @@ cluster_size_distribution:  # FIXME Migrate plot
       y: log
     set_limits:
       x: [0, max]
-      y: [0.8, ~]
-
-  # Perform dimensionality reduction of the given data
-  preprocess:
-    # This is a sequence of operations to carry out. Each entry is either the
-    # name of an operation (if there are no arguments needed for the
-    # operation) or a dict where the only key refers to the name of the
-    # operation and the content of the dict is passed to that function
-
-    # First, Select the last index along the time dimension
-    - isel:
-        time: -1
-    # Then, count unique cluster IDs, i.e.: the cluster sizes
-    - count_unique
-    # Now apply a base-10 logarithm; histogram makes no sense otherwise
-    - log10
+      y: [0.7, ~]
 
   # Configure the histogram
-  histogram_kwargs:
-    bins: 30
-    range: [0, ~]  # None is resolved to data.min() or data.max()
+  bins: 30
+  # ... further arguments here are passed to np.histogram (via matplotlib)
 
-  # Arguments passed to plt.bar
-  # ...
 
-# --- Complementary Cumulative Cluster Size Distribution ----------------------
-compl_cum_cluster_size_dist:  # FIXME Migrate plot
-  based_on: .distribution.histogram.complementary_cumulative
+# An animation of the cluster size distribution over time
+cluster_size_distribution_animated:
+  based_on:
+    - .animation.ffmpeg
+    - cluster_size_distribution
 
-  # Specify which data to calculate the histogram of
-  model_name: ForestFire
-  path_to_data: cluster_id
+  select:
+    log10_cluster_size:
+      path: cluster_id
+      transform:
+        - .data
+        - count_unique: [!dag_prev , [x, y]]
 
-  # Set scales, limits, and title
+  frames: time
+
   helpers:
     set_title:
-      title: Compl. Cum. Cluster Size Distribution
+      title: " "  # to not create an overlap with the time shown in the title
+
+
+# -- Complementary Cumulative Cluster Size Distribution -----------------------
+# ... for individual universes
+compl_cum_cluster_size_dist.universe:
+  based_on:
+    - .creator.universe
+    - .facet_grid.line
+
+  select:
+    cluster_size:
+      <<: *select_cluster_size
+
+  transform:
+    # Use a custom operation to compute the complementary cluster size
+    # distribution. Repeated counts need to be masked because (in a cumulative
+    # distribution) they represent bins with zero counts; masking these makes
+    # the plot visually simpler ...
+    - ForestFire.compl_cum_distr: !dag_tag cluster_size
+      kwargs:
+        mask_repeated: true
+      tag: data
+
+  helpers: &compl_cum_helpers
+    set_title:
+      title: &compl_cum_title Compl. Cum. Cluster Size Distribution
     set_labels:
       x: Cluster Size $[A]$
       y: $N_A$
@@ -63,50 +113,47 @@ compl_cum_cluster_size_dist:  # FIXME Migrate plot
       x: log
       y: log
 
-  # Configure dimensionality reduction of the given data
-  preprocess:
-    # First, Select the last index along the time dimension
-    - isel:
-        time: -1
-    # Then, count unique cluster IDs, i.e.: the cluster sizes
-    - count_unique
-
-  # Adjust postprocessing to not normalize
-  postprocess:
-    - cumulate_complementary
+  linestyle: "None"
+  marker: "."
 
 
-# --- Tree age plots ----------------------------------------------------------
-mean_tree_age:   # FIXME Migrate plot
-  based_on: .basic_uni.errorbar
+# ... more generically: for sweeps
+compl_cum_cluster_size_dist.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_4D
+    - .facet_grid.with_auto_encoding
+    - .facet_grid.line
 
-  model_name: ForestFire
+  select_and_combine:
+    fields:
+      data:
+        path: cluster_id
+        transform:
+          # Look only at the last time step
+          - .isel: [!dag_prev , {time: -1}]
+          # Count unique cluster IDs, i.e.: the cluster sizes
+          - count_unique
+          # Compute the distribution
+          - ForestFire.compl_cum_distr: !dag_prev
+            kwargs:
+              mask_repeated: true
+          - .rename: [!dag_prev , {bin_pos: "cluster size"}]
 
-  to_plot:
-    age:
-      label: Tree Age
-      plot_std: true
-      transform_data:
-        - where: ['>', 0]
-        - mean: [x, y]
-      transform_std:
-        - where: ['>', 0]
-        - std: [x, y]
+  x: cluster size
 
   helpers:
+    <<: *compl_cum_helpers
     set_title:
-      title: Mean Tree Age
-    set_labels:
-      x: Time [Iteration Steps]
-      y: Mean Age [Iteration Steps]
-    set_limits:
-      x: [0., max]
+      enabled: false
+    set_suptitle:
+      title: *compl_cum_title
 
-  # Passed on to errorbar plot
-  # ...
+  linestyle: "None"
+  marker: "."
 
 
-# --- Tree density plots ------------------------------------------------------
+# -- Tree density plots -------------------------------------------------------
 # ... Time series for each universe ...........................................
 tree_density:
   based_on: .basic_uni.lineplot
@@ -118,7 +165,7 @@ tree_density:
     set_title:
       title: Tree Density
     set_labels:
-      x: Time [Iteration Steps]
+      x: Time [Steps]
       y: Tree Density $[1/A]$
     set_limits:
       x: [0., max]
@@ -127,81 +174,143 @@ tree_density:
   # Passed on to plt.plot
   # ...
 
-# ... For a parameter sweep over seed and p_lightning .........................
-tree_density_over_p_lightning:
-  based_on: .basic_mv.errorbar
-  expected_multiverse_ndim: [1, 2, 3]
-  select:
-    field: data/ForestFire/tree_density
 
-  # Specify which data to plot and which data to use for std
-  to_plot: tree_density
-  plot_std: true
+# .. Facet grid ...............................................................
+tree_density_facet_grid:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_3D
+    - .facet_grid.with_auto_encoding
+    - .facet_grid.line
+    - .hlpr.kind.time_series
 
-  # Apply some transformations, e.g. calculate a mean over the seed
-  transform_data:
-    - mean: [seed]
-      _may_fail: true
+  select_and_combine:
+    fields:
+      data: tree_density
 
-  # Same transformations needed for std
-  transform_std:
-    - std: [seed]
-      _may_fail: true
+  auto_encoding: true
+  kind: line
+  x: time
 
-  # Specify over which sweep to create lines
-  lines_from: p_lightning
-
-  # Adjust helpers
   helpers:
-    set_title:
-      title: Tree Density
-    set_labels:
-      x: Time [Iteration Steps]
-      y: Tree Density $[1/A]$
     set_limits:
-      x: [0., max]
       y: [0., 1.]
-    set_legend:
-      loc: upper left
 
-  # Use a custom color map for lines
-  cmap: viridis
-
-  # Passed on to errorbar plot
-  # ...
 
 
 # ... Asymptotic tree density .................................................
 tree_density_asymptotic:
-  based_on: .basic_mv.asymptotic_average
+  based_on:
+    - .creator.multiverse
+    - .facet_grid.errorbars
 
-  select:
+  expected_multiverse_ndim: [1, 2, 3, 4]
+
+  dag_options:
+    define:
+      # The fraction of the time series at which to start the averaging
+      averaging_start_fraction: 0.95
+
+  select_and_combine:
     fields:
-      data: data/ForestFire/tree_density
+      tree_density:
+        path: tree_density
+        transform:
+          - ForestFire.isel_range_fraction:
+              - !dag_prev
+              - {time: [!dag_tag averaging_start_fraction, 1.0]}
+          - .mean: [!dag_prev , [time]]
 
-  # Make this a time-averaged tree density
-  average_dim: time
-  average_fraction: .01
+  transform:
+    - .mean: [!dag_tag tree_density, [seed]]
+      allow_failure: true  # TODO Make this an errorbar plot!!
+      tag: mean_tree_density
+      fallback: !dag_tag tree_density
 
-  # Average over seed, if available
-  transform_data:
-    - mean: [seed]
-      _may_fail: true
+    - xr.full_like: [!dag_tag mean_tree_density, .nan]
+      tag: all_nan
 
-  # Don't plot std
-  plot_std: false
+    - .std: [!dag_tag tree_density, [seed]]
+      allow_failure: true
+      fallback: !dag_tag all_nan
+      tag: std_tree_density
 
-  # Adjust helpers
+    - xr.Dataset:
+      - mean_tree_density: !dag_tag mean_tree_density
+        std_tree_density: !dag_tag std_tree_density
+      tag: data
+
+  y: mean_tree_density
+  yerr: std_tree_density
+  # FIXME This should be x and xerr, but errorbars does not support it
+
+  # need to adjust auto-encoding to have tree density on the (free) x axis
+  auto_encoding:
+    line: [y, hue, col, row, frames]
+
   helpers:
-    set_title:
+    set_suptitle:
       title: Asymptotic Tree Density
     set_labels:
-      x: Tree Density $[1/A]$
+      # x: Tree Density $[1/A]$
+      y: Tree Density $[1/A]$
     set_limits:
-      x: [0., ~]
+      # x: [0., ~]
+      y: [0., ~]
+
+  linestyle: "None"
+  marker: "."
 
 
-# --- Grid Snapshots ----------------------------------------------------------
+# -- Tree age -----------------------------------------------------------------
+mean_tree_age:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_3D
+    - .facet_grid.with_auto_encoding
+    - .facet_grid.errorbands
+    - .hlpr.kind.time_series
+
+  select_and_combine:
+    fields:
+      age_mean:
+        path: age
+        transform:
+          - where: [!dag_prev , ">", 0]  # removes cells that are no trees
+          - .mean: [!dag_prev , [x, y]]
+      age_std:
+        path: age
+        transform:
+          - where: [!dag_prev , ">", 0]
+          - .std: [!dag_prev , [x, y]]
+
+  transform:
+    - xr.Dataset:
+        - age mean: !dag_tag age_mean
+          age std: !dag_tag age_std
+      tag: data
+
+  x: time
+  y: age mean
+  yerr: age std
+
+  helpers:
+    set_suptitle:
+      title: Mean Tree Age
+    set_labels:
+      x: Time [Steps]
+      y: Mean Age [Steps]
+      only_label_outer: true
+    set_limits:
+      y: [0., ~]
+
+
+  # Passed on to facet grid errorbar plot
+  # ...
+
+
+
+# -- Grid Snapshots -----------------------------------------------------------
 # NOTE These can also be used as basis for grid animations.
 # ... The forest ..............................................................
 forest_snapshot:
@@ -245,16 +354,3 @@ clusters_snapshot:  # FIXME Migrate plot
     cluster_id:
       - where: ['!=', 0]       # 0 is masked: not part of a cluster
       - mod: 20                # ... to match the tab20 color map
-
-
-# --- Generic Multidimensional Plotting ---------------------------------------
-# ... Facet Grid Plot .........................................................
-tree_density_facet_grid:
-  based_on: .dag.generic.facet_grid
-  expected_multiverse_ndim: [1, 2, 3]
-  creator: multiverse
-
-  select_and_combine:
-    fields:
-      data: tree_density
-    base_path: data/ForestFire

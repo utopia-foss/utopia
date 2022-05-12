@@ -1,3 +1,295 @@
 # Base plot configuration for models using the Utopia framework
+#
+# This file contains shared config entries that can be used in the composition
+# of plot configurations.
 ---
-{}
+# YAML anchors used throughout this file
+_:
+  labels:
+    time:                  &label_time            Time [Steps]
+
+  aesthetics:
+    hvline: &style_hvline
+      linestyle: solid
+      color: grey
+      alpha: .4
+      linewidth: 2.
+      zorder: -42
+
+
+# -----------------------------------------------------------------------------
+# -- Skip conditions ----------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+.skip.if_less_than_1D:
+  expected_multiverse_ndim: [1, 2, 3, 4, 5]
+
+.skip.if_less_than_2D:
+  expected_multiverse_ndim: [2, 3, 4, 5]
+
+.skip.if_more_than_1D:
+  expected_multiverse_ndim: [0, 1]
+
+.skip.if_more_than_2D:
+  expected_multiverse_ndim: [0, 1, 2]
+
+.skip.if_more_than_3D:
+  expected_multiverse_ndim: [0, 1, 2, 3]
+
+.skip.if_more_than_4D:
+  expected_multiverse_ndim: [0, 1, 2, 3, 4]
+
+.skip.if_more_than_5D:
+  expected_multiverse_ndim: [0, 1, 2, 3, 4, 5]
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# -- Helpers ------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Layout
+.hlpr.no_tight_layout:
+  helpers:
+    save_figure:
+      bbox_inches: ~
+
+
+# Limits
+.hlpr.limits.x_min_max:
+  helpers:
+    set_limits:
+      x: [min, max]
+
+.hlpr.limits.x_from_zero:
+  helpers:
+    set_limits:
+      x: [0, ~]
+
+.hlpr.limits.y_min_max:
+  helpers:
+    set_limits:
+      y: [min, max]
+
+.hlpr.limits.y_from_zero:
+  helpers:
+    set_limits:
+      y: [0, ~]
+
+# Scales
+# ...
+
+
+# Labels
+# ...
+
+
+# Lines
+.hlpr.lines.h_zero:
+  helpers:
+    set_hv_lines:
+      hlines:
+        - pos: 0.
+          <<: *style_hvline
+
+.hlpr.lines.v_zero:
+  helpers:
+    set_hv_lines:
+      vlines:
+        - pos: 0.
+          <<: *style_hvline
+
+
+# Ticks and tick labels
+.hlpr.ticks.x.hide:
+  helpers:
+    set_ticks:
+      x:
+        major:
+          locs: []
+          labels: []
+
+.hlpr.ticks.y.hide:
+  helpers:
+    set_ticks:
+      y:
+        major:
+          locs: []
+          labels: []
+
+.hlpr.ticks.x.si_suffixes:
+  helpers:
+    set_tick_formatters:
+      x:
+        major: &eng_formatter
+          name: EngFormatter
+          # places: 0
+          sep: '$\,$'
+
+.hlpr.ticks.y.si_suffixes:
+  helpers:
+    set_tick_formatters:
+      y:
+        major:
+          <<: *eng_formatter
+
+.hlpr.ticks.x.fewer_ticks:
+  helpers:
+    set_tick_locators:
+      x:
+        major: &ticker_maxn_fewer
+          name: MaxNLocator
+          nbins: 5  # -->  max. 6 ticks
+          steps: [1, 2, 5, 10]
+          min_n_ticks: 4
+
+.hlpr.ticks.y.fewer_ticks:
+  helpers:
+    set_tick_locators:
+      y:
+        major:
+          <<: *ticker_maxn_fewer
+
+
+.hlpr.ticks.x.even_fewer_ticks:
+  helpers:
+    set_tick_locators:
+      x:
+        major: &ticker_maxn_even_fewer
+          name: MaxNLocator
+          nbins: 4  # -->  max. 5 ticks
+          steps: [1, 2, 5, 10]
+          min_n_ticks: 3
+
+.hlpr.ticks.y.even_fewer_ticks:
+  helpers:
+    set_tick_locators:
+      y:
+        major:
+          <<: *ticker_maxn_even_fewer
+
+
+# Legend
+.hlpr.legend.use:
+  helpers:
+    set_legend:
+      use_legend: true
+
+.hlpr.legend.gather_from_fig:
+  helpers:
+    set_legend:
+      use_legend: true
+      gather_from_fig: true
+
+.hlpr.legend.hide:
+  helpers:
+    set_legend:
+      use_legend: false
+
+.hlpr.legend.hide_if_large:
+  helpers:
+    set_legend:
+      use_legend: true
+      hiding_threshold: 10
+
+
+# Figure legend
+.hlpr.figlegend.use:
+  helpers:
+    set_figlegend:
+      gather_from_fig: true
+
+.hlpr.figlegend.hide_if_large:
+  helpers:
+    set_figlegend:
+      gather_from_fig: true
+      hiding_threshold: 10
+
+
+# For specific kinds of representations .......................................
+
+# A time series plot along the x-axis
+.hlpr.kind.time_series:
+  based_on:
+    - .hlpr.ticks.x.si_suffixes
+
+  helpers:
+    set_limits:
+      x: [min, max]
+
+    axis_specific:
+      [~, -1]:  # bottom row
+        set_labels:
+          x: *label_time
+
+
+# -----------------------------------------------------------------------------
+# -- Defaults -----------------------------------------------------------------
+# -----------------------------------------------------------------------------
+.defaults: {}
+
+
+# .. Animation ................................................................
+.animation:
+  animation:
+    enabled: true
+    writer: frames
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 144
+      ffmpeg:
+        init:
+          fps: 10
+        saving:
+          dpi: 144
+
+.animation.ffmpeg:
+  based_on: .animation
+  file_ext: .mp4
+  animation:
+    writer: ffmpeg
+
+.animation.frames:
+  based_on: .animation
+  animation:
+    writer: frames
+
+
+# -----------------------------------------------------------------------------
+# -- Plot functions and specializations ---------------------------------------
+# -----------------------------------------------------------------------------
+
+# .. Facet grid ...............................................................
+.facet_grid:
+  based_on:
+    - .defaults
+    - .dag.generic.facet_grid
+
+# .. Mixins
+.facet_grid.with_auto_encoding:
+  based_on: .facet_grid
+  auto_encoding: true
+  col_wrap: auto
+
+# .. Specializations
+# TODO Expand to other kinds
+# ...
+
+.facet_grid.line:
+  based_on: .facet_grid
+  kind: line
+
+.facet_grid.hist:
+  based_on: .facet_grid
+  kind: hist
+
+.facet_grid.errorbars:
+  based_on: .facet_grid
+  kind: errorbars
+
+.facet_grid.errorbands:
+  based_on: .facet_grid
+  kind: errorbars
+  use_bands: true

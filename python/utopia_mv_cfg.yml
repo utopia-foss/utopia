@@ -19,7 +19,10 @@ plot_manager:
         <<: *default_style
 
 
-# Additional parameter space configuration, passed to backend
+# Default parameter space configuration
+#
+# This extends the utopya defaults and/or explicitly specifies those
+# parameters that are required by the Utopia C++ backend.
 parameter_space:
   # Default PRNG seed
   seed: 42
@@ -42,17 +45,12 @@ parameter_space:
   # Default logging pattern and level defaults
   log_pattern: "[%T.%e] [%^%l%$] [%n]  %v"
   log_levels:
-    # level for backend internal operations
+    # backend: core, data I/O, and DataManager (in WriteMode::managed)
     core: warning
-
-    # level for general I/O operations
     data_io: warning
-
-    # level for the DataManager in WriteMode::managed
     data_mngr: warning
 
-    # level for the root model, inherited by sub-models if they don't set their
-    # own log level
+    # root model: inherited by sub-models if they don't set their own log level
     model: info
 
   # File mode to use for the output HDF5 file
