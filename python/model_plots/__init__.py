@@ -13,3 +13,6 @@ log = logging.getLogger(__name__)
 import matplotlib
 
 matplotlib.use("Agg")
+
+# Make shared plot functions and operations available
+from ._shared import *

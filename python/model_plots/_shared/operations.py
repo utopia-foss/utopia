@@ -1,4 +1,4 @@
-"""Custom data operations for the ForestFire model"""
+"""Implements data transformation operations that are shared by all models"""
 
 import logging
 from math import ceil, floor
@@ -7,9 +7,14 @@ from typing import Dict, Tuple
 import numpy as np
 import xarray as xr
 
+from utopya.eval import is_operation
+
 log = logging.getLogger(__name__)
 
+# -----------------------------------------------------------------------------
+
 # TODO Consider implementing this in dantro or utopya?
+@is_operation(".isel_range_fraction")
 def isel_range_fraction(
     d: xr.DataArray, dims: Dict[str, Tuple[float, float]], **isel_kwargs
 ) -> xr.DataArray:
@@ -42,6 +47,7 @@ def isel_range_fraction(
     return d.isel(indexers, **isel_kwargs)
 
 
+@is_operation("complementary_cumulative_distribution")
 def compute_compl_cum_distr(
     data: np.ndarray,
     *,

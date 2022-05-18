@@ -98,7 +98,7 @@ compl_cum_cluster_size_dist.universe:
     # distribution. Repeated counts need to be masked because (in a cumulative
     # distribution) they represent bins with zero counts; masking these makes
     # the plot visually simpler ...
-    - ForestFire.compl_cum_distr: !dag_tag cluster_size
+    - complementary_cumulative_distribution: !dag_tag cluster_size
       kwargs:
         mask_repeated: true
       tag: data
@@ -135,7 +135,7 @@ compl_cum_cluster_size_dist.multiverse:
           # Count unique cluster IDs, i.e.: the cluster sizes
           - count_unique
           # Compute the distribution
-          - ForestFire.compl_cum_distr: !dag_prev
+          - complementary_cumulative_distribution: !dag_prev
             kwargs:
               mask_repeated: true
           - .rename: [!dag_prev , {bin_pos: "cluster size"}]
@@ -216,7 +216,7 @@ tree_density_asymptotic:
       tree_density:
         path: tree_density
         transform:
-          - ForestFire.isel_range_fraction:
+          - .isel_range_fraction:
               - !dag_prev
               - {time: [!dag_tag averaging_start_fraction, 1.0]}
           - .mean: [!dag_prev , [time]]
