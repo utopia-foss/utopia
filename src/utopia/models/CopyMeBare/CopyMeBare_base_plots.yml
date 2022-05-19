@@ -2,3 +2,29 @@
 #
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
+.variables:
+  base_path: &base_path data/CopyMeBare
+
+
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+.creator.universe:
+  based_on: .creator.universe
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on: .creator.multiverse
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+# #############################################################################
+# -- PLOTS --------------------------------------------------------------------
+# #############################################################################
+
+# ...

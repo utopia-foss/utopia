@@ -1,28 +1,74 @@
 # Base configuration for SEIRD model plots
 ---
-# -- Shared Definitions -------------------------------------------------------
-_cmap: &cmap
-  empty: &color_empty darkkhaki
-  susceptible: &color_susceptible forestgreen
-  exposed: &color_exposed darkorange
-  infected: &color_infected firebrick
-  recovered: &color_recovered slategray
-  deceased: &color_deceased black
-  source: &color_source maroon
-  inert: &color_inert moccasin
+.variables:
+  base_path: &base_path  data/SEIRD
 
-_style:
-  constrained_layout: &constrained_layout
-    figure.constrained_layout.use: true
+  cmap: &cmap
+    empty: &color_empty darkkhaki
+    susceptible: &color_susceptible forestgreen
+    exposed: &color_exposed darkorange
+    infected: &color_infected firebrick
+    recovered: &color_recovered slategray
+    deceased: &color_deceased black
+    source: &color_source maroon
+    inert: &color_inert moccasin
 
+  style:
+    constrained_layout: &constrained_layout
+      figure.constrained_layout.use: true
+
+
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert SEIRD-specific settings
+
+.creator.universe:
+  based_on: .creator.universe
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on: .creator.multiverse
+
+  select_and_combine:
+    base_path: *base_path
+
+
+.animation.ffmpeg:
+  based_on: .animation.ffmpeg
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 8
+        saving:
+          dpi: 300
+
+.animation.frames:
+  based_on: .animation.frames
+  animation:
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 300
+
+
+# -- Styles -------------------------------------------------------------------
 # .. Property cycles ..........................................................
 # Using these as base configurations allows to have consistent kind colors
+# NOTE The order in the evaluated format string needs to match the order in
+#      which the cycling happens! This is an implicit mapping.
+
+style.prop_cycle.ESEIRDSI:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}', '{cmap[source]:}', '{cmap[inert]:}'])"
+      cmap: *cmap
+
 style.prop_cycle.seird:
   style:
     axes.prop_cycle: !format
       fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
-      # NOTE The fstr has to match the order of the compute_for_kinds argument
-      #      of the SEIRD.compute_age_distribution operation
       cmap: *cmap
 
 style.prop_cycle.deceased:
@@ -35,21 +81,61 @@ style.prop_cycle.default:
   style:
     axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
 
-# default animation configurations
-animation:
-  animation:
-    enabled: true
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 300
-      ffmpeg:
-        init:
-          fps: 8
-        saving:
-          dpi: 300
-    writer: ffmpeg
-  file_ext: mp4
+
+
+# #############################################################################
+# -- PLOTS --------------------------------------------------------------------
+# #############################################################################
+
+# -- Densities time series ----------------------------------------------------
+
+densities.uni:
+  based_on:
+    - .creator.universe
+    - .facet_grid.line
+    - .hlpr.kind.time_series
+    - style.prop_cycle.ESEIRDSI
+
+  select:
+    data: densities
+
+  x: time
+  hue: kind
+
+  helpers: &helpers_densities
+    set_limits:
+      y: [0., 1.]
+    set_labels:
+      y: Density [1/A]
+      only_label_outer: true
+    set_title:
+      title: Densities
+    set_legend:
+      loc: best
+
+densities.mv:
+  based_on:
+    - .creator.multiverse
+    - .facet_grid.with_auto_encoding
+    - .facet_grid.line
+    - .hlpr.kind.time_series
+    - style.prop_cycle.ESEIRDSI
+
+  expected_multiverse_ndim: [1, 2, 3]
+
+  select_and_combine:
+    fields:
+      data: densities
+
+  x: time
+  hue: kind
+
+  helpers:
+    <<: *helpers_densities
+    set_title:
+      enabled: false
+    set_suptitle:
+      title: Densities
 
 
 # -- Any kind of phase plot ---------------------------------------------------
@@ -75,80 +161,6 @@ phase_diagram:
   s: 10
 
 
-# -- Densities plot -----------------------------------------------------------
-densities:  # FIXME Migrate plot
-  based_on: .basic_uni.lineplots
-
-  model_name: SEIRD
-
-  to_plot:
-    empty:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: empty }
-      label: empty
-      color: *color_empty
-
-    susceptible:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: susceptible }
-      label: susceptible
-      color: *color_susceptible
-
-    exposed:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: exposed }
-      label: exposed
-      color: *color_exposed
-
-    infected:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: infected }
-      label: infected
-      color: *color_infected
-
-    recovered:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: recovered }
-      label: recovered
-      color: *color_recovered
-
-    deceased:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: deceased }
-      label: deceased
-      color: *color_deceased
-
-    source:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: source }
-      label: source
-      color: *color_source
-
-    inert:
-      transform_data:
-        - sel: { kind: inert }
-      path_to_data: densities
-      label: inert
-      color: *color_inert
-
-  helpers:
-    set_limits:
-      x: [min, max]
-      y: [0., 1.]
-    set_labels:
-      x: Time [Iteration Steps]
-      y: Density [1/A]
-    set_title:
-      title: Densities
-    set_legend:
-      loc: best
 
 
 # --- Counter-based -----------------------------------------------------------
@@ -245,7 +257,7 @@ CA_age_snapshot:
       cmap: YlGn
 
 # ... The clusters ............................................................
-clusters_snapshot:
+clusters_snapshot:  # FIXME Migrate
   based_on: .ca.state
   model_name: SEIRD
 

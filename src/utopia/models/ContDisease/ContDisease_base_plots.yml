@@ -1,19 +1,42 @@
 # Base configuration for ContDisease model plots
 ---
-.colors:
-  empty: &color_empty darkkhaki
-  tree: &color_tree forestgreen
-  infected: &color_infected firebrick
-  source: &color_source orange
-  stone: &color_stone slategray
+.variables:
+  base_path: &base_path data/ContDisease
 
-  cycler: &cycler 'cycler(
-      "color",
-      ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
-  )'
+  colors:
+    empty: &color_empty darkkhaki
+    tree: &color_tree forestgreen
+    infected: &color_infected firebrick
+    source: &color_source orange
+    stone: &color_stone slategray
 
+    cycler: &cycler 'cycler(
+        "color",
+        ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
+    )'
+
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+.creator.universe:
+  based_on: .creator.universe
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on: .creator.multiverse
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+# #############################################################################
+# -- PLOTS --------------------------------------------------------------------
+# #############################################################################
 # -- Any kind of phase plot ---------------------------------------------------
-phase_diagram:
+phase_diagram:  # TODO Consider migrating to facet grid scatter plot
   based_on: .default_style_and_helpers
 
   creator: universe
@@ -30,16 +53,10 @@ phase_diagram:
 
 
 # -- Densities plot -----------------------------------------------------------
-densities:
+densities.base:
   based_on:
-    - .creator.universe
-    - .dag.generic.facet_grid
-
-  select:
-    data:
-      path: data/ContDisease/densities
-      transform:
-        - .data
+    - .hlpr.kind.time_series
+    - .facet_grid.line
 
   x: time
   hue: kind
@@ -49,17 +66,39 @@ densities:
 
   helpers:
     set_limits:
-      x: [min, max]
       y: [0., 1.]
     set_labels:
-      x: Time [Iteration Steps]
       y: Density [1/A]
-    set_title:
+      only_label_outer: true
+    set_suptitle:
       title: Densities
     set_legend:
       loc: best
 
-# TODO Facet grid version?
+densities.universe:
+  based_on:
+    - .creator.universe
+    - densities.base
+
+  select:
+    data:
+      path: densities
+      transform:
+        - .data
+
+densities.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_3D
+    - densities.base
+    - .facet_grid.with_auto_encoding
+
+  select_and_combine:
+    fields:
+      data:
+        path: densities
+        transform:
+          - .data
 
 
 # --- Grid Snapshots ----------------------------------------------------------

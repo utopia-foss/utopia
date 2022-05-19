@@ -136,11 +136,17 @@ _:
     - .plot.facet_grid.with_auto_encoding
     - .hlpr.limits.x_min_max
 
+  kind: line
   x: time
+
+  helpers:
+    set_labels:
+      x: time [steps]
+      only_label_outer: true
 
 
 # -----------------------------------------------------------------------------
-# Actual plot configurations --------------------------------------------------
+# Actual plots ----------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
 # .. Spatial plots ............................................................
@@ -215,27 +221,27 @@ time_series/final_group_velocity:
   based_on:
     - .creator.multiverse
     - .plot.facet_grid.with_auto_encoding
-    - .hlpr.limits.x_min_max
     - .hlpr.limits.y_positive
 
   expected_multiverse_ndim: [1, 2, 3, 4, 5]
 
   select_and_combine:
     fields:
-      _data:
+      data:
         path: norm_group_velocity
         transform:
           - .isel.item: [!dag_prev , {time: -1}]  # TODO Consider averaging
 
-  transform:
-    - define: !dag_tag _data
-      tag: data
+  kind: line
 
   helpers:
+    set_labels:
+      y: absolute group velocity
     set_title:
       title: final absolute group velocity
-    set_limits:
-      x: [0, ~]
+
+  linestyle: none
+  marker: "."
 
 # A time series plot of the orientation's circular std. dev.
 time_series/orientation_circstd:

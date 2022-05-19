@@ -1,10 +1,14 @@
 # Default plots for the ContDisease model
 ---
-# --- Plot of all densities over time -----------------------------------------
+# --- Densities time series ---------------------------------------------------
 densities:
-  based_on: densities
+  enabled: false
+  based_on: densities.universe
+
+densities_facet_grid:
+  based_on: densities.multiverse
   
-# --- Create a phase plot of two densities ------------------------------------
+# --- Phase plot of two densities ---------------------------------------------
 phase_diagram:
   based_on: phase_diagram
 
@@ -20,7 +24,7 @@ phase_diagram:
       x: [0, 0.7]
       y: [0, 0.01]
 
-  # Parameters that are passed on to plot.scatter
+  # Parameters that are passed on to plt.scatter
   s: 10
 
 

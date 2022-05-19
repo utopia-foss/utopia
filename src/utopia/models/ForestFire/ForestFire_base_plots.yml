@@ -262,6 +262,18 @@ tree_density_asymptotic:
   marker: "."
 
 
+tree_density_asymptotic_over_p_lightning:
+  based_on: tree_density_asymptotic
+
+  x: p_lightning
+
+  helpers:
+    set_labels:
+      x: Lightning Probability
+    set_scales:
+      x: log
+
+
 # -- Tree age -----------------------------------------------------------------
 mean_tree_age:
   based_on:

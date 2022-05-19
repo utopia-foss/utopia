@@ -1,30 +1,11 @@
 # This defines the default plots for the Vegetation model
 ---
 
-# Plot the average plant mass per cell over time
-average_plant_mass_time:
-  creator: universe
-  universes: all
+# Mean plant mass over time
+time_series/mean_plant_mass:
+  based_on: time_series/mean_plant_mass
 
-  module: model_plots.Vegetation
-  plot_func: average_state_over_time
 
-  save_kwargs:
-    bbox_inches: tight
-
-  # ... can add plt.plot kwargs here
-
-# Plot the spatial development in the CA
+# Spatial development in the CA over time
 plant_mass_spatial:
-  based_on: .ca.state.anim_ffmpeg
-  
-  # Select the model
-  model_name: Vegetation
-
-  # Select the properties to plot
-  to_plot:
-    # The name of the property to plot with its options
-    plant_mass:
-      title: Plant Biomass
-      cmap: Greens
-      limits: [0, 12]
+  based_on: plant_mass_spatial

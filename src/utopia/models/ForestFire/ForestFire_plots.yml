@@ -33,20 +33,12 @@ tree_density_facet_grid:
 
 # ... asymptotic tree density with specializations
 tree_density_asymptotic:
-  enabled: false
   based_on: tree_density_asymptotic
+  enabled: false
 
 tree_density_asymptotic_over_p_lightning:
+  based_on: tree_density_asymptotic_over_p_lightning
   enabled: false
-  based_on: tree_density_asymptotic
-
-  x: p_lightning
-
-  helpers:
-    set_labels:
-      x: Lightning Probability
-    set_scales:
-      x: log
 
 
 # --- Tree age ----------------------------------------------------------------

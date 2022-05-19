@@ -1,40 +1,31 @@
 # This defines the default plots for the SimpleEG model
 ---
-# plot the frequency of the strategy S0
-frequency_S0:
-  enabled: false
-
-  creator: universe
-  universes: all
-
-  module: model_plots.SimpleEG
-  plot_func: frequency
-
-  strategy: S0
+# The frequency of the strategy S1 (a facet grid plot)
+frequency_S1:
+  based_on: frequency_S1
 
 
-# plot the frequency of strategy S0 and S1 in one plot
+# The frequency of strategies S0 and S1 in one plot
 frequencies:
-  creator: universe
-  universes: all
-
-  module: model_plots.SimpleEG
-  plot_func: frequency
-
-  strategy: [S0, S1]
+  based_on: frequencies
 
 
-# plot the spatial development in the CA of the strategy
+# Payoff distribution plots
+payoff_distribution_over_time:
+  based_on: payoff_distribution_over_time
+
+payoff_distribution_final:
+  based_on: payoff_distribution_final
+
+
+# The spatial development in the CA of the strategy
 strategy_and_payoff: &strategy_and_payoff
-  # Base this plot on a utopya base plot configuration
   based_on: .ca.state.anim_ffmpeg
 
   model_name: SimpleEG
 
-  # Select the properties to plot
   to_plot:
-    # The name of the property to plot with its options
-    strategy:
+    strategy: &plot_strategy
       title: Strategy
       limits: [0, 1]
       cmap: 
@@ -46,30 +37,8 @@ strategy_and_payoff: &strategy_and_payoff
       limits: [0, 12]
       cmap: viridis
 
-
-# another plot that stores things as frames
 strategy_and_payoff_frames:
-  <<: *strategy_and_payoff
+  based_on:
+    - strategy_and_payoff
+    - .animation.frames
   enabled: false
-
-  # Writer options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs:
-    file_format: png
-
-
-# plot the spatial development in the CA of only the strategy
-strategy:
-  <<: *strategy_and_payoff
-  enabled: false
-
-  # Select only the strategy state property to plot
-  to_plot:
-    strategy:
-      title: Strategy
-      limits: [0, 1]
-      cmap: 
-        S0: red
-        S1: blue

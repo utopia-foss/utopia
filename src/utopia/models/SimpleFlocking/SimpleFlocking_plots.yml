@@ -8,6 +8,9 @@
 time_series/norm_group_velocity:
   based_on: time_series/norm_group_velocity
 
+time_series/final_group_velocity:
+  based_on: time_series/final_group_velocity
+
 time_series/orientation_circstd:
   based_on: time_series/orientation_circstd
 

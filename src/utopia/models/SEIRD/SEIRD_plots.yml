@@ -1,9 +1,11 @@
 # Default plots for the SEIRD model
 ---
 # --- Plot of all densities over time -----------------------------------------
-densities:  # FIXME Migrate plot
-  enabled: false
-  based_on: densities
+densities:
+  based_on: densities.uni
+
+densities_facet_grid:
+  based_on: densities.mv
 
 
 # --- Counter-based -----------------------------------------------------------

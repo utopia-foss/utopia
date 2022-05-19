@@ -2,6 +2,8 @@
 #
 # This file contains shared config entries that can be used in the composition
 # of plot configurations.
+#
+# TODO Should these all move to utopya's base plots??
 ---
 # YAML anchors used throughout this file
 _:
@@ -247,7 +249,7 @@ _:
 
 .animation.ffmpeg:
   based_on: .animation
-  file_ext: .mp4
+  file_ext: mp4
   animation:
     writer: ffmpeg
 
@@ -260,6 +262,7 @@ _:
 # -----------------------------------------------------------------------------
 # -- Plot functions and specializations ---------------------------------------
 # -----------------------------------------------------------------------------
+# TODO These should follow the .plot.<name> pattern!
 
 # .. Facet grid ...............................................................
 .facet_grid:
@@ -297,6 +300,14 @@ _:
   kind: scatter
 
 
+# .. Seaborn plots ............................................................
+.snsplot:
+  based_on: .dag.snsplot
+
+
+# .. Graph plot ...............................................................
+.graph:
+  based_on: .dag.graph
 
 
 
