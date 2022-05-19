@@ -39,3 +39,8 @@ cell_manager:
 # --- Dynamics ----------------------------------------------------------------
 # The critical slope; beyond this value, sand topples
 critical_slope: !is-unsigned 4
+
+
+# --- Data writing ------------------------------------------------------------
+# If true, will only store the avalanche size, not the spatially resolved data
+write_only_avalanche_size: !is-bool false

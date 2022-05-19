@@ -273,10 +273,7 @@ _:
   auto_encoding: true
   col_wrap: auto
 
-# .. Specializations
-# TODO Expand to other kinds
-# ...
-
+# .. Specializations: working on xr.DataArray
 .facet_grid.line:
   based_on: .facet_grid
   kind: line
@@ -294,7 +291,10 @@ _:
   kind: errorbars
   use_bands: true
 
-
+# .. Specializations: working on xr.Dataset
+.facet_grid.scatter:
+  based_on: .facet_grid
+  kind: scatter
 
 
 

@@ -6,24 +6,26 @@ mean_slope:
 
 
 # --- Plot the avalanche area fraction time series ----------------------------
-# Depending on the number of cells, you will perhaps need to adjust the
-# y limits of the plot accordingly. Set the minimum smaller or equal to
-# 1/num_cells
-area_fraction:  # FIXME Migrate plot
-  enabled: false
+area_fraction:
   based_on: area_fraction
 
 
-# --- A plot of the cluster size distribution ---------------------------------
-cluster_size_distribution:  # FIXME Migrate plot
+# --- Cluster size distribution plots -----------------------------------------
+cluster_size_distribution:
   enabled: false
   based_on: cluster_size_distribution
 
+# The complementary cumulative cluster size distribution
+# ... for each universe
+compl_cum_cluster_size_dist:
+  based_on: compl_cum_cluster_size_dist.universe
 
-# --- A plot the complementary cumulative probability distribution ------------
-compl_cum_prob_dist:  # FIXME Migrate plot
+# ... for a multiverse sweep, using auto-encoding
+compl_cum_cluster_size_dist_facet_grid:
   enabled: false
-  based_on: compl_cum_prob_dist
+  based_on: compl_cum_cluster_size_dist.multiverse
+
+
 
 
 # --- An animation of the CA `slope` state ------------------------------------

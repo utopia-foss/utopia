@@ -123,6 +123,11 @@ private:
     const unsigned int _topple_num_grains;
 
 
+    // .. Writing-related parameters ..........................................
+    /// If true, will only store the avalanche size, not the spatial data
+    const bool _write_only_avalanche_size;
+
+
     // .. Temporary objects ...................................................
     /// A distribution to select a random cell
     UniformIntDist _cell_distr;
@@ -167,6 +172,11 @@ public:
         _critical_slope(get_as<Slope>("critical_slope", _cfg)),
         _topple_num_grains(_cm.nb_size()),
 
+        // Writing-related parameters
+        _write_only_avalanche_size(
+            get_as<bool>("write_only_avalanche_size", _cfg, false)
+        ),
+
         // Initialize the distribution such that a random cell can be selected
         _cell_distr(0, _cm.cells().size() - 1),
 
@@ -177,17 +187,21 @@ public:
     {
         // Check neighborhood mode; currently does not work with Moore
         if (_cm.nb_mode() != NBMode::vonNeumann) {
-            throw std::invalid_argument("Other neighborhoods than vonNeumann "
-                                        "are currently not supported!");
+            throw std::invalid_argument(
+                "Other neighborhoods than vonNeumann are not supported!"
+            );
         }
 
-        // Add a dimension label for the avalanche size dataset
+        // Add a dimension label for the avalanche size dataset and store the
+        // size of the grid as attribute, allowing to compute the avalanche
+        // size area fraction without the need for spatial data
         _dset_avalanche_size->add_attribute("dim_names", "time");
-
-        this->_log->debug("Toppling size: {}", _topple_num_grains);
+        _dset_avalanche_size->add_attribute("num_cells", _cm.cells().size());
 
         // Perform initial step
         this->_log->info("Adding first grain of sand and letting topple ...");
+        this->_log->debug("Toppling size: {}", _topple_num_grains);
+
         if (_cm.cells().size() > 4000) {
             this->_log->info("With {} cells, this may take a while ...",
                              _cm.cells().size());
@@ -203,7 +217,7 @@ private:
     // .. Helper functions ....................................................
 
     /// Calculate the avalanche size
-    /** \details Count all cells that are marked as in_avalanche
+    /** Counts all cells that are marked as `in_avalanche`.
      */
     unsigned int avalanche_size() const {
         return
@@ -301,7 +315,8 @@ public:
         // Reset cells: All cells are not touched by an avalanche
         apply_rule<Update::async, Shuffle::off>(_reset, _cm.cells());
 
-        // Add a grain of sand and, starting from the cell the grain fell on, // let all supercritical cells topple until a relaxed state is reached
+        // Add a grain of sand and, starting from the cell the grain fell on,
+        // let all supercritical cells topple until a relaxed state is reached
         topple(add_sand_grain());
     }
 
@@ -321,6 +336,13 @@ public:
 
     /// Write the cell slope and avalanche flag to the datasets
     void write_data () {
+        // Calculate and write the avalanche size; may stop after that
+        _dset_avalanche_size->write(avalanche_size());
+
+        if (_write_only_avalanche_size) {
+            return;
+        }
+
         // Write the slope of all cells
         _dset_slope->write(_cm.cells().begin(), _cm.cells().end(),
             [](const auto& cell) {
@@ -336,9 +358,6 @@ public:
                 return static_cast<char>(cell->state.in_avalanche);
             }
         );
-
-        // Calculate and write the avalanche size
-        _dset_avalanche_size->write(avalanche_size());
     }
 };
 
