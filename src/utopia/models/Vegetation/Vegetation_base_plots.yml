@@ -41,8 +41,8 @@ plant_mass_spatial:
 time_series/mean_plant_mass:
   based_on:
     - .creator.multiverse
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.errorbands
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.errorbands
     - .hlpr.kind.time_series
     - .hlpr.limits.y_from_zero
 

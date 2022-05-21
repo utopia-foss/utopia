@@ -20,9 +20,9 @@
 
 
 
-# #############################################################################
-# -- PLOTS --------------------------------------------------------------------
-# #############################################################################
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
 
 # --- A plot of the slope (mean - critical_slope) -----------------------------
 mean_slope:
@@ -52,7 +52,7 @@ mean_slope:
 area_fraction:
   based_on:
     - .creator.universe
-    - .facet_grid.scatter
+    - .plot.facet_grid.scatter
     - .hlpr.kind.time_series
 
   select:
@@ -106,7 +106,7 @@ area_fraction:
 cluster_size_distribution:
   based_on:
     - .creator.universe
-    - .facet_grid.hist  # wraps xarray.plot.hist
+    - .plot.facet_grid.hist  # wraps xarray.plot.hist
 
   # Specify which data to calculate the histogram of
   select:
@@ -150,7 +150,7 @@ cluster_size_distribution:
 compl_cum_cluster_size_dist.universe:
   based_on:
     - .creator.universe
-    - .facet_grid.line
+    - .plot.facet_grid.line
 
   select:
     cluster_size: avalanche_size
@@ -184,8 +184,8 @@ compl_cum_cluster_size_dist.multiverse:
   based_on:
     - .creator.multiverse
     - .skip.if_more_than_4D
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
 
   select_and_combine:
     fields:

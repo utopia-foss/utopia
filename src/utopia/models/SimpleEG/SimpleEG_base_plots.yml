@@ -20,17 +20,17 @@
 
 
 
-# #############################################################################
-# -- PLOTS --------------------------------------------------------------------
-# #############################################################################
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
 
 # .. S1 frequency time series .................................................
 frequency_S1:
   based_on:
     - .creator.multiverse
     - .skip.if_more_than_4D
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
     - .hlpr.kind.time_series
 
   select_and_combine:
@@ -52,8 +52,8 @@ frequency_S1:
 frequencies:
   based_on:
     - .creator.universe
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
     - .hlpr.kind.time_series
 
   select:
@@ -86,8 +86,8 @@ payoff_distribution_over_time:
   based_on:
     - .creator.universe
     - .animation.ffmpeg
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.hist
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.hist
 
   select:
     payoff: payoff
@@ -117,7 +117,7 @@ payoff_distribution_over_time:
 payoff_distribution_final:  # TODO animate?
   based_on:
     - .creator.multiverse
-    - .snsplot
+    - .plot.snsplot
 
   select_and_combine:
     fields:

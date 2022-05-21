@@ -1,60 +1,178 @@
-# The base plots of this model
+# Base plot configuration for this model
 #
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
-# A model-specific plot of the mean state over time
-mean_cell_state_over_time:
-  based_on: [.default_style_and_helpers]
-
-  universes: all
-  
-  # Use the CopyMeGraph-specific plot functions
-  module: model_plots.CopyMeGraph
-  plot_func: state_mean
+.variables:
+  base_path: &base_path data/CopyMeGraph
 
 
-# Plots using the DAG framework ...............................................
-# A time series specialization for universe data
-time_series.uni:
-  based_on: .dag.generic.time_series
-  
-  creator: universe
-  universes: all
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+.creator.universe:
+  based_on: .creator.universe
 
   dag_options:
-    # Provide the base path within the universe to make selection easier
-    select_path_prefix: data/CopyMeGraph
+    select_path_prefix: *base_path
 
-
-# A time series specialization for multiverse data
-time_series.mv:
-  based_on: .dag.generic.time_series
-  
-  creator: multiverse
+.creator.multiverse:
+  based_on: .creator.multiverse
 
   select_and_combine:
-    # Provide the base path within each universe to make selection easier
-    base_path: data/CopyMeGraph
+    base_path: *base_path
+
+# -- Plot templates -----------------------------------------------------------
+
+# Time series facet grid plots
+.plot.time_series.base:
+  based_on:
+    - .hlpr.kind.time_series
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
+
+  x: time
+
+.plot.time_series.uni:
+  based_on:
+    - .creator.universe
+    - .plot.time_series.base
+
+.plot.time_series.mv:
+  based_on:
+    - .creator.multiverse
+    - .plot.time_series.base
 
 # A graph plot for universe data
-graph:
-  based_on: .dag.graph
+.plot.graph:
+  based_on:
+    - .creator.universe
+    - .plot.graph
 
+
+
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
+
+# .. Mean value time series ...................................................
+some_state_mean_and_std:
+  # Base it on existing configurations
+  based_on:
+    - .plot.time_series.uni
+    - .plot.facet_grid.errorbands
+
+  # Select the data by defining a variable that is also used to set the y label
   dag_options:
-    select_path_prefix: data/CopyMeGraph
+    define:
+      data_to_select: g_static/some_state
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-# Some example DAG-based plots that are implemented in the CopyMeGraph model plots
-# and performs some visualization that is not generalizable but needs be
-# implemented specifically for the CopyMeGraph model
-some_dag_based_CopyMeGraph_plot:
-  based_on: .default_style_and_helpers
+  select:
+    _data:
+      path: "."
+      transform:
+        - getitem: [!dag_prev , !dag_tag data_to_select]
 
-  module: model_plots.CopyMeGraph
-  plot_func: some_DAG_based_CopyMeGraph_plot
+  # Compute mean and std and assemble into Dataset for errorbar plot
+  transform:
+    - .mean: [!dag_tag _data, [vertex_idx]]
+      tag: mean
+    - .std: [!dag_tag _data, [vertex_idx]]
+      tag: std
 
-# Example usage of the generic facet_grid function
-some_facet_grid_plot:
-  based_on: .dag.generic.facet_grid
-  creator: multiverse  # you can use this for 'universe', too :)
-  
+    - xr.Dataset:
+      - mean: !dag_tag mean
+        std: !dag_tag std
+      tag: data
+
+  y: mean
+  yerr: std
+
+  helpers:
+    set_labels:
+      y: !dag_result data_to_select
+
+# Same for the trait value
+some_trait_mean_and_std:
+  based_on: some_state_mean_and_std
+
+  # Need only adapt the path to the dataset, rest is inherited
+  dag_options:
+    define:
+      data_to_select: g_static/some_trait
+
+
+# .. Individual cell states ...................................................
+# Plot individual vertex states over time using a generic plotting function
+single_vertex_states:
+  based_on: .plot.time_series.uni
+
+  # Select some single vertices to plot the states of
+  select:
+    data:
+      path: g_static/some_state
+      with_previous_result: true  # makes the select data available as first
+                                  # positional argument to the transform
+                                  # operation; and the result of the first
+                                  # transformation to the first argument of the
+                                  # second transformation, etc.
+      transform:
+        - .sel: {vertex_idx: [0, 1, 2, 4, 8]}
+
+  helpers:
+    set_title:
+      title: Individual Vertex States
+
+# Perform the same plot with the data from the graph group 'g_dynamic'. In this
+# case, the data is loaded as a `TimeSeriesGroup` (and not as Xarray) which
+# also supports important xarray-methods such as coordinate access using .sel.
+single_vertex_states_dynamic:
+  based_on: single_vertex_states
+
+  select:
+    data:
+      path: g_dynamic/some_state
+
+  helpers:
+    set_labels:
+      y: cell state
+
+
+# .. Graph plot ...............................................................
+# Plot the final graph. Map the 'some_state' data to the node color, the node
+# degree to the size of the nodes, and the weights to the edge width.
+graph:
+  based_on: .plot.graph
+
+  select:
+    graph_group: g_dynamic
+
+  # Configure the created networkx graph object
+  graph_creation:
+    at_time_idx: -1                           # Select the last timestep
+    node_props: ['some_trait', 'some_state']  # Select node and edge
+    edge_props: ['weights']                   # properties from the GraphGroup
+
+  # Configure the graph layout
+  graph_drawing:
+    positions:
+      model: spring                   # The spring model positions the nodes
+                                      # such that edge lengths are reduced.
+      k: 1                            # Tweaking the spring model by adjusting
+                                      # the optimal edge length (k) and the
+      iterations: 100                 # maximum number of iterations done.
+    nodes:
+      node_color:
+        from_property: some_state     # Map the 'some_state' data to the color
+      node_size:
+        from_property: degree         # Map the node degree to the node size
+        scale_to_interval: [10, 200]  # Scale the (degree-)data to the given
+                                      # interval (the default size is 300).
+    edges:
+      width:
+        from_property: weights        # Map the 'weights' data to the edge
+        scale_to_interval: [0.1, 1.2] # width and scale the data accordingly.
+
+  helpers:
+    set_title:
+      title: Final Graph
+

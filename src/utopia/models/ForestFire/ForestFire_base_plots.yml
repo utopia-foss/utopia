@@ -19,15 +19,15 @@
     base_path: *base_path
 
 
-# #############################################################################
-# -- PLOTS --------------------------------------------------------------------
-# #############################################################################
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
 
 # -- Cluster size distribution ------------------------------------------------
 cluster_size_distribution:
   based_on:
     - .creator.universe
-    - .facet_grid.hist  # wraps xarray.plot.hist
+    - .plot.facet_grid.hist  # wraps xarray.plot.hist
 
   # Specify which data to calculate the histogram of
   select:
@@ -87,7 +87,7 @@ cluster_size_distribution_animated:
 compl_cum_cluster_size_dist.universe:
   based_on:
     - .creator.universe
-    - .facet_grid.line
+    - .plot.facet_grid.line
 
   select:
     cluster_size:
@@ -122,8 +122,8 @@ compl_cum_cluster_size_dist.multiverse:
   based_on:
     - .creator.multiverse
     - .skip.if_more_than_4D
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
 
   select_and_combine:
     fields:
@@ -180,8 +180,8 @@ tree_density_facet_grid:
   based_on:
     - .creator.multiverse
     - .skip.if_more_than_3D
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
     - .hlpr.kind.time_series
 
   select_and_combine:
@@ -202,7 +202,7 @@ tree_density_facet_grid:
 tree_density_asymptotic:
   based_on:
     - .creator.multiverse
-    - .facet_grid.errorbars
+    - .plot.facet_grid.errorbars
 
   expected_multiverse_ndim: [1, 2, 3, 4]
 
@@ -279,8 +279,8 @@ mean_tree_age:
   based_on:
     - .creator.multiverse
     - .skip.if_more_than_3D
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.errorbands
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.errorbands
     - .hlpr.kind.time_series
 
   select_and_combine:

@@ -1,19 +1,10 @@
-# Evaluate the example multiverse run of the CopyMeGrid model
-# Plot only some_parameter in two facet_grid plots
+# Evaluate the example multiverse run of the model
+#
+# Here, only a subset of plots is carried out
 ---
-# --- SomeParameter -----------------------------------------------------------
-# ... Of a sweep over some_parameter and seed as facet grid ...................
-some_parameter_facet_grid_lineplots:
-  based_on: some_facet_grid_plot
-  
-  enabled: true
+time_series/some_state_mean_and_std:
+  based_on: some_state_mean_and_std
 
-  col: some_parameter
-  row: seed
+time_series/some_trait_mean_and_std:
+  based_on: some_trait_mean_and_std
 
-some_parameter_facet_grid_imshow:
-  based_on: some_facet_grid_plot
-  
-  enabled: true
-
-  col: some_parameter

@@ -83,16 +83,16 @@ style.prop_cycle.default:
 
 
 
-# #############################################################################
-# -- PLOTS --------------------------------------------------------------------
-# #############################################################################
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
 
 # -- Densities time series ----------------------------------------------------
 
 densities.uni:
   based_on:
     - .creator.universe
-    - .facet_grid.line
+    - .plot.facet_grid.line
     - .hlpr.kind.time_series
     - style.prop_cycle.ESEIRDSI
 
@@ -116,8 +116,8 @@ densities.uni:
 densities.mv:
   based_on:
     - .creator.multiverse
-    - .facet_grid.with_auto_encoding
-    - .facet_grid.line
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
     - .hlpr.kind.time_series
     - style.prop_cycle.ESEIRDSI
 

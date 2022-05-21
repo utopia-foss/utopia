@@ -262,51 +262,51 @@ _:
 # -----------------------------------------------------------------------------
 # -- Plot functions and specializations ---------------------------------------
 # -----------------------------------------------------------------------------
-# TODO These should follow the .plot.<name> pattern!
+# These should follow the .plot.<name> pattern!
 
 # .. Facet grid ...............................................................
-.facet_grid:
+.plot.facet_grid:
   based_on:
     - .defaults
     - .dag.generic.facet_grid
 
 # .. Mixins
-.facet_grid.with_auto_encoding:
-  based_on: .facet_grid
+.plot.facet_grid.with_auto_encoding:
+  based_on: .plot.facet_grid
   auto_encoding: true
   col_wrap: auto
 
 # .. Specializations: working on xr.DataArray
-.facet_grid.line:
-  based_on: .facet_grid
+.plot.facet_grid.line:
+  based_on: .plot.facet_grid
   kind: line
 
-.facet_grid.hist:
-  based_on: .facet_grid
+.plot.facet_grid.hist:
+  based_on: .plot.facet_grid
   kind: hist
 
-.facet_grid.errorbars:
-  based_on: .facet_grid
+.plot.facet_grid.errorbars:
+  based_on: .plot.facet_grid
   kind: errorbars
 
-.facet_grid.errorbands:
-  based_on: .facet_grid
+.plot.facet_grid.errorbands:
+  based_on: .plot.facet_grid
   kind: errorbars
   use_bands: true
 
 # .. Specializations: working on xr.Dataset
-.facet_grid.scatter:
-  based_on: .facet_grid
+.plot.facet_grid.scatter:
+  based_on: .plot.facet_grid
   kind: scatter
 
 
 # .. Seaborn plots ............................................................
-.snsplot:
+.plot.snsplot:
   based_on: .dag.snsplot
 
 
 # .. Graph plot ...............................................................
-.graph:
+.plot.graph:
   based_on: .dag.graph
 
 

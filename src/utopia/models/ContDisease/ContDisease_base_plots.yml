@@ -32,9 +32,9 @@
 
 
 
-# #############################################################################
-# -- PLOTS --------------------------------------------------------------------
-# #############################################################################
+# =============================================================================
+# == PLOTS ====================================================================
+# =============================================================================
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:  # TODO Consider migrating to facet grid scatter plot
   based_on: .default_style_and_helpers
@@ -56,7 +56,7 @@ phase_diagram:  # TODO Consider migrating to facet grid scatter plot
 densities.base:
   based_on:
     - .hlpr.kind.time_series
-    - .facet_grid.line
+    - .plot.facet_grid.line
 
   x: time
   hue: kind
@@ -91,7 +91,7 @@ densities.multiverse:
     - .creator.multiverse
     - .skip.if_more_than_3D
     - densities.base
-    - .facet_grid.with_auto_encoding
+    - .plot.facet_grid.with_auto_encoding
 
   select_and_combine:
     fields:
