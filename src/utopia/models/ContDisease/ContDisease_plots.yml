@@ -40,7 +40,9 @@ forest_snapshot:
   time_idx: -1
 
 forest:
-  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
+  based_on:
+    - forest_snapshot
+    - .ca.state.anim_ffmpeg
 
 # ... The forest age ..........................................................
 forest_age_snapshot:
@@ -49,7 +51,9 @@ forest_age_snapshot:
   time_idx: -1
 
 forest_age:
-  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
+  based_on:
+    - forest_age_snapshot
+    - .ca.state.anim_ffmpeg
 
 # ... The clusters ............................................................
 clusters_snapshot:  # FIXME Migrate
@@ -59,10 +63,15 @@ clusters_snapshot:  # FIXME Migrate
 
 clusters:  # FIXME Migrate
   enabled: false
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
+  based_on:
+    - clusters_snapshot
+    - .ca.state.anim_ffmpeg
 
 # --- Miscellaneous -----------------------------------------------------------
 # ... Combined plot of forest states and clusters .............................
-forest_and_clusters:
-  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+forest_and_clusters:  # FIXME Migrate
+  based_on:
+    - forest_snapshot
+    - clusters_snapshot
+    - .ca.state.anim_ffmpeg
   enabled: false

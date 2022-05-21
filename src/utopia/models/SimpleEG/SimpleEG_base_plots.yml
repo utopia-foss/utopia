@@ -134,7 +134,6 @@ payoff_distribution_final:  # TODO animate?
     - xr.Dataset:
       - payoff: !dag_tag payoff
         strategy: !dag_tag strategy
-    - print: !dag_prev
       tag: data
 
   sns_kind: displot
@@ -153,3 +152,35 @@ payoff_distribution_final:  # TODO animate?
     set_suptitle:
       title: Final Payoff Distribution
 
+
+# .. Spatial plots ............................................................
+# The spatial development in the CA of the strategy
+strategy_and_payoff:
+  based_on:
+    - .creator.universe
+    - .animation.ffmpeg
+    - .plot.ca
+
+  select:
+    strategy: strategy
+    payoff: payoff
+
+  to_plot:
+    strategy:
+      title: Strategy
+      limits: [0, 1]
+      cmap:
+        S0: red
+        S1: blue
+
+    payoff:
+      title: Payoff
+      limits: [0, 12]
+      cmap: viridis
+
+
+strategy_and_payoff_frames:
+  based_on:
+    - strategy_and_payoff
+    - .animation.frames
+  enabled: false

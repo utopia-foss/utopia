@@ -18,27 +18,12 @@ payoff_distribution_final:
   based_on: payoff_distribution_final
 
 
-# The spatial development in the CA of the strategy
-strategy_and_payoff: &strategy_and_payoff
-  based_on: .ca.state.anim_ffmpeg
+# The spatial development in the CA of the strategy and the payoff
+spatial/strategy_and_payoff:
+  based_on: strategy_and_payoff
 
-  model_name: SimpleEG
-
-  to_plot:
-    strategy: &plot_strategy
-      title: Strategy
-      limits: [0, 1]
-      cmap: 
-        S0: red
-        S1: blue
-
-    payoff:
-      title: Payoff
-      limits: [0, 12]
-      cmap: viridis
-
-strategy_and_payoff_frames:
+spatial/strategy_and_payoff_final:
   based_on:
     - strategy_and_payoff
-    - .animation.frames
-  enabled: false
+    - .animation.disabled
+  frames_isel: -1
