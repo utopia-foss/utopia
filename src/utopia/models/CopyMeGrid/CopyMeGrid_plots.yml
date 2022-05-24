@@ -4,8 +4,16 @@
 # accompanying <model_name>_base_plots.yml file and in other base plot configs.
 ---
 # -- Spatial plots ------------------------------------------------------------
-ca:
-  based_on: ca
+ca/state:
+  based_on: ca/state
+
+ca/trait:
+  based_on: ca/trait
+
+ca/state_and_trait:
+  based_on:
+    - ca/state
+    - ca/trait
 
 
 # -- Time series plots --------------------------------------------------------

@@ -13,10 +13,6 @@
     source: &color_source maroon
     inert: &color_inert moccasin
 
-  style:
-    constrained_layout: &constrained_layout
-      figure.constrained_layout.use: true
-
 
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert SEIRD-specific settings
@@ -221,57 +217,52 @@ age_distribution:  # FIXME Migrate plot
       title: Age Distribution
 
 
-# --- Grid Snapshots ----------------------------------------------------------
-# NOTE These can also be used as basis for grid animations.
-# ... The CA ..................................................................
-CA_snapshot:
-  based_on: .ca.state
-  model_name: SEIRD
+# --- CA Plots ----------------------------------------------------------------
+ca/state:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    kind: kind
 
   to_plot:
     kind:
-      title: ""
+      title: State
       limits: [0, 7]
-      # Be aware that the colors need to be in the correct ordering!
-      cmap:
-        empty: *color_empty
-        susceptible: *color_susceptible
-        exposed: *color_exposed
-        infected: *color_infected
-        recovered: *color_recovered
-        deceased: *color_deceased
-        source: *color_source
-        inert: *color_inert
+      cmap: *cmap  # NOTE Colors need to be in the correct ordering!
 
-  style:
-    <<: [*constrained_layout]
 
-# ... The CA age ..............................................................
-CA_age_snapshot:
-  based_on: .ca.state
-  model_name: SEIRD
+ca/age:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    age: age
 
   to_plot:
     age:
       title: Age
       cmap: YlGn
 
-# ... The clusters ............................................................
-clusters_snapshot:  # FIXME Migrate
-  based_on: .ca.state
-  model_name: SEIRD
+
+ca/clusters:  # FIXME Does not show clusters in hexagonal mode
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    cluster:
+      path: cluster_id
+      with_previous_result: true
+      transform:
+        - where: ['!=', 0]       # 0 is masked: not part of a cluster
+        - np.fmod: 20
 
   to_plot:
-    cluster_id:
+    cluster:
       title: Clusters
       limits: [0, 20]
       cmap: tab20
       no_cbar_markings: true
-
-  transform_data:
-    cluster_id:
-      - where: ['!=', 0]       # 0 is masked: not part of a cluster
-      - mod: 20                # ... to match the tab20 color map
-
-  style:
-    <<: [*constrained_layout]

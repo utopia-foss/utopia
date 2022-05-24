@@ -1,6 +1,6 @@
 # Default plots for the SEIRD model
 ---
-# --- Plot of all densities over time -----------------------------------------
+# -- Plot of all densities over time ------------------------------------------
 densities:
   based_on: densities.uni
 
@@ -8,7 +8,7 @@ densities_facet_grid:
   based_on: densities.mv
 
 
-# --- Counter-based -----------------------------------------------------------
+# -- Counter-based ------------------------------------------------------------
 
 # Transition plots ............................................................
 transitions/raw:
@@ -102,7 +102,7 @@ movement:
       y: Movement Events
 
 
-# --- Distribution plots ------------------------------------------------------
+# -- Distribution plots -------------------------------------------------------
 age_distribution/final:  # FIXME Migrate plot
   enabled: false
   based_on: [age_distribution, style.prop_cycle.seird]
@@ -153,7 +153,7 @@ age_distribution/deceased:  # FIXME Migrate plot
       title: Deceased Age Distribution
 
 
-# --- Phase diagrams from two densities ---------------------------------------
+# -- Phase diagrams from two densities ----------------------------------------
 phase_diagram/SI:
   based_on: phase_diagram
 
@@ -189,48 +189,47 @@ phase_diagram/EI:
       y: Infected Density [1/A]
 
 
-# --- Snapshots and animations of the spatial grid ----------------------------
-# NOTE These are both based on the snapshot base plots and add the remaining
-#      parameters: For snapshots, the time index that is to be plotted; for
-#      animations, the animation parameters (using multiple inheritance).
+# -- CA plots -----------------------------------------------------------------
+ca/state:
+  based_on: ca/state
+  enabled: false
 
-# ... The CA ..............................................................
-CA_snapshot:
-  based_on: CA_snapshot
-  enabled: true
-  time_idx: -1
-
-CA:
+ca/state_final:
   based_on:
-    - CA_snapshot
-    - .ca.state.anim_ffmpeg
-    - animation
-
-
-
-# ... The CA age ..........................................................
-CA_age_snapshot:
-  based_on: CA_age_snapshot
+    - ca/state
+    - .plot.ca.snapshot
   enabled: false
-  time_idx: -1
-
-CA_age:
-  based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg, animation]
 
 
-# ... The clusters ............................................................
-clusters_snapshot:
-  based_on: clusters_snapshot
+ca/age:
+  based_on: ca/age
   enabled: false
-  time_idx: -1
 
-clusters:  # FIXME Migrate plot
+ca/age_final:
+  based_on:
+    - ca/age
+    - .plot.ca.snapshot
   enabled: false
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg, animation]
 
 
-# --- Miscellaneous -----------------------------------------------------------
-# ... Combined plot of CA states and clusters .............................
-CA_and_clusters:
-  based_on: [CA_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+ca/clusters:
+  based_on: ca/clusters
   enabled: false
+
+ca/clusters_final:
+  based_on:
+    - ca/clusters
+    - .plot.ca.snapshot
+  enabled: false
+
+
+ca/combined:
+  based_on:
+    - ca/state
+    - ca/age
+    - ca/clusters
+
+ca/combined_final:
+  based_on:
+    - ca/combined
+    - .plot.ca.snapshot

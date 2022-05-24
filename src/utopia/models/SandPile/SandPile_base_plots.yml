@@ -208,3 +208,40 @@ compl_cum_cluster_size_dist.multiverse:
 
   linestyle: "None"
   marker: "."
+
+
+# -- CA Plots -----------------------------------------------------------------
+
+ca/slope:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    slope: slope
+
+  to_plot:
+    slope:
+      title: Slope
+      cmap: copper
+
+ca/avalanche:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    avalanche: avalanche
+
+  to_plot:
+    avalanche:
+      title: Avalanche
+      limits: [0, 1]
+      cmap:
+        static: black
+        mobile: orange
+
+ca/slope_and_avalanche:
+  based_on:
+    - ca/slope
+    - ca/avalanche

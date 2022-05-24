@@ -247,6 +247,17 @@ _:
         saving:
           dpi: 144
 
+.animation.high_dpi:
+  based_on: .animation
+  animation:
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 254
+      ffmpeg:
+        saving:
+          dpi: 254
+
 .animation.ffmpeg:
   based_on: .animation
   file_ext: mp4
@@ -263,6 +274,20 @@ _:
 # -- Plot functions and specializations ---------------------------------------
 # -----------------------------------------------------------------------------
 # These should follow the .plot.<name> pattern!
+
+# .. CA plot ..................................................................
+.plot.ca:
+  based_on:
+    - .defaults
+    - .animation.ffmpeg
+    - .plot.ca
+
+.plot.ca.snapshot:
+  based_on:
+    # - .plot.ca  # do not inherit again, would cause overwriting downstream
+    - .animation.disabled
+
+  frames_isel: -1
 
 # .. Facet grid ...............................................................
 .plot.facet_grid:

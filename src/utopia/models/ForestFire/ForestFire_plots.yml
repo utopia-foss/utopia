@@ -46,41 +46,39 @@ mean_tree_age:
   based_on: mean_tree_age
 
 
-# --- Snapshots and animations of the spatial grid ----------------------------
-# NOTE These are both based on the snapshot base plots and add the remaining
-#      parameters: For snapshots, the time index that is to be plotted; for
-#      animations, the animation parameters (using multiple inheritance).
-
+# --- CA plots ----------------------------------------------------------------
 # ... The forest ..............................................................
-forest_snapshot:
-  based_on: forest_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest:
+  based_on: ca/forest
 
-forest:
-  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_final:
+  based_on:
+    - ca/forest
+    - .plot.ca.snapshot
 
 # ... The forest age ..........................................................
-forest_age_snapshot:
-  based_on: forest_age_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest_age:
+  based_on: ca/forest_age
 
-forest_age:
-  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_age_final:
+  enabled: false
+  based_on:
+    - ca/forest_age
+    - .plot.ca.snapshot
 
 # ... The clusters ............................................................
-clusters_snapshot:
-  based_on: clusters_snapshot
-  enabled: false
-  time_idx: -1
+ca/clusters:
+  based_on: ca/clusters
 
-clusters:  # FIXME Migrate plot
+ca/clusters_final:
+  based_on:
+    - ca/clusters
+    - .plot.ca.snapshot
   enabled: false
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
 
-# --- Miscellaneous -----------------------------------------------------------
 # ... Combined plot of forest states and clusters .............................
-forest_and_clusters:
-  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
-  enabled: false
+ca/combined:
+  based_on:
+    - ca/forest
+    - ca/forest_age
+    - ca/clusters

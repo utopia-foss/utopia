@@ -19,11 +19,10 @@ payoff_distribution_final:
 
 
 # The spatial development in the CA of the strategy and the payoff
-spatial/strategy_and_payoff:
+ca/strategy_and_payoff:
   based_on: strategy_and_payoff
 
-spatial/strategy_and_payoff_final:
+ca/strategy_and_payoff_final:
   based_on:
-    - strategy_and_payoff
-    - .animation.disabled
-  frames_isel: -1
+    - ca/strategy_and_payoff
+    - .plot.ca.snapshot

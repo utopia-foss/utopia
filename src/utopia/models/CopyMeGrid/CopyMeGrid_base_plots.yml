@@ -124,17 +124,30 @@ single_cell_states:
 
 
 # .. Spatial CA plot ..........................................................
-ca:
-  based_on: .ca.state.anim_ffmpeg
+ca/state:
+  based_on:
+    - .creator.universe
+    - .plot.ca
 
-  model_name: CopyMeGrid
+  select:
+    some_state: some_state
 
   to_plot:
     some_state:
       title: Some State
       cmap: Greens
-      limits: [0, ~]
+      limits: [min, max]
+
+ca/trait:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    some_trait: some_trait
+
+  to_plot:
     some_trait:
       title: Some Trait
       cmap: Blues
-      limits: [0, ~]
+      # limits: [0, ~]

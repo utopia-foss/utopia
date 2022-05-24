@@ -154,7 +154,7 @@ payoff_distribution_final:  # TODO animate?
 
 
 # .. Spatial plots ............................................................
-# The spatial development in the CA of the strategy
+# The spatial development of the CA, showing strategy and payoff
 strategy_and_payoff:
   based_on:
     - .creator.universe
@@ -177,10 +177,3 @@ strategy_and_payoff:
       title: Payoff
       limits: [0, 12]
       cmap: viridis
-
-
-strategy_and_payoff_frames:
-  based_on:
-    - strategy_and_payoff
-    - .animation.frames
-  enabled: false

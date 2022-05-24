@@ -1,24 +1,4 @@
 # This defines the default plots for the Geomorphology model
 ---
-# The spatial development in the CA
-# TODO Make drainage area log-scaled
-map_animation:
-  based_on: .ca.state.anim_ffmpeg
-
-  # Select the model
-  model_name: Geomorphology
-
-  # Select the properties to plot
-  to_plot:
-    height:
-      title: Rock height
-      cmap: gist_earth
-      
-    drainage_area:
-      title: Drainage Area
-      cmap: Blues
-      limits: [0, ~]
-      
-    watercolumn:
-      title: Water column
-      cmap: Blues
+map:
+  based_on: map

@@ -104,9 +104,13 @@ densities.multiverse:
 # --- Grid Snapshots ----------------------------------------------------------
 # NOTE These can also be used as basis for grid animations.
 # ... The forest ..............................................................
-forest_snapshot:
-  based_on: .ca.state
-  model_name: ContDisease
+ca/forest:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    kind: kind
   
   to_plot:
     kind:
@@ -120,19 +124,32 @@ forest_snapshot:
         stone: *color_stone
 
 # ... The forest age ..........................................................
-forest_age_snapshot:
-  based_on: .ca.state
-  model_name: ContDisease
+ca/forest_age:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    age: age
 
   to_plot:
     age:
       title: Forest Age
       cmap: YlGn
+      limits: [0, max]
 
 # ... The clusters ............................................................
-clusters_snapshot:  # FIXME Migrate
-  based_on: .ca.state
-  model_name: ContDisease
+ca/clusters:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    cluster_id:
+      path: cluster_id
+      transform:
+        - where: [!dag_prev , "!=", 0]  # not part of the cluster
+        - mod: [!dag_prev , 20]         # matching the size of the tab20 cmap
 
   to_plot:
     cluster_id:
@@ -140,8 +157,3 @@ clusters_snapshot:  # FIXME Migrate
       limits: [0, 20]
       cmap: tab20
       no_cbar_markings: true
-
-  transform_data:
-    cluster_id:
-      - where: ['!=', 0]       # 0 is masked: not part of a cluster
-      - mod: 20                # ... to match the tab20 color map
