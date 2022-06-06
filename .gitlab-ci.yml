@@ -73,7 +73,7 @@ image: ${BASE_IMAGE}
     expire_in: 3 hours
 
 
-# Add cobertura coverage report visualization for MRs
+# Add coverage report visualization for MRs
 # Docs: https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
 # Reports are generated from multiple jobs and is then merged by GitLab
 .coverage_report:
