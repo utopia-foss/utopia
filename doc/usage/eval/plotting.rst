@@ -9,7 +9,7 @@ Furthermore, it extends the available plotting capabilities by providing a basic
 .. note::
 
     While this page and the linked documents aim to give an overview over the plot framework in the context of Utopia, the dantro documentation provides the full API reference and more detailed information.
-    To access it, visit the `project page <https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro>`_ or the `online dantro documentation <https://dantro.readthedocs.io/en/stable/index.html>`_.
+    To access it, visit the `project page <https://gitlab.com/utopia-project/dantro>`_ or the `online dantro documentation <https://dantro.readthedocs.io/en/stable/index.html>`_.
 
 .. contents:: Overview
    :local:
@@ -50,7 +50,7 @@ In this documentation, plot configurations are usually given in YAML, as this is
 
 This leads to the :py:class:`~utopya.plotting.PlotManager` instantiating a plot creator ``some_creator``, which is instructed to create a plot called ``my_plot``.
 The additional parameters are passed to the plot creator, which then uses these for its own purposes.
-The same happens for the ``my_other_plot`` plot, which uses ``another_creator``. For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `the dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_manager.html>`_.
+The same happens for the ``my_other_plot`` plot, which uses ``another_creator``. For more information on the :py:class:`~utopya.plotting.PlotManager`, refer to `the dantro documentation <https://dantro.readthedocs.io/en/stable/plotting/plot_manager.html>`_.
 
 Plot configuration entries can also make use of parameter sweeps. Simply add the ``!pspace`` tag to the top-level entry:
 
@@ -235,8 +235,8 @@ In the following example, the ``ggplot`` style is used and subsequently adjusted
         ytick.labelsize : 16
 
 
-For the ``base_style`` entry, choose the name of a `matplotlib stylesheet <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`_.
-For valid RC parameters, see the `matplotlib customization documentation <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html>`_.
+For the ``base_style`` entry, choose the name of a `matplotlib stylesheet <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`_.
+For valid RC parameters, see the `matplotlib customization documentation <https://matplotlib.org/stable/tutorials/introductory/customizing.html>`_.
 
 
 .. _external_plot_creator_plot_helper:
@@ -277,7 +277,7 @@ This is a powerful tool, especially when combined with the plotting framework.
 What motivates using this DAG framework for plotting is similar what motivates the plot helper:
 ideally, the plot function should focus on the visualization of some data; everything else before (data selection, transformation, etc.) and after (adjusting plot aesthetics, saving the plot, etc.) should be automated. The DAG allows for arbitrary operations, making it a highly versatile and powerful framework. It uses a configuration-based syntax that is optimized for specification via YAML. Additionally, it allows to cache results to a file; this is very useful when the analysis of data takes much longer than the plotting itself.
 
-To learn more, visit the `dantro documentation of the DAG transformation framework <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/data_io/transform.html>`_.
+To learn more, visit the `dantro documentation of the DAG transformation framework <https://dantro.readthedocs.io/en/stable/data_io/transform.html>`_.
 
 .. hint::
 
@@ -407,7 +407,7 @@ Other possible plot function signatures
 
     The examples below are for the :py:class:`~utopya.plotting.ExternalPlotCreator` and might need to be adapted for the specialized plot creators.
 
-    Examples for those creators are given in the `dantro documentation <https://hermes.iup.uni-heidelberg.de/dantro_doc/master/html/plotting/plot_data_selection.html>`_ and :ref:`here <uni_and_mv_plots>`.
+    Examples for those creators are given in the `dantro documentation <https://dantro.readthedocs.io/en/stable/plotting/plot_data_selection.html>`_ and :ref:`here <uni_and_mv_plots>`.
 
 Without DAG framework
 """""""""""""""""""""

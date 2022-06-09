@@ -6,7 +6,7 @@ date-released: 2020-09-02
 version: JOSS Publication
 doi: 10.5281/zenodo.4011978
 license: LGPL-3.0-or-later
-repository-code: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia
+repository-code: https://gitlab.com/utopia-project/utopia
 authors:
   - family-names: Riedel
     given-names: Lukas

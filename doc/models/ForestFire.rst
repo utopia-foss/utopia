@@ -59,20 +59,20 @@ Spatial Representation
 ^^^^^^^^^^^^^^^^^^^^^^
 Snapshots of the forest state, its age, and the identified clusters after 223 iteration steps:
 
-.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/forest_snapshot.png
+.. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/forest_snapshot.png
   :width: 600
 
-.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/forest_age_snapshot.png
+.. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/forest_age_snapshot.png
   :width: 600
 
-.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/clusters_snapshot.png
+.. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/clusters_snapshot.png
   :width: 600
 
 Tree Density
 ^^^^^^^^^^^^
 The time development of the tree density shows how the system relaxes into its quasi-stable equilibrium state.
 
-.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density.png
+.. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/tree_density.png
   :width: 600
 
 ..
@@ -80,20 +80,20 @@ The time development of the tree density shows how the system relaxes into its q
 
     The temporal development of the mean tree density (sample size: 10) for five different lightning probabilites:
 
-    .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density_over_p_lightning.png
+    .. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/tree_density_over_p_lightning.png
       :width: 600
 
     Additionally, we can look at the asymptotic tree density.
     Here, "asymptotic" refers to both time and space, as a small grid will show undesirable results.
 
-    .. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/tree_density_asymptotic.png
+    .. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/tree_density_asymptotic.png
       :width: 600
 
 Cluster Size Analysis
 ^^^^^^^^^^^^^^^^^^^^^
 In a complementary cumulative cluster size distribution plot, the scale-free nature of the system can be deduced by observing those parts of the plot that appear linear in a log-log representation.
 
-.. image:: https://ts-gitlab.iup.uni-heidelberg.de/utopia/doc_resources/raw/master/models/ForestFire/compl_cum_cluster_size_dist.png
+.. image:: https://gitlab.com/utopia-project/doc_resources/raw/master/models/ForestFire/compl_cum_cluster_size_dist.png
   :width: 600
 
 .. _FFM_cfg:

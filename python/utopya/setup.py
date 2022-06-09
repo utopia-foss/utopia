@@ -54,7 +54,7 @@ setup(
     version=find_version('utopya', '__init__.py'),
     #
     description='The Utopia Frontend Package',
-    url='https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia',
+    url='https://gitlab.com/utopia-project/utopia',
     author='TS-CCEES Utopia Developers',
     author_email=('Benjamin Herdeanu '
                   '<Benjamin.Herdeanu@iup.uni-heidelberg.de>, '

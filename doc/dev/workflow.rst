@@ -40,7 +40,7 @@ The workflow with Git is as follows:
 Create a new branch
 ^^^^^^^^^^^^^^^^^^^
 
-A simple way to create a new branch is right in the `Utopia Gitlab project <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia>`_: in the left-hand navigation pane, navigate to Repository -> Banches, and click on "New Branch". Give your branch a descriptive name, and select from where you want to branch off (typically the master branch). Click "Create branch" – and the branch is created!
+A simple way to create a new branch is right in the `Utopia Gitlab project <https://gitlab.com/utopia-project/utopia>`_: in the left-hand navigation pane, navigate to Repository -> Banches, and click on "New Branch". Give your branch a descriptive name, and select from where you want to branch off (typically the master branch). Click "Create branch" – and the branch is created!
 
 Now, your local machine does not yet know that there is a new branch, and, of course, your local copy of the code repository is also not yet on this new branch. To switch branches, navigate to your ``utopia`` directory, open the terminal, and do
 
@@ -171,11 +171,11 @@ Problems with git?
 
 The Gitlab workflow: Plan, develop, merge
 -----------------------------------------
-The Utopia project uses the `GitLab platform <https://about.gitlab.com/>`_ for its version control. GitLab is a platform that helps managing large software projects. It encompasses a lot of features. First of all, all of the code that is controlled by git is stored on a central server. On the `project page <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia>`_ you can see all the files, and below them some information on the project, e.g. how to install and use it. Take a look at the `About GitLab <https://about.gitlab.com/>`_ page, as well as Utopia's project page to get yourself familiarised with the purpose and interface of GitLab.
+The Utopia project uses the `GitLab platform <https://about.gitlab.com/>`_ for its version control. GitLab is a platform that helps managing large software projects. It encompasses a lot of features. First of all, all of the code that is controlled by git is stored on a central server. On the `project page <https://gitlab.com/utopia-project/utopia>`_ you can see all the files, and below them some information on the project, e.g. how to install and use it. Take a look at the `About GitLab <https://about.gitlab.com/>`_ page, as well as Utopia's project page to get yourself familiarised with the purpose and interface of GitLab.
 
 Issues: The planning phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-About half-way down the left-hand pane, you should see a section titled "`Issues <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_". This is where everyone working with Utopia can suggest new features and improvements, discuss topics, propose new models, and so on. Feel free to take a look around, read the different issues, the discussions that sometimes emerge, and if you have an idea or comment, just add it to the comments section!
+About half-way down the left-hand pane, you should see a section titled "`Issues <https://gitlab.com/utopia-project/utopia/issues>`_". This is where everyone working with Utopia can suggest new features and improvements, discuss topics, propose new models, and so on. Feel free to take a look around, read the different issues, the discussions that sometimes emerge, and if you have an idea or comment, just add it to the comments section!
 
 Let's say you want to create a new model. Click on the "New issue" button in the top right-hand corner of the page: a new page will open. In the field ``Choose a template`` you can select a template and use the structure that is already given. For posting a model idea, we recommend the ``task`` template. Some text will appear: fill in the sections, and keep in mind that in an issue you try to plan what you would like to do, and tell others (and of course yourself) about it. Do not worry if you cannot fill in every section: the description can be changed later. You can also select the appropriate labels for your issue, such that everyone who sees the issue immediately knows what the issue is roughly about. This also facilitates finding your issue later.
 

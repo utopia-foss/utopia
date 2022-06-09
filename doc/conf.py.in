@@ -106,7 +106,7 @@ html_theme = "sphinx_book_theme"
 #   https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
 #
 html_theme_options = {
-    "repository_url": "https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia",
+    "repository_url": "https://gitlab.com/utopia-project/utopia",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": False,  # NOTE Not working with GitLab repos yet

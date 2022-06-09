@@ -135,7 +135,7 @@ Do not issue multiple `run`, `run_single` or `run_sweep` calls!
 
 
 ### The `DataManager`
-For loading and working with the output data, the `utopya.datamanager` module and its `DataManager` class are used, which is based on the [`dantro`](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) package.
+For loading and working with the output data, the `utopya.datamanager` module and its `DataManager` class are used, which is based on the [`dantro`](https://gitlab.com/utopia-project/dantro) package.
 
 An instance of that class is initialized already when the `Multiverse` is created and accessible via the `dm` property.
 After a simulation run, the data can be loaded in the following way:

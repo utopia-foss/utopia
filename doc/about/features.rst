@@ -496,7 +496,7 @@ Cluster Support
 * Cluster mode is controlled via the ``cluster_mode`` and ``cluster_params`` of the meta configuration.
 * 📚
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
-  `bwForCluster Support Project <https://ts-gitlab.iup.uni-heidelberg.de/yunus/bwForCluster>`_
+  `bwForCluster Support Project <https://gitlab.com/blsqr/bwForCluster>`_
 
 Reporter
 """"""""
@@ -841,9 +841,9 @@ This environment provides some useful functionality you should know about.
 
 Issue Board & Merge Request
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Any questions, bug reports, feature suggestions... **write an issue** by visiting the `issue board <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_.
+* Any questions, bug reports, feature suggestions... **write an issue** by visiting the `issue board <https://gitlab.com/utopia-project/utopia/issues>`_.
   Also seemingly minor questions have a place here!
-* Want to contribute code to the framework repository? Open a `merge request <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/merge_requests>`_.
+* Want to contribute code to the framework repository? Open a `merge request <https://gitlab.com/utopia-project/utopia/merge_requests>`_.
   Looking forward to your contributions! :)
 * When writing issues, MR descriptions, notes, or other content on the GitLab, take note of the many features of `GitLab MarkDown <https://docs.gitlab.com/ee/user/markdown.html>`_, e.g. for posting syntax-highlighted code, tables, simple diagrams, ... and much more.
 * To add more involved diagrams like class diagrams or sequence diagrams, the GitLab also provides access to `PlantUML <http://plantuml.com>`_, simply by defining a code block with ``plantuml`` as syntax:

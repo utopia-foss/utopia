@@ -28,8 +28,9 @@ Investigating these models by performing simulation runs with a few varying para
 
 For introductory guides, feature lists, FAQs, and API references refer to the online [user manual at docs.utopia-project.org][Utopia-docs]
 
-Utopia development happens mainly on our self-hosted GitLab instance at [`ts-gitlab.iup.uni-heidelberg.de`][Utopia].
-Additionally, you can retrieve the code and get in contact via mirrored repositories on [GitLab.com][Utopia-Gitlab] and [GitHub][Utopia-Github].
+Utopia development happens in the [`utopia-project` group on GitLab.com](https://gitlab.com/utopia-project).
+Additionally, you can retrieve the code and get in contact via a mirrored repository on [GitHub][Utopia-Github].
+Note that we *used* to host our own GitLab instance at `ts-gitlab.iup.uni-heidelberg.de`; traces of that past development platform may still be around this project somewhere ... 👻
 
 ### How to cite Utopia
 
@@ -263,7 +264,7 @@ The following instructions will enable additional, *optional* features of Utopia
         brew update && brew install onedpl
         ```
 
-    * On **macOS** with **MacPorts**, we are [currently unsure](https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/-/issues/254) whether multithreading is workable.
+    * On **macOS** with **MacPorts**, we are [currently unsure](https://gitlab.com/utopia-project/utopia/-/issues/254) whether multithreading is workable.
 
 1. Enter the Utopia build directory, and call CMake again. This time, enable the use of multithreading with the `MULTITHREADING` option:
 
@@ -492,7 +493,7 @@ These packages and their dependencies are _automatically_ installed into a virtu
 | ------------------------------------------------------- | ---------- | ------------------------------- |
 | [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 4.2     | Builds the Utopia documentation |
 | [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.8   | Makes parameter sweeps easy     |
-| [dantro](https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro) | >= 0.17    | Handle, transform, and visualize hierarchically organized data |
+| [dantro](https://gitlab.com/utopia-project/dantro) | >= 0.17    | Handle, transform, and visualize hierarchically organized data |
 
 
 ### Recommended
@@ -546,20 +547,20 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 
 <!-- Links ################################################################ -->
 
-[Utopia]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia
+[Utopia]: https://gitlab.com/utopia-project/utopia
 [Utopia-Gitlab]: https://gitlab.com/utopia-project/utopia
 [Utopia-Github]: https://github.com/utopia-foss/utopia
 [models_template]: https://gitlab.com/utopia-project/models_template
 
-[Utopia-issues]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues
-[Utopia-new-issue]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues/new?issue
+[Utopia-issues]: https://gitlab.com/utopia-project/utopia/issues
+[Utopia-new-issue]: https://gitlab.com/utopia-project/utopia/issues/new?issue
 
 [Utopia-docs]: https://docs.utopia-project.org/html/index.html
 [Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
 [paramspace]: https://gitlab.com/blsqr/paramspace
-[dantro]: https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro
+[dantro]: https://gitlab.com/utopia-project/dantro
 
 [LGPL]: https://www.gnu.org/licenses/lgpl-3.0.en.html
 [Ubuntu-packages]: https://packages.ubuntu.com
