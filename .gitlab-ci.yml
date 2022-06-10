@@ -38,6 +38,9 @@ variables:
   #      login command will complain, using --password-stdin actually EXPOSES
   #      the variable! No no.
 
+  # The GitLab Pages where artifacts can be shown
+  PAGES_URL: https://utopia-project.gitlab.io/-/utopia
+
 
 stages:
   - setup     # (on master) set up the docker base image
@@ -51,7 +54,13 @@ image: ${BASE_IMAGE}
 
 
 # .. YAML Templates ...........................................................
-# These are used in job definitions via YAML anchors or the `extends` keyword
+# These are used in job definitions via the `extends` keyword
+
+.use_multicore_group_runners:
+  tags:
+    # These tags make the jobs run using dedicated multicore group runners:
+    - default
+    - multicore
 
 # Create artifacts of build results and meta-data that's shared between jobs
 .default_artifacts:
@@ -113,7 +122,7 @@ setup:utopia-base:
 # In this stage, the tests, models, and documentation is built
 # The artifacts of the tests and models jobs are needed in the test stage
 
-# Build the documentation; artifacts used for documentation deployment
+# Build the documentation and expose it as a review environment
 build:docs:
   stage: build
   allow_failure: true
@@ -134,12 +143,19 @@ build:docs:
     expire_in: 1 day
     expose_as: Documentation build - including error log
 
+  environment:
+    name: review/docs/$CI_COMMIT_REF_NAME
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
+
 
 
 # Build the core unit tests; artifacts used in test stage
 build:tests_core:
   stage: build
-  extends: .default_artifacts
+  extends:
+    - .default_artifacts
+    - .use_multicore_group_runners
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -158,7 +174,9 @@ build:tests_dataio:
 # Build the models and their tests; artifacts used in test stage
 build:models:
   stage: build
-  extends: .default_artifacts
+  extends:
+    - .default_artifacts
+    - .use_multicore_group_runners
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -174,6 +192,8 @@ build:models:
 build:debug:
   stage: build
   allow_failure: true
+  extends:
+    - .use_multicore_group_runners
   variables:
     CXXFLAGS: -Werror
   script:
@@ -218,6 +238,8 @@ build:debug-clang:
 # Build for installation tests
 build:install:
   stage: build
+  extends:
+    - .use_multicore_group_runners
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -242,7 +264,9 @@ build:install:
 # Test the core library
 test:core:
   stage: test
-  extends: .coverage_report
+  extends:
+    - .coverage_report
+    - .use_multicore_group_runners
   needs:
     - "build:tests_core"
   variables:
@@ -272,6 +296,11 @@ test:core:
       - build/coverage/
     expire_in: 1 week
 
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/core
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/coverage/report.html
+
 
 # Test the data I/O library
 test:dataio:
@@ -287,6 +316,9 @@ test:dataio:
     - make $MAKE_FLAGS_TEST test_dataio
   artifacts:
     expose_as: Coverage report of DataIO tests
+
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/dataio
 
 
 # Test the models via their own tests and via the CLI
@@ -337,11 +369,16 @@ test:models:
   artifacts:
     expose_as: Coverage report of Model tests
 
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/models
+
 
 # Test the utopya package
 test:utopya:
   stage: test
-  extends: .coverage_report
+  extends:
+    - .coverage_report
+    - .use_multicore_group_runners
   needs:
     - "build:models"
   before_script:
@@ -535,33 +572,32 @@ test:link_install_tree:
 
 
 # -- Deploy Stage -------------------------------------------------------------
-# Deploy the documentation in two ways:
-#   - by triggering a pipeline in gitlab.com/utopia-project/docs (only master)
-#   - by pushing the docs to a documentation server
+# Deploy ...
+#   - the documentation by triggering a pipeline in the docs project, which has
+#     the docs.utopia-project.org domain registered with GitLab Pages
+#   - the latest Utopia docker image to Docker Hub: ccees/utopia:latest
 
 deploy:docs_gitlab_pages:
   image: curlimages/curl:latest
   stage: deploy
   only:
-    - master@utopia/utopia
+    - master@utopia-project/utopia
   needs:
     - job: "build:docs"
       artifacts: false
   script:
     - curl -X POST -F token=$DOC_DEPLOYMENT_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/25960923/trigger/pipeline
   environment:
-    name: docs_gitlab_pages
+    name: production/docs
     url: https://docs.utopia-project.org/
 
 
-# Build and deploy the docker image to docker hub: ccees/utopia:latest
 deploy:dockerhub-latest:
   extends: .dind
   stage: deploy
   only:
-    - master
+    - master@utopia-project/utopia
   script:
-    # Now, build the docker image and push it as $UTOPIA_IMAGE_NAME:latest
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg PROCNUM=$CPUS_DIND
@@ -571,5 +607,5 @@ deploy:dockerhub-latest:
                    ./
     - docker push $UTOPIA_IMAGE_NAME:latest
   environment:
-    name: docker/latest
+    name: production/docker-latest
     url: https://hub.docker.com/r/$UTOPIA_IMAGE_NAME
