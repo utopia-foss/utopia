@@ -32,8 +32,9 @@ function(register_models_with_utopya)
             --base-source-dir "${CMAKE_SOURCE_DIR}"
             --separator ";"
             --label added_by_cmake
-            --exists-action overwrite  # TODO Make configurable
+            --set-default
             --project-name "${CMAKE_PROJECT_NAME}"
+            --exists-action overwrite  # TODO Make configurable?
             --py-tests-dir-fstr "${UTOPIA_PYTHON_MODEL_TESTS_DIR}/{model_name}"
             --py-plots-dir-fstr "${UTOPIA_PYTHON_MODEL_PLOTS_DIR}/{model_name}"
         RESULT_VARIABLE RETURN_VALUE
