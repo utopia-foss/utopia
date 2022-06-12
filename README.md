@@ -81,20 +81,15 @@ This is where the Utopia repository will be cloned to.
 When working with or developing for Utopia, auxiliary data will have a place
 there as well.
 
-In your terminal, enter the `Utopia` directory you just created.
-
-Now, get a clone URL via the _Clone_ button in the top right-hand corner of the [Utopia project page][Utopia].  
-If you are a developer, you should [get an SSH key registered](#ssh-repository-access) with the GitLab and use the SSH address.
-Otherwise, use the HTTPS address.
-
-To clone the repository, use the following command and add the chosen clone URL at the indicated place:
+In your terminal, enter the `Utopia` directory you just created and invoke the clone command:
 
 ```bash
-git clone UTOPIA-CLONE-URL
+git clone https://gitlab.com/utopia-project/utopia.git
 ```
 
-After cloning, there will be a new `utopia`
-directory (mirroring this repository) inside your top-level `Utopia` directory.
+Alternatively, get the SSH address from the [project page][Utopia].
+
+After cloning, there will be a new `utopia` directory (mirroring this repository) inside your top-level `Utopia` directory.
 
 
 
