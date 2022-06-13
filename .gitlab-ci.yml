@@ -14,7 +14,7 @@ variables:
   # Variables controlling the deployed Utopia image and its development
   # counterpart (deployed from the ci_test stage for testing)
   UTOPIA_IMAGE_NAME: ccees/utopia
-  UTOPIA_IMAGE_REMOTE_URL: https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia.git
+  UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
 
   UTOPIA_DEV_IMAGE_TAG: dev
   UTOPIA_DEV_IMAGE_CHECKOUT: master
@@ -38,11 +38,8 @@ variables:
   #      login command will complain, using --password-stdin actually EXPOSES
   #      the variable! No no.
 
-  # Documentation server configuration
-  DOC_HOST: root@hermes.iup.uni-heidelberg.de
-  DOC_PORT: 2022      # ... forwards to utopia_doc_server container. root ok ;)
-  DOC_REMOTE_BASE_DIR: /var/utopia_doc
-  DOC_REMOTE_PATH: $DOC_REMOTE_BASE_DIR/$CI_COMMIT_REF_SLUG
+  # The GitLab Pages where artifacts can be shown
+  PAGES_URL: https://utopia-project.gitlab.io/-/utopia
 
 
 stages:
@@ -57,7 +54,13 @@ image: ${BASE_IMAGE}
 
 
 # .. YAML Templates ...........................................................
-# These are used in job definitions via YAML anchors or the `extends` keyword
+# These are used in job definitions via the `extends` keyword
+
+.use_multicore_group_runners:
+  tags:
+    # These tags make the jobs run using dedicated multicore group runners:
+    - default
+    - multicore
 
 # Create artifacts of build results and meta-data that's shared between jobs
 .default_artifacts:
@@ -73,10 +76,12 @@ image: ${BASE_IMAGE}
 # Add cobertura coverage report visualization for MRs
 # Docs: https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
 # Reports are generated from multiple jobs and is then merged by GitLab
-.cobertura:
+.coverage_report:
   artifacts:
     reports:
-      cobertura: $CI_PROJECT_DIR/build/coverage/cobertura.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: $CI_PROJECT_DIR/build/coverage/cobertura.xml
 
 
 # Use the Docker-in-Docker executor and services, log into Docker Hub
@@ -90,31 +95,6 @@ image: ${BASE_IMAGE}
     DOCKER_DRIVER: overlay2
   before_script:
     - $DOCKER_HUB_LOGIN
-
-
-# For docserver deployment, we need SSH access. By adding a deploy key to
-# selected jobs, we are authenticated. The key is a CI/CD secret.
-.ssh-access:
-  before_script:
-    # For outside dependencies, use the "Utopia CI" deploy key
-    # Instructions:
-    #   https://docs.gitlab.com/ce/ci/ssh_keys/
-    # Run ssh-agent (inside the build environment)
-    - eval $(ssh-agent -s)
-
-    # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-    # We're using tr to fix line endings which makes ed25519 keys work
-    # without extra base64 encoding.
-    # https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-
-    # Create the SSH directory and give it the right permissions
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-
-    # Add the known hosts lists to ensure this ssh connection is the right one
-    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
 
 
 
@@ -142,7 +122,7 @@ setup:utopia-base:
 # In this stage, the tests, models, and documentation is built
 # The artifacts of the tests and models jobs are needed in the test stage
 
-# Build the documentation; artifacts used for documentation deployment
+# Build the documentation and expose it as a review environment
 build:docs:
   stage: build
   allow_failure: true
@@ -163,12 +143,19 @@ build:docs:
     expire_in: 1 day
     expose_as: Documentation build - including error log
 
+  environment:
+    name: review/docs/$CI_COMMIT_REF_NAME
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
+
 
 
 # Build the core unit tests; artifacts used in test stage
 build:tests_core:
   stage: build
-  extends: .default_artifacts
+  extends:
+    - .default_artifacts
+    - .use_multicore_group_runners
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -187,7 +174,9 @@ build:tests_dataio:
 # Build the models and their tests; artifacts used in test stage
 build:models:
   stage: build
-  extends: .default_artifacts
+  extends:
+    - .default_artifacts
+    - .use_multicore_group_runners
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -203,6 +192,8 @@ build:models:
 build:debug:
   stage: build
   allow_failure: true
+  extends:
+    - .use_multicore_group_runners
   variables:
     CXXFLAGS: -Werror
   script:
@@ -247,6 +238,8 @@ build:debug-clang:
 # Build for installation tests
 build:install:
   stage: build
+  extends:
+    - .use_multicore_group_runners
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -271,7 +264,9 @@ build:install:
 # Test the core library
 test:core:
   stage: test
-  extends: .cobertura
+  extends:
+    - .coverage_report
+    - .use_multicore_group_runners
   needs:
     - "build:tests_core"
   variables:
@@ -301,6 +296,11 @@ test:core:
       - build/coverage/
     expire_in: 1 week
 
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/core
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/coverage/report.html
+
 
 # Test the data I/O library
 test:dataio:
@@ -316,6 +316,9 @@ test:dataio:
     - make $MAKE_FLAGS_TEST test_dataio
   artifacts:
     expose_as: Coverage report of DataIO tests
+
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/dataio
 
 
 # Test the models via their own tests and via the CLI
@@ -366,11 +369,16 @@ test:models:
   artifacts:
     expose_as: Coverage report of Model tests
 
+  environment:
+    name: review/coverage/$CI_COMMIT_REF_NAME/models
+
 
 # Test the utopya package
 test:utopya:
   stage: test
-  extends: .cobertura
+  extends:
+    - .coverage_report
+    - .use_multicore_group_runners
   needs:
     - "build:models"
   before_script:
@@ -564,89 +572,32 @@ test:link_install_tree:
 
 
 # -- Deploy Stage -------------------------------------------------------------
-# Deploy the documentation in two ways:
-#   - by triggering a pipeline in gitlab.com/utopia-project/docs (only master)
-#   - by pushing the docs to a documentation server
+# Deploy ...
+#   - the documentation by triggering a pipeline in the docs project, which has
+#     the docs.utopia-project.org domain registered with GitLab Pages
+#   - the latest Utopia docker image to Docker Hub: ccees/utopia:latest
 
 deploy:docs_gitlab_pages:
   image: curlimages/curl:latest
   stage: deploy
   only:
-    - master@utopia/utopia
+    - master@utopia-project/utopia
   needs:
     - job: "build:docs"
       artifacts: false
   script:
     - curl -X POST -F token=$DOC_DEPLOYMENT_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/25960923/trigger/pipeline
   environment:
-    name: docs_gitlab_pages
+    name: production/docs
     url: https://docs.utopia-project.org/
 
 
-deploy:docs:
-  stage: deploy
-  # NOTE: Job fails due to obscure GitLab bug where artifacts are not downloaded
-  allow_failure: true
-  extends: .ssh-access
-  only:
-    - branches@utopia/utopia
-  needs:
-    - job: "build:docs"
-      artifacts: true
-  script:
-    # Create the directory on the remote, removing any prior version
-    - echo "Creating remote directory $DOC_REMOTE_PATH ..."
-    - ssh -p $DOC_PORT $DOC_HOST "rm -rf $DOC_REMOTE_PATH"
-    - ssh -p $DOC_PORT $DOC_HOST "mkdir -p $DOC_REMOTE_PATH/doxygen/"
-
-    # Copy sphinx & doxygen HTML documentation to remote
-    - cd $CI_PROJECT_DIR/build/doc
-    - echo "Uploading documentation to $DOC_REMOTE_PATH/ ..."
-    - scp -P $DOC_PORT -pr html         $DOC_HOST:$DOC_REMOTE_PATH/
-    - scp -P $DOC_PORT -pr doxygen/html $DOC_HOST:$DOC_REMOTE_PATH/doxygen/
-
-    - echo "Finished. :)"
-
-  environment:
-    name: docs/$CI_COMMIT_REF_NAME
-    url: https://hermes.iup.uni-heidelberg.de/utopia_doc/$CI_COMMIT_REF_SLUG/html/
-    on_stop: deploy:stop_docs
-
-
-# Stop the deployed "docs" environment for this branch
-# NOTE: This job is automatically executed if the original branch is deleted
-#       (*GitLab Magic*) or someone stops the environment.
-deploy:stop_docs:
-  stage: deploy
-  extends: .ssh-access
-  when: manual # Also triggered on branch deletion
-  variables:
-    # Stop GitLab from checking out the commit again (branch is deleted!)
-    GIT_STRATEGY: none
-  # NOTE: Same "needs" as for "deploy:docs", for on_stop relation to work
-  needs:
-    - job: "build:docs"
-      artifacts: false
-
-  script:
-    - echo "Removing remote directory $DOC_REMOTE_PATH ..."
-    - ssh -p $DOC_PORT $DOC_HOST "rm -rf $DOC_REMOTE_PATH"
-
-    - echo "It's gone. :)"
-
-  environment:
-    name: docs/$CI_COMMIT_REF_NAME
-    action: stop
-
-
-# Build and deploy the docker image to docker hub: ccees/utopia:latest
 deploy:dockerhub-latest:
   extends: .dind
   stage: deploy
   only:
-    - master
+    - master@utopia-project/utopia
   script:
-    # Now, build the docker image and push it as $UTOPIA_IMAGE_NAME:latest
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg PROCNUM=$CPUS_DIND
@@ -656,5 +607,5 @@ deploy:dockerhub-latest:
                    ./
     - docker push $UTOPIA_IMAGE_NAME:latest
   environment:
-    name: docker/latest
+    name: production/docker-latest
     url: https://hub.docker.com/r/$UTOPIA_IMAGE_NAME

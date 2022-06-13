@@ -40,7 +40,7 @@ Currently, the following stop condition functions are available in the :py:mod:`
 
 .. note::
 
-    If you are missing a stop condition function, please let us know by opening an issue or a merge request `via the project page <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia>`_.
+    If you are missing a stop condition function, please let us know by opening an issue or a merge request `via the project page <https://gitlab.com/utopia-project/utopia>`_.
 
 .. hint::
 

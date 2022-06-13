@@ -5,7 +5,7 @@ Tutorial
 
 .. note::
 
-  If you notice any errors in this tutorial, other parts of the documentation, or the code — even minor ones — please open an `issue <https://ts-gitlab.iup.uni-heidelberg.de/utopia/utopia/issues>`_ on the GitLab project page.
+  If you notice any errors in this tutorial, other parts of the documentation, or the code — even minor ones — please open an `issue <https://gitlab.com/utopia-project/utopia/issues>`_ on the GitLab project page.
 
   In general, if you have *any* kind of question or remark regarding Utopia, you should **open an issue.**
   This applies even to small or very specific questions; other people might have the same small or very specific question.
@@ -969,7 +969,7 @@ Together with the three values for the ``seed`` dimensions, there are now 21 pos
   No need to worry if a universe is missing: This is because each point in parameter space needs to be associated with an index, and this includes the default values for each parameter dimension.
   To be consistent, the zero index of each parameter dimension maps to the default. Thus, the sweep values begin at index 1 and result in the pattern of indices you see.
 
-There are a bunch of other things to do with parameter sweeps, which go beyond the scope of this tutorial. (If you're keen to explore the features, you can have a look at the underlying `paramspace package <https://ts-gitlab.iup.uni-heidelberg.de/yunus/paramspace>`_.)
+There are a bunch of other things to do with parameter sweeps, which go beyond the scope of this tutorial. (If you're keen to explore the features, you can have a look at the underlying `paramspace package <https://gitlab.com/blsqr/paramspace>`_.)
 
 As you see, parameter sweeps can be used to easily create huge amounts of data. And we all know: with (hopefully) great data comes great responsibility.
 Thus, let's now focus on how the plotting framework can be used to handle the multidimensional data.

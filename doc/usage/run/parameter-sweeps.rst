@@ -134,7 +134,7 @@ The plot configuration then looks like this:
          # Label the dimensions (optional. If not given, they are called dim_0, dim_1, ...)
          dims: [time]
      # For more syntax examples, e.g. selecting multiple fields, see here:
-     #   https://ts-gitlab.iup.uni-heidelberg.de/utopia/dantro/merge_requests/21#interface-examples
+     #   https://gitlab.com/utopia-project/dantro/merge_requests/21#interface-examples
 
      # Select the plot function just as for a universe plot
      module: model_plots.MyFancyModel
