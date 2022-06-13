@@ -87,7 +87,7 @@ In your terminal, enter the `Utopia` directory you just created and invoke the c
 git clone https://gitlab.com/utopia-project/utopia.git
 ```
 
-Alternatively, get the SSH address from the [project page][Utopia].
+Alternatively, you can clone via SSH, using the address from the "Clone" button on the [project page][Utopia].
 
 After cloning, there will be a new `utopia` directory (mirroring this repository) inside your top-level `Utopia` directory.
 
