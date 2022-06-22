@@ -26,9 +26,13 @@
 
 # Spatial development in the CA
 plant_mass_spatial:
-  based_on: .ca.state.anim_ffmpeg
+  based_on:
+    - .creator.universe
+    - .animation.ffmpeg
+    - .plot.ca
 
-  model_name: Vegetation
+  select:
+    plant_mass: plant_mass
 
   to_plot:
     plant_mass:
