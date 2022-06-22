@@ -1,0 +1,3 @@
+[submodule "doc/_inc/utopya"]
+	path = doc/_inc/utopya
+	url = https://gitlab.com/utopia-project/utopya

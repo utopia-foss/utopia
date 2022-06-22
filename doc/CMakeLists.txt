@@ -1,26 +1,24 @@
-#
-# --- Setup the Sphinx-based documentation build ---
-#
+# Set up documentation building
+# -----------------------------
 
-# Define a function to install the utilities needed for sphinx ...
-function(utopia_install_doc_utils)
-    # Install requirements into Utopia venv
-    set(INSTALL_CMD install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt)
-    execute_process(
-        COMMAND ${UTOPIA_ENV_PIP} ${INSTALL_CMD}
-        RESULT_VARIABLE RETURN_VALUE
-        OUTPUT_QUIET)
-    if (NOT RETURN_VALUE EQUAL "0")
-        message(SEND_ERROR "Error installing doc utilities into virtualenv: "
-                           "${RETURN_VALUE}")
-    endif ()
-endfunction()
-
-# ... and run it
-utopia_install_doc_utils()
-
-# Register subdirectories
+# Need doxygen for the C++ docs
 add_subdirectory("doxygen")
+
+
+# .. Sphinx config ............................................................
+
+# Install the utilities needed for sphinx ...
+execute_process(
+    COMMAND
+        ${UTOPIA_ENV_PIP} install -r ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
+    RESULT_VARIABLE RETURN_VALUE
+    OUTPUT_VARIABLE PIP_OUTPUT
+    ERROR_VARIABLE PIP_OUTPUT
+)
+if (NOT RETURN_VALUE EQUAL "0")
+    message(SEND_ERROR "Error installing doc utilities into virtualenv: "
+                       "${PIP_OUTPUT}")
+endif ()
 
 # Copy some files into the doc directory such that they can be included into
 # the built documentation
@@ -31,10 +29,10 @@ file(COPY ${PROJECT_SOURCE_DIR}/README.md
           ${PROJECT_SOURCE_DIR}/CODE_OF_CONDUCT.md
      DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Configure Sphinx config file
+# Can now configure Sphinx config file
 configure_file(conf.py.in conf.py)
 
-# -- Target definitions --
+# .. Targets ..................................................................
 # Gather shared arguments
 set(SHARED_ARGS
         -W --keep-going -w build_errors.log         # warnings as errors
