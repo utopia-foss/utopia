@@ -132,7 +132,6 @@ build:docs:
     - mkdir build && cd build
     - cmake ..
     - make doc
-    - make check_docs
   after_script:
     # Append the error log such that it's more convenient to read in the CI log
     - echo "-------- Errors emitted during building of documentation --------"
@@ -253,6 +252,17 @@ build:install:
 
 # -- Test stage ---------------------------------------------------------------
 # Uses artifacts of the build stage to test: backend, models, CLI, installation
+
+# A separate test job for running doctest (requires models to be compiled)
+test:docs:
+  stage: test
+  needs:
+    - "build:docs"
+    - "build:models"
+  script:
+    - cd build
+    - make check_docs
+
 
 # Test the core library
 test:core:
