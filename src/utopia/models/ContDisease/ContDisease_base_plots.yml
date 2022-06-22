@@ -149,7 +149,10 @@ ca/clusters:
       path: cluster_id
       transform:
         - where: [!dag_prev , "!=", 0]  # not part of the cluster
-        - mod: [!dag_prev , 20]         # matching the size of the tab20 cmap
+        - np.fmod: [!dag_prev , 20]     # matching the size of the tab20 cmap
+        # NOTE Important to use np.fmod here because it carries through the
+        #      container attributes, which are needed for determining the
+        #      grid structure. The `mod` operation itself does not do that.
 
   to_plot:
     cluster_id:

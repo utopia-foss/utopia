@@ -1,4 +1,9 @@
 # This defines the default plots for the Geomorphology model
 ---
-map:
-  based_on: map
+ca:
+  based_on: ca
+
+ca_snapshot:
+  based_on:
+    - ca
+    - .plot.ca.snapshot

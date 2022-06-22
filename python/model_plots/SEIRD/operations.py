@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 import xarray as xr
-from dantro.utils.data_ops import count_unique
+from dantro.data_ops.arr_ops import count_unique
 
 log = logging.getLogger(__name__)
 
