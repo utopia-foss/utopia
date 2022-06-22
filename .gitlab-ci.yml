@@ -129,6 +129,7 @@ build:docs:
     - mkdir build && cd build
     - cmake ..
     - make doc
+    - make check_docs
   after_script:
     # Append the error log such that it's more convenient to read in the CI log
     - echo "-------- Errors emitted during building of documentation --------"
@@ -364,6 +365,7 @@ test:models:
 
 
 # Test the utopia command line interface
+# TODO Consider removing this test -- is basically tested by utopya already
 test:cli:
   stage: test
   needs:

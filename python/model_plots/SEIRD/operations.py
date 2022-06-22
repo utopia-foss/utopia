@@ -7,11 +7,14 @@ import numpy as np
 import xarray as xr
 from dantro.data_ops.arr_ops import count_unique
 
+from utopya.eval import is_operation
+
 log = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
 
+@is_operation("SEIRD.compute_age_distribution")
 def compute_age_distribution(
     *,
     age: xr.DataArray,

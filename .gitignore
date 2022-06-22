@@ -43,7 +43,6 @@
 !*.coveragerc
 
 # Miscellaneous
-!python/utopya/utopya/bin/utopia
 !.dockerignore
 !*.dockerfile
 !.gitignore
@@ -53,7 +52,7 @@
 # Again blacklist certain directories and files completely, e.g. because they
 # contain automatically created build artefacts or test metadata
 build/
-doc/api/utopya
+doc/api
 *.egg-info
 *.pytest_cache
 __pycache__
