@@ -8,6 +8,8 @@
 #   - UTOPIA_ENV_PIP            Pip module executable inside the venv
 #   - RUN_IN_UTOPIA_ENV         Binary for executing a single command in a
 #                               shell configured with the virtual env.
+#   - UTOPYA_FROM_PYPI          Whether to install utopya from PyPI
+#                               (default: True)
 #   - UTOPYA_URL                The URL from which to install utopya
 #   - UTOPYA_BRANCH             The branch from which to install utopya
 #
@@ -24,9 +26,9 @@ endif ()
 
 # the designated paths for the virtual env and some environments.
 # some might not exist yet at this point, are created below
-set (UTOPIA_ENV_DIR ${CMAKE_BINARY_DIR}/utopia-env)
-set (UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
-set (UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
+set(UTOPIA_ENV_DIR ${CMAKE_BINARY_DIR}/utopia-env)
+set(UTOPIA_ENV_EXECUTABLE ${UTOPIA_ENV_DIR}/bin/python)
+set(UTOPIA_ENV_PIP ${UTOPIA_ENV_DIR}/bin/pip)
 
 message(STATUS "")
 message(STATUS "Setting up the utopia-env ...")
@@ -41,9 +43,9 @@ if (NOT RETURN_VALUE EQUAL "0")
 endif ()
 
 # create a symlink to the activation script
-file (CREATE_LINK ${UTOPIA_ENV_DIR}/bin/activate
-                  ${CMAKE_BINARY_DIR}/activate
-      SYMBOLIC)
+file(CREATE_LINK ${UTOPIA_ENV_DIR}/bin/activate
+                 ${CMAKE_BINARY_DIR}/activate
+     SYMBOLIC)
 
 # write the convenience bash script
 # configure the script
@@ -51,13 +53,13 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/scripts/run-in-utopia-env.in
                 ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
                 @ONLY)
 # copy the script, changing file permissions
-file (COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
+file(COPY ${CMAKE_BINARY_DIR}/cmake/scripts/run-in-utopia-env
         DESTINATION ${CMAKE_BINARY_DIR}
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                         GROUP_READ GROUP_WRITE GROUP_EXECUTE
                         WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 
-set (RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
+set(RUN_IN_UTOPIA_ENV ${CMAKE_BINARY_DIR}/run-in-utopia-env)
 
 
 # -- virtual environment installed now, but remains to be populated -----------
@@ -87,21 +89,31 @@ endif()
 
 # -- utopya
 
+if(NOT UTOPYA_FROM_PYPI)
+    set(UTOPYA_FROM_PYPI On)
+endif()
+
 if(NOT UTOPYA_URL)
     set(UTOPYA_URL https://gitlab.com/utopia-project/utopya.git)
 endif()
 
 if(NOT UTOPYA_BRANCH)
-    set(UTOPYA_BRANCH utopia-integration)  # FIXME set to main
+    set(UTOPYA_BRANCH main)
 endif()
 
 python_find_package(PACKAGE utopya VERSION 1.0.0)
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
-    python_install_package_remote(
-        URL ${UTOPYA_URL}
-        BRANCH ${UTOPYA_BRANCH}
-        EGG_NAME utopya
-    )
+    if(UTOPYA_FROM_PYPI)
+        message(STATUS "Installing utopya from PyPI ...")
+        python_pip_install(PACKAGE utopya INSTALL_OPTIONS "--pre")
+    else()
+        message(STATUS "Installing utopya from custom URL ...")
+        python_install_package_remote(
+            URL ${UTOPYA_URL}
+            BRANCH ${UTOPYA_BRANCH}
+            EGG_NAME utopya
+        )
+    endif()
 endif()
 # TODO Once utopya is on PyPI, consider replacing with requirements file?
 #      ... but need to avoid repetitive version checks on each cmake call!
