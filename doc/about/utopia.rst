@@ -57,7 +57,7 @@ Below is a brief history of how the Utopia project came about.
 
 2016
 ^^^^
-The idea of the Utopia framework emerged in 2016 among members of the `TS-CCEES research group <https://ts.iup.uni-heidelberg.de>`_ at the `Institute of Environmental Physics <https://www.iup.uni-heidelberg.de/en>`_.
+The idea of the Utopia framework emerged in 2016 among members of the `TS-CCEES research group <https://ts.iup.uni-heidelberg.de/>`_ at the `Institute of Environmental Physics <https://iup.uni-heidelberg.de/en/>`_.
 In the words of Prof. Kurt Roth at that time:
 
 .. pull-quote::

@@ -150,7 +150,7 @@ The ``state.py`` script is provided to show you how a model specific plotting
 script could look like.
 In ``generic.py`` you see some examples of generic plotting functions which can
 be used in combination with Utopia's :ref:`data transformation and selection
-framework <external_plot_creator_DAG_support>`.
+framework <pyplot_plot_creator_DAG_support>`.
 
 When starting to implement more plots, you should definitely have a look at
 the :ref:`detailed plotting documentation <eval_plotting>`!

@@ -337,7 +337,7 @@ In the ``vonNeumann`` neighborhood on a ``square`` lattice the 4 next neighborho
 In the ``Moore`` neighborhood they are too close with distance 1, where the true distance of the cell centers would be :math:`\sqrt{2}`.
 In the ``hexagonal`` discretization all neighbors have the true unit distance, however this is only true for paths that are 60° (instead of 90°) apart.
 
-For more details have a look at the `grid implementation <../../doxygen/html/class_utopia_1_1_grid.html>`_ and `this tutorial <http://www-cs-students.stanford.edu/~amitp/game-programming/grids/>`_.
+For more details have a look at the `grid implementation <../../doxygen/html/class_utopia_1_1_grid.html>`_ and `these tutorial <https://www.redblobgames.com>`_.
 
 
 Are neighborhoods computed on the fly, or can I cache them?

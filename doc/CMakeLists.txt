@@ -34,26 +34,32 @@ configure_file(conf.py.in conf.py)
 
 # .. Targets ..................................................................
 # Gather shared arguments
-set(SHARED_ARGS
-        -W --keep-going -w build_errors.log         # warnings as errors
+set(SHARED_SPHINX_ARGS
+        -w build_errors.log                         # output log file
         -c ${CMAKE_CURRENT_BINARY_DIR}              # conf.py dir (in build!)
         -d ${CMAKE_CURRENT_BINARY_DIR}/_doctrees    # doctree pickles dir
         ${CMAKE_CURRENT_SOURCE_DIR}                 # input dir
         ${CMAKE_CURRENT_BINARY_DIR}/html            # output dir
 )
+set(SPHINX_FAIL_ON_WARN -W --keep-going)
 
 # Register sphinx build targets
 add_custom_target(sphinx_html
-    COMMAND ${RUN_IN_UTOPIA_ENV} sphinx-build -T -b html ${SHARED_ARGS}
+    COMMAND ${RUN_IN_UTOPIA_ENV}
+        sphinx-build -T -b html ${SHARED_SPHINX_ARGS} ${SPHINX_FAIL_ON_WARN}
 )
 
 # ... and some targets for checking the resulting build
-add_custom_target(sphinx_linkcheck
-    COMMAND ${RUN_IN_UTOPIA_ENV} sphinx-build -T -b linkcheck ${SHARED_ARGS}
-)
 add_custom_target(sphinx_doctest
-    COMMAND ${RUN_IN_UTOPIA_ENV} sphinx-build -T -b doctest ${SHARED_ARGS}
+    COMMAND ${RUN_IN_UTOPIA_ENV}
+        sphinx-build -T -b doctest ${SHARED_SPHINX_ARGS} ${SPHINX_FAIL_ON_WARN}
 )
+add_custom_target(sphinx_linkcheck
+    COMMAND ${RUN_IN_UTOPIA_ENV}
+        sphinx-build -T -b linkcheck ${SHARED_SPHINX_ARGS} || true
+)
+# NOTE linkcheck is not set to fail because there are some links that will
+#      always lead to a failure (the relative doxygen links for instance)
 
 # Add the doxygen-dependent documentation target only when it exists
 if (TARGET doxygen_utopia)

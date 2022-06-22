@@ -140,7 +140,7 @@ The following keys in the model configuration allow you to control the model:
 
     - ``directed``: whether or not the network should be directed. If directed, the network edges will be given weights (see above).
 
-    - ``model``: the network topology: can be ``KlemmEguiluz`` (small-world, highly clustered, scale-free network, defualt), ``regular`` (a regular network), ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world, default), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), ``complete``, or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
+    - ``Model``: the network topology: can be ``KlemmEguiluz`` (small-world, highly clustered, scale-free network, defualt), ``regular`` (a regular network), ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world, default), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), ``complete``, or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
 
     - ``edges``:
 

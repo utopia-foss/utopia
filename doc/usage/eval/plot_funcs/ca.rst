@@ -1,8 +1,7 @@
 Cellular Automata Plots
 =======================
 
-.. automodule:: utopya.plot_funcs.ca
-    :noindex:
+See :py:mod:`utopya.eval.plots.ca`.
 
 ----
 
@@ -15,6 +14,5 @@ update.
 For information on how to configure it such that it performs an animation, see
 :ref:`plot_animations`.
 
-.. autofunction:: utopya.plot_funcs.ca.state
-    :noindex:
+See :py:func:`utopya.eval.plots.ca.state`.
 

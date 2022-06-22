@@ -23,7 +23,7 @@ Example
 ^^^^^^^
 A batch file may look like this:
 
-.. literalinclude:: ../../../python/utopya/test/cfg/batch.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/batch.yml
    :language: yaml
    :start-after: # START --- example_basic
    :end-before: # END ----- example_basic
@@ -168,7 +168,7 @@ Other available keys for that format string are ``model_name`` and ``timestamp``
 .. note::
 
     Be aware that writing to the same directory may lead to ``FileExistsError``\ s for the plot configurations that are saved alongside each plot or for the creation of the output directory.
-    You will need to adjust the ``DataManager`` and ``PlotManager`` configurations accordingly:
+    You will need to adjust the ``DataManager`` and :py:class:`~utopya.eval.plotmanager.PlotManager` configurations accordingly:
 
     .. code-block:: YAML
 

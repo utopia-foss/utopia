@@ -78,13 +78,9 @@ All you need to do to make this function support animation is to mark it as supp
 The following things changed:
 
     * an ``update`` function was defined,
-    * the ``update`` function was passed to the helper via ``register_animation_update``, and
+    * the ``update`` function was passed to the helper via :py:meth:`~dantro.plot.plothelper.PlotHelper.register_animation_update`, and
     * the plot function was marked as ``supports_animation``.
 
-
-.. autoclass:: dantro.plot_creators.PlotHelper
-    :members: register_animation_update
-    :noindex:
 
 There are a few things to look out for:
     * In order for the animation update to actually be used, the feature needs
@@ -98,7 +94,7 @@ There are a few things to look out for:
     * The animation update function is expected to be a so-called Python
       Generator, thus using the yield keyword. For more information, have a
       look `here <https://wiki.python.org/moin/Generators>`_.
-    * The file extension is taken care of by the ``PlotManager``, which is why
+    * The file extension is taken care of by the :py:class:`~utopya.eval.plotmanager.PlotManager`, which is why
       it needs to be adjusted at the top level of the plot configuration, e.g.
       when storing the animation as a movie.
 

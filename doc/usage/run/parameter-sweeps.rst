@@ -143,9 +143,12 @@ The plot configuration then looks like this:
      # Below, you can put the other plot specific parameters.
      # ...
 
-The data specified in ``select`` will be passed to the plotting function as ``mv_data`` parameter and as an `xarray.Dataset <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ object. Take a look at the `xarray documentation <http://xarray.pydata.org/en/stable/>`_ to learn more. The big advantage of this package is that your array dimensions are now labelled, so you can just call ``.mean(dim='time')`` on your data and don't have to worry that the wrong dimension might be chosen.
+The data specified in ``select`` will be passed to the plotting function as ``mv_data`` parameter and as an :py:class`xarray.Dataset` object.
+Take a look at the `xarray documentation <http://xarray.pydata.org/en/stable/>`_ to learn more.
+The big advantage of this package is that your array dimensions are now labelled, so you can just call ``.mean(dim='time')`` on your data and don't have to worry that the wrong dimension might be chosen.
 
-In the above example, you need to write a new plot function ``mean_state``. It could look something like this:
+In the above example, you need to write a new plot function ``mean_state``.
+It could look something like this:
 
 .. code-block:: python
 

@@ -18,7 +18,7 @@ This page describes how to create plot functions and configurations for plotting
 
 Plots from Universe Data
 ------------------------
-To create plots that use data from a single universe, use the :py:class:`~utopya.plotting.UniversePlotCreator`.
+To create plots that use data from a single universe, use the :py:class:`~utopya.eval.plotcreators.UniversePlotCreator`.
 It allows specifying a set of universes from which to create plots, and passes data from the selected universes to the plotting function.
 
 The plot configuration needs to know which universes to plot. This is done via the ``universes`` argument:
@@ -70,7 +70,7 @@ Furthermore, for universe plots, the ``uni`` tag is available as well (in *addit
 
     This is only a glimpse into the full capabilities of data selection via the transformation framework.
 
-    For more details, have a look at the `corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-universeplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
+    For more details, have a look at the `corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-universeplotcreator>`_ and :ref:`the general remarks on the transformation framework <pyplot_plot_creator_DAG_support>`.
 
 Remarks
 """""""
@@ -142,7 +142,7 @@ In other words, when not using the data selection and transformation framework, 
 
 Plots from Multiverse Data
 --------------------------
-To create plots that use data from *more than one* universe — which in Utopia is called *multiverse data* — use the :py:class:`~utopya.plotting.MultiversePlotCreator`.
+To create plots that use data from *more than one* universe — which in Utopia is called *multiverse data* — use the :py:class:`~utopya.eval.plotcreators.MultiversePlotCreator`.
 This creator selects and combines the data from all selected individual universes and passes the combined data to plot function. This requires handling multidimensional data and depends on the dimensionality of the chosen parameter space. For instance, say the selected data from each universe has dimensionality three and a parameter sweep was done over four dimensions: the data provided to the plot function then has seven dimensions.
 
 See :ref:`below <select_mv_data>` on how to control the selection and combination of data.
@@ -152,7 +152,7 @@ See :ref:`below <select_mv_data>` on how to control the selection and combinatio
 Multiverse plots using DAG framework *(recommended)*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Again, use the :ref:`creator-averse plot function definition<plot_func_sig_recommended>` and specify the ``creator`` in the plot configuration.
-For the :py:class:`~utopya.plotting.MultiversePlotCreator`, a `special syntax <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ exists to select and combine the multiverse data.
+For the :py:class:`~utopya.eval.plotcreators.MultiversePlotCreator`, a `special syntax <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ exists to select and combine the multiverse data.
 
 When using the recommended creator-averse plot function signature, the DAG is automatically enabled and allows to select data using the ``select_and_combine`` key:
 
@@ -187,7 +187,7 @@ When using the recommended creator-averse plot function signature, the DAG is au
 
     As above, this is only a glimpse into the full capabilities of data selection via the transformation framework.
 
-    For more details, have a look at `the corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <external_plot_creator_DAG_support>`.
+    For more details, have a look at `the corresponding dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_data_selection.html#special-case-multiverseplotcreator>`_ and :ref:`the general remarks on the transformation framework <pyplot_plot_creator_DAG_support>`.
 
 .. warning::
 
@@ -289,7 +289,7 @@ The signature for such a plot function looks like this:
 
 To select the ``mv_data``, specify the ``select`` key in the configuration.
 The associated ``MultiverseGroup`` will then take care to select the desired multidimensional data.
-The resulting data is then bundled into a ``xr.Dataset``; see `the xarray documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataset>`_ for more information.
+The resulting data is then bundled into a :py:class:`xarray.Dataset`.
 
 The ``select`` argument allows a number of ways to specify which data is to be selected. The examples below range from the simplest to the most explicit:
 
@@ -316,7 +316,4 @@ The fields ``data`` and ``std`` are then made available to the ``mv_data`` argum
 To access the **default universe configuration** for such a multiverse plot, use ``dm['multiverse'].pspace.default``.
 Be aware that it contains only *default* values for all sweep dimensions; as the sweep values are different for each universe, the sweep parameters only make sense in the context of the selected data: you find them as coordinates of ``mv_data``.
 
-For further documentation, see the functions invoked by ``MultiversePlotCreator``, ``ParamSpaceGroup.select`` and :py:meth:`paramspace.paramspace.ParamSpace.activate_subspace`:
-
-.. autoclass:: dantro.groups.ParamSpaceGroup
-    :members: select
+For further documentation, see the functions invoked by :py:class:`~utopya.eval.plotcreators.MultiversePlotCreator`, :py:meth:`dantro.groups.psp.ParamSpaceGroup.select`, and :py:meth:`paramspace.paramspace.ParamSpace.activate_subspace`:

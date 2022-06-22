@@ -17,13 +17,6 @@ import sphinx
 # doc_dir = os.path.dirname(__file__)
 doc_dir = "@CMAKE_CURRENT_SOURCE_DIR@"
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(
-#     0, os.path.abspath(f"{doc_dir}/../python/utopya")  # TODO submodule?
-# )
-
 
 # -- Project information ------------------------------------------------------
 
@@ -97,10 +90,21 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "_inc/utopya/**",
+]
+# NOTE The _inc/utopya directory is used as a workaround to have all the tested
+#      examples available for literalincludes. Once the utopya documentation is
+#      ready, this would no longer be required.
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
+
+# Can suppress some warnings that cannot be resolved
+suppress_warnings = []
 
 
 # -- Options for HTML output --------------------------------------------------
@@ -240,9 +244,24 @@ epub_title = project
 epub_exclude_files = ["search.html"]
 
 
-# -- Extension configuration --------------------------------------------------
 
-# -- Options for todo extension -----------------------------------------------
+# -----------------------------------------------------------------------------
+# -- Extensions ---------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -- API reference generation -------------------------------------------------
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+# sys.path.insert(
+#     0, os.path.abspath(f"{doc_dir}/../python/utopya")  # TODO submodule?
+# )
+
+
+# -- MyST ---------------------------------------------------------------------
+
+
+# -- Todo extension -----------------------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
@@ -447,24 +466,6 @@ def manipulate_source_read(app, docname: str, source: list):
         source can be done by *mutably* changing that single entry in the
         ``source`` object (a list).
     """
-    # Exclude utopya.plot_funcs._mpl_helpers.HandlerEllipse because it contains
-    # docstrings that create warnings and that we cannot get rid of.
-    if docname == "api/utopya/utopya.plot_funcs":
-        s = "\n".join([
-            "utopya.plot\_funcs.\_mpl\_helpers module",
-            "----------------------------------------",
-            "",
-            ".. automodule:: utopya.plot_funcs._mpl_helpers",
-            "   :members:",
-            "   :undoc-members:",
-            "   :show-inheritance:",
-            "   :private-members:",
-        ])
-        r = s + "\n   :exclude-members: HandlerEllipse"
-
-        source[0] = source[0].replace(s, r)
-        return
-
     if docname == "README":
         # Drop everything before the installation instructions
         marker = "<!-- marker-installation-instructions -->"

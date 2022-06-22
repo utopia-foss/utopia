@@ -95,13 +95,15 @@ Where to next?
 
    C++ Documentation <../doxygen/html/index.html#http://>
    ref/cpp_doc
-   api/utopya/utopya
-   dantro package <https://dantro.readthedocs.io/en/stable/>
-   api/paramspace/paramspace
    ref/utopya_base_cfg
    ref/base_plots_cfg
    ref/batch_cfg
+   utopya package <https://utopya.readthedocs.io/>
+   dantro package <https://dantro.readthedocs.io/>
+   paramspace package <https://paramspace.readthedocs.io/>
 
+.. api/utopya/utopya         .. FIXME Remove
+.. api/paramspace/paramspace .. FIXME Remove
 
 .. toctree::
    :caption: Utopia Development

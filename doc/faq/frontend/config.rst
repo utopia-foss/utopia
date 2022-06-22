@@ -22,7 +22,7 @@ Which other tags are available?
 """""""""""""""""""""""""""""""
 Quite a bunch. The example below demonstrates them:
 
-.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/faq_frontend.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/doc_examples/faq_frontend.yml
     :language: yaml
     :start-after: ### Start -- faq_frontend_yaml_tags_general
     :end-before:  ### End ---- faq_frontend_yaml_tags_general
@@ -31,7 +31,7 @@ Quite a bunch. The example below demonstrates them:
 There are some **Python-only tags**, which create Python objects that have no equivalent on C++-side.
 Make sure to *not* specify them inside your run or model config, but *only* in your evaluation config.
 
-.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/faq_frontend.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/doc_examples/faq_frontend.yml
     :language: yaml
     :start-after: ### Start -- faq_frontend_yaml_tags_python_only
     :end-before:  ### End ---- faq_frontend_yaml_tags_python_only

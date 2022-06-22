@@ -137,7 +137,7 @@ The Utopia::Model base class holds a logger instance which should be used
 for information on the current model. To write log messages from within
 Data I/O or Core backend functions, the respective logger first has to be
 retrieved. This is achieved by using `spdlog::get`
-(https://github.com/gabime/spdlog/wiki/2.-Creating-loggers#accessing-loggers-using-spdlogget).
+(https://github.com/gabime/spdlog/wiki/2.-Creating-loggers).
 The names for the two loggers are exported within the Utopia namespace.
 All log levels are handled through the input configuration files.
 

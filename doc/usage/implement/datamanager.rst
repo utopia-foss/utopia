@@ -1,19 +1,21 @@
 Utopia Datamanager — How to
 ===========================
 
-This guide shows you how to set up your model to use the Datamanager layer of the
-Utopia data-IO module.
+This guide shows you how to set up your model to use the Datamanager layer of the Utopia Data I/O module.
 
-.. contents:: Contents
+.. contents::
     :local:
     :depth: 2
 
 
-.. note:: If you just want to know what to do to get your model up and running
-          with the datamanager, jump to the `Usage` section. The `Overview` and
-          `Structure` sections are meant as a supplement for developers, or for
-          the curious, but the information they contain is not needed for
-          using the datamanager.
+.. note::
+
+    If you just want to know what to do to get your model up and running with the datamanager, jump to the `Usage` section.
+    The `Overview` and `Structure` sections are meant as a supplement for developers, or for the curious, but the information they contain is not needed for using the datamanager.
+
+.. note::
+
+    This page is about the Utopia C++ library's ``DataManager``, which is something else than the :ref:`object with the same name in the frontend <utopya_data_manager>`.
 
 Overview
 --------
@@ -64,7 +66,7 @@ parts:
 
 * The ``DataManager`` class, which manages ``WriteTasks``. This class is
   indepenent of HDF5, hence could be used with your favorite csv-library or some
-  other binary format like `NetCDF <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html>`_,
+  other binary format like `NetCDF <https://en.wikipedia.org/wiki/NetCDF>`_,
   as long as you adhere to the task structure the entire module is built
   around.
 

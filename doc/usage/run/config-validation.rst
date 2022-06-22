@@ -33,10 +33,7 @@ The rationale behind specifying it in that file is to have all information on mo
 If you wish to have a model parameter validated, simply add a ``!param`` tag after the parameter name, and specify the default value and any validity constraints in an *indented block* underneath.
 A ``default`` value is required, though the validity restrictions are optional.
 
-Refer to the documentation below and to the examples to learn more about possible keys.
-
-.. automethod:: utopya.parameter.Parameter.__init__
-   :noindex:
+Refer to the :py:class:`utopya.parameter.Parameter` API and to the examples to learn more about possible keys.
 
 .. warning::
 
@@ -46,7 +43,7 @@ Refer to the documentation below and to the examples to learn more about possibl
 Examples
 ^^^^^^^^
 
-.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/param_validation.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/doc_examples/param_validation.yml
     :language: yaml
     :start-after: ### Start -- config_validation_simple_tags
     :end-before:  ### End ---- config_validation_simple_tags
@@ -63,7 +60,7 @@ Shorthands
 For frequently used parameter types, shorthand tags are available to spare you the trouble of having to specify limits or data types.
 Simply add the corresponding YAML tag and the default value directly:
 
-.. literalinclude:: ../../../python/utopya/test/cfg/doc_examples/param_validation.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/doc_examples/param_validation.yml
     :language: yaml
     :start-after: ### Start -- config_validation_shorthand_tags
     :end-before:  ### End ---- config_validation_shorthand_tags
@@ -90,9 +87,6 @@ The validation is restricted to the ``parameter_space`` entry of the :ref:`meta 
 If ``parameter_space`` actually is a parameter space, validation will *always* occur for the full parameter space and including the default point, independent of whether a sweep will actually be performed.
 
 For all specified validation parameters, the given value is checked against the constraints using the :py:class:`~utopya.parameter.Parameter`\ 's :py:meth:`~utopya.parameter.Parameter.validate` method:
-
-.. automethod:: utopya.parameter.Parameter.validate
-   :noindex:
 
 .. hint::
 

@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 project(Utopia
     DESCRIPTION "Framework for studying models of complex & adaptive systems."
     LANGUAGES C CXX
-    VERSION 0.1
+    VERSION 2.0.0
 )
 
 # Use 'Release' as build type of none was selected by the user.

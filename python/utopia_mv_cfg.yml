@@ -31,6 +31,8 @@ data_manager:
         min_files: 5
         min_total_size: 104857600  # 100 MiB
 
+  # --- End of load configuration
+
 
 # Plotting configuration
 plot_manager:

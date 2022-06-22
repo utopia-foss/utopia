@@ -12,15 +12,15 @@ Python
 ------
 We use Python >= 3.7.
 
-Orientation style guide: `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Orientation style guide: `PEP 8 <https://peps.python.org/pep-0008/>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * This is the basic orientation. If you are unsure how to write things, look it up here.
 * We do not need to be 100% strict on this; the main purpose is: **produce readable and well-documented code.**
 * If you want, you can **install a Linter** to help you adhere to the style. For Sublime Text, there is the `SublimeLinter` <https://github.com/SublimeLinter/SublimeLinter-pep8>`_ package.
 * Most important points (these we should stick to!):
 
-  * `A foolish consistency is the hobgoblin of little minds. <https://www.python.org/dev/peps/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_
+  * `A foolish consistency is the hobgoblin of little minds <https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_
   * *Definitely* use **4 spaces** instead of a single tab stop. Modern code editors can be configured to perform this replacement.
 
     * In Sublime Text, the options are called: ``translateTabsToSpaces``\ , ``tabSize``\ , and ``useTabStops`` see `here <http://www.sublimetext.com/docs/indentation>`_.
@@ -40,14 +40,14 @@ Orientation style guide: `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_
     * Avoid comments that state the obvious.
     * Use inline comments sparingly.
 
-  * Stick to the `naming styles <https://www.python.org/dev/peps/pep-0008/#descriptive-naming-styles>`_ of variables.
+  * Stick to the `naming styles <https://peps.python.org/pep-0008/#descriptive-naming-styles>`_ of variables.
 
 Docstrings
 ~~~~~~~~~~
 
 In order to auto-generate a documentation (using the docstrings in the Python code), we need to adhere to a specific style. For creating the documentation, ``Sphinx`` is used.
 
-For the coding style of the docstring, the `Google Style Python Docstring <http://www.sphinx-doc.org/en/stable/ext/example_google.html#example-google>`_ style seems most readable and simple to write.
+For the coding style of the docstring, the `Google Style Python Docstring <https://www.sphinx-doc.org/en/master/usage/extensions/example_google.html>`_ style seems most readable and simple to write.
 Additionally, the `sphinxcontrib-napoleon <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html>`_ extension allows parsing the type annotations, further simplifying writing and maintenance of docstrings.
 
 Type Hinting
@@ -60,14 +60,18 @@ C++
 ---
 
 We use C++17. For very recent coding guidelines on the new C++ standard(s), refer to
- `CppCoreGuidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_ and `Scott Meyers: Effective Modern C++ (2014) </uploads/5ba4a15cb3b15c1c76465090092263fe/Scott_Meyers-Effective_Modern_C++__42_Specific_Ways_to_Improve_Your_Use_of_C++11_and_C++14-O_Reilly_Media__2014_.pdf>`_.
+`CppCoreGuidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_ and
+`Scott Meyers: Effective Modern C++ (2014) <https://moodle.ufsc.br/pluginfile.php/2377667/mod_resource/content/0/Effective_Modern_C__.pdf>`_.
 
-We will mostly stick to the STL library. Its complete reference can be found on   `cppreference.com <http://en.cppreference.com/w/>`_.
+We will mostly stick to the STL library.
+Its complete reference can be found on `cppreference.com <http://en.cppreference.com/w/>`_.
 
 Style Guidelines
 ~~~~~~~~~~~~~~~~
 
-C++ lacks concrete style guides such as Python's `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_. However, PEP 8 actually offers great instructions on how to write code *in general*. Its instructions on code layout are especially useful. Basically, most of the instructions in the above Python section also apply here.
+C++ lacks concrete style guides such as Python's `PEP 8 <https://peps.python.org/pep-0008/>`__.
+However, PEP 8 actually offers great instructions on how to write code *in general*. Its instructions on code layout are especially useful.
+Basically, most of the instructions in the above Python section also apply here.
 
 * Keep in mind that other people have to read and understand your code.
 

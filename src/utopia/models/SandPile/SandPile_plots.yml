@@ -28,10 +28,12 @@ compl_cum_cluster_size_dist_facet_grid:
 
 # -- CA plots -----------------------------------------------------------------
 
+# An animation of the slope
 ca/slope:
   based_on: ca/slope
   enabled: false
 
+# An animation of the avalanche
 ca/avalanche:
   based_on: ca/avalanche
   enabled: false

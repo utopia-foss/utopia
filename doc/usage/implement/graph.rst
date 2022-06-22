@@ -56,7 +56,7 @@ Here ``cfg["my_graph"]`` points to the relevant configuration entry from the mod
         parallel: False
         self_edges: False
 
-The ``model`` key tells Utopia which graph generation algorithm you wish to use, for which there are several currently available options. Each model key requires its own parameters for the graph generation algorithm – see :ref:`below <graph_gen_functions>` for more details.
+The ``Model`` key tells Utopia which graph generation algorithm you wish to use, for which there are several currently available options. Each model key requires its own parameters for the graph generation algorithm – see :ref:`below <graph_gen_functions>` for more details.
 
 .. note::
 

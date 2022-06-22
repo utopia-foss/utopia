@@ -17,5 +17,4 @@ Evaluating Simulations
    uni_and_mv_plots
    animations
    plot_funcs/index
-   plotting_api
    batch

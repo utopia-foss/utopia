@@ -558,24 +558,52 @@ Plots go by a name. To find out the names of the configured plots, let's first h
 
 .. code-block:: console
 
-  ...
-  INFO     utopia      Plotting...
-  INFO     plot_mngr   Performing plots from 5 entries ...
-  INFO     plot_mngr   Performing 'mean_slope' plot ...
-  INFO     plot_mngr   Finished 'mean_slope' plot.
-  INFO     plot_mngr   Performing 'area_fraction' plot ...
-  INFO     plot_mngr   Finished 'area_fraction' plot.
-  INFO     plot_mngr   Performing 'cluster_size_distribution' plot ...
-  INFO     plot_mngr   Finished 'cluster_size_distribution' plot.
-  INFO     plot_mngr   Performing 'compl_cum_prob_dist' plot ...
-  INFO     plot_mngr   Finished 'compl_cum_prob_dist' plot.
-  INFO     plot_mngr   Performing 'slope_and_avalanche_anim' plot ...
-  INFO     ca          Plotting animation with 4 frames of 2 properties each ...
-  INFO     ca          Animation finished.
-  INFO     plot_mngr   Finished 'slope_and_avalanche_anim' plot.
-  INFO     plot_mngr   Successfully performed plots for 5 configuration(s).
-  INFO     utopia      Plotting finished.
-  ...
+    HILIGHT  plotmanager   Now creating plots for 'SandPile' model ...
+    NOTE     plotmanager   Using default plots configuration
+
+    REMARK   plotmanager   Pre-loaded plot modules of:  model, project, framework
+    HILIGHT  plot_mngr     Performing plots from 4 plot configuration entries:
+    NOTE     plot_mngr     Have (at least) the following 4 plots to perform:
+      - mean_slope                        (universe, 1 plot)
+      - area_fraction                     (universe, 1 plot)
+      - compl_cum_cluster_size_dist       (universe, 1 plot)
+      - ca/slope_and_avalanche            (universe, 1 plot)
+
+    PROGRESS plot_mngr     Plotting 'mean_slope' ...
+
+    ...
+
+    PROGRESS plot_mngr     Plotting 'ca/slope_and_avalanche' ...
+    REMARK   plotmanager   Pre-loaded plot modules of:  model, project, framework
+    REMARK   pyplot        Using custom style context with 6 entries ...
+    NOTE     psp           Using data of:        UniverseGroup '0'
+    NOTE     base          Setting up data transformation framework ...
+    NOTE     base          TransformationDAG with 3 nodes set up in 0.0s.
+    INFO     base          Computing data transformation results ...
+    NOTE     dag           Computing result of 3 tags on DAG with 3 nodes ...
+    REMARK   dag              1/3:  'uni'  ...
+    REMARK   dag              2/3:  'avalanche'  ...
+    REMARK   dag              3/3:  'slope'  ...
+    NOTE     dag           Computed 3 tags in 0.00s.
+    REMARK   dag           Profiling results per node:  mean ± std (min|max) [s]
+                  compute   3e-06    ±  4.3e-06   (0       | 9.1e-06)
+             cache_lookup   nan      ±  nan       (nan     | nan    )
+            cache_writing   nan      ±  nan       (nan     | nan    )
+    REMARK   base          Finished computing data transformation results.
+    REMARK   _dag_utils    No placeholders found to resolve.
+    INFO     pyplot        Now calling plotting function 'caplot' ...
+    NOTE     ca            Preparing data for CA plot ...
+    REMARK   ca            Constructing dataset ...
+    NOTE     ca            Performing CA plot for 2 data variables ...
+    REMARK   ca              Data variables:     slope, avalanche
+    REMARK   ca              Dimensions:         x: 32, y: 32, time: 101
+    REMARK   ca              Grid structure:     square
+    INFO     pyplot        Invoking animation update generator ...
+    NOTE     ca            Plotting animation with 101 frames ...
+    NOTE     pyplot        Animation finished after 101 frames.
+    PROGRESS plot_mngr     Performed 'ca/slope_and_avalanche' plot in 6.1s.
+
+    ...
 
 As you see there, multiple plots are configured.
 To find out more about the default plot configuration, locate the corresponding section in the ``SandPile`` :doc:`model documentation <../models/SandPile>`.
@@ -585,9 +613,9 @@ There, you will find the same names as extracted from the log as keys on the roo
 .. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
    :language: yaml
    :start-after: ---
-   :end-before: # --- An animation
 
-You will notice that the default configuration does not contain an awful lot of parameters. This is because it employs so-called "configuration inheritance" using the ``based_on`` key.
+You will notice that the default configuration does not contain an awful lot of parameters.
+This is because it employs so-called "configuration inheritance" using the ``based_on`` key.
 It imports an existing so-called "base plot configuration" and uses the additionally specified keys to update it recursively. This avoids copy-pasting configurations and allows to combine configurations using multiple inheritance.
 For more information, you can continue reading :ref:`in the frontend plotting section <plot_cfg_inheritance>`.
 
@@ -596,8 +624,8 @@ To that end, add the following to your ``plots.yml`` file:
 
 .. code-block:: yaml
 
-  my_mean_slope_plot:
-    based_on: mean_slope
+    my_mean_slope_plot:
+      based_on: mean_slope
 
 This creates a new plot named ``my_mean_slope_plot``, which in this form produces the same result as the regular ``mean_slope`` plot:
 
@@ -654,8 +682,8 @@ In fact, it is part of the default plotting system. You might have noticed the c
 
 .. literalinclude:: ../../src/utopia/models/SandPile/SandPile_plots.yml
    :language: yaml
-   :start-after: # --- An animation of the CA `slope`
-   :end-before: # --- An animation of the CA `avalanche`
+   :start-after: # An animation of the slope
+   :end-before: # An animation of the avalanche
 
 .. note::
 
@@ -784,8 +812,8 @@ Let's fill that in with the code that calculates the standard deviation for the 
 
 .. note::
 
-  The ``slope`` and ``slope_std`` in the example above both behave like ``xarray.DataArray`` objects. As you see, they allow to specify operations on labelled dimensions, which not only reduces errors but is also far easier to read.
-  You can read up on it `in their documentation <http://xarray.pydata.org/en/stable/data-structures.html#dataarray>`_.
+  The ``slope`` and ``slope_std`` in the example above both behave like :py:class:`xarray.DataArray` objects. As you see, they allow to specify operations on labelled dimensions, which not only reduces errors but is also far easier to read.
+  You can read up on it `in their documentation <https://xarray.pydata.org/en/stable/user-guide/data-structures.html#dataarray>`_.
 
 .. hint::
 
@@ -793,13 +821,13 @@ Let's fill that in with the code that calculates the standard deviation for the 
   For example, it provides a ``PlotHelper`` framework which makes plotting much easier by allowing to configure your plots' aesthetics via the configuration, i.e. without touching any code.
   For example, you can set the labels and limits of the plots conveniently via the configuration.
 
-  Furthermore, there is a :ref:`data transformation framework <external_plot_creator_DAG_support>` that follows a similar approach: making it possible to select specific data and apply transformations to it before passing it to a generic plotting function.
+  Furthermore, there is a :ref:`data transformation framework <pyplot_plot_creator_DAG_support>` that follows a similar approach: making it possible to select specific data and apply transformations to it before passing it to a generic plotting function.
 
   To read up on both, check out the :ref:`plotting documentation <eval_plotting>`.
 
 
-Parameter Sweeps and the ``Multiverse``
----------------------------------------
+Parameter Sweeps and the :py:class:`~utopya.multiverse.Multiverse`
+------------------------------------------------------------------
 Alright. With the above, you already came into contact with a lot of Utopia's features. Well done for making it this far!
 In this section, you will learn how to perform multiple simulations for different sets of parameters and how to plot them.
 
@@ -912,7 +940,7 @@ This now says that instead of using the default value for a single simulation, t
 
   Do not forget the ``--sweep`` flag! This is required to tell Utopia that you want to run a parameter sweep. Alternatively, you can add a new entry ``perform_sweep: true`` to the *root level* of the configuration file, i.e. on the same level as the ``parameter_space`` key, with zero indentation.
 
-You will see some log output from the ``multiverse``, stating that it is
+You will see some log output from the :py:class:`~utopya.multiverse.Multiverse`, stating that it is
 
 .. code-block:: console
 

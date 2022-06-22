@@ -102,7 +102,7 @@ If one of the files is missing, the respective defaults will be used.
 
     The CLI still accepts a run configuration or plots configuration path, which will have precedence over the files defined via the config set.
 
-Under the hood, the :py:class:`~utopya.model.Model` class searches for these config sets, making it accessible for :ref:`interactive use <utopya_interactive>` via :py:meth:`~utopya.model.Model.get_config_set` and :py:meth:`~utopya.model.Model.get_config_sets`.
+Under the hood, the ``Model`` class searches for these config sets, making it accessible for :ref:`interactive use <utopya_interactive>` via :py:meth:`~utopya.model.Model.get_config_set` and :py:meth:`~utopya.model.Model.get_config_sets`.
 
 Here, however, we will focus on use via the CLI.
 

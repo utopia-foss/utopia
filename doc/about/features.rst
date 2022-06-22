@@ -617,7 +617,7 @@ Stop Conditions – Dynamically stop simulations
 * Total timeout is controlled via ``run_kwargs.timeout`` key of :ref:`meta configuration <feature_meta_config>`.
 * Can be configured via meta configuration by passing a list of conditions to the ``run_kwargs.stop_conditions`` key. Example:
 
-    .. literalinclude:: ../../python/utopya/test/cfg/stop_conds.yml
+    .. literalinclude:: ../_inc/utopya/tests/cfg/stop_conds.yml
         :language: yaml
         :start-after: ---
 
@@ -661,10 +661,10 @@ It interfaces with the `dantro package <https://pypi.org/project/dantro/>`__ to 
 
 .. _feature_frontend_DataManager:
 
-Data handling with the :py:class:`~utopya.datamanager.DataManager`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Data handling with the :py:class:`~utopya.eval.datamanager.DataManager`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Is used to load all generated simulation data and represent it in a *hierachical* fashion (the "data tree") with a **uniform interface**
-* Is implemented in dantro and specialized for Utopia via the :py:class:`~utopya.datamanager.DataManager` class and the ``data_manager`` key of the meta configuration.
+* Is implemented in dantro and specialized for Utopia via the :py:class:`~utopya.eval.datamanager.DataManager` class and the ``data_manager`` key of the meta configuration.
 * Makes use of `xarray <http://xarray.pydata.org/>`_ to provide **labelled dimensions and coordinates**. This information is extracted from the HDF5 attributes.
 * Supports **lazy loading**  of data using so-called :ref:`proxies <data_handling_proxy>`; these are only resolved when the data is actually needed (saves you a lot of RAM!).
   When the data is too large for the machine's memory, the :ref:`dask framework <data_handling_dask>` makes it possible to still work with the data.
@@ -673,7 +673,7 @@ Data handling with the :py:class:`~utopya.datamanager.DataManager`
 * 📚
   `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/data_mngr.html>`__,
   :ref:`data_handling`,
-  :py:class:`~utopya.datamanager.DataManager`,
+  :py:class:`~utopya.eval.datamanager.DataManager`,
   :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
   :ref:`data_handling_load_parallel`
 
@@ -705,7 +705,7 @@ Custom Plot functions
 * Models can make use of both generic plot functions (implemented in utopya) or model-specific plot functions, which are defined in ``python/model_plots``. This allows a large flexibility in how the simulation data is analyzed and visualized.
 * Plot functions can also be implemented in separate files.
 * 📚
-  :ref:`external_plot_creator`,
+  :ref:`pyplot_plot_creator`,
   :ref:`tutorial`
 
 
@@ -719,14 +719,14 @@ The Data Transformation Framework – Generic Data Processing
 * The DAG framework provides a **file cache** that can store intermediate results such that they need not be re-computed every time the plots are generated. This makes sense for data transformations that take a long time to compute but only very little time to store to a file and load back in from there.
 * 📚
   `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/transform.html>`__,
-  :ref:`Usage for plotting <external_plot_creator_DAG_support>`
+  :ref:`Usage for plotting <pyplot_plot_creator_DAG_support>`
 
 
 .. _feature_utopya_interactive:
 
 Work interactively with utopya and dantro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* The :py:class:`~utopya.model.Model` class makes it very easy to set up a model multiverse, run it, and load its data.
+* The ``Model`` class makes it very easy to set up a model multiverse, run it, and load its data.
 
     .. code-block:: python
 
@@ -743,7 +743,7 @@ Work interactively with utopya and dantro
 
 * 📚
   :ref:`utopya_interactive`,
-  :py:class:`~utopya.model.Model` class,
+  ``Model`` class,
   :py:meth:`~utopya.model.Model.create_mv`,
   :py:meth:`~utopya.model.Model.create_run_load`,
   :py:meth:`~utopya.model.Model.create_frozen_mv` (when *loading* data from an existing run)
@@ -821,7 +821,7 @@ Python-based Model Tests
   Consult the :doc:`../README` and the pytest documentation for more information on test invocation.
 * 📚
   :ref:`impl_unit_tests` (for general remarks),
-  :py:class:`~utopya.model.Model`,
+  ``Model``,
   :py:class:`~utopya.testtools.ModelTest`,
   `pytest <https://pytest.org/>`_
 

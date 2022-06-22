@@ -15,7 +15,7 @@ The base configuration is meant to be self-documenting, thus allowing to see whi
 
 ----
 
-.. literalinclude:: ../../python/utopya/utopya/cfg/base_cfg.yml
+.. literalinclude:: ../_inc/utopya/utopya/cfg/base_cfg.yml
    :language: yaml
 
 

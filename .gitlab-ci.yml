@@ -2,6 +2,9 @@
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 variables:
+  # Need to clone submodules as well
+  GIT_SUBMODULE_STRATEGY: recursive
+
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
   BASE_IMAGE_UBUNTU_VERSION: focal  # NOTE Adjust upon new Ubuntu Release

@@ -115,7 +115,7 @@ apt update
 apt install ffmpeg graphviz doxygen
 ```
 
-You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
+You will _probably_ need administrator rights.
 
 **Note:** For simplicity, we suggest installing the meta-package `libboost-all-dev` which includes the whole [Boost][Boost] library.
 If you want a minimal installation (only the [strictly required components](#dependencies)), use the following packages instead:
@@ -368,8 +368,8 @@ To work comfortably with Utopia, access to the GitLab needs to be easy.
 The best way to achieve that is by registering a so-called SSH key with your
 GitLab account.
 
-To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ce/ssh/#generating-a-new-ssh-key-pair)
-and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
+To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ee/user/ssh.html#generate-an-ssh-key-pair)
+and to [add a key to your GitLab account](https://docs.gitlab.com/ee/user/ssh.html#add-an-ssh-key-to-your-gitlab-account).
 
 ### New to Utopia? How do I implement a model?
 Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will guide you through the process of implementing your very own Utopia model.
