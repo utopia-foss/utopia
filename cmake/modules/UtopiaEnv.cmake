@@ -36,10 +36,11 @@ message(STATUS "Setting up the utopia-env ...")
 execute_process(
     COMMAND ${Python_EXECUTABLE} -m venv ${UTOPIA_ENV_DIR}
     RESULT_VARIABLE RETURN_VALUE
-    OUTPUT_QUIET
+    OUTPUT_VARIABLE PY_OUTPUT
+    ERROR_VARIABLE PY_OUTPUT
 )
 if (NOT RETURN_VALUE EQUAL "0")
-    message(FATAL_ERROR "Error creating the utopia-env:  ${RETURN_VALUE}")
+    message(FATAL_ERROR "Error setting up venv for utopia-env:  ${PY_OUTPUT}")
 endif ()
 
 # create a symlink to the activation script
