@@ -12,7 +12,10 @@ parameter_space:
       periodic: false
     cell_manager:
       grid:
+        structure: square
         resolution: 256
+      neighborhood:
+        mode: Moore
     cell_params:
       p_susceptible: 0.4
       p_transmit:
