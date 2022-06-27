@@ -53,6 +53,7 @@
 # contain automatically created build artefacts or test metadata
 build/
 doc/api
+doc/_static/_gen
 *.egg-info
 *.pytest_cache
 __pycache__

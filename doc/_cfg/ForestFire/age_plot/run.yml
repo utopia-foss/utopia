@@ -1,0 +1,9 @@
+perform_sweep: false
+
+parameter_space:
+  num_steps: 100
+  write_every: 100
+  ForestFire:
+    cell_manager:
+      grid:
+        resolution: 512

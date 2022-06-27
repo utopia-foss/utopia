@@ -13,6 +13,3 @@ pytest-cov
 # Requirements for Python model plots
 
 
-# Temporary (!) development requirements
-# FIXME Remove
-git+https://gitlab.com/utopia-project/utopya.git@45-clean-up-utopya-base-plots-config

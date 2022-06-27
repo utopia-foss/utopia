@@ -1,0 +1,54 @@
+# Run configuration to create a single infection spread
+# including run-away movement and heterogeneities via inert cells
+---
+# Configure the parameter space
+parameter_space:
+  num_steps: 150
+
+  seed: !sweep
+    default: 420
+    range: [5]
+
+  SEIRD:
+    space:
+      periodic: false
+    cell_manager:
+      grid:
+        structure: square
+        resolution: 50
+      neighborhood:
+        mode: Moore
+      cell_params:
+        p_susceptible: 0.4
+        p_immune: !sweep
+          default: 0
+          values: [0, 0.1, 0.2, 0.3]
+          name: 'immunity rate'
+        p_transmit:
+          value:
+            default: !sweep
+              default: 0.6
+              values: [0.2, 0.4, 0.6]
+              name: 'transmission rate'
+
+    p_exposed: 0.
+    p_deceased: 0.
+    p_lose_immunity: 0
+    p_infected: 1
+    p_immune: 0
+    p_recovered: 0.0714
+
+    move_away_from_infected: false
+
+    exposure_control:
+      enabled: true
+      num_additional_exposures: 1
+      at_times:
+        - 1
+
+    inert_cells:
+      enabled: false
+      num_passes: 3
+
+    # Probability to move in a random direction
+    p_move_randomly: 1.0

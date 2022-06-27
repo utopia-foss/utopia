@@ -10,6 +10,7 @@ ipython>=7.0
 # Themes
 sphinx_rtd_theme   # unused, but kept for downstream compatibility
 sphinx-book-theme
+sphinx-togglebuttonc
 
 # Workaround for sphinx-markdown-tables but occuring with more recent versions
 # of the markdown package.

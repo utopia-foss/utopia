@@ -9,12 +9,11 @@ Evaluating Simulations
 
    data
 
+   The Data Transformation Framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>
+
 .. toctree::
    :maxdepth: 2
    :caption: Visualization
 
-   plotting
-   uni_and_mv_plots
-   animations
-   plot_funcs/index
+   plotting/index
    batch

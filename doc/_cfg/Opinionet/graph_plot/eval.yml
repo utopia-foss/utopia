@@ -1,0 +1,199 @@
+_utopia_colors:
+  dark_blue: &darkblue '#003366'
+  medium_blue: &mediumblue '#0099CC'
+  light_blue: &lightblue '#99CCFF'
+  dark_green: &darkgreen '#006666'
+  medium_green: &mediumgreen '#339999'
+  light_green: &lightgreen '#AFD8BC'
+  yellow: &yellow '#FFCC66'
+  red: &red '#CC3333'
+  cream_white: &creamwhite '#F6F6F6'
+  white: &white '#fff'
+  black: &black '#000000'
+  gray: &gray '#F7F9FF'
+  dark_gray: &darkgray '#666666'
+
+_default_style: &default_style
+  style:
+    text.usetex: True
+    mathtext.fontset: 'stix'
+    font.family: 'serif'
+
+.flush_cmap:
+  graph_drawing:
+    nodes:
+      cmap: ~
+
+# Demonstrates a simple graph with no adornments
+graph_simple:
+  based_on:
+    - .creator.universe
+    - .plot.graph
+    - _default_style
+  select:
+    graph_group: nw
+  graph_creation:
+    at_time_idx: -1
+
+# Demonstrates plotting data as node and edge properties
+graph_with_props:
+  based_on: graph_simple
+  graph_creation:
+    node_props: ['opinion']
+    edge_props: ['edge_weights']
+  graph_drawing:
+    nodes:
+      node_color:
+        from_property: opinion
+      node_size:
+        from_property: degree
+    edges:
+      width:
+        from_property: edge_weights
+
+# Demonstrates changing the appearance of the graph
+graph_pretty:
+  based_on: graph_with_props
+  graph_drawing:
+    positions:
+      model: spring
+      k: 2
+    nodes:
+      node_size:
+        scale_to_interval: [1, 200]
+
+# Demonstrates a network with edited appearance
+### Start --- static_network
+static_network:
+  based_on:
+    - .creator.universe
+    - .plot.graph
+  select:
+    graph_group: nw
+  graph_creation:
+    node_props: [ 'opinion' ]
+    edge_props: [ 'edge_weights' ]
+    at_time_idx: -1
+  graph_drawing:
+    positions:
+      model: spring
+      k: 2
+    nodes:
+      node_color:
+        from_property: opinion
+      node_size:
+        from_property: degree
+        scale_to_interval: [1, 200]
+      cmap:
+        continuous: true
+        from_values:
+          0: *red
+          0.5: *yellow
+          1: *mediumblue
+      vmin: 0.
+      vmax: 1.0
+      colorbar:
+        label: opinion $\sigma$
+    edges:
+      width:
+        from_property: edge_weights
+### End --- static_network
+  <<: *default_style
+
+# Demonstrates the use of labels and highlights
+graph_highlighted:
+  based_on:
+    - static_network
+  graph_drawing:
+    positions:
+      seed: 13
+    edges:
+      edge_color: [0, 0, 0, 0.05]
+      width:
+        scale_to_interval: [0, 1]
+    node_labels:
+      enabled: True
+      show_only: &nodelist [ 2, 3, 4, 6, 7, 11, 13, 15, 18, 22, 24, 30, 49 ]
+    mark_nodes:
+      nodelist: *nodelist
+      color: *red
+    mark_edges:
+      colors:
+        [ 24, 11] : *red
+        [18, 15]: *red
+        [49, 15]: *red
+        [30, 49]: *red
+        [24, 22]: *red
+        [30, 24]: *red
+        [6, 7]: *red
+        [7, 11]: *red
+        [22, 2]: *red
+        [2, 13]: *red
+        [18, 13]: *red
+        [7, 4]: *red
+        [4, 3]: *red
+        [3, 2]: *red
+
+# Demonstrates manipulation of the colorbar
+graph_colorbar:
+  based_on: static_network
+  graph_drawing:
+    nodes:
+      colorbar:
+        labels:
+          0: left
+          0.5: center
+          1: right
+        shrink: .5
+        aspect: 10
+        orientation: horizontal
+
+# Plots a short graph animation
+### Start --- animated_network
+animated_network:
+  based_on:
+    - .creator.universe
+    - .plot.graph
+    - .animation.ffmpeg
+  select:
+    graph_group: nw
+  graph_creation:
+    node_props: [ 'opinion' ]
+    edge_props: [ 'edge_weights' ]
+    at_time_idx: -1
+  graph_drawing:
+    positions:
+      model: spring
+      k: 2
+    nodes:
+      node_color:
+        from_property: opinion
+      node_size:
+        from_property: degree
+        scale_to_interval: [1, 200]
+      cmap:
+        continuous: true
+        from_values:
+          0: *red
+          0.5: *yellow
+          1: *mediumblue
+      vmin: 0.
+      vmax: 1.0
+      colorbar:
+        label: opinion $\sigma$
+    edges:
+      width:
+        from_property: edge_weights
+  graph_animation:
+    sel:
+      time:
+        from_property: opinion
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 10
+        saving:
+          dpi: 400
+### End --- animated_network
+  <<: *default_style

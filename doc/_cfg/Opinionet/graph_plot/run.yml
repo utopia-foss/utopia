@@ -1,0 +1,11 @@
+perform_sweep: false
+
+parameter_space:
+  num_steps: 1000
+  write_every: 100
+  Opinionet:
+    tolerance: 0.2
+    network:
+      model: WattsStrogatz
+      num_vertices: 50
+      mean_degree: 8

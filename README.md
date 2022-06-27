@@ -381,6 +381,18 @@ To build the documentation locally, navigate to the `build` directory and run
 make doc
 ```
 
+In case you also want to generate (some of) the figures that are embedded into the documentation, set the `UTOPIA_DOC_GENERATE_FIGURES` environment variable:
+
+```bash
+UTOPIA_DOC_GENERATE_FIGURES=True make doc
+```
+
+After building, carrying out a link check and running some documentation tests is advisable:
+
+```bash
+make check_docs
+```
+
 The [Sphinx][Sphinx]-built user documentation will then be located at `build/doc/html/`.
 The C++ [doxygen][doxygen]-documentation can be found at `build/doc/doxygen/html/`.
 Open the respective `index.html` files to browse the documentation.

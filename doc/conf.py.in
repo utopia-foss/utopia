@@ -50,7 +50,7 @@ extensions = [
     "sphinxarg.ext",
     #
     # --- Additional extensions ---
-    #
+    "sphinx_togglebutton",
     #   ... to include doxygen docs
     "breathe",
     #
@@ -474,9 +474,6 @@ def manipulate_source_read(app, docname: str, source: list):
         return
 
 
-# .............................................................................
-
-
 def run_apidoc(app):
     """A function to run apidoc, creating the utopya API documentation"""
     import sphinx.ext.apidoc
@@ -503,8 +500,150 @@ def run_apidoc(app):
     sphinx.ext.apidoc.main(argv)
 
 
+# -----------------------------------------------------------------------------
+
+def _str2bool(val: str):
+    """Copy of strtobool from deprecated distutils package"""
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return False
+    raise ValueError(f"Invalid truth value {repr(val)}!")
+
+
+def _find_dirs(base: str, *, exclude_prefixes: list = (".", "_")) -> list:
+    return [
+        d for d in os.listdir(os.path.join(base))
+        if os.path.isdir(os.path.join(base, d)) and
+        not any(d.startswith(prefix) for prefix in exclude_prefixes)
+    ]
+
+
+def _copy_figures_flat(
+    *, source_dir: str, target_dir: str, file_types: list
+) -> list:
+    """Copies figures of certain file types from a nested source directory
+    into a (flat) target directory.
+    Returns a list of (source, target) tuples.
+    """
+    from pathlib import Path
+    from shutil import copy2
+
+    copies = []
+
+    src_files = []
+    for file_type in file_types:
+        src_files += [str(p) for p in Path(source_dir).rglob(file_type)]
+
+    if not src_files:
+        print("There were NO source files to copy!")
+        print(
+            f"Make sure there was plot output in\n  {source_dir}\nand that "
+            f"the file extensions ({file_types}) are specified as expected.\n"
+        )
+        return
+
+    _files = "\n".join(f"  .{f[len(source_dir):]}" for f in src_files)
+    print(f"Files found within source dir ({source_dir}):\n{_files}")
+
+    print(f"\nNow copying into target directory ({target_dir}) as ...")
+    for f in src_files:
+        print(f"  ./{os.path.basename(f):<42s}", end="")
+        target_path = os.path.join(target_dir, os.path.basename(f))
+
+        if os.path.exists(target_path):
+            print(" -- overwriting existing ...")
+        else:
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            print("")
+
+        # Now copy
+        copy2(f, target_path)
+        copies.append((f, target_path))
+
+    print("\nCopying all done.")
+    return copies
+
+
+def generate_figures():
+    """Generates plot output from utopia model runs"""
+    TOGGLE_ENVVAR = "UTOPIA_DOC_GENERATE_FIGURES"
+    print(
+        f"Checking {TOGGLE_ENVVAR} environment variable for whether figures "
+        "should be generated ..."
+    )
+    if (
+        not os.environ.get(TOGGLE_ENVVAR) or
+        not _str2bool(os.environ.get(TOGGLE_ENVVAR, "False"))
+    ):
+        print(
+            f"Not generating figures. Set the {TOGGLE_ENVVAR} "
+            "environment variable to control this behavior.\n\n"
+        )
+        return
+
+    from utopya import Model
+
+    cfg_base_dir = "@CMAKE_CURRENT_SOURCE_DIR@/_cfg"
+    figure_out_dir = "@CMAKE_CURRENT_SOURCE_DIR@/_static/_gen"
+    file_types = ("*.png", "*.pdf", "*.mp4")  # should be glob strings
+    num_figures = 0
+
+    # Define models to run this for
+    model_names = _find_dirs(cfg_base_dir)
+    print(f"Found model configuration(s):  {', '.join(model_names)}\n\n")
+
+    for model_name in model_names:
+        model = Model(name=model_name, use_tmpdir=True, sim_errors="raise")
+
+        # Determine the names of all config directories in there
+        cfg_names = _find_dirs(os.path.join(cfg_base_dir, model_name))
+        print(
+            "Configurations to generate figures from:\n  ",
+            ", ".join(cfg_names),
+        )
+
+        # ... and generate output for each of them
+        for cfg_name in cfg_names:
+            print(f"\n\n\n--- Configuration:  {cfg_name} ... ---")
+            cfg_dir = os.path.join(cfg_base_dir, model_name, cfg_name)
+
+            # Run
+            mv, _ = model.create_run_load(
+                run_cfg_path=os.path.join(cfg_dir, "run.yml")
+            )
+
+            # Plot
+            mv.pm.raise_exc = True
+            mv.pm.plot_from_cfg(
+                plots_cfg=os.path.join(cfg_dir, "eval.yml")
+            )
+
+            # Gather figure output into
+            paths = _copy_figures_flat(
+                source_dir=mv.pm.common_out_dir,
+                target_dir=os.path.join(figure_out_dir, model_name, cfg_name),
+                file_types=file_types,
+            )
+            num_figures += len(paths)
+
+    print(
+        f"Generated {num_figures} figures from {len(model_names)} models.\n\n"
+    )
+
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
 def setup(app):
-    # Run the apidoc builder
+    # Perform model simulations to generate to-be-embedded figures
+    generate_figures()
+
+    # Run the apidoc builder -- not currently in use
     # app.connect("builder-inited", run_apidoc)
 
     # Handle some events manually
