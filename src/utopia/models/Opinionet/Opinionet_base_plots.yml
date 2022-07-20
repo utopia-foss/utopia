@@ -210,7 +210,7 @@ localization_over_tolerance:
             args: [!dag_prev ]
             kwargs:
               time: -1
-          - operation: op_localization
+          - operation: Opinionet.op_localization
             args: [!dag_prev ]
             kwargs:
               along_dim: vertex_idx
@@ -276,7 +276,7 @@ localization_2d:
             args: [!dag_prev ]
             kwargs:
               time: -1
-          - operation: op_localization
+          - operation: Opinionet.op_localization
             args: [!dag_prev ]
             kwargs:
               along_dim: vertex_idx

@@ -152,10 +152,35 @@ densities.mv:
 phase_diagram:
   based_on:
     - .defaults
-    - .plot.phase_diagram
+    - .creator.universe
+    - .plot.facet_grid.scatter
+  select:
+    kind:
+      path: densities
+  transform:
+    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [ !dag_tag kind, { kind: exposed } ]
+      kwargs: { drop: true }
+      tag: exposed
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true }
+      tag: infected
+    - .sel: [ !dag_tag kind, { kind: recovered } ]
+      kwargs: { drop: true }
+      tag: recovered
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          exposed: !dag_tag exposed
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
 
   cmap: viridis_r
-
+  hue: time
   helpers:
     set_title:
       title: Phase Diagram

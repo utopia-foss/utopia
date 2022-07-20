@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import find_peaks
 
-from utopya.eval import register_operation
+from utopya.eval import is_operation
 
 # .. Helper functions .........................................................
 
@@ -14,9 +14,7 @@ def apply_along_dim(func):
     def _apply_along_axis(data, along_dim: str = None, *args, **kwargs):
         if along_dim is not None:
             ax = data.get_axis_num(along_dim)
-            return np.apply_along_axis(
-                func, axis=ax, arr=data, *args, **kwargs
-            )
+            return np.apply_along_axis(func, axis=ax, arr=data, *args, **kwargs)
         else:
             return func(data, *args, **kwargs)
 
@@ -26,6 +24,7 @@ def apply_along_dim(func):
 # .. Statistics on opinion data ...............................................
 
 
+@is_operation("Opinionet.op_number_of_peaks")
 @apply_along_dim
 def op_number_of_peaks(data, *, bins: int, interval, **find_peaks_kwargs):
     hist, _ = np.histogram(data, range=interval, bins=bins)
@@ -33,6 +32,7 @@ def op_number_of_peaks(data, *, bins: int, interval, **find_peaks_kwargs):
     return peak_number
 
 
+@is_operation("Opinionet.op_localization")
 @apply_along_dim
 def op_localization(data, *, bins: int, interval):
     hist, _ = np.histogram(data, range=interval, bins=bins, density=True)
@@ -44,19 +44,13 @@ def op_localization(data, *, bins: int, interval):
     return l
 
 
+@is_operation("Opinionet.op_polarization")
 @apply_along_dim
 def op_polarization(data, interval):
     p = sum(
-        (data[i] - data[j]) ** 2
-        for i in range(len(data))
-        for j in range(len(data))
+        (data[i] - data[j]) ** 2 for i in range(len(data)) for j in range(len(data))
     )
     # normalize to data size and interval width
     p *= 2.0 / len(data) ** 2
     p /= (interval[1] - interval[0]) ** 2
     return p
-
-
-register_operation(name="op_number_of_peaks", func=op_number_of_peaks)
-register_operation(name="op_localization", func=op_localization)
-register_operation(name="op_polarization", func=op_polarization)

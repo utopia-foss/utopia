@@ -49,6 +49,12 @@ Where to specify changes
 Short Answer
 """"""""""""
 If in doubt, use the run configuration; you can specify everything there.
+But to avoid excessive duplication of plot configurations when adding config sets, make use of the
+plot configuration inheritance discussed above:
+
+* put shared definitions into the base configuration
+* in the config set, only specify those options that deviate from the default or that should better be explicitly specified
+
 
 Longer Answer
 """""""""""""
