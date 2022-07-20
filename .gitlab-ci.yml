@@ -49,6 +49,7 @@ stages:
   - setup     # (on master) set up the docker base image
   - build     # build utopia and all tests
   - test      # carry out tests
+  - docs      # build the documentation (requires build stage artifacts)
   - deploy    # deploy documentation; build and deploy docker image (on master)
 
 
@@ -121,36 +122,8 @@ setup:utopia-base:
 
 
 # -- Build stage --------------------------------------------------------------
-# In this stage, the tests, models, and documentation is built
-# The artifacts of the tests and models jobs are needed in the test stage
-
-# Build the documentation and expose it as a review environment
-build:docs:
-  stage: build
-  allow_failure: true
-  script:
-    - mkdir build && cd build
-    - cmake ..
-    - make doc
-  after_script:
-    # Append the error log such that it's more convenient to read in the CI log
-    - echo "-------- Errors emitted during building of documentation --------"
-    - cat $CI_PROJECT_DIR/build/doc/build_errors.log || true
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/build/doc
-      - $CI_PROJECT_DIR/build/doc/build_errors.log
-    expire_in: 1 day
-    expose_as: Documentation build - including error log
-
-  environment:
-    name: review/docs/$CI_COMMIT_REF_NAME
-    auto_stop_in: six weeks
-    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
-
-
+# In this stage, the tests and models are built.
+# Artifacts are needed in the next stages.
 
 # Build the core unit tests; artifacts used in test stage
 build:tests_core:
@@ -250,19 +223,9 @@ build:install:
     - cp -r ~/.cmake .  # makes packgage registry available as artifact
 
 
+
 # -- Test stage ---------------------------------------------------------------
 # Uses artifacts of the build stage to test: backend, models, CLI, installation
-
-# A separate test job for running doctest (requires models to be compiled)
-test:docs:
-  stage: test
-  needs:
-    - "build:docs"
-    - "build:models"
-  script:
-    - cd build
-    - make check_docs
-
 
 # Test the core library
 test:core:
@@ -271,7 +234,7 @@ test:core:
     - .coverage_report
     - .use_multicore_group_runners
   needs:
-    - "build:tests_core"
+    - build:tests_core
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -301,7 +264,7 @@ test:core:
     expire_in: 1 week
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/core
+    name: review/coverage/core/$CI_COMMIT_REF_NAME
     auto_stop_in: six weeks
     url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/coverage/report.html
 
@@ -310,7 +273,7 @@ test:core:
 test:dataio:
   extends: test:core
   needs:
-    - "build:tests_dataio"
+    - build:tests_dataio
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -322,7 +285,7 @@ test:dataio:
     expose_as: Coverage report of DataIO tests
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/dataio
+    name: review/coverage/dataio/$CI_COMMIT_REF_NAME
 
 
 # Test the models via their own tests and via the CLI
@@ -330,7 +293,7 @@ test:models:
   stage: test
   extends: test:core
   needs:
-    - "build:models"
+    - build:models
   variables:
     # Exclude any paths containing 'test', should not count towards coverage
     GCOVR_PATHS:
@@ -374,7 +337,7 @@ test:models:
     expose_as: Coverage report of model tests
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/models
+    name: review/coverage/models/$CI_COMMIT_REF_NAME
 
 
 # Test the utopia command line interface
@@ -383,7 +346,7 @@ test:models:
 test:cli:
   stage: test
   needs:
-    - "build:models"
+    - build:models
   artifacts:
     name: utopia_output
     paths:
@@ -411,7 +374,7 @@ test:cli:
 
     # Write start and step
     - utopia run dummy -d --note write_sparse -N 10 --write-every 2 --no-eval
-    - utopia run dummy -d --note write_last -N 10 ---write-start 10 --no-eval
+    - utopia run dummy -d --note write_last -N 10 --write-start 10 --no-eval
 
     # Select a different run mode
     - utopia run ForestFire -d --num-seeds=3 --note some_sweep
@@ -450,9 +413,8 @@ test:cli:
     - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --dry-run
     - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes
 
-    # Attempting to copy it again should fail only in debug mode (files exist)
+    # Attempting to copy it again should fail (only in debug mode, files exist)
     - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --debug; then exit 1; else echo -e "\n\nFailed as expected!"; fi
-    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes
 
     # Test that it is registered. Note: Does not test building!
     - cd build && cmake ..
@@ -478,7 +440,7 @@ test:cli:
 test:link_build_tree:
   stage: test
   needs:
-    - "build:install"
+    - build:install
   script:
     # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
@@ -499,20 +461,78 @@ test:link_install_tree:
     # Build downstream module
     - mkdir build-dep && cd build-dep
 
-    # CMake v3.10 is restricted to _DIR, CMake >=v3.14 can use _ROOT
     - cmake
-        -DUtopia_DIR=$CI_PROJECT_DIR/install/lib/cmake/Utopia
         -DUtopia_ROOT=$CI_PROJECT_DIR/install
         ../test/dependency
     - make $MAKE_FLAGS_BUILD all
     - make test
 
 
+
+
+# -- Docs stage ---------------------------------------------------------------
+
+# Build the documentation and expose it as a review environment
+docs:build:
+  stage: docs
+  allow_failure: true
+  when: always
+  extends:
+    - .use_multicore_group_runners
+  needs:
+    - build:models
+  variables:
+    # Control figure generation from Utopia models
+    UTOPIA_DOC_GENERATE_FIGURES: "True"
+
+  before_script:
+    # Need LaTex for plots   # FIXME install this in the docker image instead!
+    - apt-get update && apt-get install -y texlive-latex-extra texlive-fonts-recommended dvipng cm-super
+
+    - cd build
+    - cmake ..
+  script:
+    - make doc
+    - UTOPIA_DOC_GENERATE_FIGURES=False make check_docs
+  after_script:
+    # Append the error log such that it's more convenient to read in the CI log
+    - echo "-------- Errors emitted during building of documentation --------"
+    - cat $CI_PROJECT_DIR/build/doc/build_errors.log || true
+
+  artifacts: &doc_artifacts
+    name: $CI_JOB_NAME
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/build/doc/
+
+
+
+
+
 # -- Deploy Stage -------------------------------------------------------------
 # Deploy ...
+#   - a documentation review environment, which is meant to *always* be created
+#     even if the build:docs job failed with allow_failure set.
 #   - the documentation by triggering a pipeline in the docs project, which has
 #     the docs.utopia-project.org domain registered with GitLab Pages
 #   - the latest Utopia docker image to Docker Hub: ccees/utopia:latest
+
+
+deploy:docs_review:
+  image: alpine
+  stage: deploy
+  needs:
+    - docs:build
+  when: always
+  script:
+    - echo "Deploying Utopia Docs to review environment ..."
+  artifacts:
+    <<: *doc_artifacts
+  environment:
+    name: review/docs/$CI_COMMIT_REF_NAME
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
+
 
 deploy:docs_gitlab_pages:
   image: curlimages/curl:latest
@@ -520,7 +540,7 @@ deploy:docs_gitlab_pages:
   only:
     - master@utopia-project/utopia
   needs:
-    - job: "build:docs"
+    - job: docs:build
       artifacts: false
   script:
     - curl -X POST -F token=$DOC_DEPLOYMENT_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/25960923/trigger/pipeline

@@ -27,7 +27,7 @@ _variables:
 .defaults:
   based_on: .defaults
 
-  # Can define something here ...
+  # Optionally define something here ...
 
 
 # -- Creators -----------------------------------------------------------------

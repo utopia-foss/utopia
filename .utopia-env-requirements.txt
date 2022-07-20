@@ -11,5 +11,3 @@ pytest-cov
 
 
 # Requirements for Python model plots
-
-
