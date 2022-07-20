@@ -6,25 +6,47 @@
   base_path: &base_path data/GameOfLife
 
 
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
 
+
+
 # =============================================================================
-# == PLOTS ====================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 
 # A state animation of the cellular automaton
@@ -53,7 +75,7 @@ density_living_cells:
     - .plot.facet_grid.with_auto_encoding
     - .plot.facet_grid.line
     - .hlpr.kind.time_series
-    - .hlpr.limits.y_from_zero
+    - .hlpr.limits.y.from_zero
 
   select_and_combine:
     fields:

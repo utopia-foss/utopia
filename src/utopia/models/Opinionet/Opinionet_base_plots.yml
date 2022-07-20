@@ -3,42 +3,67 @@
 .variables:
   base_path: &base_path data/Opinionet
 
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
 
-# -- Templates ----------------------------------------------------------------
+
+# .. Plot functions ...........................................................
 .plot.errorbars:
-  creator: multiverse
+  based_on:
+    - .plot.facet_grid.errorbars
+
   expected_multiverse_ndim: [1,2,3,4,5]
-  module: dantro.plot_creators.ext_funcs.generic
-  plot_func: errorbars
 
 
 .plot.sweep2d:
-  creator: multiverse
-  expected_multiverse_ndim: [2,3,4,5]
   module: model_plots.Opinionet
   plot_func: sweep2d
 
+  expected_multiverse_ndim: [2,3,4,5]
+
+
+
 
 # =============================================================================
-# == PLOTS ====================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
-
 # -- Graph plots --------------------------------------------------------------
 graph:
   based_on:
@@ -72,17 +97,12 @@ graph:
 
 graph_animation:
   based_on:
-    - .creator.universe
+    - graph
     - .animation.ffmpeg
-    - .plot.graph
-
-  select:
-    graph_group: nw
 
   graph_creation:
-    node_props: ['opinion']
-  graph_drawing:
-    <<: *graph_drawing
+    at_time_idx: ~
+
   graph_animation:
     sel:
       time:
@@ -173,7 +193,9 @@ opinion_time_series:
 
 # evaluating a parameter sweep over the tolerance and the seed
 localization_over_tolerance:
-  based_on: .plot.errorbars  # overloaded, see above
+  based_on:
+    - .creator.multiverse
+    - .plot.errorbars  # overloaded, see above
 
   select_and_combine:
     fields:
@@ -233,7 +255,9 @@ localization_over_tolerance:
 
 # evaluating a parameter sweep over the tolerance and susceptibility
 localization_2d:
-  based_on: .plot.sweep2d  # overloaded, see above
+  based_on:
+    - .creator.multiverse
+    - .plot.sweep2d  # overloaded, see above
 
   select_and_combine:
     fields:

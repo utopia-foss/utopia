@@ -38,5 +38,6 @@ ca/avalanche:
   based_on: ca/avalanche
   enabled: false
 
+# Combined
 ca/slope_and_avalanche:
   based_on: ca/slope_and_avalanche

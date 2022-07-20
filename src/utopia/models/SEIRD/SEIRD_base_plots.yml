@@ -1,6 +1,6 @@
 # Base configuration for SEIRD model plots
 ---
-.variables:
+_variables:
   base_path: &base_path  data/SEIRD
 
   cmap: &cmap
@@ -14,39 +14,49 @@
     inert: &color_inert moccasin
 
 
-# -- Overloads ----------------------------------------------------------------
-# Overload some configs to insert SEIRD-specific settings
 
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# -- Creators -----------------------------------------------------------------
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
-.animation.ffmpeg:
-  based_on: .animation.ffmpeg
-  animation:
-    writer_kwargs:
-      ffmpeg:
-        init:
-          fps: 8
-        saving:
-          dpi: 300
+# -- Plot functions -----------------------------------------------------------
+.plot.phase_diagram:
+  # Only works with UniversePlotCreator
+  creator: universe
+  universes: all
 
-.animation.frames:
-  based_on: .animation.frames
-  animation:
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 300
+  module: model_plots.SEIRD
+  plot_func: phase_diagram
+
 
 
 # -- Styles -------------------------------------------------------------------
@@ -55,34 +65,38 @@
 # NOTE The order in the evaluated format string needs to match the order in
 #      which the cycling happens! This is an implicit mapping.
 
-style.prop_cycle.ESEIRDSI:
+.style.prop_cycle.ESEIRDSI:
   style:
     axes.prop_cycle: !format
       fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}', '{cmap[source]:}', '{cmap[inert]:}'])"
       cmap: *cmap
 
-style.prop_cycle.seird:
+.style.prop_cycle.seird:
   style:
     axes.prop_cycle: !format
       fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
       cmap: *cmap
 
-style.prop_cycle.deceased:
+.style.prop_cycle.deceased:
   style:
     axes.prop_cycle: !format
       fstr: "cycler('color', ['{cmap[deceased]:}'])"
       cmap: *cmap
 
-style.prop_cycle.default:
+.style.prop_cycle.default:
   style:
     axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
 
 
 
-# =============================================================================
-# == PLOTS ====================================================================
-# =============================================================================
 
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
 # -- Densities time series ----------------------------------------------------
 
 densities.uni:
@@ -90,7 +104,7 @@ densities.uni:
     - .creator.universe
     - .plot.facet_grid.line
     - .hlpr.kind.time_series
-    - style.prop_cycle.ESEIRDSI
+    - .style.prop_cycle.ESEIRDSI
 
   select:
     data: densities
@@ -115,7 +129,7 @@ densities.mv:
     - .plot.facet_grid.with_auto_encoding
     - .plot.facet_grid.line
     - .hlpr.kind.time_series
-    - style.prop_cycle.ESEIRDSI
+    - .style.prop_cycle.ESEIRDSI
 
   expected_multiverse_ndim: [1, 2, 3]
 
@@ -136,13 +150,9 @@ densities.mv:
 
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
-  based_on: .default_style_and_helpers
-
-  creator: universe
-  universes: all
-
-  module: model_plots.SEIRD
-  plot_func: phase_diagram
+  based_on:
+    - .defaults
+    - .plot.phase_diagram
 
   cmap: viridis_r
 
@@ -156,6 +166,40 @@ phase_diagram:
   # Parameters that are passed on to plt.scatter
   s: 10
 
+phase_diagram/SI:
+  based_on: phase_diagram
+
+  # Select from which densities to create the phase diagram
+  x: susceptible
+  y: infected
+
+  helpers:
+    set_labels:
+      x: Susceptible Density [1/A]
+      y: Infected Density [1/A]
+
+phase_diagram/SE:
+  based_on: phase_diagram
+
+  x: susceptible
+  y: exposed
+
+  helpers:
+    set_labels:
+      x: Susceptible Density [1/A]
+      y: Exposed Density [1/A]
+
+phase_diagram/EI:
+  based_on: phase_diagram
+
+  x: exposed
+  y: infected
+
+  helpers:
+    set_labels:
+      x: Exposed Density [1/A]
+      y: Infected Density [1/A]
+
 
 
 
@@ -164,7 +208,7 @@ phase_diagram:
 counters:
   based_on:
     - .creator.universe
-    - .dag.generic.facet_grid
+    - .plot.facet_grid
 
   select:
     counts: counts
@@ -192,19 +236,110 @@ counters:
           x: Time [Iteration Steps]
 
 
+# .. Movement stats ...........................................................
+movement:
+  based_on: counters
+
+  transform:
+    - .sel: [!dag_tag d_counts]
+      kwargs:
+        label:
+          - move_randomly
+          - move_away_from_infected
+      tag: data
+
+  kind: line
+  x: time
+  hue: label
+
+  helpers:
+    set_labels:
+      y: Movement Events
+
+
+# .. State transitions ........................................................
+transitions/raw:
+  based_on: counters
+
+  transform:
+    - &op_sel_transitions
+      .sel: [!dag_tag d_counts]
+      kwargs:
+        label:
+          - empty_to_susceptible
+          - living_to_empty
+          - susceptible_to_exposed_contact
+          - susceptible_to_exposed_random
+          - susceptible_to_exposed_controlled
+          - exposed_to_infected
+          - infected_to_recovered
+          - infected_to_deceased
+          - recovered_to_susceptible
+
+    # Define as data to be plotted
+    - define: !dag_prev
+      tag: data
+
+  kind: line
+  x: time
+  col: label
+  col_wrap: 3
+  sharey: true
+
+transitions/combined: &transitions_combined
+  based_on: counters
+
+  transform:
+    - *op_sel_transitions
+    - define: !dag_prev
+      tag: data
+
+  kind: line
+  x: time
+  hue: label
+
+  helpers:
+    set_labels:
+      y: Counts
+
+transitions/smoothed:
+  <<: *transitions_combined
+
+  transform:
+    - *op_sel_transitions
+
+    # Apply rolling mean over a number of time coordinates
+    - callattr: [!dag_prev , rolling]
+      kwargs:
+        dim:
+          # NOTE This value should be reduced if writing less frequently
+          time: &smoothed_by 7
+        # Configure rolling window such that early values are included
+        min_periods: 2
+        center: false
+    - callattr: [!dag_prev , mean]
+
+    # Define as data to be plotted
+    - define: !dag_prev
+      tag: data
+
+  helpers:
+    set_labels:
+      y: !format ["Counts (smoothed over {} data points)", *smoothed_by]
+
+
+
 # --- Distributions -----------------------------------------------------------
 
-age_distribution:  # FIXME Migrate plot
+age_distribution:
   based_on:
-    - .default_style_and_helpers
+    - .defaults
     - .creator.universe
-    - .dag.generic.histogram
+    - .plot.histogram
 
   select:
     age: age
     kind: kind
-  dag_options:
-    select_path_prefix: data/SEIRD
 
   x: age
   hue: kind
@@ -215,6 +350,62 @@ age_distribution:  # FIXME Migrate plot
       y: Counts
     set_title:
       title: Age Distribution
+
+age_distribution/final:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.seird
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+    # Select the last time step
+    - .isel: [!dag_prev , {time: -1}]
+      tag: counts
+
+  helpers:
+    set_title:
+      title: Final Age Distribution
+
+
+age_distribution/time_series:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.seird
+    - .animation.ffmpeg
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        normalize: false  # optional. Default: false
+      tag: counts
+
+  # Represent the time dimension as frames of the animation
+  frames: time
+
+
+age_distribution/deceased:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.deceased
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        compute_for_kinds: [deceased]
+    - .sum: [!dag_prev , time]
+    - print: !dag_prev
+      tag: counts
+
+  helpers:
+    set_title:
+      title: Deceased Age Distribution
+
+
+
 
 
 # --- CA Plots ----------------------------------------------------------------

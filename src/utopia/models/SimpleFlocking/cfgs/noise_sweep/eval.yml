@@ -4,13 +4,12 @@
 time_series/final_group_velocity:
   based_on: time_series/final_group_velocity
 
-  # average over seed dimension
   transform:
+    # average over seed dimension
     - .mean: [!dag_tag _data, seed]
       tag: data
 
   # specify encoding
-  kind: line
   x: noise_level
   hue: "N"
 
@@ -22,3 +21,8 @@ time_series/final_group_velocity:
     set_labels:
       x: noise level $\mu$
       y: $v_a$
+
+time_series/final_group_velocity_errorbars:
+  based_on:
+    - time_series/final_group_velocity
+    - time_series/final_group_velocity_errorbars

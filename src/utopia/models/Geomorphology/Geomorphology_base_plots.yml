@@ -4,27 +4,48 @@
   base_path: &base_path data/Geomorphology
 
 
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
 
-# =============================================================================
-# == PLOTS ====================================================================
-# =============================================================================
 
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
 # The spatial development in the CA
 ca:
   based_on:

@@ -3,26 +3,51 @@
 .variables:
   base_path: &base_path  data/ForestFire
 
-# -- Overloads ----------------------------------------------------------------
-# Overload some configs to insert ForestFire-specific settings
 
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
-# =============================================================================
-# == PLOTS ====================================================================
-# =============================================================================
 
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
 # -- Cluster size distribution ------------------------------------------------
 cluster_size_distribution:
   based_on:
@@ -156,17 +181,20 @@ compl_cum_cluster_size_dist.multiverse:
 # -- Tree density plots -------------------------------------------------------
 # ... Time series for each universe ...........................................
 tree_density:
-  based_on: .basic_uni.lineplot
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
 
-  model_name: ForestFire
-  path_to_data: tree_density
+  select:
+    data: tree_density
 
   helpers:
     set_title:
       title: Tree Density
     set_labels:
       x: Time [Steps]
-      y: Tree Density $[1/A]$
+      y: &label_tree_density Tree Density $[1/A]$
     set_limits:
       x: [0., max]
       y: [0., 1.]
@@ -193,6 +221,9 @@ tree_density_facet_grid:
   x: time
 
   helpers:
+    set_labels:
+      y: *label_tree_density
+      only_label_outer: true
     set_limits:
       y: [0., 1.]
 

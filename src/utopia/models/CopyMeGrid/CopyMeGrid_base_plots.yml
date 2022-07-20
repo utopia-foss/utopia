@@ -6,23 +6,41 @@
   base_path: &base_path data/CopyMeGrid
 
 
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
-# -- Plot templates -----------------------------------------------------------
 
+# -- Plot templates -----------------------------------------------------------
 # Time series facet grid plots
 .plot.time_series.base:
   based_on:
@@ -50,8 +68,12 @@
 
 
 
+
+
 # =============================================================================
-# == PLOTS ====================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 
 # .. Mean value time series ...................................................

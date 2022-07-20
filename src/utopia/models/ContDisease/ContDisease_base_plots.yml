@@ -1,43 +1,72 @@
-# Base configuration for ContDisease model plots
+# Base plot configuration pool for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file.
 ---
 .variables:
   base_path: &base_path data/ContDisease
 
-  colors:
-    empty: &color_empty darkkhaki
-    tree: &color_tree forestgreen
-    infected: &color_infected firebrick
-    source: &color_source orange
-    stone: &color_stone slategray
+  colors:                                   # state value
+    empty: &color_empty darkkhaki           # 0
+    tree: &color_tree forestgreen           # 1
+    infected: &color_infected firebrick     # 2
+    source: &color_source orange            # 3
+    stone: &color_stone slategray           # 4
 
     cycler: &cycler 'cycler(
         "color",
         ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
     )'
 
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
 
+
+
+
 # =============================================================================
-# == PLOTS ====================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 # -- Any kind of phase plot ---------------------------------------------------
-phase_diagram:  # TODO Consider migrating to facet grid scatter plot
-  based_on: .default_style_and_helpers
+phase_diagram:  # TODO Migrate to facet grid scatter plot
+  based_on:
+    - .defaults
 
   creator: universe
   universes: all
@@ -52,11 +81,12 @@ phase_diagram:  # TODO Consider migrating to facet grid scatter plot
       title: Phase Diagram
 
 
+
 # -- Densities plot -----------------------------------------------------------
 densities.base:
   based_on:
-    - .hlpr.kind.time_series
     - .plot.facet_grid.line
+    - .hlpr.kind.time_series
 
   x: time
   hue: kind

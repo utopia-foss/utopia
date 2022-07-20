@@ -10,7 +10,6 @@ time_series/final_group_velocity:
       tag: data
 
   # specify encoding
-  kind: line
   x: "N"
   hue: noise_level
 
@@ -22,3 +21,8 @@ time_series/final_group_velocity:
     set_labels:
       x: $N$
       y: $v_a$
+
+time_series/final_group_velocity_errorbars:
+  based_on:
+    - time_series/final_group_velocity
+    - time_series/final_group_velocity_errorbars

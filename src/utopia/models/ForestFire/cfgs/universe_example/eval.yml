@@ -8,17 +8,10 @@ tree_density:
 
 # --- Animation of the spatial grid -------------------------------------------
 # ... With binary state .......................................................
-forest:
-  based_on: .ca.state.anim_frames
+ca/forest:
+  based_on: ca/forest
 
-  model_name: ForestFire
-
-  # Select the properties to plot
-  to_plot:
-    # Plot the kind (tree or empty)
-    kind:
-      title: Forest State
-      limits: [0, 1]
-      cmap: 
-        Empty: darkkhaki
-        Tree: forestgreen
+ca/forest_final:
+  based_on:
+    - ca/forest
+    - .plot.ca.snapshot

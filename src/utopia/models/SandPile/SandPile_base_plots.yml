@@ -3,31 +3,48 @@
 .variables:
   base_path: &base_path  data/SandPile
 
-# -- Overloads ----------------------------------------------------------------
-# Overload some configs to insert SandPile-specific settings
 
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
+# -- Plot functions -----------------------------------------------------------
+# .. A plot of the slope (mean - critical_slope) ..............................
+.plot.mean_slope:
+  based_on:
+    - .defaults
 
-# =============================================================================
-# == PLOTS ====================================================================
-# =============================================================================
-
-# --- A plot of the slope (mean - critical_slope) -----------------------------
-mean_slope:
-  based_on: .default_style_and_helpers
-
+  # This plot only works with the universe plot creator, does not support DAG
   creator: universe
   universes: all
 
@@ -35,7 +52,20 @@ mean_slope:
   module: model_plots.SandPile
   plot_func: mean_slope
 
-  # Select that the critical slope value should be added to the plot
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+
+# -- Mean slope ---------------------------------------------------------------
+mean_slope:
+  based_on:
+    - .plot.mean_slope
+
+  # Specify that the critical slope value should be added to the plot
   show_critical_slope_value: true
 
   # Add a title
@@ -48,7 +78,9 @@ mean_slope:
   marker: '.'
 
 
-# --- Avalanche area fraction time series -------------------------------------
+
+
+# -- Avalanche area fraction time series --------------------------------------
 area_fraction:
   based_on:
     - .creator.universe

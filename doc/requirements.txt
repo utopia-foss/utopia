@@ -10,3 +10,8 @@ ipython>=7.0
 # Themes
 sphinx_rtd_theme   # unused, but kept for downstream compatibility
 sphinx-book-theme
+
+# Workaround for sphinx-markdown-tables but occuring with more recent versions
+# of the markdown package.
+# See   https://github.com/ryanfox/sphinx-markdown-tables/issues/36
+markdown<3.4

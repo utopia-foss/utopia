@@ -14,14 +14,19 @@ log = logging.getLogger(__name__)
 
 @is_plot_func(use_dag=True, required_dag_tags=("data",))
 def sweep2d(
-    data, hlpr: PlotHelper, x: str, y: str, z: str, plot_kwargs: dict = {}
+    *,
+    data: dict,
+    hlpr: PlotHelper,
+    x: str,
+    y: str,
+    z: str,
+    plot_kwargs: dict = {},
 ):
-
     """For multiverse runs, this produces a two dimensional plot showing
     specified values.
 
     Arguments:
-        data (xarray): the dataset
+        data (dict): the DAG results
         hlpr (PlotHelper): description
         x (str): the first parameter dimension of the diagram.
         y (str): the second parameter dimension of the diagram.

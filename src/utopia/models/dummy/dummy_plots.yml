@@ -6,8 +6,14 @@ state_mean:
 
 states: !pspace
   based_on: states
+  enabled: false
 
   # Go over multiple time steps
   step: !sweep
     default: 0
     values: [0, 1, 2, 3]
+
+
+final_state:
+  based_on: states
+  step: -1

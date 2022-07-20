@@ -6,24 +6,47 @@
   base_path: &base_path data/Environment
 
 
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
 # -- Overloads ----------------------------------------------------------------
 # Overload some configs to insert model-specific settings
 
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
 .creator.universe:
-  based_on: .creator.universe
+  based_on:
+    - .creator.universe
+    - .defaults
 
   dag_options:
     select_path_prefix: *base_path
 
 .creator.multiverse:
-  based_on: .creator.multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
     base_path: *base_path
 
 
+
+
+
 # =============================================================================
-# == PLOTS ====================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 
 ca/parameter:
@@ -41,12 +64,10 @@ ca/parameter:
 
 
 trajectory:
-  based_on: .basic_uni.lineplot
-  model_name: Environment
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
 
-  path_to_data: some_global_parameter
-
-  helpers:
-    set_labels:
-      x: time
-      y: some global parameter
+  select:
+    data: some_global_parameter

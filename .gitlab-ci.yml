@@ -378,7 +378,8 @@ test:models:
 
 
 # Test the utopia command line interface
-# TODO Consider removing this test -- is basically tested by utopya already
+# NOTE This does not test the full CLI, because that would be utopya's job.
+#      This job only makes sure that the most basic commands continue to work.
 test:cli:
   stage: test
   needs:
@@ -402,108 +403,75 @@ test:cli:
     # Show which models are available
     - utopia models ls --long
 
-    # Test the run command
-    - utopia run dummy
+    # .. Running models .......................................................
+    - utopia run dummy --debug
 
     # Test passing a custom run configuration and performing a sweep
-    - utopia run dummy python/model_tests/dummy/sweep.yml --run-mode sweep --note sweep
-
-    # Test setting the number of steps (negative should fail)
-    - utopia run dummy --num-steps 1 --no-eval
-    - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
-
-    # Test setting the number of seeds (>= 1 should work)
-    - utopia run dummy --num-seeds 2 --run-mode sweep --no-eval --note sweep_via_cli
-    - utopia run dummy --num-seeds 1 --run-mode sweep --no-eval --note sweep_via_cli_single_seed
-
-    # Test debug mode and setting simulation errors level
-    - utopia run dummy --note debug0 --num-steps 3 -d
-    - utopia run dummy --note debug1 --num-steps 3 --debug
+    - utopia run dummy python/model_tests/dummy/sweep.yml --run-mode sweep --note sweep --debug
 
     # Write start and step
-    - utopia run dummy --note write_sparse --num-steps 5 --write-every 2
-    - utopia run dummy --note write_last -N 5 --ws 5
+    - utopia run dummy -d --note write_sparse -N 10 --write-every 2 --no-eval
+    - utopia run dummy -d --note write_last -N 10 ---write-start 10 --no-eval
+
+    # Select a different run mode
+    - utopia run ForestFire -d --num-seeds=3 --note some_sweep
+    - utopia run ForestFire -d --num-seeds=3 --run-mode single --note no_sweep
 
     # Test using a configuration set to specify run and plots config
-    - utopia run ForestFire --cs universe_example -N 10 --debug
-    - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo "\nFailed as expected"; fi
+    - utopia run ForestFire -d --cs universe_example -N 10
+    - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo -e "\nFailed as expected"; fi
 
-    # Test the printing of the data tree
-    # NOTE Need to sleep here because the eval directory will already exist
-    - utopia run dummy --show-data-tree full
-    - sleep 1.1 && utopia eval dummy --show-data-tree full
-    - utopia run dummy --show-data-tree none
-    - sleep 1.1 && utopia eval dummy --show-data-tree none
-
-    # Test tree file caching
-    - sleep 1.1 && utopia run dummy --use-data-tree-cache
-    - sleep 1.1 && utopia eval dummy --tc
-    - sleep 1.1 && utopia eval dummy --tc
-
-    # Test the plotting capabilities
+    # .. Evaluation ...........................................................
     - utopia run dummy --note plt0 --no-eval
     - sleep 1.1 && utopia eval dummy  # should create the corresponding plots
 
-    - utopia run dummy --note plt1
-    - utopia run dummy --note plt2 --plot-only states
-    - utopia run dummy --note plt3
-        --plots-cfg src/utopia/models/dummy/dummy_plots.yml
-    - utopia run dummy --note plt4
-        --update-plots-cfg state_step_1.based_on=states
-        -u state_step_1.step=1
-    - utopia run dummy --note plt5
-        --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml
-    - utopia run dummy --note plt6 --load-parallel --num-seeds 3 --po states
-
-    # Test the interactive plotting mode, piping mock input to it
-    # None of these should lead to an exit code other than 0
-    - sleep 1.1 && utopia eval --interactive dummy
+    # Interactive
+    - sleep 1.1 && utopia eval -d --interactive dummy
         <<< $'\n--plot-only states\n--plot-only state_mean --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--debug\n--debug --update-plots-cfg state_mean.foo=bar'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--plot-only some_non_existing_plot --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--plot-only some_non_existing_plot --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'some offending arguments\n--help'
 
-    # Test the setting of parameters and config parameters from CLI
-    - utopia run dummy --set-model-params foo=3 --mp bar=2.0
-    - utopia run dummy --set-pspace-params num_steps=3 --pp write_every=2
-    - utopia run dummy --set-params parameter_space.seed=23
-
-    # Test run configs with a parameter space of >0 dimensions which is then
-    # reduced to 0 dimensions -- data retrieval and plotting should still work
-    - utopia run ForestFire --debug --num-seeds=3 --note some_sweep
-    - utopia run ForestFire --debug --num-seeds=3 --run-mode single --note not_a_sweep
-
-    # Test batch evaluation
+    # Batch evaluation
     # - utopia batch python/utopya/test/cfg/batch_file.yml --single-worker --debug --note batch-CLI-test  # FIXME Lacking test file
 
-    # Fetching model information
+    # .. Getting model information ............................................
     - utopia models info dummy
     - utopia models info ForestFire
     - utopia models info SEIRD
 
+    # .. Model copying ........................................................
     # Test the model copying, first as a dry run, then for real
-    # TODO Reactivate, not currently implemented in utopya
-    # - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run
-    # - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive
+    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --dry-run
+    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes
+
+    # Attempting to copy it again should fail only in debug mode (files exist)
+    - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --debug; then exit 1; else echo -e "\n\nFailed as expected!"; fi
+    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes
 
     # Test that it is registered. Note: Does not test building!
-    # - cd build && cmake ..
-    # - if utopia models ls | grep -q FooBar; then echo "Found copied FooBar!"; else echo "Could not find copied FooBar model!" && exit 1; fi
+    - cd build && cmake ..
+    - if utopia models ls | grep -q FooBar; then echo "Found copied FooBar!"; else echo "Could not find copied FooBar model!" && exit 1; fi
 
-    # Attempting to copy it again should fail
-    # - if utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run; then exit 1; else echo "\nFailed as expected!"; fi
+    # After registration via cmake, will also fail, even without debug mode
+    # and when doing --dry-run, because the model already exists
+    - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --dry-run --yes; then exit 1; else echo -e "\n\nFailed as expected!"; fi
 
+
+    # .. Removing model registry entries ......................................
     # Test model registry entry removal interface; do this last, obviously
+    - utopia models rm FooBar --all --yes
+
     - utopia models rm dummy --label added_by_cmake
-    - if utopia run dummy; then exit 1; else echo "\nFailed as expected"; fi
+    - if utopia run dummy; then exit 1; else echo -e "\nFailed as expected"; fi
 
     - utopia models rm SEIRD --all --yes
-    - if utopia run SEIRD; then exit 1; else echo "\nFailed as expected"; fi
+    - if utopia run SEIRD; then exit 1; else echo -e "\nFailed as expected"; fi
 
 
 # Test if using Utopia in a downstream module works

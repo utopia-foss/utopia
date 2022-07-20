@@ -7,6 +7,11 @@
 ca/state:
   based_on: ca/state
 
+ca/state_final:
+  based_on:
+    - ca/state
+    - .plot.ca.snapshot
+
 # Density time development of living cells
 density_living_cells:
   based_on: density_living_cells
