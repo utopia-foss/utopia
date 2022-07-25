@@ -468,10 +468,10 @@ test:link_build_tree:
     - build:install
   dependencies:
     - build:install
-  before_script:
+  script:
     # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
-  script:
+
     # Build downstream module
     - cd $CI_PROJECT_DIR && mkdir build-dep && cd build-dep
 
