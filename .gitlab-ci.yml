@@ -246,9 +246,11 @@ build:install:
 # Tests pre-commit hooks
 test:check_hooks:
   stage: test
-  image: python:3.10
-  needs: []
+  allow_failure: true
+  needs:
+    - build:models
   before_script:
+    - $ENTER_UTOPIA_ENV
     - pip install pre-commit
   script:
     - pre-commit run --all-files --verbose --show-diff-on-failure
@@ -463,6 +465,8 @@ test:cli:
 test:link_build_tree:
   stage: test
   needs:
+    - build:install
+  dependencies:
     - build:install
   before_script:
     # Move the package registry into the user path
