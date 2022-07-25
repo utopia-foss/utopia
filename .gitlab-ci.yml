@@ -513,12 +513,9 @@ docs:build:
     - cd build
     - cmake ..
 
-    # Workaround for sphinx-markdown-tables bug occuring with more recent
-    # versions of the markdown package.
-    # See   https://github.com/ryanfox/sphinx-markdown-tables/issues/36
-    # FIXME Why does the one specified in doc/requirements.txt not suffice?
-    - $ENTER_UTOPIA_ENV
-    - pip install "markdown<3.4"
+    # Install dependencies and show installation result
+    - pip install -r ../doc/requirements.txt
+    - pip freeze
   script:
     # Generate figures and build docs
     - UTOPIA_DOC_GENERATE_FIGURES=True make doc

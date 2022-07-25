@@ -1,18 +1,15 @@
-Sphinx >= 4.5
+# Use a sphinx version that is compatible with sphinx-book-theme
+Sphinx == 4.5.*
 
 # Extensions
 sphinx-argparse
-sphinx-markdown-tables
 sphinx-togglebutton
 breathe >= 4.13
 myst-parser
+sphinx-markdown-tables >= 0.0.16
+markdown>=3.4.1
 ipython>=7.0
 
 # Themes
 sphinx_rtd_theme   # unused, but kept for downstream compatibility
 sphinx-book-theme
-
-# Workaround for sphinx-markdown-tables bug occuring with more recent versions
-# of the markdown package.
-# See   https://github.com/ryanfox/sphinx-markdown-tables/issues/36
-markdown<3.4
