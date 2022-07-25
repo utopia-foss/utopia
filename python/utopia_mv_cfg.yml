@@ -36,14 +36,9 @@ data_manager:
 
 # Plotting configuration
 plot_manager:
-  creator_init_kwargs:
-    universe:
-      style: &default_style
-        figure.figsize: [8., 5.]  # (16:10 instead of 4:3)
-
-    multiverse:
-      style:
-        <<: *default_style
+  shared_creator_init_kwargs:
+    style:
+      figure.figsize: [8., 5.]  # (16:10 instead of 4:3)
 
 
 # Default parameter space configuration
