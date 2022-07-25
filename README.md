@@ -49,6 +49,9 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 * [Quickstart](#quickstart)
 * [Documentation and Guides](#utopia-documentation)
 * [Information for Developers](#information-for-developers)
+    * [Testing](#testing)
+    * [Versioning](#utopia-versioning)
+    * [Utopia v1](#utopia-v1)
 * [Dependencies](#dependencies)
 * [Troubleshooting](#troubleshooting)
 
@@ -450,6 +453,27 @@ To make setting up such a project repository as easy as possible, we provide a t
 Follow the instructions in [the `models_template` project][models_template] for more information.
 
 
+### Utopia versioning
+Utopia deliberately avoids versioning: You will neither find exact version numbers nor periodic releases of Utopia.
+Instead, the main idea is to always use the latest version of the framework.
+
+Despite the above approach towards versioning, large infrastructure changes are indicated by an increase in a major version (`vX`) and a corresponding [release branch](https://gitlab.com/utopia-project/utopia/-/branches?state=all&search=v) of the same name.
+We do not specify minor version numbers or patch numbers because we do not want to suggest that there is a versioning scheme; we'd like you to "live at HEAD".
+
+So far, there has only been one large enough infrastructure change to warrant a new major version.
+The version of Utopia *prior* to that change is labelled `v1` and can be found on the `v1` branch (the one you are currently on) – more information on that [below](#utopia-v1).
+The *current* version of Utopia is referred to as "latest" and can be found on the [main branch](https://gitlab.com/utopia-project/utopia).
+The label `v2` for the latest version is avoided to not over-emphasize version numbers.
+
+
+#### Utopia `v1`
+Utopia `v1` refers to the state of Utopia prior to the [outsourcing of the `utopya` frontend package](https://gitlab.com/utopia-project/utopia/-/merge_requests/277) into its own repository.
+
+To use Utopia `v1`, make sure to locally check out this branch and stay on it.
+
+While we aim to cherry-pick important bug fixes into this branch, future development of Utopia will occur on the main branch, so it's worth considering to upgrade to the latest version of Utopia; see the [main branches README file](https://gitlab.com/utopia-project/utopia#upgrading-from-v1) for more information on upgrading.
+
+
 
 <!-- ###################################################################### -->
 
@@ -462,7 +486,7 @@ Follow the instructions in [the `models_template` project][models_template] for 
 | _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
 | [CMake](https://cmake.org/)                    | >= 3.13             | 3.16            | |
 | pkg-config                                     | >= 0.29             | 0.29            | |
-| [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4           | 1.10.4          | |
+| [HDF5](https://www.hdfgroup.org/solutions/hdf5/) | >= 1.10.4         | 1.10.4          | |
 | [Boost](http://www.boost.org/)                 | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
 | [Armadillo](http://arma.sourceforge.net/)      | >= 9.600            | 9.800           | |
 | [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.6.2            | 0.6.2           | |

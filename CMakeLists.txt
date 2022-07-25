@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 project(Utopia
     DESCRIPTION "Library for exploring complex & evolving model systems."
     LANGUAGES C CXX
-    VERSION 0.1
+    VERSION 1
 )
 
 # Use 'Release' as build type of none was selected by the user.
