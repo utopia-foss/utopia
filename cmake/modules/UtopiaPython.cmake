@@ -39,9 +39,9 @@ function(python_find_package)
     endif()
 
     # decide if we let errors pass
-    set (ERROR_SWITCH "STATUS")
+    set(ERROR_SWITCH "STATUS")
     if (ARG_REQUIRED)
-        set (ERROR_SWITCH "SEND_ERROR")
+        set(ERROR_SWITCH "SEND_ERROR")
     endif ()
 
     # Now, let pip try to find the package
@@ -129,7 +129,7 @@ endfunction()
 #          resolution of the error
 #
 function(python_pip_install)
-    set(OPTION UPGRADE)
+    set(OPTION UPGRADE ALLOW_FAILURE)
     set(SINGLE PACKAGE ERROR_HINT)
     set(MULTI INSTALL_OPTIONS)
     include(CMakeParseArguments)
@@ -139,6 +139,12 @@ function(python_pip_install)
             WARNING "Encountered unparsed arguments in python_pip_install!"
         )
     endif()
+
+    # decide whether to allow failure
+    set(ERROR_SWITCH "SEND_ERROR")
+    if (PYINST_ALLOW_FAILURE)
+        set(ERROR_SWITCH "WARNING")
+    endif ()
 
     set(INSTALL_ARGS)
     if(PYINST_PACKAGE)
@@ -160,7 +166,10 @@ function(python_pip_install)
     if (NOT RETURN_VALUE EQUAL "0")
         string(JOIN " " _INSTALL_ARGS ${INSTALL_ARGS})
         message(
-            SEND_ERROR "Call to `pip install ${_INSTALL_ARGS}` failed:\n${PIP_OUTPUT}\n${PYINST_ERROR_HINT}"
+            ${ERROR_SWITCH}
+            "Call to `pip install ${_INSTALL_ARGS}` failed:\n"
+            "${PIP_OUTPUT}"
+            "${PYINST_ERROR_HINT}\n"
         )
         return()
     endif ()

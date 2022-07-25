@@ -499,23 +499,33 @@ If you encounter difficulties with the installation procedure for any of these d
 
 
 ### Python
-Utopia's frontend, `utopya`, uses some additional python packages.
-These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#3-configure-and-build).
+Utopia also has some Python dependencies, which are _automatically_ installed during the [configuration step of the installation](#3-configure-and-build).
+
+The following table includes the most important Python dependencies:
 
 | Software                  | Version  | Comments                        |
 | ------------------------- | -------- | ------------------------------- |
 | [utopya](https://gitlab.com/utopia-project/utopya)   | >= 1.0   | The (outsourced) Utopia frontend package |
 | [dantro](https://gitlab.com/utopia-project/dantro)   | >= 0.18  | Handle, transform, and visualize hierarchically organized data |
-| [paramspace](https://gitlab.com/blsqr/paramspace)    | >= 2.5.9 | Makes parameter sweeps easy     |
-| [pre-commit](https://pre-commit.com)  | >= 2.18      | For pre-commit hooks |
-| [Sphinx](https://www.sphinx-doc.org/en/master/)      | >= 4.5   | Builds the Utopia documentation |
+| [paramspace](https://gitlab.com/blsqr/paramspace)    | >= 2.5   | Makes parameter sweeps easy |
+
+In addition, the following packages are _optionally_ used for development of the framework or its models.
+
+| Software                  | Version   | Comments                        |
+| ------------------------- | --------- | ------------------------------- |
+| [pytest](https://docs.pytest.org/)    |          | For model tests |
+| [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
+| [black](https://github.com/psf/black) | >= 22.6  | For formatting python code |
+| [Sphinx](https://www.sphinx-doc.org/) | >= 4.5   | Builds the Utopia documentation |
+
+These requirements are defined in the `.utopia-env-requirements.txt` file; in case installation fails, a warning will be emitted during [configuration](#3-configure-and-build).
 
 
 ### Recommended
 The following depencies are _recommended_ to be installed, but are not strictly required by Utopia:
 
-| Software                                              | Version | Comments                          |
-| ----------------------------------------------------- | ------- | --------------------------------- |
+| Software                  | Version  | Comments                        |
+| ------------------------- | -------- | ------------------------------- |
 | [doxygen](http://www.doxygen.nl)                      | >= 1.8  | Builds the C++ code documentation |
 | [graphviz](https://graphviz.gitlab.io)                | >= 2.40 | Used by doxygen to create dependency diagrams |
 | [ffmpeg](https://www.ffmpeg.org)                      | >= 4.1  | Used for creating videos |
@@ -533,13 +543,11 @@ The following depencies are _recommended_ to be installed, but are not strictly 
     In cases where the installation _used_ to work but at some point _stopped_ working, this should be a general remedy.
     If the problem does *not* seem to be related to the Python environment, deleting only `build/CMakeCache.txt` may already suffice and save some configuration time.
 
-* In cases where you encounter errors with the **model registry**, it helps to
-    remove the registry entries of all models and regenerate them:
-
+* If you have trouble with more recent **HDF5** versions on macOS, one workaround is to use an older version:
+    
     ```bash
-    utopia models rm --all
-    cd build
-    cmake ..
+    brew install hdf5@1.10
+    brew link hdf5@1.10 --overwrite
     ```
 
 * **Anaconda** ships its own version of the HDF5 library which is _not_

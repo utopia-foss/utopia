@@ -14,7 +14,9 @@ def apply_along_dim(func):
     def _apply_along_axis(data, along_dim: str = None, *args, **kwargs):
         if along_dim is not None:
             ax = data.get_axis_num(along_dim)
-            return np.apply_along_axis(func, axis=ax, arr=data, *args, **kwargs)
+            return np.apply_along_axis(
+                func, axis=ax, arr=data, *args, **kwargs
+            )
         else:
             return func(data, *args, **kwargs)
 
@@ -48,7 +50,9 @@ def op_localization(data, *, bins: int, interval):
 @apply_along_dim
 def op_polarization(data, interval):
     p = sum(
-        (data[i] - data[j]) ** 2 for i in range(len(data)) for j in range(len(data))
+        (data[i] - data[j]) ** 2
+        for i in range(len(data))
+        for j in range(len(data))
     )
     # normalize to data size and interval width
     p *= 2.0 / len(data) ** 2

@@ -2,7 +2,7 @@
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
 stages:
-  - setup     # (on master) set up the docker base image
+  - setup     # set up the docker base image
   - build     # build utopia and all tests
   - test      # carry out tests
   - docs      # build the documentation (requires build stage artifacts)
@@ -242,6 +242,17 @@ build:install:
 
 # -- Test stage ---------------------------------------------------------------
 # Uses artifacts of the build stage to test: backend, models, CLI, installation
+
+# Tests pre-commit hooks
+test:check_hooks:
+  stage: test
+  image: python:3.10
+  needs: []
+  before_script:
+    - pip install pre-commit
+  script:
+    - pre-commit run --all-files --verbose --show-diff-on-failure
+
 
 # Test the core library
 test:core:

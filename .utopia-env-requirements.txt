@@ -1,13 +1,16 @@
 # Python packages that are installed into the utopia-env
 # ------------------------------------------------------
+#
+# NOTE These are automatically installed as part of the `cmake ..` call.
+#      If their installation fails, a warning (not an error) will be emitted.
 
-# Requirements for repository infrastructure
+# .. Development requirements (required only when pushing to Utopia repo) .....
 pre-commit>=2.18
 
 
-# Requirements for Python model tests
+# .. Requirements for Python model tests ......................................
 pytest
-pytest-cov
 
 
-# Requirements for Python model plots
+# .. Requirements for Python model plots ......................................
+# ...

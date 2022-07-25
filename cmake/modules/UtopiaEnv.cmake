@@ -142,6 +142,7 @@ python_pip_install(
     INSTALL_OPTIONS -r ${CMAKE_SOURCE_DIR}/.utopia-env-requirements.txt
     ERROR_HINT
         "Try installing the packages defined in .utopia-env-requirements.txt manually to address this error."
+    ALLOW_FAILURE
 )
 
 
@@ -156,7 +157,9 @@ execute_process(
 )
 if (NOT RETURN_VALUE EQUAL "0")
     python_find_package(PACKAGE pre-commit)  # to provide package information
-    message(SEND_ERROR "Failed setting up pre-commit hooks: ${RETURN_VALUE}")
+    message(
+        WARNING "Failed setting up pre-commit hooks; is pre-commit installed?"
+    )
 else()
     message(STATUS "Installed pre-commit hooks.")
 endif ()
