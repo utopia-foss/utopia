@@ -11,7 +11,7 @@ INSTALL_DEPS = [
     'ruamel.yaml>=0.16.5',
 
     'paramspace>=2.5.8',
-    'dantro>=0.17.1',
+    'dantro==0.17.*',
 
     # Required for testing:
     'pytest>=6.2.1',
