@@ -474,32 +474,6 @@ def manipulate_source_read(app, docname: str, source: list):
         return
 
 
-def run_apidoc(app):
-    """A function to run apidoc, creating the utopya API documentation"""
-    import sphinx.ext.apidoc
-
-    ignore_paths = []
-
-    # Get the required directory paths
-    # FIXME That directory no longer exists
-    # TODO Find a way to still build the utopya API alongside
-    cur_dir = doc_dir
-    out_dir = os.path.join(cur_dir, "api", "utopya")
-    module_dir = os.path.join(cur_dir, "..", "python", "utopya", "utopya")
-
-    argv = [
-        "--force",
-        "--private",
-        "--no-toc",
-        "--module-first",
-        "-o",
-        out_dir,
-        module_dir,
-    ] + ignore_paths
-
-    sphinx.ext.apidoc.main(argv)
-
-
 # -----------------------------------------------------------------------------
 
 def _str2bool(val: str):
@@ -642,9 +616,6 @@ def generate_figures():
 def setup(app):
     # Perform model simulations to generate to-be-embedded figures
     generate_figures()
-
-    # Run the apidoc builder -- not currently in use
-    # app.connect("builder-inited", run_apidoc)
 
     # Handle some events manually
     app.connect("source-read", manipulate_source_read)

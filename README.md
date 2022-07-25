@@ -375,7 +375,13 @@ and to [add a key to your GitLab account](https://docs.gitlab.com/ee/user/ssh.ht
 Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will guide you through the process of implementing your very own Utopia model.
 
 ### Building the documentation locally
-To build the documentation locally, navigate to the `build` directory and run
+To build the documentation locally, first make sure that all submodules are downloaded, because they are needed for building the documentation:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then navigate to the `build` directory and run
 
 ```bash
 make doc
