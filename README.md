@@ -49,6 +49,9 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 * [Quickstart](#quickstart)
 * [Documentation and Guides](#utopia-documentation)
 * [Information for Developers](#information-for-developers)
+    * [Testing](#testing)
+    * [Versioning](#utopia-versioning)
+    * [Utopia v1](#utopia-v1)
 * [Dependencies](#dependencies)
 * [Troubleshooting](#troubleshooting)
 
@@ -59,8 +62,8 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 <!-- marker-installation-instructions -->
 
 ## How to install
-The following instructions will install Utopia into a development environment
-on your machine. If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
+The following instructions will install Utopia into a development environment on your machine.
+If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
 
 
 ### Step-by-step Instructions
@@ -372,7 +375,7 @@ To do that, follow the linked instructions to [generate a key pair](https://docs
 and to [add a key to your GitLab account](https://docs.gitlab.com/ee/user/ssh.html#add-an-ssh-key-to-your-gitlab-account).
 
 ### New to Utopia? How do I implement a model?
-Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will guide you through the process of implementing your very own Utopia model.
+Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will lead you through the process of implementing your very own Utopia model.
 
 ### Building the documentation locally
 To build the documentation locally, first make sure that all submodules are downloaded, because they are needed for building the documentation:
@@ -469,9 +472,91 @@ Follow the instructions in [the `models_template` project][models_template] for 
 
 Call the following command to export package information to the CMake project registry:
 
+```bash
+cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
 ```
-cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..`
+
+
+### Utopia versioning
+Utopia deliberately avoids versioning: You will neither find exact version numbers nor periodic releases of Utopia.
+Instead, the main idea is to always use the latest version of the framework.
+
+Despite the above approach towards versioning, large infrastructure changes are indicated by an increase in a major version (`vX`) and a corresponding [release branch](https://gitlab.com/utopia-project/utopia/-/branches?state=all&search=v) of the same name.
+We do not specify minor version numbers or patch numbers because we do not want to suggest that there is a versioning scheme; we'd like you to "live at HEAD".
+
+So far, there has only been one large enough infrastructure change to warrant a new major version.
+The version of Utopia *prior* to that change is labelled `v1` – more information on that [below](#utopia-v1).
+The *current* version of Utopia is referred to as "latest".
+The label `v2` is avoided to not over-emphasize version numbers.
+
+
+#### Utopia `v1`
+Utopia `v1` refers to the state of Utopia prior to the [outsourcing of the `utopya` frontend package](https://gitlab.com/utopia-project/utopia/-/merge_requests/277) into its own repository.
+
+To use Utopia `v1`, make sure to locally check out that branch and stay on that branch.
+
+While we aim to cherry-pick important bug fixes into the branch, future development of Utopia will occur on the main branch, so it's worth considering to upgrade to the latest version of Utopia.
+
+#### Upgrading from `v1`
+To upgrade Utopia to its latest version, simply pull the latest changes:
+
+```bash
+# Pull the latest changes
+cd utopia
+git pull
+
+# Re-configure
+cd build
+cmake ..
 ```
+
+If you are using a [separate project for model implementations](setting-up-a-separate-repository-for-models), a few changes are necessary to make your project work with the latest version of Utopia again:
+
+1. First, upgrade the Utopia framework.
+1. Run `cmake ..`, which should give you an error message coming from the `register_models_with_frontend` function.
+   That message contains information on upgrading your project:
+
+    - Rename the failing CMake function call to `register_models_with_frontend`.
+    - Create the project info file `.utopya-project.yml` in the root directory of your project and add the following content:
+
+        ```yaml
+        project_name: YourProjectName       # TODO Set to your project's name
+        framework_name: Utopia
+        metadata: {}
+        paths:
+          models_dir: src/models            # rel. path to your models
+          py_tests_dir: python/model_tests  # if they exist
+          py_plots_dir: python/model_plots  # if they exist
+        ```
+
+    - Run `cmake ..`
+
+Furthermore, you may need to update `import` statements in your model tests or model plots because the utopya and dantro package structures changed.
+To find out the new import locations, refer to the API references in the [utopya documentation](https://utopya.readthedocs.io/) and [dantro documentation](https://dantro.readthedocs.io/).
+
+
+##### Usage differences
+After upgrading, most things should remain the same compared to `v1`.
+
+However, there are some differences in the CLI, most notably:
+
+- The `--no-plot` options has been renamed to `--no-eval`
+- The `--sweep` and `--single` flags have been replaced by the `--run-mode {sweep,single}` option
+- The `--plot-only` option now only takes a single argument but can be given multiple times, e.g. `--po some_plot --po some_other_plot`.
+
+For details on the new CLI, have a look at the corresponding `--help` in case you encounter errors.
+
+
+#### Finding out repository state
+While there are no version numbers, the Utopia frontend (starting *after* [Utopia v1](#utopia-v1)!) keeps track of the state of the involved repositories at the time of a simulation run.
+This assists in reconstructing the state of a project at the time a model was run.
+
+This information is stored in the `config/git_info_project.yml` file of each simulation output and contains the name, hash, message, and branch of the latest commit.
+Furthermore, the `config/git_diff_project.patch` file stores the difference of the repository state towards the latest commit using the git patch syntax (i.e. the output of `git diff --patch`).
+
+If you are in a separate repository, the same information is stored for the Utopia framework as well.
+
+⚠️ The Utopia frontend has no power over the build process; while the repo information may be stored, it will only match the behavior of your model if you have built it in that state of the repository.
 
 
 
@@ -479,8 +564,8 @@ cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..`
 
 ## Dependencies
 
-| Software                                       | Required Version    | Tested Version  | Comments                    |
-| ---------------------------------------------- | ------------------- | --------------- | --------------------------- |
+| Software      | Required Version    | Tested Version  | Comments            |
+| ------------- | ------------------- | --------------- | ------------------- |
 | GCC                                            | >= 9                | 10              | Full C++17 support required |
 | _or:_ clang                                    | >= 9                | 10.0            | Full C++17 support required |
 | _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
@@ -522,7 +607,7 @@ In addition, the following packages are _optionally_ used for development of the
 | [pytest](https://docs.pytest.org/)    |          | For model tests |
 | [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
 | [black](https://github.com/psf/black) | >= 22.6  | For formatting python code |
-| [Sphinx](https://www.sphinx-doc.org/) | >= 4.5   | Builds the Utopia documentation |
+| [Sphinx](https://www.sphinx-doc.org/) | == 4.5.* | Builds the Utopia documentation |
 
 These requirements are defined in the `.utopia-env-requirements.txt` file; in case installation fails, a warning will be emitted during [configuration](#3-configure-and-build).
 
