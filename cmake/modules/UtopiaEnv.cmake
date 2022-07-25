@@ -115,9 +115,10 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
             EGG_NAME utopya
         )
     endif()
+    python_find_package(PACKAGE utopya)
 endif()
-# TODO Once utopya is on PyPI, consider replacing with requirements file?
-#      ... but need to avoid repetitive version checks on each cmake call!
+# TODO Can consider replacing with requirements file; but need to avoid
+#      repetitive version checks on each cmake call!
 
 
 # -- utopya CLI

@@ -1,3 +1,40 @@
+# The function that was *used* to register Utopia models with the frontend.
+#
+# The new purpose of this function is to inform a user of an update being
+# required for using the latest Utopia.
+#
+function(register_models_with_frontend)
+    message(FATAL_ERROR
+        "It looks like you have updated Utopia.\n"
+        "This error is to inform you about the changes needed to get your "
+        "model repository to run with the latest version of Utopia:\n"
+        "1) Add a project information file named `.utopya-project.yml` to the "
+        "root of your model repository and add the following content:\n"
+        "    project_name: ${CMAKE_PROJECT_NAME}\n"
+        "    framework_name: Utopia\n"
+        "    metadata: {}\n"
+        "    paths:\n"
+        "      models_dir: src/models            # rel. path to your models\n"
+        "      py_tests_dir: python/model_tests  # if they exist\n"
+        "      py_plots_dir: python/model_plots  # if they exist\n"
+        "You can later on change the content of the project information file; "
+        "it will be read into utopya's project registry upon invoking CMake.\n"
+        "2) Rename the CMake call to `register_models_with_frontend` to the "
+        "updated function `register_models_with_utopya`. After having done "
+        "that, this error message will no longer appear.\n"
+        "3) Run `cmake ..` again.\n"
+        "This should get your project running again with the latest version "
+        "of Utopia. However, there may be further steps necessary to update "
+        "your model plots and tests. "
+        "Also note that there are slight changes to the syntax of the CLI.\n"
+        "For more information, refer to:\n"
+        "  - The Utopia README: "
+        "https://gitlab.com/utopia-project/utopia#utopia\n"
+        "  - The Utopia Documentation: https://docs.utopia-project.org/\n"
+    )
+endfunction()
+
+
 # Add all Utopia models to the utopya model registry
 #
 # .. cmake_function:: register_models_with_utopya
