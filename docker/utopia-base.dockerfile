@@ -49,6 +49,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     && apt-get install -y \
         libgraphviz-dev \
         graphviz \
+        texlive-latex-extra texlive-fonts-recommended dvipng cm-super \
         vim \
         nano \
     && apt-get clean

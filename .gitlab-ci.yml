@@ -1,6 +1,14 @@
 # Continuous Integration and Deployment of Utopia Framework Repository
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
+stages:
+  - setup     # (on master) set up the docker base image
+  - build     # build utopia and all tests
+  - test      # carry out tests
+  - docs      # build the documentation (requires build stage artifacts)
+  - deploy    # deploy documentation; build and deploy docker image (on master)
+
+
 variables:
   # Need to clone submodules as well
   GIT_SUBMODULE_STRATEGY: recursive
@@ -44,13 +52,18 @@ variables:
   # The GitLab Pages where artifacts can be shown
   PAGES_URL: https://utopia-project.gitlab.io/-/utopia
 
+  # Variables that control whether certain jobs are executed.
+  # These can be overwritten via the GitLab CI/CD interface.
+  UPDATE_UTOPIA_BASE_IMAGE: "false"
+  DEPLOY_DOCKER_IMAGE: "false"
+  DEPLOY_DOCS: "false"
 
-stages:
-  - setup     # (on master) set up the docker base image
-  - build     # build utopia and all tests
-  - test      # carry out tests
-  - docs      # build the documentation (requires build stage artifacts)
-  - deploy    # deploy documentation; build and deploy docker image (on master)
+
+# Run pipelines on tags and branches
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
 
 
 # As base image for the jobs, use the Utopia image created in the setup stage
@@ -108,9 +121,12 @@ image: ${BASE_IMAGE}
 setup:utopia-base:
   extends: .dind
   stage: setup
-  only:
-    - master
-    - web
+  rules:
+    - if: '$UPDATE_UTOPIA_BASE_IMAGE == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   script:
     - docker build -f docker/utopia-base.dockerfile
                    -t ${BASE_IMAGE}
@@ -199,8 +215,7 @@ build:debug-clang:
     CXXFLAGS: -Werror
 
 
-# Build for installation tests
-# TODO Consider making this a test-stage job to avoid duplicate compilation
+# Build for installation tests using Release mode
 build:install:
   stage: build
   extends:
@@ -220,6 +235,7 @@ build:install:
         -DCMAKE_EXPORT_PACKAGE_REGISTRY=On
         ..
     - make $MAKE_FLAGS_BUILD install
+  after_script:
     - cp -r ~/.cmake .  # makes packgage registry available as artifact
 
 
@@ -341,8 +357,8 @@ test:models:
 
 
 # Test the utopia command line interface
-# NOTE This does not test the full CLI, because that would be utopya's job.
-#      This job only makes sure that the most basic commands continue to work.
+# NOTE This does not test the full CLI, because that is utopya's job.
+#      This job only makes sure that the most basic commands really work.
 test:cli:
   stage: test
   needs:
@@ -400,9 +416,6 @@ test:cli:
     - sleep 1.1 && utopia eval -d -i dummy
         <<< $'some offending arguments\n--help'
 
-    # Batch evaluation
-    # - utopia batch python/utopya/test/cfg/batch_file.yml --single-worker --debug --note batch-CLI-test  # FIXME Lacking test file
-
     # .. Getting model information ............................................
     - utopia models info dummy
     - utopia models info ForestFire
@@ -424,7 +437,6 @@ test:cli:
     # and when doing --dry-run, because the model already exists
     - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --dry-run --yes; then exit 1; else echo -e "\n\nFailed as expected!"; fi
 
-
     # .. Removing model registry entries ......................................
     # Test model registry entry removal interface; do this last, obviously
     - utopia models rm FooBar --all --yes
@@ -441,10 +453,10 @@ test:link_build_tree:
   stage: test
   needs:
     - build:install
-  script:
+  before_script:
     # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
-
+  script:
     # Build downstream module
     - cd $CI_PROJECT_DIR && mkdir build-dep && cd build-dep
 
@@ -486,7 +498,7 @@ docs:build:
     UTOPIA_DOC_GENERATE_FIGURES: "True"
 
   before_script:
-    # Need LaTex for plots   # FIXME install this in the docker image instead!
+    # Need LaTex for plots   # TODO install this in the docker image instead!
     - apt-get update && apt-get install -y texlive-latex-extra texlive-fonts-recommended dvipng cm-super
 
     - cd build
@@ -537,8 +549,12 @@ deploy:docs_review:
 deploy:docs_gitlab_pages:
   image: curlimages/curl:latest
   stage: deploy
-  only:
-    - master@utopia-project/utopia
+  rules:
+    - if: '$DEPLOY_DOCS == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   needs:
     - job: docs:build
       artifacts: false
@@ -552,8 +568,12 @@ deploy:docs_gitlab_pages:
 deploy:dockerhub-latest:
   extends: .dind
   stage: deploy
-  only:
-    - master@utopia-project/utopia
+  rules:
+    - if: '$DEPLOY_DOCKER_IMAGE == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   script:
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
