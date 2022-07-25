@@ -17,7 +17,7 @@ Orientation style guide: `PEP 8 <https://peps.python.org/pep-0008/>`__
 
 * This is the basic orientation. If you are unsure how to write things, look it up here.
 * We do not need to be 100% strict on this; the main purpose is: **produce readable and well-documented code.**
-* If you want, you can **install a Linter** to help you adhere to the style. For Sublime Text, there is the `SublimeLinter` <https://github.com/SublimeLinter/SublimeLinter-pep8>`_ package.
+* If you want, you can **install a Linter** to help you adhere to the style. For Sublime Text, there is the ``pycodestyle`` package, `see here <https://github.com/SublimeLinter/SublimeLinter-pycodestyle>`_.
 * Most important points (these we should stick to!):
 
   * `A foolish consistency is the hobgoblin of little minds <https://peps.python.org/pep-0008/#a-foolish-consistency-is-the-hobgoblin-of-little-minds>`_

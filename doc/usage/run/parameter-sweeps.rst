@@ -60,7 +60,7 @@ It will create a multidimensional hypercube with all possible value combinations
 Coupled sweeps
 ^^^^^^^^^^^^^^
 
-If you want to vary one or parameters *along* with another (e.g. sweep over a parameter and using a different seed for each run), use the ``!coupled-sweep`` tag on the parameter(s) to be varied along with another, and add a `target` key; see :ref:`here <feature_parameter_sweeps>` for an example.
+If you want to vary one or parameters *along* with another (e.g. sweep over a parameter and using a different seed for each run), use the ``!coupled-sweep`` tag on the parameter(s) to be varied along with another, and add a ``target`` key; see :ref:`here <feature_parameter_sweeps>` for an example.
 
 Once you're done, you can pass the run configuration file to the CLI like this:
 

@@ -35,13 +35,13 @@ repos:
         types: [python]
         args: [--safe]
 
-  # TODO Consider activating these as well -- but they cause many changes
-  # - repo: https://github.com/pre-commit/pygrep-hooks
-  #   rev: v1.9.0
-  #   hooks:
-  #     - id: rst-backticks
-  #       name: check RST backticks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: rst-backticks
+        name: check RST backticks
 
+  # TODO Consider activating these as well -- but they cause many changes
   # - repo: https://github.com/pre-commit/pre-commit-hooks
   #   rev: v4.1.0
   #   hooks:
