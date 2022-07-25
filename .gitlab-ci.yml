@@ -4,6 +4,7 @@
 stages:
   - setup     # set up the docker base image
   - build     # build utopia and all tests
+  - check     # carries out static checks
   - test      # carry out tests
   - docs      # build the documentation (requires build stage artifacts)
   - deploy    # deploy documentation; build and deploy docker image (on master)
@@ -235,26 +236,26 @@ build:install:
         -DCMAKE_EXPORT_PACKAGE_REGISTRY=On
         ..
     - make $MAKE_FLAGS_BUILD install
-  after_script:
-    - cp -r ~/.cmake .  # makes packgage registry available as artifact
+
+    # Make packgage registry available as artifact
+    - cp -r ~/.cmake .
 
 
-
-# -- Test stage ---------------------------------------------------------------
-# Uses artifacts of the build stage to test: backend, models, CLI, installation
+# -- Check stage --------------------------------------------------------------
 
 # Tests pre-commit hooks
-test:check_hooks:
-  stage: test
-  allow_failure: true
-  needs:
-    - build:models
+check:hooks:
+  stage: check
+  image: python:3.10
+  needs: []
   before_script:
-    - $ENTER_UTOPIA_ENV
     - pip install pre-commit
   script:
     - pre-commit run --all-files --verbose --show-diff-on-failure
 
+
+# -- Test stage ---------------------------------------------------------------
+# Uses artifacts of the build stage to test: backend, models, CLI, installation
 
 # Test the core library
 test:core:
