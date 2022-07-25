@@ -509,18 +509,21 @@ docs:build:
     - .use_multicore_group_runners
   needs:
     - build:models
-  variables:
-    # Control figure generation from Utopia models
-    UTOPIA_DOC_GENERATE_FIGURES: "True"
-
   before_script:
-    # Need LaTex for plots   # TODO install this in the docker image instead!
-    - apt-get update && apt-get install -y texlive-latex-extra texlive-fonts-recommended dvipng cm-super
-
     - cd build
     - cmake ..
+
+    # Workaround for sphinx-markdown-tables bug occuring with more recent
+    # versions of the markdown package.
+    # See   https://github.com/ryanfox/sphinx-markdown-tables/issues/36
+    # FIXME Why does the one specified in doc/requirements.txt not suffice?
+    - $ENTER_UTOPIA_ENV
+    - pip install "markdown<3.4"
   script:
-    - make doc
+    # Generate figures and build docs
+    - UTOPIA_DOC_GENERATE_FIGURES=True make doc
+
+    # For testing, do not generate figures again
     - UTOPIA_DOC_GENERATE_FIGURES=False make check_docs
   after_script:
     # Append the error log such that it's more convenient to read in the CI log
