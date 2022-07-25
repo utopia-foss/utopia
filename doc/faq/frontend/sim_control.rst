@@ -80,4 +80,3 @@ How does the Cluster Mode work?
 In cluster mode, the :py:class:`~utopya.multiverse.Multiverse` splits up a parameter sweep run in a way that each compute node takes up a specific fraction of the available universe simulations.
 The workload is balanced depending on the number of universes to be computed and the available nodes.
 The corresponding information is extracted from environment variables and can be configured via the meta configuration.
-

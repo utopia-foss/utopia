@@ -433,5 +433,3 @@ scatter_3d:
     set_ticks:
       y:
         major: [0, 0.05, 0.1]
-
-

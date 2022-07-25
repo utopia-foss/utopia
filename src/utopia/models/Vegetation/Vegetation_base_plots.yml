@@ -96,4 +96,3 @@ time_series/mean_plant_mass:
     set_labels:
       y: Plant Biomass
       only_label_outer: true
-

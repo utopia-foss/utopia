@@ -253,5 +253,3 @@ See the API reference for more information.
 .. todo::
 
     Expand this section.
-
-

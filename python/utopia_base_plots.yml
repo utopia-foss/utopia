@@ -169,5 +169,3 @@ _:
   based_on:
     - .animation.frames      # from utopya
     - .animation.defaults    # from here
-
-

@@ -41,13 +41,13 @@ repos:
       - id: rst-backticks
         name: check RST backticks
 
-  # TODO Consider activating these as well -- but they cause many changes
-  # - repo: https://github.com/pre-commit/pre-commit-hooks
-  #   rev: v4.1.0
-  #   hooks:
-  #     - id: end-of-file-fixer
-  #       name: fix end of files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: end-of-file-fixer
+        name: fix end of files
 
-  #     - id: trailing-whitespace
-  #       name: fix trailing whitespace
-  #       args: [--markdown-linebreak-ext=md]
+      # TODO Consider activating this as well -- but causes many changes
+      # - id: trailing-whitespace
+      #   name: fix trailing whitespace
+      #   args: [--markdown-linebreak-ext=md]

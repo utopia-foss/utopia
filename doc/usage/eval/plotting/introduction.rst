@@ -252,4 +252,3 @@ only to plot the final output of all the transformation operations.
 We will see more sophisticated uses of the DAG as we move through the tutorial. The DAG supplies
 `many transformation operations <https://dantro.readthedocs.io/en/latest/data_io/data_ops_ref.html>`_;
 however, if you are missing an operation, you can always :ref:`add your own operation <custom_DAG_ops>`.
-

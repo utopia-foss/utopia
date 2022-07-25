@@ -11,4 +11,3 @@ parameter_space:
         resolution: 128
 
     p_lightning: 1.0e-4
-

@@ -61,4 +61,3 @@ get_abs_filepath:
       input: {}
     throws: Utopia::KeyError
     match: filename
-

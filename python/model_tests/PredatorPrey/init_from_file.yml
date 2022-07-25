@@ -15,4 +15,3 @@ parameter_space:
       hdf5_file: set_dynamically_in_test
       load_predator: true
       load_prey: true
-

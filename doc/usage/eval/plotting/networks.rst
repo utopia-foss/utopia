@@ -403,4 +403,3 @@ You can animate your network plot by also basing your plot on one of the base an
 
 We discuss animations in more detail on the :ref:`animations page <plot_animations>`, including
 how to increase the animation resolutions.
-

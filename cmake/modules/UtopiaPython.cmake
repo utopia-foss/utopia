@@ -256,5 +256,3 @@ function(python_install_package_remote)
         message(SEND_ERROR "Error installing remote package:\n${PIP_OUTPUT}")
     endif ()
 endfunction()
-
-

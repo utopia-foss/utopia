@@ -301,4 +301,3 @@ time_series/orientation:
 
     set_labels:
       y: orientation (circ. mean and std.)
-

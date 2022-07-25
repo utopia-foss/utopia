@@ -7,4 +7,3 @@ time_series/some_state_mean_and_std:
 
 time_series/some_trait_mean_and_std:
   based_on: some_trait_mean_and_std
-

@@ -32,4 +32,3 @@ parameter_space:
     # Increase growth rate and deactivate lightning
     p_growth: 0.05
     p_lightning: 0.
-
