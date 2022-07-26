@@ -3,7 +3,7 @@
 Stacked plots and Facet grids
 =============================
 
-.. admonition:: Summary \
+.. admonition:: Summary
 
   On this page, you will see how to
 
@@ -289,16 +289,41 @@ Note that the legend and row and column titles are automatically plotted.
 
 Auto-encoding
 ^^^^^^^^^^^^^
-
-If you don't care which variables go where, base your plot on the following function:
+If you don't care which variables go where, you can include the ``.plot.facet_grid.with_auto_encoding`` modifier into your plot:
 
 .. code-block:: yaml
 
     based_on:
+      # ...
       - .plot.facet_grid.with_auto_encoding
+      # ...
 
-This will automatically distribute the variables onto any available dimensions. Variables will
-be distributed in a certain order,
-depending :ref:`on the plot kind <https://gitlab.com/utopia-project/dantro/-/blob/main/dantro/plot/funcs/generic.py#L42>`.
-Therefore, if you want specific variables on specific dimensions,
-it's best to configure that manually.
+This will automatically distribute the variables onto any available dimensions.
+Variables will be distributed in a certain order, see the :py:func:`~dantro.plot.funcs.generic.determine_encoding` dantro function.
+
+.. hint::
+
+    Automatically determining the encoding can be useful if you want to implement more generic plots that do not depend so much on the dimensionality of your multiverse simulation run.
+    They are best suited for getting an overview of your simulation results.
+
+    However, if you want to be sure that a specific variable is represented in a certain way, it's best to specify the encoding (``x``, ``col``, ...) explicitly.
+    For publication-ready figures, this explicit definition is more suited.
+
+To further control in which order dimensions are populated, you can pass a dict to the ``auto_encoding`` argument (instead of a boolean):
+
+.. code-block:: yaml
+
+    based_on:
+      # ...
+      - .plot.facet_grid.line
+      - .plot.facet_grid.with_auto_encoding
+      # ...
+
+    # change the order in which encodings are populated
+    auto_encoding:
+      line: [x, col, hue, frames, row]  # default: [x, hue, col, row, frames]
+
+.. hint::
+
+    The ``.plot.facet_grid.with_auto_encoding`` base config also sets the ``col_wrap: auto`` argument, which aims to make facet grid plots with many subplots more square by wrapping after ``sqrt(num_cols)``.
+    This is ignored if the ``row`` encoding is specified.

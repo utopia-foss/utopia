@@ -44,9 +44,8 @@ and ``kind: pcolormesh``, and the other -- discussed below -- makes use of ``.pl
 
     heatmap:
       based_on:
-        - .creator.universe  # or .creator.multiverse for multiverse plots
-        - .plot.facet_grid
-      kind: pcolormesh
+        - .creator.universe            # or .creator.multiverse
+        - .plot.facet_grid.pcolormesh  # short for kind: pcolormesh
 
       # further entries here ...
 
@@ -59,10 +58,8 @@ model at the final time:
 
       based_on:
         - .creator.universe
-        - .plot.facet_grid
+        - .plot.facet_grid.pcolormesh
         - _default_style
-
-      kind: pcolormesh
 
       # Select the age of the trees at time = -1
       select:
@@ -89,9 +86,8 @@ data: ``pcolormesh`` supports
 * ``col``: the columns of the facet grid
 * ``frames``: animation frames.
 
-For instance, you can drop the ``transform`` argument in the above configuration, thereby
-selecting all time steps, and plot the ``time`` variable as the frames of an animation. If you
-do this, you must additionally base your plot on an animation base plot, e.g. ``.animation.ffmpeg``:
+For instance, you can drop the ``transform`` argument in the above configuration, thereby selecting all time steps, and plot the ``time`` variable as the frames of an animation.
+If you do this, you must additionally base your plot on an animation base plot, e.g. ``.animation.ffmpeg``:
 
 .. code-block:: yaml
 
@@ -100,10 +96,8 @@ do this, you must additionally base your plot on an animation base plot, e.g. ``
       # Also include .animation.ffmpeg (or .animation.frames)
       based_on:
         - .creator.universe
-        - .plot.facet_grid
+        - .plot.facet_grid.pcolormesh
         - .animation.ffmpeg  # or .animation.frames
-
-      kind: pcolormesh
 
       select:
         data: age
@@ -113,11 +107,12 @@ do this, you must additionally base your plot on an animation base plot, e.g. ``
 
 We will discuss animations in more detail in the :ref:`animations section <plot_animations>`.
 
+
 Changing the appearance
 ^^^^^^^^^^^^^^^^^^^^^^^
-Use the ``PlotHelper`` (see :ref:`here <plot_helper>`) to set titles, axis labels, scales,
-annotations, and much more. With the `dantro ColorManager <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#colormanager-integration>`_,
-adjusting the colormap is easy. Just add a ``cmap`` key to the plot configuration.
+Use the ``PlotHelper`` (see :ref:`here <plot_helper>`) to set titles, axis labels, scales, annotations, and much more.
+With the `dantro ColorManager <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#colormanager-integration>`_, adjusting the colormap is easy:
+Just add a ``cmap`` key to the plot configuration.
 You can define your own continuous or discrete colormap right from the configuration:
 
 .. code-block:: yaml
@@ -138,12 +133,12 @@ Take a look at the :ref:`style section <colormaps>` for more details. Alternativ
 you can set a `predefined matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_
 or `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`_ colormap.
 
+
+
 Plotting 2D states with ``.plot.ca``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 Equally capable are the ``.plot.ca`` and the (very similar) ``.plot.ca.snapshot`` base plots.
-They are optimised for plotting two-dimensional cellular automata, such as the grid-based Utopia
-:ref:`SEIRD <model_SEIRD>` and :ref:`ForestFire <model_ForestFire>` models.
+They are optimised for plotting two-dimensional cellular automata, such as the grid-based Utopia :ref:`SEIRD <model_SEIRD>` and :ref:`ForestFire <model_ForestFire>` models.
 
 To plot a snapshot of a two-dimensional state, base your plot on ``.plot.ca`` and ``.plot.ca.snapshot``.
 You can specify the time of the snapshot with the ``frames_isel`` argument (``-1`` by default). Here is
@@ -152,7 +147,6 @@ an example for the ForestFire model, using the ``age`` variable:
 .. code-block:: yaml
 
     forest_age_final:
-
       based_on:
         - .creator.universe
         - .plot.ca
@@ -176,12 +170,12 @@ This will produce something like this:
 
 .. warning::
 
-    🚧 The ``ColorManager`` is not yet fully implemented for ``.plot.ca``, thus
-    you cannot define custom continuous colormaps as for ``pcolormesh``. It is
-    therefore recommended to just pass the name of a matplotlib or seaborn
-    colormap. Discrete maps work just the same.
+    🚧 The ``ColorManager`` is not yet fully implemented for ``.plot.ca``, thus you cannot define custom continuous colormaps as for ``pcolormesh``.
+    It is therefore recommended to just pass the name of a matplotlib or seaborn colormap.
+    Discrete maps work just the same.
 
 
-Just like ``pcolormesh``, ``.plot.ca`` supports animations. To animate, simply remove the ``.plot.ca.snapshot``
-reference in the above code. You do not need to add an animation base plot, since this
-is already an integral part of ``.plot.ca``. More details on this are given in the :ref:`animations article <plot_animations>`.
+Just like ``pcolormesh``, ``.plot.ca`` supports animations.
+To animate, simply remove the ``.plot.ca.snapshot`` reference in the above code.
+You do not need to add an animation base plot, since this is already an integral part of ``.plot.ca``.
+More details on this are given in the :ref:`animations article <plot_animations>`.

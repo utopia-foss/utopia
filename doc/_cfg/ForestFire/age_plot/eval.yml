@@ -24,13 +24,14 @@ _default_style: &default_style
 forest_age_with_pcolormesh:
   based_on:
     - .creator.universe
-    - .plot.facet_grid
-  kind: pcolormesh
+    - .plot.facet_grid.pcolormesh
+
   select:
     data:
       path: age
       transform:
         - .isel: [!dag_prev , {time: -1}]
+
   x: x
 ### End --- pcolormesh
   <<: *default_style
@@ -55,9 +56,11 @@ forest_age_with_ca:
   based_on:
     - .creator.universe
     - .plot.ca
-    - .plot.ca.snapshot
+    - .plot.ca.snapshot  # remove to make an animation
+
   select:
     age: age
+
   to_plot:
     age:
       title: Forest Age
