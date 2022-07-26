@@ -17,6 +17,7 @@ parameter_space:
     prey:
       cost_of_living: 1.
       repro_cost: 2.
+      repro_resource_requ: 2.
       resource_intake: 0.
 
     predator:
