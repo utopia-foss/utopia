@@ -1,22 +1,22 @@
 # --- Phase Space Plots -------------------------------------------------------
-phase_space/predator_prey:  # FIXME Migrate plot
-  enabled: false
+phase_space/predator_prey:
   based_on: phase_space
 
-  x: predator
-  y: prey
+  x: predator_density
+  y: prey_density
+  hue: time
 
   helpers:
     set_labels:
       x: Predator Density $[1/A]$
       y: Prey Density $[1/A]$
 
-phase_space/prey_plant:  # FIXME Migrate plot
-  enabled: false
+phase_space/prey_plant:
   based_on: phase_space
-  
-  x: prey
-  y: plant
+
+  x: prey_density
+  y: plant_density
+  hue: time
 
   helpers:
     set_labels:
@@ -25,82 +25,21 @@ phase_space/prey_plant:  # FIXME Migrate plot
 
 
 # --- Time series of mean values ----------------------------------------------
-species_densities:  # FIXME Migrate plot
-  enabled: false
+species_densities:
   based_on: species_densities
 
-mean_resources:  # FIXME Migrate plot
-  enabled: false
+mean_resources:
   based_on: mean_resources
 
 # --- Animation of the spatial resource development of prey and predators -----
 resources:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-  enabled: true
-
-  model_name: PredatorPreyPlant
-
-  # Select the properties to plot
-  to_plot:
-    resource_predator:
-      title: Predator
-      limits: [0, 8]   # Adapt to resource_max species parameter
-      cmap: viridis
-
-    resource_prey:
-      title: Prey
-      limits: [0, 8]   # Adapt to resource_max species parameter
-      cmap: viridis
-
-  helpers:
-    set_suptitle:
-      title: Resources
-      fontsize: xx-large
-
+  based_on: resources
 
 # --- Animation of the spatial development of prey and predator populations ---
 population:
-  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
-  enabled: true
-
-  to_plot:
-    # Combined in model_plots.PredatorPreyPlant.ca.combine_pred_and_prey
-    combined: &population_combined
-      title: Predator and Prey
-      limits: [0, 3]
-      cmap: 
-        empty: white
-        prey: orange
-        predator: blue
-        both: red
+  based_on: population
 
 
 # --- More detailed animation: prey only, combined, predator only -------------
 population_detailed:
-  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
-  enabled: true
-
-  to_plot:
-    predator:
-      title: Predator
-      limits: [0, 1]
-      cmap: 
-        empty: white
-        predator: blue
-        
-    combined:
-      <<: *population_combined
-
-    prey:
-      title: Prey
-      limits: [0, 1]
-      cmap: 
-        empty: white
-        prey: orange
-
-    plant:
-      title: Plant
-      limits: [0, 1]
-      cmap: 
-        empty: white
-        plant: green
+  based_on: population_detailed

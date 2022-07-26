@@ -15,74 +15,12 @@ mean_resources:
 
 # --- Animation of the spatial resource development of prey and predators -----
 resources:
-  based_on:
-    - .creator.universe
-    - .defaults
-    - .plot.ca
+  based_on: resources
 
-  select:
-    resource_predator: resource_predator
-    resource_prey: resource_prey
-
-  # Select the properties to plot
-  to_plot:
-    resource_predator:
-      title: Predator resources
-      limits: [0, max]   # Should be adapted to the resource_max model parameter
-      cmap: YlGn
-      
-    resource_prey:
-      title: Prey resources
-      limits: [0, max]   # Should be adapted to the resource_max model parameter
-      cmap: YlGn
-
-# --- Animation of the spatial development of prey and predator populations ---
 population:
-  based_on:
-    - .creator.universe
-    - .defaults
-    - .plot.ca
+  based_on: population
+  enabled: true
 
-  select:
-    predator: predator
-    prey: prey
-
-  transform:
-    - PredatorPrey.combine_positions: [!dag_tag predator, !dag_tag prey]
-      tag: combined
-
-  to_plot:
-    combined:
-      cmap:
-        0: white
-        1: red
-        2: blue
-        3: orange
-
-
-# --- More detailed animation: prey only, combined, predator only -------------
-#population_detailed:
-#  based_on: combined_grid_animation
-#  enabled: false
-#
-#  select:
-#    predator: predator
-#    prey: prey
-#
-#  to_plot:
-#    predator:
-#      title: Predator
-#      limits: [0, 1]
-#      cmap:
-#        empty: white
-#        predator: blue
-#
-#    combined:
-#      <<: *population_combined
-#
-#    prey:
-#      title: Prey
-#      limits: [0, 1]
-#      cmap:
-#        empty: white
-#        prey: orange
+population_detailed:
+  based_on: population_detailed
+  enabled: true

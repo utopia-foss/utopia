@@ -66,12 +66,13 @@
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
   based_on:
-    - .defaults
     - .creator.universe
     - .plot.facet_grid.scatter
+
   select:
     kind:
       path: densities
+
   transform:
     - .sel: [ !dag_tag kind, { kind: tree } ]
       kwargs: { drop: true }
@@ -79,8 +80,7 @@ phase_diagram:
     - .sel: [ !dag_tag kind, { kind: infected } ]
       kwargs: { drop: true }
       tag: infected
-    - operation: xr.Dataset
-      kwargs:
+    - xr.Dataset:
         data_vars:
           tree: !dag_tag tree
           infected: !dag_tag infected

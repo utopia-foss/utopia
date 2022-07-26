@@ -8,8 +8,7 @@ Line plots and Errorbars
   On this page, you will see how to
 
   * use ``.plot.facet_grid.line`` for line plots, and
-  * use ``.plot.facet_grid.errorbar`` or ``.plot.facet_grid.errorbands``
-    for errorbars and errorbands.
+  * use ``.plot.facet_grid.errorbars`` or ``.plot.facet_grid.errorbands`` for errorbars and errorbands.
 
 .. admonition:: Complete example: Line plot
     :class: dropdown
