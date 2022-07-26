@@ -15,14 +15,16 @@ phase_diagram:
   # Select from what densities to create the phase diagram
   x: tree
   y: infected
+  hue: time
 
   helpers:
     set_labels:
       x: Tree Density [1/A]
       y: Infected Density [1/A]
-    set_limits:
-      x: [0, 0.7]
-      y: [0, 0.01]
+    set_title:
+      title: Phase Diagram
+
+  cmap: viridis_r
 
   # Parameters that are passed on to plt.scatter
   s: 10

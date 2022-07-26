@@ -84,15 +84,10 @@ Let's compare the infection curves for three different values of the transmissio
 
     select_and_combine:
       fields:
-        infected:
+        data:
           path: data/SEIRD/densities
           transform:
             - .sel: [ !dag_prev , { kind: [ 'infected' ] }]
-
-    # Add the data tag to the output
-    transform:
-      - define: !dag_tag infected
-        tag: data
 
     x: time
 
@@ -103,7 +98,8 @@ performing any actual transformation operations.
 .. note::
 
     For ``facet_grid`` plots, the ``data`` tag must always be defined,
-    even when not applying any sort of transformation.
+    even when not applying any sort of transformation. Here, we are
+    defining the ``data`` tag in the ``select`` step.
     Other plot functions may have different requirements.
 
 This produces the following output:

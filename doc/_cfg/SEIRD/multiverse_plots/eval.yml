@@ -104,16 +104,13 @@ stacked_transmission:
     - .plot.facet_grid.line
   select_and_combine:
     fields:
-      infected:
+      data:
         path: densities
         transform:
           - .sel: [ !dag_prev , { kind: ['infected'] } ]
     subspace:
       immunity rate: [ 0.3 ]
       seed: [ 0 ]
-  transform:
-    - define: !dag_tag infected
-      tag: data
   x: time
   hue: transmission rate
   style:
@@ -122,7 +119,7 @@ stacked_transmission:
     set_labels:
       y: Density [1/A]
     set_title:
-      title: Density of agent kinds
+      title: Density of infected agents
 
 # Demonstrates a stacked averaged line plot
 stacked_transmission_averaged:

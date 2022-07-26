@@ -64,22 +64,27 @@
 #  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 # -- Any kind of phase plot ---------------------------------------------------
-phase_diagram:  # TODO Migrate to facet grid scatter plot
+phase_diagram:
   based_on:
     - .defaults
-
-  creator: universe
-  universes: all
-
-  module: model_plots.ContDisease
-  plot_func: phase_diagram
-
-  cmap: viridis_r
-
-  helpers:
-    set_title:
-      title: Phase Diagram
-
+    - .creator.universe
+    - .plot.facet_grid.scatter
+  select:
+    kind:
+      path: densities
+  transform:
+    - .sel: [ !dag_tag kind, { kind: tree } ]
+      kwargs: { drop: true }
+      tag: tree
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true }
+      tag: infected
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tree: !dag_tag tree
+          infected: !dag_tag infected
+      tag: data
 
 
 # -- Densities plot -----------------------------------------------------------

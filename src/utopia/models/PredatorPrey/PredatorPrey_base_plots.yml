@@ -39,8 +39,31 @@
   select_and_combine:
     base_path: *base_path
 
-
-
+.calculate_densities:
+  based_on:
+    - .defaults
+  select:
+    area:
+      path: ../../cfg/PredatorPrey
+      transform:
+        - getitem: [ !dag_prev , 'cell_manager' ]
+        - getitem: [ !dag_prev , 'grid' ]
+        - getitem: [ !dag_prev , 'resolution' ]
+        - pow: [ !dag_prev , 2 ]
+    predator:
+      path: predator
+      transform:
+        - .where: [!dag_prev ==1, !dag_prev , 0]
+        - .sum: [ !dag_prev , 'x' ]
+        - .sum: [ !dag_prev , 'y' ]
+        - div: [ !dag_prev , !dag_tag area ]
+    prey:
+      path: prey
+      transform:
+        - .where: [!dag_prev ==1, !dag_prev , 0]
+        - .sum: [ !dag_prev , 'x' ]
+        - .sum: [ !dag_prev , 'y' ]
+        - div: [ !dag_prev , !dag_tag area ]
 
 
 # =============================================================================
@@ -49,14 +72,18 @@
 #  ╩  ╩═╝╚═╝ ╩ ╚═╝
 # =============================================================================
 # -- Plot of the predator density against the prey density --------------------
-phase_space:  # FIXME Migrate plot
-  based_on: .time_series.phase_space
-
-  model_name: PredatorPrey
-
-  # Select the data
-  x: predator
-  y: prey
+phase_space:
+  based_on:
+    - .creator.universe
+    - .calculate_densities
+    - .plot.facet_grid.scatter
+  transform:
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          predator: !dag_tag predator
+          prey: !dag_tag prey
+      tag: data
 
   # Set helpers accordingly
   helpers:
@@ -64,17 +91,36 @@ phase_space:  # FIXME Migrate plot
       x: Predator Density $[1/A]$
       y: Prey Density $[1/A]$
 
-  # How to color-code the time axis
   cmap: viridis_r
 
-  # All below: passed on to plt.scatter
+  # Parameters that are passed on to plt.scatter
   s: 3.5
+
+  # Select the data
+  x: predator
+  y: prey
+  hue: time
+
 
 
 # -- Time series of the predator and prey densities ---------------------------
-species_densities:  # FIXME Migrate plot
-  based_on: .time_series.densities
+species_densities:
+  based_on:
+    - .creator.universe
+    - .calculate_densities
+    - .plot.facet_grid.line
+  transform:
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          predator: !dag_tag predator
+          prey: !dag_tag prey
+    - .to_array: [!dag_prev ]
+      kwargs:
+        dim: 'kind'
+      tag: data
 
+  hue: 'kind'
   helpers:
     set_limits:
       x: [0, max]
@@ -83,26 +129,35 @@ species_densities:  # FIXME Migrate plot
     set_title:
       title: Predator and Prey Densities
 
-  model_name: PredatorPrey
-
-  # Which data to calculate the densities from
-  to_plot:
-    predator:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
-      label: Predator
-
-    prey:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
-      label: Prey
-
 # -- Time series of the predator and prey resources ---------------------------
-mean_resources:  # FIXME Migrate plot
-  based_on: .basic_uni.lineplots
-
+mean_resources:
+  based_on:
+    - .defaults
+    - .creator.universe
+    - .plot.facet_grid.line
+  select:
+    resource_predator:
+      path: resource_predator
+      transform:
+        - .where: [ !dag_prev ge 1, !dag_prev , 0]
+        - .mean: [!dag_prev , ['x', 'y']]
+    resource_prey:
+      path: resource_prey
+      transform:
+        - .where: [ !dag_prev ge 1, !dag_prev , 0]
+        - .mean: [!dag_prev , ['x', 'y']]
+  transform:
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          predator: !dag_tag resource_predator
+          prey: !dag_tag resource_prey
+    - .to_array: [ !dag_prev ]
+      kwargs:
+        dim: 'kind'
+      tag: data
+  x: time
+  hue: kind
   helpers:
     set_limits:
       x: [0, max]
@@ -112,35 +167,10 @@ mean_resources:  # FIXME Migrate plot
     set_title:
       title: Mean Total Resources
 
-  model_name: PredatorPrey
-
-  # Take average only of cells with resources >= 1
-  to_plot:
-    resource_predator:
-      path_to_data: resource_predator
-      transform_data:
-        - where: [ge, 1]
-        - mean: [x, y]
-      label: Predator
-
-    resource_prey:
-      path_to_data: resource_prey
-      transform_data:
-        - where: [ge, 1]
-        - mean: [x, y]
-      label: Prey
-
 
 # -- A grid animation that shows combined predator and prey positions ---------
-combined_grid_animation_frames: &combined_grid_anim
-  based_on: .ca.state.anim_frames
-
-  model_name: PredatorPrey
-
-  # Use the custom plotting function
-  module: model_plots.PredatorPrey
-  plot_func: combine_pred_and_prey
-
-combined_grid_animation_ffmpeg:
-  <<: *combined_grid_anim
-  based_on: .ca.state.anim_ffmpeg
+combined_grid_animation:
+  based_on:
+    - .creator.universe
+    - .defaults
+    - .plot.ca
