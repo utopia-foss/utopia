@@ -521,7 +521,10 @@ docs:build:
     - UTOPIA_DOC_GENERATE_FIGURES=True make doc
 
     # For testing, do not generate figures again
-    - UTOPIA_DOC_GENERATE_FIGURES=False make check_docs
+    - make sphinx_doctest
+    - make sphinx_linkcheck || true
+    # NOTE linkcheck is not set to fail because there are some links that will
+    #      always lead to a failure (the relative doxygen links for instance)
   after_script:
     # Append the error log such that it's more convenient to read in the CI log
     - echo "-------- Errors emitted during building of documentation --------"

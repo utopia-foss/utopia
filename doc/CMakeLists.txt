@@ -56,10 +56,8 @@ add_custom_target(sphinx_doctest
 )
 add_custom_target(sphinx_linkcheck
     COMMAND ${RUN_IN_UTOPIA_ENV}
-        sphinx-build -T -b linkcheck ${SHARED_SPHINX_ARGS} || true
+        sphinx-build -T -b linkcheck ${SHARED_SPHINX_ARGS}
 )
-# NOTE linkcheck is not set to fail because there are some links that will
-#      always lead to a failure (the relative doxygen links for instance)
 
 # Add the doxygen-dependent documentation target only when it exists
 if (TARGET doxygen_utopia)
@@ -72,4 +70,4 @@ add_custom_target(doc)
 add_dependencies(doc sphinx_html)
 
 add_custom_target(check_docs)
-add_dependencies(check_docs sphinx_linkcheck sphinx_doctest)
+add_dependencies(check_docs sphinx_doctest sphinx_linkcheck)
