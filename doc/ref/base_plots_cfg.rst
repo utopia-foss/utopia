@@ -68,6 +68,17 @@ More information:
     :end-before: # ===
 
 
+``.skip``: skip conditions
+--------------------------
+These can be used to skip ``multiverse`` plots if a sweep did not have a certain dimensionality.
+This can be useful to restrict the scope of automatically created :ref:`facet grid plots <facet_grid_auto_encoding>`.
+
+.. literalinclude:: ../../python/utopia_base_plots.yml
+    :language: yaml
+    :start-after: # start: .skip
+    :end-before: # ===
+
+
 ``.style``: choosing plot style
 -------------------------------
 More information:

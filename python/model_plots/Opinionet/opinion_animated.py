@@ -3,20 +3,14 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utopya.eval import (
-    DataManager,
-    PlotHelper,
-    UniverseGroup,
-    UniversePlotCreator,
-    is_plot_func,
-)
+from utopya.eval import DataManager, PlotHelper, UniverseGroup, is_plot_func
 
 log = logging.getLogger(__name__)
 logging.getLogger("matplotlib.animation").setLevel(logging.WARNING)
 
 # -------------------------------------------------------------------------------
 @is_plot_func(
-    creator_type=UniversePlotCreator,
+    creator="universe",
     supports_animation=True,
     helper_defaults=dict(set_labels=dict(x="Values", y="Counts")),
 )

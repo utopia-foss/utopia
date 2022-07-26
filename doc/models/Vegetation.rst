@@ -48,3 +48,22 @@ Below are the default configuration parameters of the model:
 For these parameters and a grid size of 20 x 20, the system takes
 roughly 50 time steps to reach a dynamic equilibrium, in which the
 plant bio-mass on all cells fluctuates around 9.5.
+
+
+Available plots
+---------------
+The following plot configurations are available for the ``Vegetation`` model:
+
+Default Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/Vegetation/Vegetation_plots.yml
+   :language: yaml
+   :start-after: ---
+
+Base Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/Vegetation/Vegetation_base_plots.yml
+   :language: yaml
+   :start-after: ---
+
+For available base plots, see :ref:`utopia_base_plots_ref`.

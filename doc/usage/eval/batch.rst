@@ -2,7 +2,8 @@
 
 Batch Framework
 ===============
-Most of the Utopia frontend focusses on making a single simulation or evaluation run as easy and configurable as possible, because working on the level of the individual simulation is the most frequent use case. When working with *multiple* simulations, Utopia can be of help as well:
+Most of the Utopia frontend focusses on making a single simulation or evaluation run as easy and configurable as possible, because working on the level of the individual simulation is the most frequent use case.
+When working with *multiple* simulations, Utopia can be of help as well:
 the Batch Framework allows defining and performing multiple tasks all from the comfort of a single so-called "batch configuration file", or **batch file**.
 This batch file can be used to define so-called ``eval`` and ``run`` tasks, corresponding to evaluation and running of simulations, respectively.
 
@@ -13,6 +14,10 @@ This batch file can be used to define so-called ``eval`` and ``run`` tasks, corr
 .. note::
 
     ``run`` tasks are not implemented yet!
+
+.. warning::
+
+    🚧 This guide needs to be updated for use with `utopya v1 <https://gitlab.com/utopia-project/utopya>`_; some information *may* be outdated!
 
 
 .. _batch_cfg:
@@ -51,10 +56,10 @@ Update Scheme
 ^^^^^^^^^^^^^
 The batch configuration consists of four layers:
 
-    1. :py:mod:`utopya` default values, see :ref:`utopya_default_batch_cfg` (the "base configuration")
-    2. The :ref:`user-specific defaults <batch_cfg_user>`
-    3. The batch file, specified via ``batch_cfg_path`` in the CLI
-    4. Runtime update values, e.g. the ``debug`` CLI option
+1. :py:mod:`utopya` default values, see :ref:`utopya_default_batch_cfg` (the "base configuration")
+2. The :ref:`user-specific defaults <batch_cfg_user>`
+3. The batch file, specified via ``batch_cfg_path`` in the CLI
+4. Runtime update values, e.g. the ``debug`` CLI option
 
 As with the :py:class:`~utopya.multiverse.Multiverse` meta-configuration, these dict-like configuration trees are updated recursively, starting from the first level.
 The resulting batch configuration and the involved files are backed up to ``{batch_out_dir}/{timestamp}/config``.
@@ -86,19 +91,19 @@ This section details the output directory structure and shows how to configure i
 
 * **Batch directory** or **batch output directory** refers to the directory where batch task meta-data and output are stored.
 
-    * By default, this is ``~/utopia_output/_batch``
-    * It can be configured by the ``paths.out_dir`` option
+  * By default, this is ``~/utopia_output/_batch``
+  * It can be configured by the ``paths.out_dir`` option
 
 * The **batch run directory** is the timestamped directory in the batch directory that is created when calling ``utopia batch``.
 
-    * It has the format ``YYMMDD-HHMMSS``, potentially with the ``paths.note`` as a suffix, i.e. ``YYMMDD-HHMMSS_{note}``.
-    * It serves as a backup of the used configuration files and stores log output.
-    * This is not to be confused with the output of a run *task* (which denotes a simulation run invoked via a batch task).
+  * It has the format ``YYMMDD-HHMMSS``, potentially with the ``paths.note`` as a suffix, i.e. ``YYMMDD-HHMMSS_{note}``.
+  * It serves as a backup of the used configuration files and stores log output.
+  * This is not to be confused with the output of a run *task* (which denotes a simulation run invoked via a batch task).
 
 * The **evaluation output directory** is where output of evaluation tasks is written to.
 
-    * By default, this is the ``eval`` subdirectory within the batch run directory.
-    * It can be configured separately for each task, see :ref:`batch_output_custom_eval_outdir`.
+  * By default, this is the ``eval`` subdirectory within the batch run directory.
+  * It can be configured separately for each task, see :ref:`batch_output_custom_eval_outdir`.
 
 
 The *default* **folder structure** will thus look something like this:
@@ -237,7 +242,7 @@ The **parallelization level** may be controlled by the ``parallelization_level``
 * ``batch`` parallelization (the default) means that the *batch* tasks are being worked on in parallel while the individual tasks are meant to use only a single CPU core.
 * ``task`` parallelization means that the batch tasks are worked on sequentially, leaving parallelization to the *individual* tasks.
 
-Under the hood, each task is worked in a separate ``multiprocessing.Process``, which is handled by :py:class:`~utopya.task.MPProcessTask`.
+Under the hood, each task is worked in a separate :py:class:`multiprocessing.Process`, which is handled by :py:class:`~utopya.task.MPProcessTask`.
 Independent of the platform, processes are created with the ``spawn`` method, thus making them fully independent from the parent process.
 There is no option to share memory between processes; this would be too difficult and the speedup would most probably evaporate.
 

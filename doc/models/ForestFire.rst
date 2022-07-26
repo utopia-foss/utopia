@@ -39,11 +39,11 @@ The following data is stored alongside the simulation:
 
 * ``kind``: the state of each cell. Possible values:
 
-   * ``0``: ``empty``
-   * ``1``: ``tree``
-   * ``2``: (not used)
-   * ``3``: ``source``, is constantly ignited
-   * ``4``: ``stone``, does not take part in any interaction
+  * ``0``: ``empty``
+  * ``1``: ``tree``
+  * ``2``: (not used)
+  * ``3``: ``source``, is constantly ignited
+  * ``4``: ``stone``, does not take part in any interaction
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
@@ -123,7 +123,7 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.
 
 References
 ----------

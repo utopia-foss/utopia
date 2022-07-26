@@ -59,14 +59,14 @@ errorbars:
     - .coords: [!dag_tag infected, time]
       tag: time
     - .mean: [!dag_tag infected, [seed]]
-      tag: mean_infected
+      tag: infected_mean
     - .std: [!dag_tag infected, [seed]]
       tag: infected_std
 
     - operation: xr.Dataset
       kwargs:
         data_vars:
-          avg: !dag_tag mean_infected
+          avg: !dag_tag infected_mean
           err: !dag_tag infected_std
       tag: data  # Don't forget to define the 'data' tag
 

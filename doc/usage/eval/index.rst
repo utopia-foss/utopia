@@ -9,7 +9,7 @@ Evaluating Simulations
 
    data
 
-   The Data Transformation Framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>
+   Data Transformation Framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>
 
 .. toctree::
    :maxdepth: 2

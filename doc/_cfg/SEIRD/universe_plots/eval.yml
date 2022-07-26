@@ -1,6 +1,6 @@
 # Plots for the utopia plotting docs
 ---
-_utopia_colors:
+_utopia_colors: &utopia_colors
   dark_blue:          &darkblue           '#003366'
   medium_blue:        &mediumblue         '#0099CC'
   light_blue:         &lightblue          '#99CCFF'
@@ -30,6 +30,9 @@ _default_style: &default_style
 
 .flush_helper:
   helpers: ~
+
+.flush_cmap:
+  cmap: ~
 
 # -----------------------------------------------------------------------------
 # Demonstrates a basic line plot
@@ -326,6 +329,7 @@ helper_demo:
           linestyle: dotted
           label: Livin' in a lonely world
     set_legend:
+      title: Lines and Dots
       loc: best
     annotate:
       annotations:

@@ -51,14 +51,34 @@ The erosion process is implemented by asynchronously updating all the cells (in 
 
     with the critial height :math:`h_c`. If toppling occurs, the slope is reduced to 1/3 of its initial value.
 
-Default parameters
-^^^^^^^^^^^^^^^^^^
 
-Below are the default configuration parameters for the ``Geomorphology`` model:
+Default configuration parameters
+--------------------------------
+Below are the default configuration parameters for the ``Geomorphology`` model.
 
 .. literalinclude:: ../../src/utopia/models/Geomorphology/Geomorphology_cfg.yml
    :language: yaml
    :start-after: ---
+
+
+Available plots
+---------------
+The following plot configurations are available for the ``Geomorphology`` model:
+
+Default Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/Geomorphology/Geomorphology_plots.yml
+   :language: yaml
+   :start-after: ---
+
+Base Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/Geomorphology/Geomorphology_base_plots.yml
+   :language: yaml
+   :start-after: ---
+
+For available base plots, see :ref:`utopia_base_plots_ref`.
+
 
 
 Further reading

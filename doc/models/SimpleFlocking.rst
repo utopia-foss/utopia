@@ -25,8 +25,8 @@ Observables
 ^^^^^^^^^^^
 * ``agent``: group that contains agent-specific data, labelled by ``time`` and agent ``id``
 
-    * ``x`` and ``y``: agent position
-    * ``orientation``: agent orientation in radians :math:`[-\pi, +\pi)`
+  * ``x`` and ``y``: agent position
+  * ``orientation``: agent orientation in radians :math:`[-\pi, +\pi)`
 
 * ``norm_group_velocity``: the normalized average group velocity time series.
   This is what Vicsek et al., :ref:`1995 <SimpleFlockingRefs>`, refer to as the **order parameter** :math:`v_a` of the system.
@@ -69,43 +69,30 @@ The following general plots are available for the ``SimpleFlocking`` model:
 * ``agents_in_domain``: shows the agents with color-coded orientation moving in the domain
 * ``time_series``:
 
-    * ``norm_group_velocity``: The normalized group velocity time series, which is used as the **order parameter** :math:`v_a` by Vicsek *et al.*.
-    * ``orientation_circstd``: The circular standard deviation of the agents' orientation over time, which can also be interpreted as an order parameter.
-    * ``orientation``: A combined plot of the circular mean and circular standard deviation of the agent orientation over time.
+  * ``norm_group_velocity``: The normalized group velocity time series, which is used as the **order parameter** :math:`v_a` by Vicsek *et al.*.
+  * ``orientation_circstd``: The circular standard deviation of the agents' orientation over time, which can also be interpreted as an order parameter.
+  * ``orientation``: A combined plot of the circular mean and circular standard deviation of the agent orientation over time.
 
 For details on how to further configure these, see the plot configurations.
 
 Default Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. raw:: html
+.. toggle::
 
-   <details>
-   <summary><a>See the default plot config</a></summary>
+    .. literalinclude:: ../../src/utopia/models/SimpleFlocking/SimpleFlocking_plots.yml
+       :language: yaml
+       :start-after: ---
 
-.. literalinclude:: ../../src/utopia/models/SimpleFlocking/SimpleFlocking_plots.yml
-   :language: yaml
-   :start-after: ---
-
-.. raw:: html
-
-   </details>
 
 Base Plot Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. raw:: html
+.. toggle::
 
-   <details>
-   <summary><a>See the base plot config</a></summary>
+    .. literalinclude:: ../../src/utopia/models/SimpleFlocking/SimpleFlocking_base_plots.yml
+       :language: yaml
+       :start-after: ---
 
-.. literalinclude:: ../../src/utopia/models/SimpleFlocking/SimpleFlocking_base_plots.yml
-   :language: yaml
-   :start-after: ---
-
-.. raw:: html
-
-   </details>
-
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.
 
 
 Possible Future Extensions

@@ -66,6 +66,8 @@ graph_pretty:
     nodes:
       node_size:
         scale_to_interval: [1, 200]
+    edges:
+      arrowsize: 4
 
 # Demonstrates a network with edited appearance
 ### Start --- static_network
@@ -121,6 +123,7 @@ graph_highlighted:
       edge_color: [0, 0, 0, 0.05]
       width:
         scale_to_interval: [0, 1]
+      arrowsize: 4
     node_labels:
       enabled: True
       show_only: &nodelist !range [2, 12]
@@ -190,6 +193,7 @@ animated_network:
       colorbar:
         label: opinion $\sigma$
     edges:
+      arrowsize: 4
       width:
         from_property: edge_weights
 
@@ -202,8 +206,8 @@ animated_network:
     writer_kwargs:
       ffmpeg:
         init:
-          fps: 10
+          fps: 3
         saving:
-          dpi: 400
+          dpi: 254
 ### End --- animated_network
   <<: *default_style

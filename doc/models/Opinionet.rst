@@ -252,7 +252,7 @@ In each case, the time of the opinion distribution in question can be specified.
 
    </details>
 
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.
 
 
 Literature

@@ -2,7 +2,7 @@ perform_sweep: false
 
 parameter_space:
   num_steps: 1000
-  write_every: 100
+  write_every: 50
   seed: 10
   Opinionet:
     tolerance: 0.2

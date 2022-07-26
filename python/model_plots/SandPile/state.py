@@ -6,13 +6,7 @@ from typing import Tuple
 import numpy as np
 import xarray as xr
 
-from utopya.eval import (
-    DataManager,
-    PlotHelper,
-    UniverseGroup,
-    UniversePlotCreator,
-    is_plot_func,
-)
+from utopya.eval import DataManager, PlotHelper, UniverseGroup, is_plot_func
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +14,7 @@ log = logging.getLogger(__name__)
 
 
 @is_plot_func(
-    creator_type=UniversePlotCreator,
+    creator="universe",
     helper_defaults=dict(
         set_limits=dict(x=[0.0, None]),
         set_labels=dict(x="Time [Iteration Steps]", y=r"Slope $<n> - n_c$"),

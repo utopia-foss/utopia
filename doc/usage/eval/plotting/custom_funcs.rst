@@ -124,7 +124,8 @@ Below, you will learn how to implement a plot function that can be used with the
 The :py:func:`~dantro.plot.utils.plot_func.is_plot_func` decorator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When defining a plot function, we recommend using this decorator.
-It takes care of providing essential information to the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` and makes it easy to configure those parameters relevant for the plot function. For example, to specify which creator should be used for the plot function, the ``creator_type`` can be given.
+It takes care of providing essential information to the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` and makes it easy to configure those parameters relevant for the plot function.
+For example, to specify which creator should be used for the plot function, the ``creator`` argument can specify the name of a creator.
 To control usage of the data transformation framework, the ``use_dag`` flag can be used and the ``required_dag_tags`` argument can specify which data tags the plot function expects.
 
 
@@ -141,11 +142,11 @@ In the following example, two tags called ``x`` and ``y`` are required, which ar
 Importantly, such a plot function can be **averse to any creator**, because it is compatible not only with the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` but also with all its specializations.
 This makes it very flexible in its usage, serving solely as the bridge between data and visualization.
 
-.. code-block:: python
+.. testcode::
 
     from utopya.eval import is_plot_func, PlotHelper
 
-    @is_plot_func(use_dag=True, required_dag_tags=('x', 'y'))
+    @is_plot_func(use_dag=True, required_dag_tags=("x", "y"))
     def my_plot(*, data: dict, hlpr: PlotHelper, **plot_kwargs):
         """A creator-averse plot function using the data transformation
         framework and the plot helper framework.
@@ -156,7 +157,7 @@ This makes it very flexible in its usage, serving solely as the bridge between d
             **plot_kwargs: Passed on to matplotlib.pyplot.plot
         """
         # Create a lineplot on the currently selected axis
-        hlpr.ax.plot(data['x'], data['y'], **plot_kwargs)
+        hlpr.ax.plot(data["x"], data["y"], **plot_kwargs)
 
         # Done! The plot helper saves the plot.
 
@@ -212,12 +213,12 @@ Without DAG framework
 If you wish not to use the data transformation framework, simply omit the ``use_dag`` flag or set it to ``False`` in the decorator.
 When not using the transformation framework, the ``creator_type`` should be specified, thus binding the plot function to one type of creator.
 
-.. code-block:: python
+.. testcode:: plot-func-without-dag
 
     from utopya import DataManager
-    from utopya.eval import is_plot_func, PlotHelper, ExternalPlotCreator
+    from utopya.eval import is_plot_func, PlotHelper
 
-    @is_plot_func(creator_type=ExternalPlotCreator)
+    @is_plot_func()
     def my_plot(dm: DataManager, *, hlpr: PlotHelper, **additional_kwargs):
         """A plot function using the plot helper framework.
 
