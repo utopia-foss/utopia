@@ -333,10 +333,10 @@ helper_demo:
       loc: best
     annotate:
       annotations:
-        - xy: [ 0.08, 0.16 ]
+        - xy: [ 0.03, 0.16 ]
           xycoords: data
           text: Here is the maximum!
-          xytext: [ 0.05, 0.1 ]
+          xytext: [ 0.0, 0.1 ]
           arrowprops:
             facecolor: *mediumblue
             shrink: 0.05
