@@ -344,7 +344,7 @@ title, axis labels, and axis scales:
             x: $\alpha$
             y: $\beta$
 
-You can also some lines:
+You could add some lines:
 
 .. code-block:: yaml
 
@@ -363,7 +363,7 @@ You can also some lines:
     set_legend:
       loc: 'best'
 
-And why not annotate some points in the plot:
+Or annotate some noteworthy points in the plot:
 
 .. code-block:: yaml
 
@@ -385,7 +385,7 @@ And why not annotate some points in the plot:
               alpha: 0.5
               boxstyle: round
 
-And the struggle with matplotlib ticks is finally over:
+The struggle with matplotlib ticks is finally over:
 
 .. code-block:: yaml
 

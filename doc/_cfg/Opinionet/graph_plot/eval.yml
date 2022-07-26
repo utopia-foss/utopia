@@ -104,6 +104,8 @@ static_network:
 graph_highlighted:
   based_on:
     - static_network
+  graph_creation:
+    at_time_idx: 0
   graph_drawing:
     positions:
       seed: 13
@@ -113,26 +115,21 @@ graph_highlighted:
         scale_to_interval: [0, 1]
     node_labels:
       enabled: True
-      show_only: &nodelist [ 2, 3, 4, 6, 7, 11, 13, 15, 18, 22, 24, 30, 49 ]
+      show_only: &nodelist !range [2, 12]
     mark_nodes:
       nodelist: *nodelist
       color: *red
     mark_edges:
       colors:
-        [ 24, 11] : *red
-        [18, 15]: *red
-        [49, 15]: *red
-        [30, 49]: *red
-        [24, 22]: *red
-        [30, 24]: *red
+        [2, 3] : *red
+        [3, 4]: *red
+        [4, 5]: *red
+        [5, 6]: *red
         [6, 7]: *red
-        [7, 11]: *red
-        [22, 2]: *red
-        [2, 13]: *red
-        [18, 13]: *red
-        [7, 4]: *red
-        [4, 3]: *red
-        [3, 2]: *red
+        [7, 8]: *red
+        [8, 9]: *red
+        [9, 10]: *red
+        [10, 11]: *red
 
 # Demonstrates manipulation of the colorbar
 graph_colorbar:

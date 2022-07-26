@@ -395,7 +395,7 @@ scatter_3d:
     subspace:
       transmission rate: [0.2, 0.4]
       immunity rate: [0.2]
-      seed: [0]
+      seed: [4]
   transform:
     - .sel: [ !dag_tag kind, { kind: susceptible } ]
       kwargs: { drop: true }

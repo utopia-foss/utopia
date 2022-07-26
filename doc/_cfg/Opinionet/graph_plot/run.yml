@@ -3,9 +3,10 @@ perform_sweep: false
 parameter_space:
   num_steps: 1000
   write_every: 100
+  seed: 10
   Opinionet:
     tolerance: 0.2
     network:
-      model: WattsStrogatz
+      model: regular
       num_vertices: 50
-      mean_degree: 8
+      mean_degree: 14
