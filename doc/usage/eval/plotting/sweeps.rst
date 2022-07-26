@@ -1,12 +1,13 @@
-Sweeps
-======
+.. _plot_sweep_cfgs:
 
-.. admonition:: Summary \
+Sweeps in Plot Configs
+======================
+
+.. admonition:: Summary
 
   On this page, you will see how to
 
-  * add the ``!pspace`` tag to plots in order to plot the same figure multiple times with
-    different settings
+  * add the ``!pspace`` tag to plots in order to plot the same figure multiple times with different settings
   * write your plots to a common subfolder
 
 Sometimes you may want to plot a bunch of very similar plots that differ only in a few configuration entries.
@@ -30,9 +31,8 @@ You can also give the plots more meaningful names by adding a ``name`` entry:
         values: [foo, bar, baz]
         name: parameter_name
 
-You may also find it useful to write plots of a similar kind to a separate folder, in order to
-have a better overview of your output. For example, you may want to plot three different phase diagrams;
-a handy way of achieving is doing
+You may also find it useful to write plots of a similar kind to a separate folder, in order to have a better overview of your output.
+For example, you may want to plot three different phase diagrams; a handy way of achieving is doing
 
 .. code-block:: yaml
 
@@ -42,5 +42,5 @@ a handy way of achieving is doing
     phase_diagrams/plot2:
       # ..
 
-Two plots ``plot1`` and ``plot2`` will be saved in a subfolder called ``phase_diagrams``
-in your output directory. This can be useful when you're plotting a large number of plots.
+Two plots ``plot1`` and ``plot2`` will be saved in a subfolder called ``phase_diagrams`` in your output directory.
+This can be useful when you're creating a large number of plots.

@@ -23,10 +23,43 @@ _:
 
 
 # =============================================================================
+#  ╔╦╗╔═╗╔═╗╔═╗╦ ╦╦ ╔╦╗╔═╗
+#   ║║║╣ ╠╣ ╠═╣║ ║║  ║ ╚═╗
+#  ═╩╝╚═╝╚  ╩ ╩╚═╝╩═╝╩ ╚═╝
+# =============================================================================
+# start: .defaults
+# This section defines defaults that are (meant to be) used in all plots.
+# These find their way into the plot configuration via the `.creator` configs.
+
+# .. Aggregated defaults ......................................................
+.defaults:
+  based_on:
+    - .defaults  # utopya .defaults
+    - .defaults.style
+    - .defaults.file_ext
+
+
+# .. Individual defaults ......................................................
+.defaults.style:
+  based_on: .defaults.style
+
+.defaults.file_ext:
+  file_ext: pdf
+
+
+
+
+
+
+
+
+
+# =============================================================================
 #  ╔═╗╦  ╔═╗╔╦╗  ╔═╗╦═╗╔═╗╔═╗╔╦╗╔═╗╦═╗╔═╗
 #  ╠═╝║  ║ ║ ║   ║  ╠╦╝║╣ ╠═╣ ║ ║ ║╠╦╝╚═╗
 #  ╩  ╩═╝╚═╝ ╩   ╚═╝╩╚═╚═╝╩ ╩ ╩ ╚═╝╩╚═╚═╝
 # =============================================================================
+# start: .creator
 # This is where the above defaults enter the plot configuration
 .creator.base:
   based_on:
@@ -72,6 +105,7 @@ _:
 #  ╠═╝║  ║ ║ ║   ╠╣ ║ ║║║║║   ║ ║║ ║║║║╚═╗
 #  ╩  ╩═╝╚═╝ ╩   ╚  ╚═╝╝╚╝╚═╝ ╩ ╩╚═╝╝╚╝╚═╝
 # =============================================================================
+# start: .plot
 # -- Overloads of existing plot functions -------------------------------------
 
 .plot.ca:
@@ -89,6 +123,7 @@ _:
 #  ╚═╗╠╩╗║╠═╝  ║  ║ ║║║║ ║║║ ║ ║║ ║║║║╚═╗
 #  ╚═╝╩ ╩╩╩    ╚═╝╚═╝╝╚╝═╩╝╩ ╩ ╩╚═╝╝╚╝╚═╝
 # =============================================================================
+# start: .skip
 
 .skip.if_less_than_1D:
   expected_multiverse_ndim: [1, 2, 3, 4, 5]
@@ -117,10 +152,23 @@ _:
 
 
 # =============================================================================
+#  ╔═╗╔╦╗╦ ╦╦  ╔═╗
+#  ╚═╗ ║ ╚╦╝║  ║╣
+#  ╚═╝ ╩  ╩ ╩═╝╚═╝
+# =============================================================================
+# start: .style
+
+
+
+
+
+
+# =============================================================================
 #  ╔═╗╦  ╔═╗╔╦╗  ╦ ╦╔═╗╦  ╔═╗╔═╗╦═╗╔═╗
 #  ╠═╝║  ║ ║ ║   ╠═╣║╣ ║  ╠═╝║╣ ╠╦╝╚═╗
 #  ╩  ╩═╝╚═╝ ╩   ╩ ╩╚═╝╩═╝╩  ╚═╝╩╚═╚═╝
 # =============================================================================
+# start: .hlpr
 
 # For specific kinds of representations .......................................
 
@@ -145,6 +193,7 @@ _:
 #  ╠═╣║║║║║║║╠═╣ ║ ║║ ║║║║
 #  ╩ ╩╝╚╝╩╩ ╩╩ ╩ ╩ ╩╚═╝╝╚╝
 # =============================================================================
+# start: .animation
 # The default animation config
 # NOTE These do not enable animation, but merely set parameters.
 #      Use `.animation.enabled` or the specific `.animation.<writer>` configs.
@@ -169,3 +218,62 @@ _:
   based_on:
     - .animation.frames      # from utopya
     - .animation.defaults    # from here
+
+
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗  ╔═╗╦═╗╔═╗╔╦╗╔═╗╦ ╦╔═╗╦═╗╦╔═
+#   ║║╠═╣║ ╦  ╠╣ ╠╦╝╠═╣║║║║╣ ║║║║ ║╠╦╝╠╩╗
+#  ═╩╝╩ ╩╚═╝  ╚  ╩╚═╩ ╩╩ ╩╚═╝╚╩╝╚═╝╩╚═╩ ╩
+# =============================================================================
+# start: .dag
+# -- Options ------------------------------------------------------------------
+# .. Aggregated DAG default options ...........................................
+.dag.defaults:
+  based_on: .dag.defaults
+
+
+
+# -- Visualization ------------------------------------------------------------
+# Parameters controlling DAG visualization
+.dag.vis.defaults:
+  based_on: .dag.vis.defaults
+
+
+
+# -- Definitions --------------------------------------------------------------
+# The entries below set certain tags using the `dag_options.define` argument.
+# This should not be confused with the .dag.meta_ops defined below.
+
+.dag.define.defaults:
+  based_on: .dag.define.defaults
+
+
+
+
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗  ╔╦╗╔═╗╔╦╗╔═╗  ╔═╗╔═╗╔═╗╦═╗╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
+#   ║║╠═╣║ ╦  ║║║║╣  ║ ╠═╣  ║ ║╠═╝║╣ ╠╦╝╠═╣ ║ ║║ ║║║║╚═╗
+#  ═╩╝╩ ╩╚═╝  ╩ ╩╚═╝ ╩ ╩ ╩  ╚═╝╩  ╚═╝╩╚═╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
+# =============================================================================
+# start: .dag.meta_ops
+# The following entries can be included into a plot configuration to make
+# certain meta-operations available for the data transformation framework.
+
+
+
+
+
+# =============================================================================
+# end of Utopia base plots
+# -----------------------------------------------------------------------------
+# Maintenance remark: ASCII headings were created using the Calvin S font at
+#   https://patorjk.com/software/taag/#p=display&c=bash&f=Calvin%20S
+#

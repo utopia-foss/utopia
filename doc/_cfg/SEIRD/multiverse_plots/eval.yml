@@ -1,34 +1,37 @@
 # Plots for the utopia plotting docs
 ---
 _utopia_colors:
-  dark_blue: &darkblue '#003366'
-  medium_blue: &mediumblue '#0099CC'
-  light_blue: &lightblue '#99CCFF'
-  dark_green: &darkgreen '#006666'
-  medium_green: &mediumgreen '#339999'
-  light_green: &lightgreen '#AFD8BC'
-  yellow: &yellow '#FFCC66'
-  red: &red '#CC3333'
-  cream_white: &creamwhite '#F6F6F6'
-  white: &white '#fff'
-  black: &black '#000000'
-  gray: &gray '#F7F9FF'
-  dark_gray: &darkgray '#666666'
+  dark_blue:          &darkblue           '#003366'
+  medium_blue:        &mediumblue         '#0099CC'
+  light_blue:         &lightblue          '#99CCFF'
+  dark_green:         &darkgreen          '#006666'
+  medium_green:       &mediumgreen        '#339999'
+  light_green:        &lightgreen         '#AFD8BC'
+  yellow:             &yellow             '#FFCC66'
+  red:                &red                '#CC3333'
+  cream_white:        &creamwhite         '#F6F6F6'
+  white:              &white              '#fff'
+  black:              &black              '#000000'
+  gray:               &gray               '#F7F9FF'
+  dark_gray:          &darkgray           '#666666'
 
 _default_style: &default_style
   style:
     text.usetex: True
-    mathtext.fontset: 'stix'
-    font.family: 'serif'
+    mathtext.fontset: stix
+    font.family: serif
 
-# ----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 .flush_kind:
   to_plot:
     kind:
       cmap: ~
+
 .flush_helper:
   helpers: ~
 
+# -----------------------------------------------------------------------------
 # Demonstrates a line plot with errorbars
 ### Start --- errorbars
 errorbars:
@@ -42,7 +45,8 @@ errorbars:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: [ 'infected' ] }]
+          - .sel: [!dag_prev , { kind: [infected] }]
+
     # Select a subspace of the sweep parameters that was performed here
     # (not needed if you are only sweeping over 'seed'. See the 'subspace' page
     # for details).
@@ -52,19 +56,13 @@ errorbars:
 
   # Get time coordinates, and calculate mean and std
   transform:
-    - operation: .coords
-      args: [ !dag_tag infected , 'time']
+    - .coords: [!dag_tag infected, time]
       tag: time
-    - operation: .mean
-      args: [ !dag_tag infected ]
-      kwargs:
-        dim: seed
+    - .mean: [!dag_tag infected, [seed]]
       tag: mean_infected
-    - operation: .std
-      args: [ !dag_tag infected ]
-      kwargs:
-        dim: seed
+    - .std: [!dag_tag infected, [seed]]
       tag: infected_std
+
     - operation: xr.Dataset
       kwargs:
         data_vars:
@@ -85,6 +83,7 @@ errorbars:
   # Set the helpers
   helpers:
     set_labels:
+      x: Time [steps]
       y: Density [1/A]
     set_title:
       title: Density of infected agents
@@ -102,17 +101,20 @@ stacked_transmission:
   based_on:
     - .creator.multiverse
     - .plot.facet_grid.line
+
   select_and_combine:
     fields:
       data:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: ['infected'] } ]
+          - .sel: [!dag_prev , { kind: [infected] }]
     subspace:
-      immunity rate: [ 0.3 ]
-      seed: [ 0 ]
+      immunity rate: [0.3]
+      seed: [0]
+
   x: time
   hue: transmission rate
+
   style:
     axes.prop_cycle: cycler('color', ['#AFD8BC', '#FFCC66', '#006666' ])
   helpers:
@@ -127,22 +129,23 @@ stacked_transmission_averaged:
     - .creator.multiverse
     - .plot.facet_grid.line
     - _default_style
+
   select_and_combine:
     fields:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: ['infected'] } ]
+          - .sel: [!dag_prev , { kind: [infected] }]
     subspace:
       immunity rate: [ 0.3 ]
+
   transform:
-    - operation: .mean
-      args: [ !dag_tag infected ]
-      kwargs:
-        dim: seed
+    - .mean: [!dag_tag infected, [seed]]
       tag: data
+
   x: time
   hue: transmission rate
+
   style:
     axes.prop_cycle: cycler('color', ['#AFD8BC', '#FFCC66', '#006666' ])
   helpers:
@@ -164,24 +167,21 @@ stacked_errorbands:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: [ 'infected' ] } ]
+          - .sel: [!dag_prev , { kind: [infected] }]
     subspace:
       immunity rate: [ 0.3 ]
 
   # Calculate mean and std for each 'transmission rate' value
   transform:
-    - operation: .mean
-      args: [ !dag_tag infected ]
+    - .mean: [!dag_tag infected]
       kwargs:
         dim: seed
       tag: mean
-    - operation: .std
-      args: [ !dag_tag infected ]
+    - .std: [!dag_tag infected]
       kwargs:
         dim: seed
       tag: std
-    - operation: xr.Dataset
-      kwargs:
+    - xr.Dataset:
         data_vars:
           infected density: !dag_tag mean
           err: !dag_tag std
@@ -203,8 +203,8 @@ stacked_errorbands:
   # Use some pretty colors and latex
   style:
     text.usetex: True
-    mathtext.fontset: 'stix'
-    font.family: 'serif'
+    mathtext.fontset: stix
+    font.family: serif
     axes.prop_cycle: cycler('color', ['#AFD8BC', '#FFCC66', '#006666' ])
 ### End --- stacked_errorbands
 
@@ -222,22 +222,19 @@ panel_errorbands:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: [ 'infected' ] } ]
+          - .sel: [!dag_prev , { kind: [infected] }]
 
   # Calculate mean and std for each
   transform:
-    - operation: .mean
-      args: [ !dag_tag infected ]
+    - .mean: [!dag_tag infected]
       kwargs:
         dim: seed
       tag: mean
-    - operation: .std
-      args: [ !dag_tag infected ]
+    - .std: [!dag_tag infected]
       kwargs:
         dim: seed
       tag: std
-    - operation: xr.Dataset
-      kwargs:
+    - xr.Dataset:
         data_vars:
           infected density: !dag_tag mean
           err: !dag_tag std
@@ -256,11 +253,11 @@ panel_errorbands:
       y: [ 0, 0.2 ]
 
   # Use some pretty colors and latex
+  color: '#CC3333'
   style:
     text.usetex: True
-    mathtext.fontset: 'stix'
-    font.family: 'serif'
-  color: '#CC3333'
+    mathtext.fontset: stix
+    font.family: serif
 ### End --- facet_grid
 
 # Demonstrates a facet grid of stacked line plots with errorbands
@@ -268,13 +265,16 @@ panel_all:
   based_on:
     - panel_errorbands
     - .flush_helper
+
   select_and_combine:
     fields:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: [ 'susceptible', 'infected', 'recovered' ] } ]
+          - .sel: [!dag_prev , { kind: [susceptible, infected, recovered] }]
+
   hue: kind
+
   color: ~
   style:
     axes.prop_cycle: cycler('color', ['#CC3333', '#006666', '#AFD8BC' ])
@@ -285,11 +285,14 @@ panel_all:
 # Demonstrates subspace selection
 panel_subspace:
   based_on: panel_all
+
   select_and_combine:
     subspace:
       transmission rate: [ 0.2 ]
       immunity rate: [ 0, 0.1, 0.2 ]
+
   row: ~
+
   style:
     axes.prop_cycle: cycler('color', ['#CC3333', '#006666', '#AFD8BC' ])
   helpers:
@@ -309,12 +312,11 @@ histogram:
       infected:
         path: densities
         transform:
-          - .sel: [ !dag_prev , { kind: ['infected'] } ]
+          - .sel: [!dag_prev , { kind: [infected] }]
 
   # Get the maximum value
   transform:
-    - operation: np.max
-      args: [ !dag_tag infected ]
+    - np.max: [!dag_tag infected]
       kwargs:
         axis: 3
       tag: data
@@ -327,12 +329,13 @@ histogram:
       x: Peak height
       y: ' '
 ### End --- histogram
-  style:
-    text.usetex: True
-    mathtext.fontset: 'stix'
-    font.family: 'serif'
   color: *mediumgreen
   bins: 50
+
+  style:
+    text.usetex: True
+    mathtext.fontset: stix
+    font.family: serif
 
 # Demonstrates a facet grid 2d scatter plot
 ### Start --- scatter_2d_facet
@@ -354,14 +357,14 @@ scatter_2d_facet:
 
   # Bundle kinds into a single dataset
   transform:
-    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+    - .sel: [!dag_tag kind, { kind: susceptible }]
       kwargs: { drop: true }
       tag: susceptible
-    - .sel: [ !dag_tag kind, { kind: infected } ]
+    - .sel: [!dag_tag kind, { kind: infected }]
       kwargs: { drop: true }
       tag: infected
-    - operation: xr.Dataset
-      kwargs:
+
+    - xr.Dataset:
         data_vars:
           susceptible: !dag_tag susceptible
           infected: !dag_tag infected
@@ -391,32 +394,37 @@ scatter_3d:
   based_on:
     - scatter_2d_facet
     - .plot.facet_grid.scatter3d
+
   select_and_combine:
     subspace:
       transmission rate: [0.2, 0.4]
       immunity rate: [0.2]
       seed: [4]
+
   transform:
-    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+    - .sel: [!dag_tag kind, { kind: susceptible }]
       kwargs: { drop: true }
       tag: susceptible
-    - .sel: [ !dag_tag kind, { kind: infected } ]
+    - .sel: [!dag_tag kind, { kind: infected }]
       kwargs: { drop: true }
       tag: infected
-    - .sel: [ !dag_tag kind, { kind: recovered } ]
+    - .sel: [!dag_tag kind, { kind: recovered }]
       kwargs: { drop: true }
       tag: recovered
-    - operation: xr.Dataset
-      kwargs:
+
+    - xr.Dataset:
         data_vars:
           susceptible: !dag_tag susceptible
           infected: !dag_tag infected
           recovered: !dag_tag infected
       tag: data
+
   z: recovered
-  row: ~
   col: transmission rate
-  figsize: [ 8, 4 ]
+  row: ~
+
+  figsize: [8, 4]
+
   helpers:
     subplots_adjust:
       right: 0.75
@@ -427,6 +435,7 @@ scatter_3d:
           args: ['{x: 0.1f}']
       z:
         <<: *tick_format
+
     set_ticks:
       y:
         major: [0, 0.05, 0.1]

@@ -3,7 +3,9 @@
 Animations
 ==========
 
-.. admonition:: Summary \
+Animations can make complex dynamics much more comprehensible, and are easy to create using the plotting framework.
+
+.. admonition:: Summary
 
   On this page, you will see how to
 
@@ -33,13 +35,11 @@ Animations
         :start-after: ### Start --- animated_network
         :end-before: ### End --- animated_network
 
-Animations can make complex dynamics much more comprehensible, and are easy to create using the plotting framework.
 
 Animated Cellular Automaton
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A particular common case is animating cellular automata, such as the SEIRD model, for which the :code:`.plot.ca`
-function provides a simple interface to create an animated plot.
+A particularly common case is animating cellular automata, such as the :ref:`SEIRD <model_SEIRD>` model, for which the :code:`.plot.ca` function provides a simple interface to create an animated plot.
 
 .. code-block:: yaml
 
@@ -58,22 +58,25 @@ function provides a simple interface to create an animated plot.
       to_plot:
         kind:
           limits: [~, 3]
+          # title: My title
           cmap:
             empty: white
             susceptible: lightgreen
             infected: crimson
             recovered: teal
 
-:code:`.plot.ca` requires a :code:`to_plot` key, specifying the limits of the colormap. Here, we are only
-plotting the susceptible, infected, and recovered agents, so we set the limits to :code:`[0, 3]`, and define the colors
-we want for each :code:`kind`:
+:code:`.plot.ca` requires a :code:`to_plot` key, specifying what to put into each subplot.
+The keys (here: ``kind``) need to correspond to the selected data entries.
+
+In addition, it is used to specify the limits of the colormap (and other information like a subplot title).
+Here, we are only plotting the susceptible, infected, and recovered agents, so we set the limits to :code:`[0, 3]`, and define the colors we want for each :code:`kind`:
 
 .. raw:: html
 
     <video width="600" src="../../../_static/_gen/SEIRD/universe_plots/animated_ca.mp4" controls></video>
 
-For animations, you will typically want a fairly high plotting resolution. Change the resolution of the plot by adding an
-:code:`animation` block to the plot configuration:
+For animations, you will typically want a fairly high plotting resolution.
+Change the resolution of the plot by adding an :code:`animation` block to the plot configuration:
 
 .. code-block:: yaml
 
@@ -86,8 +89,7 @@ For animations, you will typically want a fairly high plotting resolution. Chang
             saving:
               dpi: 400
 
-A higher dpi will give you a higher resolution and prevent interpolation issues,
-but will also take longer to plot and require more storage.
+A higher ``dpi`` will give you a higher resolution and prevent interpolation issues, but will also take longer to plot and require more storage.
 
 You can restrict yourself to a smaller range of frames to plot using the ``frames_isel`` key (which selects indices).
 This can be useful for long simulation runs, and when only wanting to visualise a small part of the dynamics.
@@ -101,11 +103,12 @@ Simply add
 
       frames_isel: !range [30, 60]
 
-This will only plot the frames from 30 to 60. You can also manually specify an array,
-i.e. :code:`frames_isel: [10, 20, 30, 40]`.
+This will only plot the frames from 30 to 60. You can also manually specify an array, i.e. :code:`frames_isel: [10, 20, 30, 40]`.
 
-You can also use the ``.plot.facet_grid`` base configuration with ``kind: pcolormesh``
-to animate heatmaps. See the :ref:`article on heatmaps <pcolormesh>` for more details.
+You can also use the ``.plot.facet_grid`` base configuration with ``kind: pcolormesh`` to animate heatmaps.
+See the :ref:`article on heatmaps <pcolormesh>` for more details.
+
+
 
 Animated Network Plots
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -123,19 +126,19 @@ static graph plot ``static_network``, you can amend it in the following way:
 
 .. code-block:: yaml
 
-   static_network:
-     # Plot configuration for a static network plot ...
+    static_network:
+      # Plot configuration for a static network plot ...
 
-   animated_network:
-     based_on:
-       - static_network
-       - .animation.ffmpeg  # Use the ffmpeg writer
+    animated_network:
+      based_on:
+        - static_network
+        - .animation.ffmpeg  # Use the ffmpeg writer
 
-     # Add this entry to make the 'opinion' change over time
-     graph_animation:
-       sel:
-         time:
-           from_property: opinion
+      # Add this entry to make the 'opinion' change over time
+      graph_animation:
+        sel:
+          time:
+            from_property: opinion
 
 And that's it! Instead of ``ffmpeg``, you can also use the ``frames`` writer by instead basing your plot on ``.animation.frames``.
 Increase the resolution of the animation by adding and updating the following entry:
@@ -157,50 +160,60 @@ You only need to add the key for the animation writer you are actually using.
 
 Take a look at the :ref:`Utopia Opinionet model <model_Opinionet>` for a working demo of an animated network.
 
+
 Writing your own animation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. admonition:: Idea
+.. TODO Idea: Why not write an animation of the infection curve as time
+..      progresses, and show the result here?
 
-    Why not write an animation of the infection curve as time progresses, and show the
-    result here?
+Implementing the animation function
+"""""""""""""""""""""""""""""""""""
 
-Writing your own animated plot is simple with the inclusion of the ``PlotHelper`` and the :code:`@is_plot_func`
-decorator. The fundamental structure of a plot function that supports animation should follow this scaffolding:
-first, use the :code:`is_plot_func` decorator on your plot function:
+Writing your own animated plot is simple with the inclusion of the ``PlotHelper`` and the :py:class:`~dantro.plot.utils.plot_func.is_plot_func` decorator.
+The fundamental structure of a plot function that supports animation should follow this scaffolding:
+first, use the :code:`@is_plot_func` decorator to denote a function as a plot function:
 
-.. code-block:: python
+.. testcode:: write-animation
 
     from utopya import DataManager, UniverseGroup
-    from utopya.plotting import UniversePlotCreator, is_plot_func, PlotHelper
+    from utopya.eval import UniversePlotCreator, is_plot_func, PlotHelper
 
     @is_plot_func(use_dag=True, supports_animation=True)
-    def my_plot( *, hlpr: PlotHelper, data: dict, time: int, **plot_kwargs):
+    def my_plot(
+        *, hlpr: PlotHelper, data: dict, dim: str, time: int = 0, **kwargs
+    ):
+        # Select data
+        d = data[dim]
+
+        # ...
 
 Set :code:`use_dag` and :code:`supports_animation` to :code:`True`.
 
 Next, write your plot function. It should plot the data at a single time, and then contain an update function
 that loops over the time steps, plotting a frame of the animation at each step:
 
-.. code-block:: python
+.. testcode:: write-animation
 
     from utopya import DataManager, UniverseGroup
-    from utopya.plotting import UniversePlotCreator, is_plot_func, PlotHelper
+    from utopya.eval import UniversePlotCreator, is_plot_func, PlotHelper
 
     @is_plot_func(use_dag=True, supports_animation=True)
-    def my_plot( *, hlpr: PlotHelper, data: dict, time: int, **plot_kwargs):
+    def my_plot(
+        *, hlpr: PlotHelper, data: dict, dim: str, time: int = 0, **kwargs
+    ):
+        d = data[dim]
 
-        hlpr.ax.plot(data[time], **plot_kwargs)
+        hlpr.ax.plot(d[time], **kwargs)
 
         def update():
             for idx, y_data in enumerate(data):
-
                 # Clear the plot and plot anew
                 hlpr.ax.clear()
-                hlpr.ax.plot(y_data, **plot_kwargs)
+                hlpr.ax.plot(y_data, **kwargs)
 
                 # Set the title
-                hlpr.invoke_helper('set_title', title="Time {}".format(idx))
+                hlpr.invoke_helper("set_title", title=f"Time {idx}")
 
                 # Done with this frame. Yield control to the plot framework,
                 # which will take care of grabbing the frame.
@@ -213,17 +226,19 @@ and other frames.
 
 Finally, register the animation with the plot helper:
 
-.. code-block:: python
+.. testcode:: write-animation
 
     from utopya import DataManager, UniverseGroup
-    from utopya.plotting import UniversePlotCreator, is_plot_func, PlotHelper
+    from utopya.eval import UniversePlotCreator, is_plot_func, PlotHelper
 
     @is_plot_func(use_dag=True, supports_animation=True)
-    def my_plot( *, hlpr: PlotHelper, data: dict, time: int, **plot_kwargs):
-
+    def my_plot(
+        *, hlpr: PlotHelper, data: dict, dim: str, time: int = 0, **kwargs
+    ):
         # as above ...
 
         def update():
+            pass
             # as above ...
 
         hlpr.register_animation_update(update)
@@ -232,11 +247,21 @@ To summarise, we
 
 * marked the plot function as ``supports_animation``,
 * defined an ``update`` function, and
-* passed the ``update`` function to the helper
-  via :py:meth:`~dantro.plot.plothelper.PlotHelper.register_animation_update`
+* passed the ``update`` function to the helper via :py:meth:`~dantro.plot.plothelper.PlotHelper.register_animation_update`
 
-Now let's look at what the ``plot_cfg.yml`` needs to contain. There are two base plot configurations
-you can use: ``.animation.frames`` and ``.animation.ffmpeg``. They use different writers for the animation.
+.. hint::
+
+    To learn more about plot function signatures and animation, have a look at the `dantro documentation <https://dantro.readthedocs.io/>`_:
+
+    * `About plot functions <https://dantro.readthedocs.io/en/latest/plotting/plot_manager.html#the-plot-function>`_
+    * `About animations <https://dantro.readthedocs.io/en/latest/plotting/creators/pyplot.html#animations>`_
+
+
+Animation configuration
+"""""""""""""""""""""""
+Now let's look at what the ``plot_cfg.yml`` needs to contain.
+There are two base plot configurations you can use: ``.animation.frames`` and ``.animation.ffmpeg``.
+They use different writers for the animation.
 Basing your plot on either of them is sufficient for the animation to run:
 
 .. code-block:: yaml
@@ -247,8 +272,7 @@ Basing your plot on either of them is sufficient for the animation to run:
         - .animation.ffmpeg  # or .animation.frames
         - # other base settings
 
-You can change the resolution and frame rates of the animation by adding an ``animation``
-entry to the plot configuration
+You can change the resolution and frame rates of the animation by adding an ``animation`` entry to the plot configuration
 
 .. code-block:: yaml
 
@@ -286,7 +310,9 @@ Finally, you can also pass any additional kwargs to the ``update`` function you 
       # same as above ...
 
       animation:
-        animation_update_kwargs:  {}
+        animation_update_kwargs: {}
+
+These end up as arguments to the ``update`` function.
 
 .. hint::
 
@@ -296,5 +322,13 @@ Finally, you can also pass any additional kwargs to the ``update`` function you 
 
         animation:
           enabled: false
+
+    Alternatively, include the ``.animation.disabled`` base plot entry:
+
+    .. code-block:: yaml
+
+        based_on:
+          - # ...
+          - .animation.disabled
 
     This can be useful to avoid plotting lengthy animations for every run.

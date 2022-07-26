@@ -100,6 +100,8 @@ hierarchy. Settings you specify in the top-level (``my_plot`` in the example abo
     The plot configuration inheritance feature is completely `implemented in dantro <https://dantro.readthedocs.io/en/latest/plotting/plot_manager.html#plot-configuration-inheritance>`_.
 
 
+.. _custom_base_config_pools:
+
 Custom or additional base config pools
 """"""""""""""""""""""""""""""""""""""
 Which base config pools are used can be adjusted via the meta configuration.

@@ -1,23 +1,26 @@
+---
 _utopia_colors:
-  dark_blue: &darkblue '#003366'
-  medium_blue: &mediumblue '#0099CC'
-  light_blue: &lightblue '#99CCFF'
-  dark_green: &darkgreen '#006666'
-  medium_green: &mediumgreen '#339999'
-  light_green: &lightgreen '#AFD8BC'
-  yellow: &yellow '#FFCC66'
-  red: &red '#CC3333'
-  cream_white: &creamwhite '#F6F6F6'
-  white: &white '#fff'
-  black: &black '#000000'
-  gray: &gray '#F7F9FF'
-  dark_gray: &darkgray '#666666'
+  dark_blue:          &darkblue           '#003366'
+  medium_blue:        &mediumblue         '#0099CC'
+  light_blue:         &lightblue          '#99CCFF'
+  dark_green:         &darkgreen          '#006666'
+  medium_green:       &mediumgreen        '#339999'
+  light_green:        &lightgreen         '#AFD8BC'
+  yellow:             &yellow             '#FFCC66'
+  red:                &red                '#CC3333'
+  cream_white:        &creamwhite         '#F6F6F6'
+  white:              &white              '#fff'
+  black:              &black              '#000000'
+  gray:               &gray               '#F7F9FF'
+  dark_gray:          &darkgray           '#666666'
 
 _default_style: &default_style
   style:
     text.usetex: True
-    mathtext.fontset: 'stix'
-    font.family: 'serif'
+    mathtext.fontset: stix
+    font.family: serif
+
+# -----------------------------------------------------------------------------
 
 # Demonstrates a heatmap plot using pcolormesh
 ### Start --- pcolormesh

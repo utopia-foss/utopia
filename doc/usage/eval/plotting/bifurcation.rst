@@ -7,9 +7,9 @@ Bifurcation diagrams
 
 .. hint::
 
-    This plot is powerful but equally specialised, and was originally designed for
-    a Vegetation model (not included in Utopia). Making this plot more general and integrating it into the wider
-    pool of base plots is WIP.
+    This plot is powerful but equally specialised, and was originally designed for a Vegetation model (not included in Utopia).
+    Making this plot more general and integrating it into the wider pool of base plots is WIP.
+
 
 Bifurcation in one parameter dimension
 --------------------------------------

@@ -14,7 +14,8 @@ Implementing your own plot functions
 
 This leads to the :py:class:`~utopya.eval.plotmanager.PlotManager` instantiating a plot creator ``some_creator``, which is instructed to create a plot called ``my_plot``.
 The additional parameters are passed to the plot creator, which then uses these for its own purposes.
-The same happens for the ``my_other_plot`` plot, which uses ``another_creator``. For more information on the :py:class:`~utopya.eval.plotmanager.PlotManager`, refer to `the dantro documentation <https://dantro.readthedocs.io/en/stable/plotting/plot_manager.html>`_.
+The same happens for the ``my_other_plot`` plot, which uses ``another_creator``.
+For more information on the :py:class:`~utopya.eval.plotmanager.PlotManager`, refer to `the dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_manager.html>`_.
 
 
 
