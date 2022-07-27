@@ -167,16 +167,16 @@ To avoid excessive duplication of plot configurations when adding config sets, m
 
 .. _plot_with_DAG:
 
-The Data Transformation Framework
----------------------------------
+Plotting with the Data Transformation Framework
+-----------------------------------------------
 
 .. hint::
 
-    See the `dantro documentation of the DAG transformation framework <https://dantro.readthedocs.io/en/stable/data_io/transform.html>`_ for a complete guide on the data transformation framework.
+    See the `dantro documentation of the DAG transformation framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>`_ for a complete guide on the data transformation framework.
     The dantro documentation also includes :ref:`a page about the integration of the DAG into the plotting framework <plot_creator_dag>`.
 
-As part of :py:mod:`dantro`, a `data selection and transformation framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>`_ based on a directed, acyclic graph (*short*: DAG) of operations is available.
-This is a powerful tool, especially when combined with the plotting framework.
+:py:mod:`dantro` implements the so-called `data selection and transformation framework <https://dantro.readthedocs.io/en/latest/data_io/transform.html>`_ which is based on a directed, acyclic graph (*short*: DAG) of operations.
+As mentioned in the :ref:`DAG introduction <dag_intro>`, this is a powerful tool, especially when combined with the plotting framework.
 
 The central idea is that plotting and data transformation should be separate:
 Having a very long and intricate function that both slices and dices your data *and* plots it is inconvenient and error-prone.
@@ -253,3 +253,8 @@ Remember, the plot function won't be aware of any of these operations; its job i
 
 We will see more sophisticated uses of the DAG as we move through the tutorial.
 The DAG supplies `many transformation operations <https://dantro.readthedocs.io/en/latest/data_io/data_ops_ref.html>`_; however, if you are missing an operation, you can always :ref:`add your own operation <custom_DAG_ops>`.
+
+
+.. admonition:: Trying to debug errors in your DAG?
+
+    Have a look at :ref:`debug_DAG` for approaches to do that.

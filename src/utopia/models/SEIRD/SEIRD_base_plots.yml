@@ -196,8 +196,7 @@ phase_diagram:
     - .sel: [ !dag_tag kind, { kind: recovered } ]
       kwargs: { drop: true }
       tag: recovered
-    - operation: xr.Dataset
-      kwargs:
+    - xr.Dataset:
         data_vars:
           susceptible: !dag_tag susceptible
           exposed: !dag_tag exposed
@@ -337,7 +336,7 @@ transitions/raw:
   col_wrap: 3
   sharey: true
 
-transitions/combined: &transitions_combined
+transitions/combined:
   based_on: counters
 
   transform:
@@ -354,24 +353,23 @@ transitions/combined: &transitions_combined
       y: Counts
 
 transitions/smoothed:
-  <<: *transitions_combined
+  based_on:
+    - transitions/combined
+    - .dag.meta_ops.rolling
+
+  dag_options:
+    define:
+      smoothed_by: &smoothed_by 7
 
   transform:
     - *op_sel_transitions
 
     # Apply rolling mean over a number of time coordinates
-    - callattr: [!dag_prev , rolling]
+    - rolling: [!dag_prev , mean, {time: *smoothed_by}]
       kwargs:
-        dim:
-          # NOTE This value should be reduced if writing less frequently
-          time: &smoothed_by 7
         # Configure rolling window such that early values are included
         min_periods: 2
         center: false
-    - callattr: [!dag_prev , mean]
-
-    # Define as data to be plotted
-    - define: !dag_prev
       tag: data
 
   helpers:

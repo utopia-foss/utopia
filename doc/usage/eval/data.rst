@@ -3,7 +3,12 @@
 Handling Data
 =============
 
-In this section we will take a look at utopya's capabilities to handle simulation data.
+In this section we will take a look at the Utopia frontend's capabilities to handle simulation data.
+
+.. hint::
+
+    These capabilities are implemented in :py:mod:`dantro`.
+    See `the dantro documentation <https://dantro.readthedocs.io/en/latest/data_io/data_mngr.html>`_ for more information.
 
 .. contents::
    :local:
@@ -16,11 +21,12 @@ In this section we will take a look at utopya's capabilities to handle simulatio
 The :py:class:`~utopya.eval.datamanager.DataManager`
 ----------------------------------------------------
 Objects of this class are the home of all your simulation data.
-One such :py:class:`~utopya.eval.datamanager.DataManager` object is initialized together with the :py:class:`~utopya.multiverse.Multiverse` and thereafter available as :py:attr:`~utopya.multiverse.Multiverse.dm` attribute. It is set up with a :ref:`load configuration <data_manager_load_cfg>` and, upon invocation of its :py:meth:`~dantro.data_mngr.DataManager.load_from_cfg` method, will load the simulation data using that configuration. It is equipped to handle hierarchical data, storing it as a data tree.
+One such :py:class:`~utopya.eval.datamanager.DataManager` object is initialized together with the :py:class:`~utopya.multiverse.Multiverse` and thereafter available as :py:attr:`~utopya.multiverse.Multiverse.dm` attribute.
+It is set up with a :ref:`load configuration <data_manager_load_cfg>` and, upon invocation of its :py:meth:`~dantro.data_mngr.DataManager.load_from_cfg` method, will load the simulation data using that configuration. It is equipped to handle hierarchical data, storing it as a data tree.
 
 .. hint::
 
-    To visually inspect the tree representation, you can use the :py:attr:`~dantro.data_mngr.DataManager.tree` property: ``print(dm.tree)``.
+    To visually inspect the tree representation, you can use the :py:attr:`~dantro.data_mngr.DataManager.tree` property via ``print(dm.tree)``.
     This also works with every group-like member of the tree.
 
 This functionality is all based on the `dantro package <https://dantro.readthedocs.io/en/stable/>`_, which provides a uniform interface to handle hierarchically structured data.
@@ -63,7 +69,7 @@ The dantro data loading interface supports parallel loading and Utopia allows to
 The above command will enable parallel loading and it will use all available CPUs for that; see the CLI ``--help`` for details.
 
 If you want more control, you can also directly configure it via the :ref:`meta-configuration <feature_meta_config>`.
-Have a look at the corresponding section in the :ref:`utopya_base_cfg` for available options, e.g. for using parallel loading depending on the number of files or their total file size:
+Have a look at the corresponding section in the :ref:`utopia_mv_base_cfg` for available options, e.g. for using parallel loading depending on the number of files or their total file size:
 
 .. literalinclude:: ../../../python/utopia_mv_cfg.yml
     :language: yaml
@@ -145,3 +151,5 @@ Files that match the ``glob_str`` are loaded using a certain ``loader`` and plac
    :language: yaml
    :start-after: # Data Manager ...
    :end-before: # The resulting data tree is then
+
+Note that this is *extended* by the :ref:`Utopia Multiverse configuration <utopia_mv_base_cfg>`.

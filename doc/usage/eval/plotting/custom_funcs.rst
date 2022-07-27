@@ -5,7 +5,6 @@ Implementing your own plot functions
 
 .. code-block:: yaml
 
-    ---
     my_plot:
       creator: some_creator
       # ... plot configuration parameters here ...
@@ -20,6 +19,9 @@ The same happens for the ``my_other_plot`` plot, which uses ``another_creator``.
 For more information on the :py:class:`~utopya.eval.plotmanager.PlotManager`, refer to `the dantro documentation <https://dantro.readthedocs.io/en/latest/plotting/plot_manager.html>`_.
 
 
+.. contents::
+    :local:
+    :depth: 2
 
 
 .. _pyplot_plot_creator:
@@ -95,24 +97,23 @@ As an example, the following plot configuration sets the title of the plot as we
 
 .. code-block:: yaml
 
-  my_plot:
-    # ...
+    my_plot:
+      # ...
 
-    # Configure the plot helpers
-    helpers:
-      set_title:
-        title: This is My Fancy Plot
-      set_labels:
-        x: $A$
-        y: Counts $N_A$
-      set_limits:
-        x: [0, max]
-        y: [1.0, ~]
+      # Configure the plot helpers
+      helpers:
+        set_title:
+          title: This is My Fancy Plot
+        set_labels:
+          x: $A$
+          y: Counts $N_A$
+        set_limits:
+          x: [0, max]
+          y: [1.0, ~]
 
 Furthermore, notice how you can combine the capabilities of the plot helper framework with the ability to :ref:`set the plot style <pyplot_plot_creator_plot_style>`.
 
 
-.. _custom_plot_funcs:
 
 Implementing plot functions
 ---------------------------

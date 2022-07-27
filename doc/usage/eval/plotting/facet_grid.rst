@@ -166,6 +166,11 @@ Make sure to adjust the :code:`hue` key to whatever you named your sweep dimensi
     :alt: Errorbands plot with hue dimension
 
 
+.. admonition:: Trying to debug errors in your DAG?
+
+    Have a look at :ref:`debug_DAG` for approaches to do that.
+
+
 
 .. _facet_grid_panels:
 

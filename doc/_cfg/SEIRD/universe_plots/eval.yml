@@ -35,6 +35,161 @@ _default_style: &default_style
   cmap: ~
 
 # -----------------------------------------------------------------------------
+# Failing plots for usage/eval/dag/debug.rst
+
+.debug_DAG:
+  based_on: phase_diagram
+  debug: false
+
+  select: ~
+
+  transform:
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+      tag: data
+
+  dag_visualization:
+    enabled: true
+    when:
+      always: true
+      only_once: false
+
+debug_DAG_bad_op_name:
+  based_on: .debug_DAG
+
+### START --- debug_DAG_bad_op_name
+  select:
+    susceptible:
+      path: densities
+      transform:
+        - .sel: [!dag_prev , {kind: susceptible}]
+        - square: [!dag_prev ]  # does not exist
+### END --- debug_DAG_bad_op_name
+
+debug_DAG_bad_args:
+  based_on: .debug_DAG
+
+### START --- debug_DAG_bad_args
+  select:
+    susceptible:
+      path: densities
+      transform:
+        - .data   # to resolve the utopya XarrayDC into an xr.DataArray
+        - .sel: [!dag_prev , {kind: SuSCePTIble}]
+### END --- debug_DAG_bad_args
+
+debug_DAG_locate_with_vis:
+  based_on:
+    - .debug_DAG
+    - phase_diagram/SI
+
+### START --- debug_DAG_locate_with_vis
+  select:
+    kind:
+      path: densities
+
+  transform:
+    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [ !dag_tag kind, { kind: exposed } ]
+      kwargs: { drop: true }
+      tag: exposed
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true, bAd_ArGuMeNT: i should not be here! }
+      tag: infected
+    - .sel: [ !dag_tag kind, { kind: recovered } ]
+      kwargs: { drop: true }
+      tag: recovered
+
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          exposed: !dag_tag exposed
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+### END --- debug_DAG_locate_with_vis
+
+
+debug_DAG_print_examples:
+  based_on: .debug_DAG
+
+  select:
+    some_data: densities
+  transform:
+### START --- debug_DAG_print_examples
+    # Example 1 --- Tagged operation to probe
+    - .mean: [!dag_tag some_data, [foo, bar]]
+      tag: my_result
+
+    #    ... and again with print added before and after
+    - print: [!dag_tag some_data]
+    - .mean: [!dag_prev , [foo, bar]]
+    - print: !dag_prev
+      tag: my_result
+
+    #    ... more verbose example that allows commenting out of prints
+    - pass: [!dag_tag some_data]
+    - print                                  # can comment this out
+    - .mean: [!dag_prev , [foo, bar]]
+    - print                                  # can comment this out
+    - pass: !dag_prev
+      tag: my_result
+
+
+    # Example 2 --- Untagged operation to probe
+    - .mean: [!dag_tag some_data, [foo, bar]]
+
+    #    ... and again with print added before and after
+    - print: [!dag_tag some_data]
+    - .mean: [!dag_prev , [foo, bar]]
+    - print
+### END --- debug_DAG_print_examples
+
+
+
+debug_DAG_advanced_print_examples:
+  based_on: .debug_DAG
+  debug: true  # should not be failing
+
+  select:
+    some_data:
+      path: densities
+      transform: [.data]
+  transform:
+### START --- debug_DAG_advanced_print_examples
+    - print: [!dag_tag some_data]
+      kwargs:
+        fstr: "Data before .mean operation:\n{}"
+
+    - .mean   # <-- operation to probe, could of course also have arguments
+
+    - print: !dag_prev
+      kwargs:
+        fstr: "Data after .mean operation:\n{}"
+### END --- debug_DAG_advanced_print_examples
+    # To make the plot work, just combine them here
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_prev
+          exposed: !dag_prev
+      tag: data
+
+  x: susceptible
+  y: exposed
+  hue: ~
+
+
+
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
 # Demonstrates a basic line plot
 density_basic:
   based_on:
@@ -226,6 +381,8 @@ scatter_2d:
       1: *mediumblue
   <<: *default_style
   color: ~
+
+
 
 # Demonstrates a 3D scatter plot with hue
 ### Start --- scatter_3d

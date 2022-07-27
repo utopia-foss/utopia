@@ -209,6 +209,12 @@ If you want to change the view of the axis, use the ``PlotHelper`` to change the
             azim: 45
 
 
+.. admonition:: Trying to debug errors in your DAG?
+
+    Have a look at :ref:`debug_DAG` for approaches to do that.
+
+
+
 Facet grid scatter plots
 ^^^^^^^^^^^^^^^^^^^^^^^^
 You can plot both types of scatter plot in a facet grid, using rows and columns

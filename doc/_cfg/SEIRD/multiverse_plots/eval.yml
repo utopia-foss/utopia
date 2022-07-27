@@ -226,13 +226,9 @@ panel_errorbands:
 
   # Calculate mean and std for each
   transform:
-    - .mean: [!dag_tag infected]
-      kwargs:
-        dim: seed
+    - .mean: [!dag_tag infected, seed]
       tag: mean
-    - .std: [!dag_tag infected]
-      kwargs:
-        dim: seed
+    - .std: [!dag_tag infected, seed]
       tag: std
     - xr.Dataset:
         data_vars:

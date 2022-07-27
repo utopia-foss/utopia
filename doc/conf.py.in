@@ -545,6 +545,8 @@ def _copy_figures_flat(
 def generate_figures():
     """Generates plot output from utopia model runs"""
     TOGGLE_ENVVAR = "UTOPIA_DOC_GENERATE_FIGURES"
+    ONLY_MODELS_ENVVAR = "UTOPIA_DOC_GENERATE_FIGURES_FOR_MODELS"
+
     print(
         f"Checking {TOGGLE_ENVVAR} environment variable for whether figures "
         "should be generated ..."
@@ -566,11 +568,24 @@ def generate_figures():
     file_types = ("*.png", "*.pdf", "*.mp4")  # should be glob strings
     num_figures = 0
 
+    # Find out which models to generate plots for
+    only_models = os.environ.get(ONLY_MODELS_ENVVAR, "all")
+    if only_models != "all":
+        print(f"Got {ONLY_MODELS_ENVVAR}.")
+        only_models = only_models.split(",")
+        print(f"Generating only for models:  {', '.join(only_models)}.")
+    else:
+        print(f"Did not get {ONLY_MODELS_ENVVAR}, generating for all models.")
+
     # Define models to run this for
     model_names = _find_dirs(cfg_base_dir)
     print(f"Found model configuration(s):  {', '.join(model_names)}\n\n")
 
     for model_name in model_names:
+        if only_models != "all" and model_name not in only_models:
+            print(f"Skipping model '{model_name}' ...\n")
+            continue
+
         model = Model(name=model_name, use_tmpdir=True, sim_errors="raise")
 
         # Determine the names of all config directories in there

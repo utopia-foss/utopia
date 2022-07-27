@@ -100,7 +100,7 @@ Where to next?
    :hidden:
 
    C++ Documentation <ref/cpp_doc>
-   ref/utopya_base_cfg
+   ref/mv_base_cfg
    ref/base_plots_cfg
    ref/batch_cfg
    utopya package <https://utopya.readthedocs.io/>

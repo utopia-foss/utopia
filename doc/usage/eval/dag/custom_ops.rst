@@ -56,9 +56,19 @@ You can also use the :py:func:`~utopya.eval.transform.register_operation` functi
     register_operation(name="my_custom_square", func=lambda d: d**2)
 
 
+.. hint::
+
+    If the operation does not become available despite you importing it, this may have several reasons:
+
+    * Only the ``model_plots/<model_name>/__init__.py`` is directly imported; that module should explicitly import the module that you define your operations in, otherwise the operation will not become available.
+
+    * You may have a ``ModuleNotFoundError`` somewhere in your model-specific plot definitions.
+      Due to restrictions of the importing function, these actual errors cannot be distinguished from other (acceptable) import errors, and will thus fail silently.
+      This may be another point to look at if your operation does not become available.
+
+
 Examples
 ^^^^^^^^
-
-There is are some example implementions in the
+There are some example implementions in the
 `Utopia SEIRD model <https://gitlab.com/utopia-project/utopia/-/blob/master/python/model_plots/SEIRD/operations.py>`_
 and the `Utopia Opinionet model <https://gitlab.com/utopia-project/utopia/-/blob/master/python/model_plots/Opinionet/data_ops.py>`_.
