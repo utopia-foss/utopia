@@ -244,6 +244,7 @@ compl_cum_cluster_size_dist.multiverse:
 
 # -- CA Plots -----------------------------------------------------------------
 
+# START --- ca/slope
 ca/slope:
   based_on:
     - .creator.universe
@@ -256,6 +257,7 @@ ca/slope:
     slope:
       title: Slope
       cmap: copper
+# END --- ca/slope
 
 ca/avalanche:
   based_on:

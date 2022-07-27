@@ -11,7 +11,7 @@ Lines starting with the 📚 symbol also denote further reading material.
 
 .. note::
 
-    Please inform us about any outdated information or broken links on this page!
+    Please `inform us <https://gitlab.com/utopia-project/utopia/-/issues/new>`_ about any outdated information or broken links on this page!
 
 .. contents::
     :local:
@@ -38,11 +38,11 @@ The ``Model`` Base Class
 * This common interface also allows *nesting* of models, thus allowing a model hierarchy.
 * The following methods allow specialization of the model:
 
-    * ``perform_step``: Performs the iteration step. You have total freedom here.
-    * ``write_data``: Specifies the data that is to be stored to the associated HDF5 file.
-    * ``monitor``: (Optional) Provides :ref:`monitoring data <feature_monitor>` to the frontend to control the simulation
-    * ``prolog``: (Optional) Provides the possibility to perform a task before the model's first iteration. By default this includes writing of the initial state.
-    * ``epilog``: (Optional) Provides the possibility to perform a task after the model's last iteration.
+  * ``perform_step``: Performs the iteration step. You have total freedom here.
+  * ``write_data``: Specifies the data that is to be stored to the associated HDF5 file.
+  * ``monitor``: (Optional) Provides :ref:`monitoring data <feature_monitor>` to the frontend to control the simulation
+  * ``prolog``: (Optional) Provides the possibility to perform a task before the model's first iteration. By default this includes writing of the initial state.
+  * ``epilog``: (Optional) Provides the possibility to perform a task after the model's last iteration.
 
 * Model traits can be used to specify the default types used by the model, e.g. the random number generator.
 * 📚
@@ -82,14 +82,14 @@ Logging
 * Based on `spdlog <https://github.com/gabime/spdlog>`_, logging fast yet conveniently using the `fmt <https://github.com/fmtlib/fmt>`_ library for string parsing. No more ``std::cout``!
 * Available as ``_log`` member in every ``Model``. Example:
 
-    .. code-block:: cpp
+  .. code-block:: cpp
 
-        _log->debug("Creating {} entities now ...", num_new_entities);
-        create_entities(num_new_entities);
-        _log->info("Added {} new entities. Have a total of {} entities now",
-                   num_new_entities, entities.size());
+      _log->debug("Creating {} entities now ...", num_new_entities);
+      create_entities(num_new_entities);
+      _log->info("Added {} new entities. Have a total of {} entities now",
+                  num_new_entities, entities.size());
 
-* **Verbosity** can be controlled for each ``Model`` using the ``log_level`` config entry. Default log levels are specified via the meta configuration, see :ref:`the base configuration <utopya_base_cfg>` for examples.
+* **Verbosity** can be controlled for each ``Model`` using the ``log_level`` config entry. Default log levels are specified via the meta configuration, see :ref:`the base configuration <mv_base_cfg>` for examples.
 * 📚
   `Doxygen <../../doxygen/html/group___logging.html>`__
 
@@ -109,9 +109,6 @@ Monitoring the state of the model
 
 .. _feature_model_config:
 
-
-
-
 Model Configuration
 ^^^^^^^^^^^^^^^^^^^
 * All parameters a model is initialized with
@@ -125,13 +122,13 @@ Reading Config Entries
 """"""""""""""""""""""
 * Extract a config entry through, optionally providing a default value:
 
-    .. code-block:: c++
+  .. code-block:: c++
 
-        # Extract an entry; throws KeyError if the key is missing
-        auto foo = get_as<int>("foo", this->_cfg);
+      # Extract an entry; throws KeyError if the key is missing
+      auto foo = get_as<int>("foo", this->_cfg);
 
-        # Provide a default value when the key is missing
-        auto bar = get_as<int>("bar", this->_cfg, 42)
+      # Provide a default value when the key is missing
+      auto bar = get_as<int>("bar", this->_cfg, 42)
 
 * Supported types for ``get_as<T>`` are defined by yaml-cpp library and include basic types as well as some container types (``std::vector``, ``std::array``, also in nested form)
 * There exist specializations to conveniently load entries as Armadillo types (vectors, matrices, …)
@@ -185,50 +182,50 @@ The ``apply_rule`` Interface – rule-based formulation of model dynamics
 * For asynchronous updates, the iteration order can be shuffled for each invocation. This avoids artifacts originating from a fixed application order.
 * Code example:
 
-    .. code-block:: c++
+  .. code-block:: c++
 
-        // Apply a rule to all cells of a cell manager
-        apply_rule<Update::async,             // Apply the rule asynchronously,
-                                              // one cell after the other.
-                   Shuffle::off>              // Do not shuffle the container
-                                              // before applying the rule
-        (
-            [](const auto& cell){             // Operate on a cell
-                auto& state = cell->state;    // Get the state reference
-                state.age += 1;               // Increment the age member
-                // return state;              // Optional for async update.
-                                              // REQUIRED for sync update
-            },
-            _cm.cells()     // Apply the rule to all cells in the cell manager.
-                            // This can however, also be any container of
-                            // Utopia entities.
-        );
+      // Apply a rule to all cells of a cell manager
+      apply_rule<Update::async,             // Apply the rule asynchronously,
+                                            // one cell after the other.
+                 Shuffle::off>              // Do not shuffle the container
+                                            // before applying the rule
+      (
+          [](const auto& cell){             // Operate on a cell
+              auto& state = cell->state;    // Get the state reference
+              state.age += 1;               // Increment the age member
+              // return state;              // Optional for async update.
+                                            // REQUIRED for sync update
+          },
+          _cm.cells()     // Apply the rule to all cells in the cell manager.
+                          // This can however, also be any container of
+                          // Utopia entities.
+      );
 
-        // Apply a rule to all vertices of a graph
-        apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
-            [](auto vertex, auto& g){
-                g[vertex].state.property = 42;
-            },
-            g               // The graph to iterate over
-        );
+      // Apply a rule to all vertices of a graph
+      apply_rule<IterateOver::vertices, Update::async, Shuffle::off>(
+          [](auto vertex, auto& g){
+              g[vertex].state.property = 42;
+          },
+          g               // The graph to iterate over
+      );
 
 * With a rule that accepts more than one argument, additional container-like arguments can be passed to ``apply_rule``, leading to a ``zip``-iteration. For each entity, the arguments from the containers are then unpacked into the respective call to the rule function.
 * ``apply_rule`` for manual state updates offers overloads with parallel execution policies.
-    The rule will then be applied according to the selected policy, similar to a :ref:`parallel STL algorithm <feature_parallel_stl>` (it actually uses them internally).
-    Even with a sequential policy (or none), internals of the ``apply_rule`` algorithms may parallelize if the feature is enabled.
-    Enabling parallel features happens through the :ref:`parameter space configuration <feature_meta_config>`, or explicitly, see :ref:`feature_parallel_stl`.
+  The rule will then be applied according to the selected policy, similar to a :ref:`parallel STL algorithm <feature_parallel_stl>` (it actually uses them internally).
+  Even with a sequential policy (or none), internals of the ``apply_rule`` algorithms may parallelize if the feature is enabled.
+  Enabling parallel features happens through the :ref:`parameter space configuration <feature_meta_config>`, or explicitly, see :ref:`feature_parallel_stl`.
 
-    .. code-block:: c++
+  .. code-block:: c++
 
-        // Apply a rule with multithreading
-        apply_rule<Update::sync>(
-            ExecPolicy::par,
-            // NOTE: Rule must avoid data races!
-            [](const auto& cell){
-                return cell->state + 1;
-            },
-            _cm.cells()
-        );
+      // Apply a rule with multithreading
+      apply_rule<Update::sync>(
+          ExecPolicy::par,
+          // NOTE: Rule must avoid data races!
+          [](const auto& cell){
+              return cell->state + 1;
+          },
+          _cm.cells()
+      );
 
 * 📚
   `Doxygen <../../doxygen/html/group___rules.html>`__,
@@ -277,20 +274,20 @@ Iterate Over Graph Entities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Conveniently loop over graph entities:
 
-.. code-block:: c++
+  .. code-block:: c++
 
-    include <utopia/graph/iterator.hh>
-    // ...
+      include <utopia/graph/iterator.hh>
+      // ...
 
-    // Loop over all vertices and print their states
-    for (auto vertex : range<IterateOver::vertex>(g)) {
-        std::cout << g[vertex].property << "\n";
-    }
+      // Loop over all vertices and print their states
+      for (auto vertex : range<IterateOver::vertex>(g)) {
+          std::cout << g[vertex].property << "\n";
+      }
 
-    // Loop over all neighbors of vertex '0' and print their states
-    for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g)) {
-        std::cout << g[vertex].property << "\n";
-    }
+      // Loop over all neighbors of vertex '0' and print their states
+      for (auto neighbor : range<IterateOver::neighbor>(boost::vertex(0, g), g)) {
+          std::cout << g[vertex].property << "\n";
+      }
 
 .. _feature_parallel_stl:
 
@@ -322,6 +319,17 @@ Parallel STL Algorithms
   `Doxygen <../../doxygen/html/group___parallel.html>`__,
   :ref:`Parallel apply_rule <feature_apply_rule>`
 
+
+
+Separate models repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+* For advanced modelling projects, one typically wants to implement models in their own repository, with their own dependencies and separate version control.
+  We maintain a `template project <https://gitlab.com/utopia-project/models_template>`_ which can be used to quickly generate such a models repository.
+* 📚
+  :ref:`set_up_models_repo`
+
+
+
 |
 
 |
@@ -351,7 +359,8 @@ The ``DataManager``
 * While writing simple data structures can easily be done directly with the :ref:`Utopia HDF5 library <feature_hdf5_library>`, this becomes rather difficult in more complex scenarios, e.g. when the number of agents in a system change.
 * The Utopia ``DataManager`` allows to define the possible write operations and then control their execution mostly via the configuration file.
 * 📚
-  `Doxygen <../../doxygen/html/group___data_manager.html>`__
+  `Doxygen <../../doxygen/html/group___data_manager.html>`__,
+  :ref:`dataio_DataManager`
 
 
 .. _feature_saving_graphs:
@@ -395,47 +404,51 @@ The ``utopia`` Command Line Interface (CLI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Basic interface to control the generation of simulation data and its analysis
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        utopia run MyModel                       # ... using all defaults
-        utopia run MyModel path/to/run_cfg.yml   # Custom run config
-
-        utopia eval MyModel                      # Evaluate the last run
-        utopia eval MyModel --plots-cfg path_to/plots_cfg.yml  # Custom plots
+      utopia run MyModel                       # ... using all defaults
+      utopia run MyModel path/to/run_cfg.yml   # Custom run config
+      utopia eval MyModel                      # Evaluate the last run
+      utopia eval MyModel --plots-cfg path_to/plots_cfg.yml  # Custom plots
 
 * Available in :ref:`Utopia's virtual environment <feature_utopia_env>`, ``utopia-env``.
 * Allows setting parameters directly from the command line (have access to the whole :ref:`meta configuration <feature_meta_config>`):
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        utopia run MyModel --num-steps 1000 --set-params log_levels.model=debug --set-model-params my_param=12.345
+      utopia run MyModel --num-steps 1000 --set-params log_levels.model=debug --set-model-params my_param=12.345
 
 * **Debug Mode:** by adding the ``--debug`` flag, logger verbosity is increased and errors are raised; this makes debugging easier.
-* **Configuration Sets:** models may provide example configuration sets, which are basically pairs of run and eval configuration files.
+* **Configuration Sets:** models may provide example :ref:`configuration sets <config_sets>`, which are basically pairs of run and eval configuration files.
   These can be selected via the ``--cfg-set`` command line argument and simplify running different scenarios of a model.
   See :ref:`config_sets` for more information.
 * **Interactive Plotting:** for ``utopia run`` or ``utopia eval``, pass the ``--interactive`` flag to not quit the CLI after the plotting routine has finished.
 
-    * The CLI will then give the option to change the plotting-related arguments, e.g. which plots are to be created or from which configuration file they should be created.
-    * The already-loaded data is kept in memory and thus speeds-up the creation of plots, especially when large amounts of data are to be loaded.
-    * *Not to confused with* the feature to work interactively with ``utopya`` using the Python interface, e.g. via IPython or Jupyter Notebook.
-      See :ref:`below <feature_utopya_interactive>` for more info on that feature.
+  * The CLI will then give the option to change the plotting-related arguments, e.g. which plots are to be created or from which configuration file they should be created.
+  * The already-loaded data is kept in memory and thus speeds-up the creation of plots, especially when large amounts of data are to be loaded.
+  * *Not to confused with* the feature to work interactively with :py:mod:`utopya` using the Python interface, e.g. via IPython or Jupyter Notebook.
+    See :ref:`below <feature_utopya_interactive>` for more info on that feature.
 
-* **Copying a model:** The CLI helps a lot with that by copying all relevant files, renaming them, and even refactoring them. Copying between Utopia projects is also possible.
+* **Copying a model:** The :ref:`utopia CLI <utopia_cli>` helps a lot with that by copying all relevant files, renaming them, and even refactoring them. Copying between Utopia projects is also possible.
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        utopia models copy CopyMe --new-name MyFancyModel
+      utopia models copy CopyMeGraph --new-name MyFancyGraphModel
 
 * To learn about all possible commands:
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        utopia --help           # Shows all available subcommands
-        utopia run --help       # Help for running a model
-        utopia eval --help      # Help for evaluating a model run
-        utopia config --help    # Help regarding the Utopia configuration
-        utopia models --help    # Help regarding the model registry
+      utopia --help           # Shows all available subcommands
+      utopia run --help       # Help for running a model
+      utopia eval --help      # Help for evaluating a model run
+      utopia config --help    # Help regarding the Utopia configuration
+      utopia models --help    # Help regarding the model registry
+
+* 📚
+  :ref:`utopia_cli`,
+  `utopya CLI reference <https://utopya.readthedocs.io/en/latest/cli/index.html>`_
+
 
 
 
@@ -443,27 +456,32 @@ The ``utopia`` Command Line Interface (CLI)
 
 Meta-Configuration – Controlling the Model Simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Every option in Utopia can be set through a configuration parameter. The complete set of configuration options of a simulation run is gathered in a meta configuration.
-* Configuration levels, sequentially updating the defaults to arrive at the final meta configuration:
+* Every frontend-related option in Utopia can be set through a configuration parameter.
+  The complete set of configuration options of a simulation run is gathered in the so-called *meta configuration*.
+* There are multiple :ref:`configuration levels <config_hierarchy>`, sequentially updating the defaults to arrive at the final meta configuration:
 
-    #. **Base configuration:** all the default values
-    #. **Model configurations:** model-specific defaults
+  * **Base configuration:** the base layer with a large number of :ref:`default values <utopya_mv_base_cfg>`
+  * **Framework configuration:** an update layer that is specific to the framework a model is used in, here: Utopia itself.
+  * **Project configuration:** *if* using Utopia with a :ref:`separate models repository <set_up_models_repo>`, that repository can *also* provide defaults. Within Utopia itself, this configuration layer is not used.
+  * **Model configuration:** model-specific defaults
 
-        * Defined alongside the respective models, see :ref:`above <feature_model_config>`
-        * Provide defaults not for the *whole* meta configuration but for the respective models; can be imported where needed.
+    * Defined alongside the respective models, typically as ``<model_name>_cfg.yml`` file.
+    * Provides defaults not for the *whole* meta configuration but only for the respective model's entry at ``parameter_space.<model_name>``.
 
-    #. **User configuration:** user- or machine-specific *updates* to the defaults
+  * **User configuration:** user- or machine-specific updates to the above
+  * **Run configuration:** updates for a specific simulation run
 
-        * Used for all simulation runs, regardless of the model.
-        * Nonexistent by default. Deploy using ``utopia config user --deploy``; see ``utopia config --help`` for more info. The deployed version contains descriptions of all possible settings.
+    * This may also come from a ``run.yml`` file as part of a model's :ref:`configuration set <config_set>`.
 
-    #. **Run configuration:** updates for a specific simulation run
-    #. **Temporary changes:** additional updates, defined via the CLI
+  * **Temporary changes:** additional updates given via the :ref:`utopia_CLI`
 
-* The ``parameter_space`` key of the meta config is passed to the model; it can be conveniently sweeped over (see :ref:`below <feature_parameter_sweeps>`).
-* **Model parameters can be validated by the frontend.** This helps detecting wrongly-specified simulation runs *before* starting them and allows to reduce model implementation code.
+* All involved configuration files are :ref:`backed up <mv_cfg_backup>` into the model run's output directory. This includes information about the state of the involved repositories: the latest git commit and potentially existing differences from it.
+* The ``parameter_space`` key of the meta config is what is passed to the Utopia C++ backend; it can be conveniently sweeped over (see :ref:`below <feature_parameter_sweeps>`).
+* Model parameters can be :ref:`validated <config_validation>` by the frontend.
+  This helps detecting wrongly-specified simulation runs *before* starting them and allows to reduce model implementation code.
 * 📚
-  :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
+  :ref:`config_hierarchy`,
+  :ref:`mv_base_cfg`,
   :py:class:`~utopya.multiverse.Multiverse`,
   :ref:`config_validation`,
   :ref:`FAQ Entry <faq_config>`
@@ -476,16 +494,16 @@ The Utopia *Multiverse* – Parallelization of Simulations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Comparing the simulation results for a set of different parameters is often required for the analysis of the model system. This is very easy in Utopia. First, some definitions:
 
-    * A Utopia *Universe* refers to a single simulation carried out with Utopia, i.e. a specific model implementation that received a specific configuration as input.
-    * A Utopia *Multiverse* refers to a *set* of such Universes with different configurations as input.
+  * A Utopia *Universe* refers to a *single* simulation carried out with Utopia, i.e. a specific model implementation that received a specific configuration as input.
+  * A Utopia *Multiverse* refers to a *set* of such Universes with different configurations as input.
 
 * These Universes can be naively parallelized, because they do not depend on each other. By default, when performing a *multiverse run*, Utopia automatically parallelizes their execution in this way.
-* To control the behaviour, see the ``worker_manager``
+* To control the behaviour, see the ``worker_manager`` entry of the :ref:`meta configuration <mv_base_cfg>`.
 * For the easy definition of different such configurations, see :ref:`below <feature_parameter_sweeps>`.
 * 📚
   :py:class:`~utopya.multiverse.Multiverse`,
   :py:class:`~utopya.workermanager.WorkerManager`,
-  :ref:`Multiverse Base Configuration <utopya_base_cfg>`
+  :ref:`Multiverse Base Configuration <mv_base_cfg>`
 
 
 .. _feature_cluster_support:
@@ -495,7 +513,7 @@ Cluster Support
 * The :py:class:`~utopya.multiverse.Multiverse` also supports distributed execution, e.g. on a cluster. It detects which set of compute nodes a run is performed on and distributes the tasks accordingly.
 * Cluster mode is controlled via the ``cluster_mode`` and ``cluster_params`` of the meta configuration.
 * 📚
-  :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
+  :ref:`Multiverse Base Configuration <mv_base_cfg>`,
   `bwForCluster Support Project <https://gitlab.com/blsqr/bwForCluster>`_
 
 Reporter
@@ -504,7 +522,7 @@ Reporter
 * They can be customized to do specific reporting tasks at defined trigger points, e.g. after a task (the simulation of a universe) was finished
 * By default, they show an adaptive progress bar during simulation and generate a ``_report.txt`` file after the run which shows some run statistics.
 * 📚
-  :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
+  :ref:`Multiverse Base Configuration <mv_base_cfg>`,
   :py:class:`~utopya.reporter.Reporter`,
   :py:class:`~utopya.reporter.WorkerManagerReporter`
 
@@ -519,46 +537,46 @@ Defining Parameter Sweeps
   The :ref:`Multiverse <feature_multiverse>` can then iterate over all points in parameter space.
 * To define parameter dimensions, simply use the ``!sweep`` and YAML tags in your **run** configuration. In the example below, a :math:`25 \times 4 \times 101`\ -sized parameter space is created.
 
-    .. code-block:: yaml
+  .. code-block:: yaml
 
-        # Run configuration for MyModel
-        ---
-        parameter_space:
-          seed: !sweep     # ... to have some statistics ...
+      # Run configuration for MyModel
+      ---
+      parameter_space:
+        seed: !sweep     # ... to have some statistics ...
+          default: 42
+          range: [25]    # unpacked to [0, 1, 2, ..., 24] using range(*args)
+
+        MyModel:
+          my_first_param: !sweep
             default: 42
-            range: [25]    # unpacked to [0, 1, 2, ..., 24] using range(*args)
+            values: [-23, 0, 23, 42]
 
-          MyModel:
-            my_first_param: !sweep
-              default: 42
-              values: [-23, 0, 23, 42]
+          my_second_param: !sweep
+            default: 0.
+            linspace: [0., 10., 101]   # also available: logspace
 
-            my_second_param: !sweep
-              default: 0.
-              linspace: [0., 10., 101]   # also available: logspace
-
-            another_param: 123.   # No sweep here
+          another_param: 123.   # No sweep here
 
 * The ``!coupled-sweep`` tag can be used to move one parameter *along* with another parameter dimension.
 
-    .. code-block:: yaml
+  .. code-block:: yaml
 
-        # Run configuration for MyModel
-        ---
-        parameter_space:
-          seed: !sweep
-            default: 42
-            values: [1, 2, 4, 8]
+      # Run configuration for MyModel
+      ---
+      parameter_space:
+        seed: !sweep
+          default: 42
+          values: [1, 2, 4, 8]
 
-          MyModel:
-            my_coupled_param: !coupled-sweep
-              target_name: my_first_param
-              # default and values from my_first_param used
+        MyModel:
+          my_coupled_param: !coupled-sweep
+            target_name: my_first_param
+            # default and values from my_first_param used
 
-            my_other_coupled_param: !coupled-sweep
-              target_name: my_first_param
-              default: foo
-              values: [foo, bar, baz, spam] # has to have same length as target
+          my_other_coupled_param: !coupled-sweep
+            target_name: my_first_param
+            default: foo
+            values: [foo, bar, baz, spam] # has to have same length as target
 
 * Sweeps are also possible for :ref:`plot configurations <feature_plots_config>`!
 * 📚
@@ -576,29 +594,29 @@ YAML and YAML Tags – Configuration files on steroids
 * YAML has many benefits as a configuration language, not only for :ref:`feature_parameter_sweeps` or :ref:`stop conditions <feature_stop_conditions>`.
 * **Anchors** and **inheritance** make it easy to re-use definitions; avoid copy-paste at all costs! This is a built-in functionality of YAML:
 
-    .. code-block:: yaml
+  .. code-block:: yaml
 
-        # Anchors: define with &, use with *
-        some_value: &some_value 42
-        some_other_value: *some_value  # ... will also be 42
+      # Anchors: define with &, use with *
+      some_value: &some_value 42
+      some_other_value: *some_value  # ... will also be 42
 
-        # Inheritance
-        some_mapping: &some_mapping
-          foo: bar
-          spam: spam
-        some_other_mapping_based_on_the_first_mapping:
-          <<: [*some_mapping]          # Can also specify multiple anchors here
-          spam: SPAM                   # Overwrite an inherited value
+      # Inheritance
+      some_mapping: &some_mapping
+        foo: bar
+        spam: spam
+      some_other_mapping_based_on_the_first_mapping:
+        <<: [*some_mapping]          # Can also specify multiple anchors here
+        spam: SPAM                   # Overwrite an inherited value
 
 * Additional YAML tags help in creating configuration entries:
 
-    .. code-block:: yaml
+  .. code-block:: yaml
 
-        seconds: !expr 60*60*24 + 1.5  # Evaluate mathematical expressions
-        a_slice: !slice [10,100,5]     # Create a python slice object
-        a_range: !range [0, 10, 2]     # Invokes python range(*args)
-        bool1: !any [true, false]      # Evaluates a sequence of booleans
-        bool2: !all [true, true]
+      seconds: !expr 60*60*24 + 1.5  # Evaluate mathematical expressions
+      a_slice: !slice [10,100,5]     # Create a python slice object
+      a_range: !range [0, 10, 2]     # Invokes python range(*args)
+      bool1: !any [true, false]      # Evaluates a sequence of booleans
+      bool2: !all [true, true]
 
 * 📚
   :ref:`faq_config_YAML`,
@@ -617,9 +635,9 @@ Stop Conditions – Dynamically stop simulations
 * Total timeout is controlled via ``run_kwargs.timeout`` key of :ref:`meta configuration <feature_meta_config>`.
 * Can be configured via meta configuration by passing a list of conditions to the ``run_kwargs.stop_conditions`` key. Example:
 
-    .. literalinclude:: ../_inc/utopya/tests/cfg/stop_conds.yml
-        :language: yaml
-        :start-after: ---
+  .. literalinclude:: ../_inc/utopya/tests/cfg/stop_conds.yml
+      :language: yaml
+      :start-after: ---
 
 * 📚
   :ref:`stop_conds`
@@ -634,10 +652,10 @@ The ``utopia-env``
 * Is created as part of the build process; checks dependencies and installs them if required.
 * In order to be able to run the ``utopia`` CLI command, make sure to have activated the virtual environment:
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        $ source utopia/build/activate
-        (utopia-env) $ utopia run dummy
+      $ source utopia/build/activate
+      (utopia-env) $ utopia run dummy
 
 * 📚
   :doc:`README <../README>`
@@ -656,7 +674,7 @@ Data Analysis & Plotting
 ------------------------
 
 Data analysis and plotting is implemented in the Python frontend of Utopia, the :py:mod:`utopya` package.
-It interfaces with the `dantro package <https://pypi.org/project/dantro/>`__ to supply a data evaluation pipeline, directly connected to the running of simulations.
+It interfaces with the `dantro package <https://gitlab.com/utopia-project/dantro>`__ to supply a data evaluation pipeline, directly connected to the running of simulations.
 
 
 .. _feature_frontend_DataManager:
@@ -674,7 +692,7 @@ Data handling with the :py:class:`~utopya.eval.datamanager.DataManager`
   `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/data_mngr.html>`__,
   :ref:`data_handling`,
   :py:class:`~utopya.eval.datamanager.DataManager`,
-  :ref:`Multiverse Base Configuration <utopya_base_cfg>`,
+  :ref:`Multiverse Base Configuration <mv_base_cfg>`,
   :ref:`data_handling_load_parallel`
 
 
@@ -687,7 +705,7 @@ Utopia couples tightly with the `dantro framework <https://pypi.org/project/dant
 * It is possible to configure a set of default plots which are automatically created after a model is run. For more control, plot configuration files specify the plots that are to be created.
 * 📚
   `dantro documentation <https://dantro.readthedocs.io/>`__,
-  :ref:`eval_plotting`
+  :ref:`Plotting tutorial <eval_plotting>`
 
 
 .. _feature_plots_config:
@@ -706,7 +724,7 @@ Custom Plot functions
 * Plot functions can also be implemented in separate files.
 * 📚
   :ref:`pyplot_plot_creator`,
-  :ref:`tutorial`
+  :ref:`custom_plot_funcs`
 
 
 .. _feature_dag:
@@ -718,8 +736,8 @@ The Data Transformation Framework – Generic Data Processing
 * This allows **generalized plot functions** which can focus on visualizing the data they are provided with (instead of doing both: data analysis *and* visualization).
 * The DAG framework provides a **file cache** that can store intermediate results such that they need not be re-computed every time the plots are generated. This makes sense for data transformations that take a long time to compute but only very little time to store to a file and load back in from there.
 * 📚
-  `dantro documentation <https://dantro.readthedocs.io/en/stable/data_io/transform.html>`__,
-  :ref:`Usage for plotting <pyplot_plot_creator_DAG_support>`
+  `dantro documentation <https://dantro.readthedocs.io/en/latest/data_io/transform.html>`__,
+  :ref:`Use in plotting <plot_with_DAG>`
 
 
 .. _feature_utopya_interactive:
@@ -728,18 +746,24 @@ Work interactively with utopya and dantro
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * The ``Model`` class makes it very easy to set up a model multiverse, run it, and load its data.
 
-    .. code-block:: python
+  .. testcode:: run-cdm-interactively
 
-        import utopya
+      import utopya
 
-        # Create the model object
-        ffm = utopya.Model(name="ForestFire")
+      # Create the model object for the ContDisease model
+      cdm = utopya.Model(name="ContDisease")
 
-        # Create a multiverse (mv), let it run with some config file, and then
-        # load the data into the DataManager (dm)
-        mv, dm = ffm.create_run_load(run_cfg_path="path/to/my/run_cfg.yml")
+      # Create a multiverse (mv), let it run with some config file, and then
+      # load the data into the DataManager (dm)
+      mv, dm = cdm.create_run_load()
+      # mv, dm = cdm.create_run_load(run_cfg_path="path/to/my/run_cfg.yml")
 
-        # ... do something with the loaded data or the PlotManager (mv.pm)
+      # ... do something with the loaded data or the PlotManager (mv.pm)
+
+  .. testoutput:: run-cdm-interactively
+      :hide:
+
+      ...
 
 * 📚
   :ref:`utopya_interactive`,
@@ -758,10 +782,10 @@ Batch-run and batch-evaluate simulations
   That way, all configuration options are in one place.
   This has several **benefits:**
 
-    * Configuration options can be easily shared within the batch file, e.g. to define a common aesthetic for plots.
-    * Creating output from multiple simulations becomes easier to replicate.
-    * The batch file is self-documenting and can, in principle, be used as a lab book.
-    * This feature can be especially helpful if performing data evaluation for a talk or thesis: one can set a specific output directory (e.g. ``my_thesis/figures``) and easily re-create plot output.
+  * Configuration options can be easily shared within the batch file, e.g. to define a common aesthetic for plots.
+  * Creating output from multiple simulations becomes easier to replicate.
+  * The batch file is self-documenting and can, in principle, be used as a lab book.
+  * This feature can be especially helpful if performing data evaluation for a talk or thesis: one can set a specific output directory (e.g. ``my_thesis/figures``) and easily re-create plot output.
 
 * The batch feature is available via the CLI by calling ``utopia batch``
 * 📚
@@ -805,18 +829,18 @@ Python-based Model Tests
 * Python-based tests are most useful for the *macroscopic* perspective, i.e.: given some configuration, testing that the model data is as expected.
 * A test case can be as simple as this:
 
-    .. literalinclude:: ../../python/model_tests/ForestFire/test_dynamics.py
-        :language: python
-        :start-after: # SPHINX-MARKER
+  .. literalinclude:: ../../python/model_tests/ForestFire/test_dynamics.py
+      :language: python
+      :start-after: # SPHINX-MARKER
 
   The tests make use of the `pytest <https://pytest.org/>`_ framework and some Utopia-specific helper classes which make running simulations and loading data easy.
   For example, test-specific configuration files can be passed to the :py:meth:`utopya.model.Model.create_run_load` method of the :py:class:`utopya.testtools.ModelTest` class... just as in the CLI.
 * Tests are located on a per-model basis in the ``python/model_tests`` directory; have a look there for some more examples on how to define tests.
 * The tests can be invoked using
 
-    .. code-block:: bash
+  .. code-block:: bash
 
-        python -m pytest -v python/model_tests/MyModel
+      python -m pytest -v python/model_tests/MyModel
 
   Consult the :doc:`../README` and the pytest documentation for more information on test invocation.
 * 📚
@@ -848,30 +872,22 @@ Issue Board & Merge Request
 * When writing issues, MR descriptions, notes, or other content on the GitLab, take note of the many features of `GitLab MarkDown <https://docs.gitlab.com/ee/user/markdown.html>`_, e.g. for posting syntax-highlighted code, tables, simple diagrams, ... and much more.
 * To add more involved diagrams like class diagrams or sequence diagrams, the GitLab also provides access to `PlantUML <http://plantuml.com>`_, simply by defining a code block with ``plantuml`` as syntax:
 
-    .. code-block::
+  .. code-block::
 
-        ```plantuml
-        Bob -> Alice : hello
-        Alice -> Bob : hi
-        ```
+      ```plantuml
+      Bob -> Alice : hello
+      Alice -> Bob : hi
+      ```
 
 
 Pipelines – Automatic Builds & Test Execution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * When pushing to the Utopia project, an automatically triggered pipeline performs a number of tasks to assert Utopia's functionality:
 
-    * All code is built with different compilers and different release types
-    * All framework tests are run
-    * All implemented model tests are run
-    * The documentation is built and deployed to a test environment to view its current state
+  * All code is built with different compilers and different release types
+  * All framework tests are run
+  * All implemented model tests are run
+  * The documentation is built and deployed to a test environment to view its current state
 
 * Having these tasks being run automatically takes the burden off the developers' shoulders to assert that Utopia is still working as it should.
 * Code changes can be merged into the master only when the pipeline succeeds and a code review has taken place.
-
-
-Separate models repository
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-* For advanced modelling projects, one typically wants to implement models in their own repository, with their own dependencies and separate version control.
-  We maintain a `template project <https://gitlab.com/utopia-project/models_template>`_ which can be used to quickly generate such a models repository.
-* 📚
-  :ref:`set_up_models_repo`

@@ -1,21 +1,29 @@
+.. _dataio_DataManager:
+
 Utopia Datamanager — How to
 ===========================
 
-This guide shows you how to set up your model to use the Datamanager layer of the Utopia Data I/O module.
+This guide shows you how to set up your model to use the ``DataManager`` layer of the Utopia Data I/O module.
+
 
 .. contents::
     :local:
     :depth: 2
 
-
 .. note::
 
-    If you just want to know what to do to get your model up and running with the datamanager, jump to the `Usage` section.
-    The `Overview` and `Structure` sections are meant as a supplement for developers, or for the curious, but the information they contain is not needed for using the datamanager.
+    If you just want to know what to do to get your model up and running with the datamanager, jump to the :ref:`dataio_DataManager_usage` section.
+    The :ref:`dataio_DataManager_overview` and :ref:`dataio_DataManager_structure` sections are meant as a supplement for developers, or for the curious, but the information they contain is not needed for *using* the datamanager.
+
+.. hint::
+
+    For the ``DataManager`` C++ documentation, have a look `here <../../../doxygen/html/group___data_manager.html>`__.
 
 .. note::
 
     This page is about the Utopia C++ library's ``DataManager``, which is something else than the :ref:`object with the same name in the frontend <utopya_data_manager>`.
+
+.. _dataio_DataManager_overview:
 
 Overview
 --------
@@ -55,8 +63,13 @@ orchestrate their execution. It therefore links a source of data to a target,
 and adds some processing capabilities inbetween; it is thus a
 `C++ stream <https://en.cppreference.com/w/cpp/io>`_.
 
-As a side note: the execution process can be customized too!
+.. admonition:: Side Note
 
+    The execution process can be customized too!
+
+
+
+.. _dataio_DataManager_structure:
 
 Structure
 ---------
@@ -239,6 +252,10 @@ This is also used for triggers.
 
 The factories are left out here for brevity, they are only needed for
 convenience and model integration.
+
+
+
+.. _dataio_DataManager_usage:
 
 Usage
 -----

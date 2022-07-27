@@ -1,25 +1,48 @@
-.. _utopya_base_cfg:
+.. _mv_base_cfg:
 
 Multiverse Base Configuration
 =============================
 
-The following is the base configuration of the :py:class:`utopya.multiverse.Multiverse` class.
-It provides all *defaults* that are needed to run a simulation, but is subsequently updated :ref:`by other configuration layers <feature_meta_config>` to form the *meta configuration*.
+This page documents the default values for the configuration of the :py:class:`~utopya.multiverse.Multiverse` class, a central element for running simulations using Utopia.
+The configuration is meant to contain all information that is needed to run a simulation; have a look at :ref:`run_config` for a more detailed motivation.
 
-The base configuration is meant to be self-documenting, thus allowing to see which parameters are available.
+For higher flexibility, the configuration is built up from a number of individual layers and can be adjusted at multiple points.
+Below, you will both find details of the update scheme as well as the default values for certain configuration layers.
+See :ref:`config_hierarchy` for more information.
 
-.. note::
-
-    The ``parameter_space`` key is extended with the default model configuration of the chosen model.
-    This will lead to the default model configuration being available at ``parameter_space.<CurrentlyChosenModelName>``.
+.. contents::
+    :local:
+    :depth: 1
 
 ----
 
-.. literalinclude:: ../_inc/utopya/utopya/cfg/base_cfg.yml
-   :language: yaml
+
+.. _utopya_mv_base_cfg:
+
+utopya ``Multiverse`` base configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The utopya ``Multiverse`` base configuration provides a large number of defaults and, at the same time, is meant to be self-documenting, thus allowing to see which parameters are available.
+
+.. toggle::
+
+    .. literalinclude:: ../_inc/utopya/utopya/cfg/base_cfg.yml
+       :language: yaml
 
 
-.. note::
+.. _utopia_mv_base_cfg:
 
-    The ``parameter_space`` key is by default (!) assumed to be a :py:class:`paramspace.paramspace.ParamSpace` object.
-    Defining sweep dimensions therein thus does *not* require to mark it with the ``!pspace`` YAML tag.
+Utopia ``Multiverse`` configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Utopia's ``Multiverse`` base configuration recursively updates the above.
+It adjusts and expands the configuration to specialize for use with Utopia as a modelling framework:
+
+* Put output into ``~/utopia_output``.
+* Configure HDF5 data loading, because all Utopia models need that.
+* Set defaults within ``parameter_space`` that are expected on C++ side.
+
+For Utopia, this configuration (at ``python/utopia_mv_cfg``) takes the place of the *framework configuration* in the update scheme.
+
+.. toggle::
+
+    .. literalinclude:: ../../python/utopia_mv_cfg.yml
+       :language: yaml

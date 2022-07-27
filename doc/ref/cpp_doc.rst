@@ -6,8 +6,8 @@ About the C++ Documentation
 Aside from this user manual, there also is a C++ documentation that documents the backend API: the ``utopia/core`` and ``utopia/data_io`` libraries, all things you need to :ref:`implement your own model <impl>`.
 
 
-To the `📚 C++ Documentation <../../doxygen/html/index.html>`_
---------------------------------------------------------------
+→ To the `📚 C++ Documentation <../../doxygen/html/index.html>`_ ←
+------------------------------------------------------------------
 
 Click on the above link to go to the C++ documentation.
 

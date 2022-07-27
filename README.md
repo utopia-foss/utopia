@@ -489,6 +489,9 @@ The version of Utopia *prior* to that change is labelled `v1` – more informati
 The *current* version of Utopia is referred to as "latest".
 The label `v2` is avoided to not over-emphasize version numbers.
 
+*Note:* While there are no version numbers, the Utopia frontend (starting *after* [Utopia v1](#utopia-v1)!) keeps track of the state of the involved repositories at the time of a simulation run.
+This assists in reconstructing the state of a project at the time a model was run.
+
 
 #### Utopia `v1`
 Utopia `v1` refers to the state of Utopia prior to the [outsourcing of the `utopya` frontend package](https://gitlab.com/utopia-project/utopia/-/merge_requests/277) into its own repository.
@@ -546,17 +549,6 @@ However, there are some differences in the CLI, most notably:
 
 For details on the new CLI, have a look at the corresponding `--help` in case you encounter errors.
 
-
-#### Finding out repository state
-While there are no version numbers, the Utopia frontend (starting *after* [Utopia v1](#utopia-v1)!) keeps track of the state of the involved repositories at the time of a simulation run.
-This assists in reconstructing the state of a project at the time a model was run.
-
-This information is stored in the `config/git_info_project.yml` file of each simulation output and contains the name, hash, message, and branch of the latest commit.
-Furthermore, the `config/git_diff_project.patch` file stores the difference of the repository state towards the latest commit using the git patch syntax (i.e. the output of `git diff --patch`).
-
-If you are in a separate repository, the same information is stored for the Utopia framework as well.
-
-⚠️ The Utopia frontend has no power over the build process; while the repo information may be stored, it will only match the behavior of your model if you have built it in that state of the repository.
 
 
 

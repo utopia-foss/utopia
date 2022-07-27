@@ -60,8 +60,8 @@ To do this, simply replace the following line:
 In both cases, we get something like this:
 
 .. image:: ../../../_static/_gen/SEIRD/universe_plots/stacked_kinds.pdf
-  :width: 800
-  :alt: caption
+    :width: 800
+    :alt: Stacked SEIRD universe plot
 
 We used LaTeX and some pretty colours to spruce everything up – see :ref:`plot_style` for more details.
 
@@ -103,6 +103,8 @@ This produces the following output:
 
 Unsurprisingly, we see the peak of infection increasing as the virus becomes more transmissible.
 
+
+.. _facet_grid_with_sweep_and_stats:
 
 Stacked line plot with one sweep dimension and statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

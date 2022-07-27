@@ -1,3 +1,5 @@
+.. _custom_plot_funcs:
+
 Implementing your own plot functions
 ====================================
 
@@ -26,7 +28,7 @@ The :py:class:`~utopya.eval.plotcreators.PyPlotCreator`
 -------------------------------------------------------
 In Utopia, the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` has a central role, as it forms the basis of several, more specialized plot creators.
 The *"external"* refers to is abiliy to invoke some plot function from an external module or file. Such a plot function can essentially be arbitrary. However, the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` has some specialized functionality for working with ``matplotlib`` which aims to make plotting more convenient: the ``style`` option and the :py:class:`~utopya.eval.plothelper.PlotHelper` framework.
-Furthermore, it has access to dantro's :ref:`data transformation framework <pyplot_plot_creator_DAG_support>`.
+Furthermore, it has access to dantro's :ref:`data transformation framework <plot_with_DAG>`.
 
 In practice, the :py:class:`~utopya.eval.plotcreators.PyPlotCreator` *itself* is hardly used in Utopia, but it is the base class of the :py:class:`~utopya.eval.plotcreators.UniversePlotCreator` and the :py:class:`~utopya.eval.plotcreators.MultiversePlotCreator`.
 Thus, the following information is valid for both these specializations and is important to understand before looking at the other creators.
@@ -81,9 +83,6 @@ There are plenty of plot function implementations provided both by utopya and th
      # ... all other arguments (as usual)
 
 
-.. _pyplot_plot_creator_plot_style:
-
-
 
 .. _pyplot_plot_creator_plot_helper:
 
@@ -113,7 +112,7 @@ As an example, the following plot configuration sets the title of the plot as we
 Furthermore, notice how you can combine the capabilities of the plot helper framework with the ability to :ref:`set the plot style <pyplot_plot_creator_plot_style>`.
 
 
-
+.. _custom_plot_funcs:
 
 Implementing plot functions
 ---------------------------
@@ -133,7 +132,7 @@ To control usage of the data transformation framework, the ``use_dag`` flag can 
 
 Recommended plot function signature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The recommended way of implementing a plot function makes use of both the :ref:`plot helper framework <pyplot_plot_creator_plot_helper>` and the :ref:`data transformation framework <pyplot_plot_creator_DAG_support>`.
+The recommended way of implementing a plot function makes use of both the :ref:`plot helper framework <pyplot_plot_creator_plot_helper>` and the :ref:`data transformation framework <plot_with_DAG>`.
 
 When using the data transformation framework, the data selection is taken care of by that framework, moving the data selection procedure to the plot configuration.
 In the plot function, one can specify which tags are required by the plot function; the framework will then make sure that these results are computed.
@@ -185,7 +184,7 @@ Simple, right? The corresponding plot configuration could look like this:
 
       # ... further arguments
 
-For more detail on the syntax, see :ref:`above <pyplot_plot_creator_DAG_support>`.
+For more detail on the syntax, see :ref:`above <plot_with_DAG>`.
 
 While the plot function signature can remain as it is regardless of the chosen specialization of the :py:class:`~utopya.eval.plotcreators.PyPlotCreator`, the plot configuration will differ for the various specializations.
 See :ref:`uni_and_mv_plots` for more information.

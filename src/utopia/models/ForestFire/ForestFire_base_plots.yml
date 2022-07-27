@@ -207,10 +207,11 @@ tree_density:
 tree_density_facet_grid:
   based_on:
     - .creator.multiverse
-    - .skip.if_more_than_3D
     - .plot.facet_grid.with_auto_encoding
     - .plot.facet_grid.line
     - .hlpr.kind.time_series
+
+  expected_multiverse_ndim: [1, 2, 3]  # only use for multiverse plots
 
   select_and_combine:
     fields:

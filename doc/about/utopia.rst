@@ -116,8 +116,16 @@ Furthermore, 2020 was the year in which the number of total projects carried out
 As part of these projects, more than 45 models have been implemented so far (mostly in private repositories).
 
 
-2021 and beyond
-^^^^^^^^^^^^^^^
+2021
+^^^^
 The `Utopia Project webpage <https://utopia-project.org>`_ is published.
 
-With the sunset of the TS-CCEES research group, the Utopia framework has to find a new home in 2021...
+With the sunset of the TS-CCEES research group, the Utopia framework has to find a new home ...
+
+
+2022
+^^^^
+The Utopia project has migrated all its repositories from the TS-CCEES group's servers to `gitlab.com/utopia-project <https://gitlab.com/utopia-project>`_.
+
+The `outsourcing of the Utopia frontend <https://gitlab.com/utopia-project/utopia/-/merge_requests/277>`_ brings about a larger architectural change.
+This makes the features of `utopya <https://gitlab.com/utopia-project/utopya>`_ available for use with other simulation backends, adds a bunch of new features, expands the documentation, and aims to reduce future maintenance load.

@@ -165,7 +165,7 @@ To avoid excessive duplication of plot configurations when adding config sets, m
 
 
 
-.. _pyplot_plot_creator_DAG_support:
+.. _plot_with_DAG:
 
 The Data Transformation Framework
 ---------------------------------

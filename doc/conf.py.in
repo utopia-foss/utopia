@@ -324,7 +324,9 @@ napoleon_include_special_with_doc = True
 # -- IPython Configuration ----------------------------------------------------
 # See https://ipython.readthedocs.io/en/stable/sphinxext.html
 
-# NOTE Using default values.
+ipython_savefig_dir = os.path.join(html_static_path[0], "_ipy")
+
+
 
 # -- Intersphinx --------------------------------------------------------------
 

@@ -22,7 +22,7 @@ Heatmaps
         :start-after: ### Start --- pcolormesh
         :end-before: ### End --- pcolormesh
 
-.. admonition:: Complete example: Stacked Errorbands
+.. admonition:: Complete example: Cellular Automaton Plot
     :class: dropdown
 
     .. literalinclude:: ../../../_cfg/ForestFire/age_plot/eval.yml
