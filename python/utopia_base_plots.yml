@@ -195,17 +195,23 @@ _:
 # =============================================================================
 # start: .animation
 # The default animation config
-# NOTE These do not enable animation, but merely set parameters.
-#      Use `.animation.enabled` or the specific `.animation.<writer>` configs.
 .animation.defaults:
   based_on:
     - .animation.defaults    # from utopya
+    - .animation.medium_dpi  # from here
 
   # By default, use the ffmpeg writer and the mp4 output format
   file_ext: mp4
   animation:
     writer: ffmpeg
 
+
+# Animation defaults that are disabled by default
+.animation.disabled:
+  based_on:
+    - .animation.defaults
+    - .animation.disabled
+    - .defaults.file_ext
 
 
 # Base configs enabling animation for a writer & including the Utopia defaults
@@ -220,6 +226,16 @@ _:
     - .animation.defaults    # from here
 
 
+# DPI settings
+.animation.medium_dpi:
+  animation:
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 96
+      ffmpeg:
+        saving:
+          dpi: 96
 
 
 

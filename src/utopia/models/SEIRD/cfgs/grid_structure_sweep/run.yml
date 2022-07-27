@@ -1,7 +1,6 @@
 # Example universe run for the SEIRD model
 ---
-perform_sweep:
-  true
+perform_sweep: true
 
 parameter_space:
   num_steps: 365 # Corresponding to one 'real-life' year

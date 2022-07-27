@@ -128,7 +128,7 @@ The following command will invoke a ``ForestFire`` model simulation with the run
 
 .. code-block:: bash
 
-    utopia run ForestFire --cfg-set multiverse_example
+    utopia run ForestFire --cfg-set p_lightning_sweep
 
 A config set is simply a directory containing a ``run.yml`` file and/or an ``eval.yml`` file.
 In the above example, the directory's name is ``multiverse_example`` and it contains both of these files.

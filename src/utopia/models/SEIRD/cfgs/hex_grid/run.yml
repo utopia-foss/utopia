@@ -1,6 +1,8 @@
 # A run configuration that configures a hexagonal grid
 ---
 parameter_space:
+  num_steps: 365
+
   SEIRD:
     cell_manager:
       grid:

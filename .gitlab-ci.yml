@@ -411,7 +411,7 @@ test:cli:
     - utopia run ForestFire -d --num-seeds=3 --run-mode single --note no_sweep
 
     # Test using a configuration set to specify run and plots config
-    - utopia run ForestFire -d --cs universe_example -N 10
+    - utopia run ForestFire -d --cs long_run -N 10
     - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo -e "\nFailed as expected"; fi
 
     # .. Evaluation ...........................................................

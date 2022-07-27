@@ -1,0 +1,6 @@
+# Plots for the sweep over p_transmit and p_immune
+---
+# -- Plot of all densities over time ------------------------------------------
+# This automatically creates an average over the seed dimension
+densities_facet_grid:
+  based_on: densities.mv

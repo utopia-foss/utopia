@@ -32,6 +32,7 @@ age_distribution/final:
 
 age_distribution/time_series:
   based_on: age_distribution/time_series
+  enabled: false
 
 age_distribution/deceased:
   based_on: age_distribution/deceased

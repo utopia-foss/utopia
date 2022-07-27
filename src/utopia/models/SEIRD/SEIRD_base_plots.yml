@@ -127,16 +127,42 @@ densities.mv:
   based_on:
     - .creator.multiverse
     - .plot.facet_grid.with_auto_encoding
-    - .plot.facet_grid.line
+    - .plot.facet_grid.errorbands
     - .hlpr.kind.time_series
+    - .hlpr.legend.hide
+    - .animation.disabled
     - .style.prop_cycle.ESEIRDSI
 
   expected_multiverse_ndim: [1, 2, 3]
 
   select_and_combine:
     fields:
-      data: densities
+      _data: densities
 
+  transform:
+    - xr.full_like: [!dag_tag _data, !expr nan]
+      tag: nans
+
+    # Try to compute mean and std over ceratain dimensions, falling back to
+    # a NaN array if that dimension is not available
+    - .mean: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag _data
+      tag: mean
+    - .std: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag nans  # use NaN instead
+      tag: std
+
+    # Combine into a dataset
+    - xr.Dataset:
+        data_vars:
+          mean: !dag_tag mean
+          std: !dag_tag std
+      tag: data
+
+  y: mean
+  yerr: std
   x: time
   hue: kind
 
@@ -398,7 +424,8 @@ age_distribution/time_series:
   based_on:
     - age_distribution
     - .style.prop_cycle.seird
-    - .animation.ffmpeg
+    - .animation.defaults
+
   transform:
     - SEIRD.compute_age_distribution:
         age: !dag_tag age

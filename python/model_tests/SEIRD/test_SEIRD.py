@@ -323,3 +323,30 @@ def test_directed_movement():
             # If there are infected ones, there should be movement in the
             # high density population
             assert (data.isel(time=t) != data.isel(time=t + 1)).any()
+
+
+def test_run_and_eval_cfgs():
+    """Carries out all additional configurations that were specified alongside
+    the default model configuration.
+
+    This is done automatically for all run and eval configuration pairs that
+    are located in subdirectories of the ``cfgs`` directory (at the same level
+    as the default model configuration).
+    If no run or eval configurations are given in the subdirectories, the
+    respective defaults are used.
+
+    See :py:meth:`~utopya.model.Model.run_and_eval_cfg_paths` for more info.
+    """
+    for cfg_name, cfg_paths in mtc.default_config_sets.items():
+        print(f"\nRunning '{cfg_name}' configuration ...")
+
+        mv, _ = mtc.create_run_load(
+            from_cfg=cfg_paths.get("run"),
+            parameter_space=dict(
+                num_steps=50,
+                SEIRD=dict(cell_manager=dict(grid=dict(resolution=48))),
+            ),
+        )
+        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get("eval"))
+
+        print(f"Succeeded running and evaluating '{cfg_name}'.\n")

@@ -1,0 +1,38 @@
+# A sweep over the p_transmit and p_immune parameters (and the seed).
+# This run also starts with a single infection introduced at time 1.
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 365
+  write_every: 3
+
+  seed: !sweep
+    default: 42
+    range: [8]
+
+  SEIRD:
+    cell_manager:
+      cell_params:
+        p_immune: !sweep
+          default: 0
+          values: [0.0, 0.1]
+
+        p_transmit:
+          value:
+            default: !sweep
+              default: 1
+              values: [0.2, 0.5, 0.8]
+              name: p_transmit
+
+    # Deactivate random exposures
+    p_exposed: 0.
+
+    # Increase speed of infection spread
+    p_infected: 1.
+
+    exposure_control:
+      enabled: true
+      num_additional_exposures: 1
+      at_times:
+        - 1
