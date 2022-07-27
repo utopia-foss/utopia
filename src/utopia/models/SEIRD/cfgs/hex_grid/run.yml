@@ -1,0 +1,9 @@
+# A run configuration that configures a hexagonal grid
+---
+parameter_space:
+  SEIRD:
+    cell_manager:
+      grid:
+        structure: hexagonal
+      neighborhood:
+        mode: hexagonal
