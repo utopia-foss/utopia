@@ -117,7 +117,7 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
     if(UTOPYA_FROM_PYPI)
         message(STATUS "Installing utopya from PyPI ...")
         python_pip_install(
-            PACKAGE utopya
+            PACKAGE "utopya>=${UTOPYA_REQUIRED_VERSION}"
             UPGRADE
             INSTALL_OPTIONS "${UTOPYA_PYPI_OPTIONS}"
             QUIET
@@ -131,10 +131,13 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
         )
     endif()
 
-    # "Find" again such that it is shown in the summary after installation
+    # "Find" again such that it is shown in the summary after installation.
+    # This time it really *is* required, so specify REQUIRED here to make it
+    # fail if it is still not found.
     python_find_package(
         PACKAGE utopya
         VERSION ${UTOPYA_REQUIRED_VERSION}
+        REQUIRED
         SHOW_IN_SUMMARY
         SHOW_AS_REQUIRED
     )
