@@ -89,9 +89,14 @@ if (NOT PYTHON_PACKAGE_wheel_FOUND)
 endif()
 
 # -- utopya
+set(UTOPYA_REQUIRED_VERSION 1.0.0)
 
 if(NOT UTOPYA_FROM_PYPI)
     set(UTOPYA_FROM_PYPI On)
+endif()
+
+if(NOT UTOPYA_PYPI_OPTIONS)
+    set(UTOPYA_PYPI_OPTIONS "")
 endif()
 
 if(NOT UTOPYA_URL)
@@ -102,11 +107,21 @@ if(NOT UTOPYA_BRANCH)
     set(UTOPYA_BRANCH main)
 endif()
 
-python_find_package(PACKAGE utopya VERSION 1.0.0)
+python_find_package(
+    PACKAGE utopya
+    VERSION ${UTOPYA_REQUIRED_VERSION}
+    SHOW_IN_SUMMARY
+    SHOW_AS_REQUIRED
+)
 if(NOT PYTHON_PACKAGE_utopya_FOUND)
     if(UTOPYA_FROM_PYPI)
         message(STATUS "Installing utopya from PyPI ...")
-        python_pip_install(PACKAGE utopya INSTALL_OPTIONS "--pre")
+        python_pip_install(
+            PACKAGE utopya
+            UPGRADE
+            INSTALL_OPTIONS "${UTOPYA_PYPI_OPTIONS}"
+            QUIET
+        )
     else()
         message(STATUS "Installing utopya from custom URL ...")
         python_install_package_remote(
@@ -115,7 +130,14 @@ if(NOT PYTHON_PACKAGE_utopya_FOUND)
             EGG_NAME utopya
         )
     endif()
-    python_find_package(PACKAGE utopya)
+
+    # "Find" again such that it is shown in the summary after installation
+    python_find_package(
+        PACKAGE utopya
+        VERSION ${UTOPYA_REQUIRED_VERSION}
+        SHOW_IN_SUMMARY
+        SHOW_AS_REQUIRED
+    )
 endif()
 # TODO Can consider replacing with requirements file; but need to avoid
 #      repetitive version checks on each cmake call!
@@ -131,7 +153,11 @@ endif()
 
 # -- dantro
 # Inform about dantro version (installation happened via utopya dependencies)
-python_find_package(PACKAGE dantro)
+python_find_package(
+    PACKAGE dantro
+    SHOW_IN_SUMMARY
+    SHOW_AS_REQUIRED
+)
 
 
 # -- additional dependencies

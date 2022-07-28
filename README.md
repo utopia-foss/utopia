@@ -508,15 +508,12 @@ To upgrade Utopia to its latest version, simply pull the latest changes:
 cd utopia
 git pull
 
-# Use a fresh build directory
-rm -rf build
-mkdir build
-
 # Re-configure
 cd build
 cmake ..
 ```
 
+In case configuration fails, delete and re-create the `build` directory and have a look at the [Troubleshooting section](#troubleshooting).
 That's it for the Utopia *framework*.
 
 If you are using a [separate project for model implementations](setting-up-a-separate-repository-for-models), a few changes are necessary to make your project work with the latest version of Utopia again:
@@ -526,7 +523,7 @@ If you are using a [separate project for model implementations](setting-up-a-sep
    That message contains information on upgrading your project:
 
     - Rename the failing CMake function call to `register_models_with_frontend`.
-    - Create the project info file `.utopya-project.yml` in the root directory of your project and add the following content:
+    - Create the project info file `.utopya-project.yml` in the root directory of your project and add the following content, adjusting the marked entries:
 
         ```yaml
         project_name: YourProjectName              # TODO Set to your project's name

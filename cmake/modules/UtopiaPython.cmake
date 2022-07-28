@@ -23,12 +23,25 @@
 #          The desired version; if a version smaller than this one is found,
 #          the package is regarded as not having been found
 #
+#       .. cmake_param:: SHOW_IN_SUMMARY
+#          :option:
+#
+#          If given, will add the package name to the feature summary list.
+#          If a version is required, will include that one.
+#
+#       .. cmake_param:: SHOW_AS_REQUIRED
+#          :option:
+#
+#          If given, will show the package as required in the feature summary.
+#          Note that this does not change the function behavior and is
+#          decoupled from the REQUIRED flag.
+#
 #   Install a remote python package located in a git repository
 #   into the Utopia venv.
 #
 function(python_find_package)
     # Parse function arguments
-    set(OPTION REQUIRED)
+    set(OPTION REQUIRED SHOW_IN_SUMMARY SHOW_AS_REQUIRED)
     set(SINGLE PACKAGE VERSION RESULT)
     set(MULTI)
     include(CMakeParseArguments)
@@ -97,7 +110,29 @@ function(python_find_package)
 
     # If this point is reached, we may set the success variable
     set(PYTHON_PACKAGE_${ARG_PACKAGE}_FOUND TRUE PARENT_SCOPE)
+
+    # Optionally, make it appear in the summary of required packages
+    if (ARG_SHOW_IN_SUMMARY)
+        set_property(
+            GLOBAL APPEND PROPERTY
+                PACKAGES_FOUND ${ARG_PACKAGE}
+        )
+        if (ARG_VERSION)
+            set_property(
+                GLOBAL APPEND PROPERTY
+                    _CMAKE_${ARG_PACKAGE}_REQUIRED_VERSION ">= ${ARG_VERSION}"
+            )
+        endif()
+        if (ARG_SHOW_AS_REQUIRED)
+            set_property(
+                GLOBAL APPEND PROPERTY
+                    _CMAKE_${ARG_PACKAGE}_TYPE REQUIRED
+            )
+        endif()
+    endif()
 endfunction()
+
+
 
 
 # Call python `pip install` command inside Utopia's virtual environment
@@ -115,6 +150,16 @@ endfunction()
 #
 #          If given, adds the --upgrade flag to the command
 #
+#       .. cmake_param:: ALLOW_FAILURE
+#          :option:
+#
+#          If given, will send a warning instead of an error
+#
+#       .. cmake_param:: QUIET
+#          :option:
+#
+#          If given, does not generate status messages
+#
 #       .. cmake_param:: INSTALL_OPTIONS
 #          :optional:
 #          :multi:
@@ -129,7 +174,7 @@ endfunction()
 #          resolution of the error
 #
 function(python_pip_install)
-    set(OPTION UPGRADE ALLOW_FAILURE)
+    set(OPTION UPGRADE ALLOW_FAILURE QUIET)
     set(SINGLE PACKAGE ERROR_HINT)
     set(MULTI INSTALL_OPTIONS)
     include(CMakeParseArguments)
@@ -148,7 +193,9 @@ function(python_pip_install)
 
     set(INSTALL_ARGS)
     if(PYINST_PACKAGE)
-        message(STATUS "Installing Python package ${PYINST_PACKAGE} ...")
+        if(NOT PYINST_QUIET)
+            message(STATUS "Installing Python package ${PYINST_PACKAGE} ...")
+        endif()
         set(INSTALL_ARGS ${PYINST_PACKAGE})
     endif()
 
@@ -174,6 +221,8 @@ function(python_pip_install)
         return()
     endif ()
 endfunction()
+
+
 
 
 # Install a python package located in a remote git repository
@@ -209,7 +258,7 @@ endfunction()
 #
 function(python_install_package_remote)
     # parse function arguments
-    set(OPTION)
+    set(OPTION QUIET)
     set(SINGLE URL TRUSTED_HOST EGG_NAME BRANCH)
     set(MULTI)
     include(CMakeParseArguments)
@@ -219,11 +268,13 @@ function(python_install_package_remote)
             python_install_package_remote!")
     endif()
 
-    if (RINST_EGG_NAME)
-        message(STATUS "Installing python package ${RINST_EGG_NAME} ...")
-        message(STATUS "  URL:     ${RINST_URL}")
-    else()
-        message(STATUS "Installing package from ${RINST_URL} ...")
+    if (NOT RINST_QUIET)
+        if (RINST_EGG_NAME)
+            message(STATUS "Installing python package ${RINST_EGG_NAME} ...")
+            message(STATUS "  URL:     ${RINST_URL}")
+        else()
+            message(STATUS "Installing package from ${RINST_URL} ...")
+        endif()
     endif()
 
     # Need 'git' in front of URL
@@ -231,7 +282,9 @@ function(python_install_package_remote)
 
     # if branch and egg name are given, add those
     if (RINST_BRANCH)
-        message(STATUS "  Branch:  ${RINST_BRANCH}")
+        if (NOT RINST_QUIET)
+            message(STATUS "  Branch:  ${RINST_BRANCH}")
+        endif()
         set(RINST_FULL_PATH ${RINST_FULL_PATH}@${RINST_BRANCH})
     endif()
     if (RINST_EGG_NAME)
