@@ -479,7 +479,7 @@ cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
 
 ### Utopia versioning
 Utopia deliberately avoids versioning: You will neither find exact version numbers nor periodic releases of Utopia.
-Instead, the main idea is to always use the latest version of the framework.
+Instead, the idea is to always use the latest version of the framework.
 
 Despite the above approach towards versioning, large infrastructure changes are indicated by an increase in a major version (`vX`) and a corresponding [release branch](https://gitlab.com/utopia-project/utopia/-/branches?state=all&search=v) of the same name.
 We do not specify minor version numbers or patch numbers because we do not want to suggest that there is a versioning scheme; we'd like you to "live at HEAD".
@@ -508,10 +508,16 @@ To upgrade Utopia to its latest version, simply pull the latest changes:
 cd utopia
 git pull
 
+# Use a fresh build directory
+rm -rf build
+mkdir build
+
 # Re-configure
 cd build
 cmake ..
 ```
+
+That's it for the Utopia *framework*.
 
 If you are using a [separate project for model implementations](setting-up-a-separate-repository-for-models), a few changes are necessary to make your project work with the latest version of Utopia again:
 
@@ -523,16 +529,28 @@ If you are using a [separate project for model implementations](setting-up-a-sep
     - Create the project info file `.utopya-project.yml` in the root directory of your project and add the following content:
 
         ```yaml
-        project_name: YourProjectName       # TODO Set to your project's name
+        project_name: YourProjectName              # TODO Set to your project's name
         framework_name: Utopia
-        metadata: {}
+
+        # Information about your project's directory structure
         paths:
-          models_dir: src/models            # rel. path to your models
-          py_tests_dir: python/model_tests  # if they exist
-          py_plots_dir: python/model_plots  # if they exist
+          models_dir: rel/path/to/models/src/dir   # TODO Set rel. path to your models
+          py_tests_dir: python/model_tests         # if they exist
+          py_plots_dir: python/model_plots         # if they exist
+
+        # Metadata about your project (aggregated in utopya models registry)
+        metadata:                                  # TODO Adjust to your needs
+          authors:
+            - your name
+            - another author's name
+          # Other fields: description, long_name, long_description, license, language, website
+
         ```
 
-    - Run `cmake ..`
+      In the `metadata` node, you can put in some descriptive info about your models, e.g. a list of `authors` or a short `description`.
+      *Hint:* You can also have a look at Utopia's `.utopya-project.yml` file to see more possible entries.
+
+    - Run `cmake ..` again.
 
 Furthermore, you may need to update `import` statements in your model tests or model plots because the utopya and dantro package structures changed.
 To find out the new import locations, refer to the API references in the [utopya documentation](https://utopya.readthedocs.io/) and [dantro documentation](https://dantro.readthedocs.io/).
