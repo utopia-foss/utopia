@@ -1,67 +1,43 @@
 # Default plots for the SandPile model
 ---
-# --- A plot of the slope (mean - critical_slope) -----------------------------
+# -- A plot of the slope (mean - critical_slope) ------------------------------
 mean_slope:
   based_on: mean_slope
 
 
-# --- Plot the avalanche area fraction time series ----------------------------
-# Depending on the number of cells, you will perhaps need to adjust the
-# y limits of the plot accordingly. Set the minimum smaller or equal to
-# 1/num_cells
+# -- Plot the avalanche area fraction time series -----------------------------
 area_fraction:
   based_on: area_fraction
 
 
-# --- A plot of the cluster size distribution ---------------------------------
+# -- Cluster size distribution plots ------------------------------------------
 cluster_size_distribution:
+  enabled: false
   based_on: cluster_size_distribution
 
+# The complementary cumulative cluster size distribution
+# ... for each universe
+compl_cum_cluster_size_dist:
+  based_on: compl_cum_cluster_size_dist.universe
 
-# --- A plot the complementary cumulative probability distribution ------------
-compl_cum_prob_dist:
-  based_on: compl_cum_prob_dist
+# ... for a multiverse sweep, using auto-encoding
+compl_cum_cluster_size_dist_facet_grid:
+  enabled: false
+  based_on: compl_cum_cluster_size_dist.multiverse
 
 
-# --- An animation of the CA `slope` state ------------------------------------
-slope_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+# -- CA plots -----------------------------------------------------------------
+
+# An animation of the slope
+ca/slope:
+  based_on: ca/slope
   enabled: false
 
-  model_name: SandPile
-
-  # Select the properties to plot
-  to_plot:
-    # The name of the property to plot with its options
-    slope: &anim_slope
-      title: Slope
-      cmap: copper
-
-
-# --- An animation of the CA `avalanche` state --------------------------------
-avalanche_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+# An animation of the avalanche
+ca/avalanche:
+  based_on: ca/avalanche
   enabled: false
 
-  model_name: SandPile
-
-  # Change the properties to be plotted to use the avalanche data
-  to_plot:
-    avalanche: &anim_avalanche
-      title: Avalanche
-      limits: [0, 1]
-      cmap: 
-        static: black
-        mobile: orange
-
-
-# --- An animation of the slope and avalanche side by side --------------------
-slope_and_avalanche_anim:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
-  
-  model_name: SandPile
-
-  to_plot:
-    # Re-use the information from above
-    slope: *anim_slope
-    avalanche: *anim_avalanche
+# Combined
+ca/slope_and_avalanche:
+  based_on: ca/slope_and_avalanche

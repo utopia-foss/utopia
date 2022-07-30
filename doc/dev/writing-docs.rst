@@ -42,7 +42,8 @@ Let :math:`x \rightarrow \infty`, then
 
 Code snippets and blocks
 """"""""""""""""""""""""
-Code snippets like ``std::algorithm`` or ``cell_manager`` are indicated like this. Code blocks can be included like this:
+Code snippets like ``std::algorithm`` or ``cell_manager`` are indicated like this.
+Code blocks can be included like this:
 
     .. code-block:: python
 
@@ -54,8 +55,12 @@ Python Documentation Bits
 
 The typical use case of Sphinx is rendering a documentation of Python modules.
 
-.. autoclass:: utopya.multiverse.Multiverse
-    :noindex:
+.. code-block:: rst
+
+    .. autoclass:: utopya.multiverse.Multiverse
+        :noindex:
+
+Alteratively, use ``:py:<role>:`` and a fully qualified module name to refer to the corresponding object in another documentation.
 
 Doxygen Documentation Bits
 """"""""""""""""""""""""""
@@ -81,7 +86,7 @@ This is a documentation of the entire ``Logging`` module:
 C++ Documentation
 -----------------
 The C++ documentation is created with
-`Doxygen <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
+`Doxygen <https://doxygen.nl/manual/index.html>`_.
 If you want to contribute to Utopia, you will need to write documentation, too.
 For this, we provide :ref:`coding guidelines <coding_guidelines>`, as
 well as the additional information below.
@@ -89,7 +94,7 @@ well as the additional information below.
 
 How to write the Doxygen documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-`Doxygen <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_
+`Doxygen <https://doxygen.nl/manual/index.html>`_
 is a neat and widely used tool to document C++ source code.
 The documentation is based on ``docstrings`` that are attached to the actual
 source code they should document using the comment syntax of the respective
@@ -107,7 +112,7 @@ Documentations for large code bases quickly become confusing. By default,
 Doxygen groups documentation pages by class names and namespaces. However,
 a certain set of classes typically closely interact within one, or even across
 several, namespaces. For documenting these groupings and interactions, Doxygen
-implements `Modules <https://www.stack.nl/~dimitri/doxygen/manual/grouping.html>`_.
+implements `Modules <https://doxygen.nl/manual/grouping.html>`_.
 
 Somewhere in the source code, one may define a module using
 ``\defgroup <label> <title>``, or ``\addtogroup <label>`` together with a set
@@ -115,7 +120,7 @@ of brackets ``{ ... }``. Single objects can be added to an existing group with
 ``\ingroup <label>``. Modules themselves can be nested, i.e., a module
 can be grouped into another module.
 
-For documenting modules, we use `modules.dox` files inside the respective
+For documenting modules, we use ``modules.dox`` files inside the respective
 source directory. Doxygen always uses the C++ syntax, therefore all
 documentation inside these files must have the syntax of a C++ comment.
 

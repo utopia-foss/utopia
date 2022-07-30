@@ -1,68 +1,44 @@
 # Default plots for the ForestFire model
 ---
-# --- A plot of the cluster size distribution ---------------------------------
+# --- Cluster size distribution plots -----------------------------------------
 cluster_size_distribution:
   based_on: cluster_size_distribution
 
+# Animation over time
+cluster_size_distribution_animated:
+  enabled: false
+  based_on: cluster_size_distribution_animated
 
-# --- The complementary cumulative cluster size distribution ------------------
+# The complementary cumulative cluster size distribution
+# ... for each universe
 compl_cum_cluster_size_dist:
-  based_on: compl_cum_cluster_size_dist
+  enabled: false
+  based_on: compl_cum_cluster_size_dist.universe
+
+# ... for a multiverse sweep, using auto-encoding
+compl_cum_cluster_size_dist_facet_grid:
+  based_on: compl_cum_cluster_size_dist.multiverse
 
 
 # --- Tree density ------------------------------------------------------------
-# ... Of the single universes .................................................
+# ... of the single universes
 tree_density:
   based_on: tree_density
 
 
-# ... Of a sweep over p_lightning and seed ....................................
-tree_density_over_p_lightning:
-  based_on: tree_density_over_p_lightning
-  enabled: false  # Can enable this when sweeping over `p_lightning`
-
-# ... Tree density facet-grid example: 1D line plots ..........................
-tree_density_facet_grid_lineplots:
-  based_on: tree_density_facet_grid
-  enabled: false  # Can enable this when sweeping over any dimension
-  col: p_lightning
-
-# ... Tree density facet-grid example: 2D imshow plot .........................
-tree_density_facet_grid_imshow:
-  based_on: tree_density_facet_grid
-  enabled: false  # Can enable this when sweeping over any dimension
-  col: p_lightning
-  row: seed
-
-# ... Tree density facet-grid example: auto-encoding ..........................
-# Automatically determines axis encoding for sweep plots
+# ... facet grid with auto-encoding for multiverse sweep plots
 tree_density_facet_grid:
   based_on: tree_density_facet_grid
-  expected_multiverse_ndim: [0, 1, 2, 3]
-  auto_encoding: true
-  kind: line
-  x: time
 
 
-# ... Asymptotic tree density .................................................
-tree_density_asymptotic_over_p_lightning:
+# ... asymptotic tree density with specializations
+tree_density_asymptotic:
   based_on: tree_density_asymptotic
-  enabled: false  # Can enable this when sweeping over any dimension
+  enabled: false
 
-  # Specialization for p_lightning
-  helpers:
-    set_labels:
-      y: $p_{lightning}$
-    set_scales:
-      y: log
-    set_limits:
-      y: [min, ~]
-
-  # Select the time steps to average over
-  average_fraction: .06
-
-  # Passed to plt.errorbar
-  color: tab:blue
+tree_density_asymptotic_over_p_lightning:
+  based_on: tree_density_asymptotic_over_p_lightning
+  enabled: false
 
 
 # --- Tree age ----------------------------------------------------------------
@@ -70,40 +46,39 @@ mean_tree_age:
   based_on: mean_tree_age
 
 
-# --- Snapshots and animations of the spatial grid ----------------------------
-# NOTE These are both based on the snapshot base plots and add the remaining
-#      parameters: For snapshots, the time index that is to be plotted; for
-#      animations, the animation parameters (using multiple inheritance).
-
+# --- CA plots ----------------------------------------------------------------
 # ... The forest ..............................................................
-forest_snapshot:
-  based_on: forest_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest:
+  based_on: ca/forest
 
-forest:
-  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_final:
+  based_on:
+    - ca/forest
+    - .plot.ca.snapshot
 
 # ... The forest age ..........................................................
-forest_age_snapshot:
-  based_on: forest_age_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest_age:
+  based_on: ca/forest_age
 
-forest_age:
-  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_age_final:
+  enabled: false
+  based_on:
+    - ca/forest_age
+    - .plot.ca.snapshot
 
 # ... The clusters ............................................................
-clusters_snapshot:
-  based_on: clusters_snapshot
+ca/clusters:
+  based_on: ca/clusters
+
+ca/clusters_final:
+  based_on:
+    - ca/clusters
+    - .plot.ca.snapshot
   enabled: false
-  time_idx: -1
 
-clusters:
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
-
-# --- Miscellaneous -----------------------------------------------------------
 # ... Combined plot of forest states and clusters .............................
-forest_and_clusters:
-  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
-  enabled: false
+ca/combined:
+  based_on:
+    - ca/forest
+    - ca/forest_age
+    - ca/clusters

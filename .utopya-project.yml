@@ -1,0 +1,59 @@
+# A project information file for use with the utopya project registry
+---
+# The name under which the models inside this project can be grouped.
+# The project name needs to be exactly the same as the CMAKE_PROJECT_NAME
+project_name: Utopia
+
+# The name of the framework this project uses, which is simply a project name.
+# For Utopia itself, the framework is Utopia.
+framework_name: Utopia
+
+paths:
+  models_dir: src/utopia/models
+
+  # Python models tests and model plots directories
+  py_tests_dir: python/model_tests
+  py_plots_dir: python/model_plots
+
+  # Project-level multiverse configuration and base plots file
+  mv_project_cfg: python/utopia_mv_cfg.yml
+  project_base_plots: python/utopia_base_plots.yml
+
+metadata:
+  # long_name: ""
+  description: A comprehensive modeling framework for complex and adaptive systems.
+  long_description: Utopia provides the tools to conveniently implement computer models, perform simulation runs, and evaluate the resulting data.
+  language: c++
+  website: https://utopia-project.org/
+  license: LGPLv3+
+  authors:
+    # NOTE Also update the list in COPYING.md if making changes here
+    #
+    # Maintainers
+    - Thomas Gaskin
+    - Benjamin Herdeanu
+    - Harald Mack
+    - Lukas Riedel
+    - Yunus Sevinchan
+    - Julian Weninger
+    #
+    # Contributors
+    - Narek Baghumian
+    - Lorenzo Biasi
+    - Unai Fischer Abaigar
+    - Leonhard Holtmann
+    - Christian Kobrow
+    - Fabian Krautgasser
+    - Daniel Lake
+    - Hendrik Leusmann
+    - Peter Manshausen
+    - Robert Rauschen
+    - Soeren Rubner
+    - Laila Pilar Schmidt
+    - Simeon Schreib
+    - Lukas Siebert
+    - Jeremias Traub
+    - Josephine Westermann
+    - Paul Wiesemeyer
+
+run_cfg_format: yaml

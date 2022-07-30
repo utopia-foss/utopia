@@ -3,15 +3,15 @@
 # These can use the `based_on` feature with configurations specified in the
 # accompanying *_base_plots.yml file and in the utopya base plot configs.
 ---
-# Plot the density time development of living cells
-living_density:
-  based_on: density_living_cells
+# Animation of the cellular automaton state
+ca/state:
+  based_on: ca/state
 
-# Plot an animation of the cellular automaton
-CA_state_anim:
+ca/state_final:
   based_on:
-    - state_anim
-    - .ca.state.anim_ffmpeg 
-  to_plot:
-    living:
-      title: Living
+    - ca/state
+    - .plot.ca.snapshot
+
+# Density time development of living cells
+density_living_cells:
+  based_on: density_living_cells

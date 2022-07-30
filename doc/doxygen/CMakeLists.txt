@@ -7,6 +7,7 @@ if (DOXYGEN_FOUND)
     set(DOXYGEN_EXTRACT_ALL YES)
     set(DOXYGEN_EXTRACT_PRIVATE YES)
     set(DOXYGEN_EXTRACT_STATIC YES)
+    set(DOXYGEN_GENERATE_HTML YES)
     set(DOXYGEN_GENERATE_XML YES)
     set(DOXYGEN_WARN_LOGFILE ${CMAKE_CURRENT_BINARY_DIR}/doxygen_warnings.log)
 
@@ -14,6 +15,9 @@ if (DOXYGEN_FOUND)
     # from the C++ definition signature and disable mixed-case file names
     set(DOXYGEN_SHORT_NAMES NO)
     set(DOXYGEN_CASE_SENSE_NAMES NO)
+
+    # Use MathJax for nicer formulas
+    set(DOXYGEN_USE_MATHJAX YES)
 
     # register the target
     doxygen_add_docs(doxygen_utopia

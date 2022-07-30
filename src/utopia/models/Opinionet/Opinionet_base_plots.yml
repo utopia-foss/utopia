@@ -1,51 +1,155 @@
 # Base configuration for the Opinionet plots
 ---
-# default animation configurations
-animation:
-  animation:
-    enabled: true
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 300
-      ffmpeg:
-        init:
-          fps: 8
-        saving:
-          dpi: 300
-    writer: ffmpeg
-  file_ext: mp4
+.variables:
+  base_path: &base_path data/Opinionet
 
 
-graph:
-  based_on: .dag.graph
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
   dag_options:
-    select_path_prefix: data/Opinionet
+    select_path_prefix: *base_path
 
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+# .. Plot functions ...........................................................
+.plot.errorbars:
+  based_on:
+    - .plot.facet_grid.errorbars
+
+  expected_multiverse_ndim: [1,2,3,4,5]
+
+
+.plot.sweep2d:
+  module: model_plots.Opinionet
+  plot_func: sweep2d
+
+  expected_multiverse_ndim: [2,3,4,5]
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+# -- Graph plots --------------------------------------------------------------
+graph:
+  based_on:
+    - .creator.universe
+    - .plot.graph
+
+  select:
+    graph_group: nw
+
+  graph_creation:
+    at_time_idx: -1
+    node_props: ['opinion']
+    # edge_props: ['edge_weight']
+
+  graph_drawing: &graph_drawing
+    positions:
+      model: spring
+      k: 1
+    nodes:
+      node_color:
+        from_property: opinion
+      node_size:
+        from_property: degree
+        scale_to_interval: [10, 200]
+    edges:
+      width: 0.2
+
+  helpers:
+    set_title:
+      title: Graph at time
+
+graph_animation:
+  based_on:
+    - graph
+    - .animation.ffmpeg
+
+  graph_creation:
+    at_time_idx: ~
+
+  graph_animation:
+    sel:
+      time:
+        from_property: opinion
+
+
+# -- Opinion plots ------------------------------------------------------------
 
 opinion_animated:
-  based_on: animation
+  based_on:
+    - .animation.ffmpeg
+
   creator: universe
   universes: all
   module: model_plots.Opinionet
   plot_func: opinion_animated
 
+  num_bins: 100
+  time_idx: ~ # if given, will plot one specific time only
+
+  animation:
+    animation_update_kwargs:
+      stepsize: 1
+
+  color: dodgerblue
+
   helpers:
+    set_title:
+      title: Opinion distribution
     set_labels:
         x: User opinion
         y: Group size
-  num_bins: 100
-  time_idx: # plot one specific time frame
-  animation:
-    animation_update_kwargs:
-      stepsize: 10
 
-
-time_series_opinion:
+opinion_time_series:
   creator: universe
   universes: all
   module: model_plots.Opinionet
   plot_func: opinion_time_series
+
+  select:
+    opinion: data/Opinionet/nw/opinion
+    opinion_space:
+      path: cfg/Opinionet
+      with_previous_result: true
+      transform:
+        - getitem: opinion_space
+
   helpers:
     setup_figure:
       ncols: 2
@@ -71,21 +175,140 @@ time_series_opinion:
     origin: lower
     aspect: auto
     cmap: bone_r
+    vmin: 0
+    vmax: 25
 
   hist_kwargs:
     color: mediumseagreen
     orientation: horizontal
 
-
-multiverse.errorbars:
-  creator: multiverse
-  expected_multiverse_ndim: [1,2,3,4,5]
-  module: dantro.plot_creators.ext_funcs.generic
-  plot_func: errorbars
+  representatives:
+    enabled: True
+    max_reps: 5
+    rep_threshold: 10
 
 
-sweep_2d:
-  creator: multiverse
-  expected_multiverse_ndim: [2,3,4,5]
-  module: model_plots.Opinionet
-  plot_func: sweep2d
+
+# -- Multiverse plots ---------------------------------------------------------
+
+# evaluating a parameter sweep over the tolerance and the seed
+localization_over_tolerance:
+  based_on:
+    - .creator.multiverse
+    - .plot.errorbars  # overloaded, see above
+
+  select_and_combine:
+    fields:
+      tolerances:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , tolerance]
+      localization:
+        path: data/Opinionet/nw/opinion
+        transform:
+          - operation: .isel
+            args: [!dag_prev ]
+            kwargs:
+              time: -1
+          - operation: Opinionet.op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
+              bins: 100
+              interval: [0., 1.]
+  transform:
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        seed: 0
+      tag: tolerance
+    - operation: .mean
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+      tag: localization_mean
+    - operation: .std
+      args: [!dag_tag localization]
+      kwargs:
+        dim: seed
+        ddof: 1
+      tag: localization_std
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          L: !dag_tag localization_mean
+          dL: !dag_tag localization_std
+      tag: data
+
+  x: tolerance
+  y: L
+  yerr: dL
+  capsize: 2
+  marker: o
+  helpers:
+    set_title:
+      title: Peak localization
+    set_labels:
+      x: Tolerance
+      y: Localization
+
+# evaluating a parameter sweep over the tolerance and susceptibility
+localization_2d:
+  based_on:
+    - .creator.multiverse
+    - .plot.sweep2d  # overloaded, see above
+
+  select_and_combine:
+    fields:
+      tolerances:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , tolerance]
+      susceptibilities:
+        path: cfg/Opinionet
+        transform:
+          - getitem: [!dag_prev , susceptibility]
+      localization:
+        path: data/Opinionet/nw/opinion
+        transform:
+          - operation: .isel
+            args: [!dag_prev ]
+            kwargs:
+              time: -1
+          - operation: Opinionet.op_localization
+            args: [!dag_prev ]
+            kwargs:
+              along_dim: vertex_idx
+              bins: 100
+              interval: [0., 1.]
+
+  transform:
+    - operation: .isel
+      args: [!dag_tag tolerances]
+      kwargs:
+        susceptibility: 0
+      tag: tolerance
+    - operation: .isel
+      args: [!dag_tag susceptibilities]
+      kwargs:
+        tolerance: 0
+      tag: susceptibility
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          tolerance: !dag_tag tolerance
+          susceptibility: !dag_tag susceptibility
+          L: !dag_tag localization
+      tag: data
+
+  x: tolerance
+  y: susceptibility
+  z: L
+
+  helpers:
+    set_title:
+      title: Peak localization
+    set_labels:
+      x: Tolerance
+      y: Susceptibility

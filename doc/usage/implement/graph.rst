@@ -56,7 +56,7 @@ Here ``cfg["my_graph"]`` points to the relevant configuration entry from the mod
         parallel: False
         self_edges: False
 
-The ``model`` key tells Utopia which graph generation algorithm you wish to use, for which there are several currently available options. Each model key requires its own parameters for the graph generation algorithm – see :ref:`below <graph_gen_functions>` for more details.
+The ``Model`` key tells Utopia which graph generation algorithm you wish to use, for which there are several currently available options. Each model key requires its own parameters for the graph generation algorithm – see :ref:`below <graph_gen_functions>` for more details.
 
 .. note::
 
@@ -509,16 +509,16 @@ then you need to *pass a* `dynamic property map <https://www.boost.org/doc/libs/
   boost::dynamic_properties pmaps(boost::ignore_other_properties);
   // Like this, it would simply ignore all properties in the file.
   // So now add a reference to the built-in or bundled weight as a source
-  // for the weight pmap. To load to the bundle's `weight`, use:
+  // for the weight pmap. To load to the bundle's ``weight``, use:
 
   pmaps.property("weight", boost::get(&EdgeState::weight, g));
-  // To load to boost's built_in `edge_weight`, use:
+  // To load to boost's built_in ``edge_weight``, use:
   // pmaps.property("weight", boost::get(boost::edge_weight, g));
   // You can also, if you want, load more edge properties, like:
 
   pmaps.property("some_int", boost::get(&EdgeState::some_int, g));
 
-  // Now load the graph, either via `create_graph`, or `load_graph`
+  // Now load the graph, either via ``create_graph``, or ``load_graph``
   g = Graph::create_graph<GraphType>(_cfg["create_graph"], *_rng, pmaps)
   // g = GraphLoad::load_graph<GraphType>(_cfg_cg["load_from_file"], pmaps);
   // where you need to pass the corresponding config nodes.

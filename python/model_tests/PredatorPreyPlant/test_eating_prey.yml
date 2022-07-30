@@ -27,5 +27,6 @@ parameter_space:
       cost_of_living: 1.
       repro_cost: 2.
       resource_intake: 2.0
+      repro_resource_requ: 2.0
     plant:
       growth_model: none

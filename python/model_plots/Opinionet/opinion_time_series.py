@@ -1,21 +1,22 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import numpy as np
 
-from utopya.plotting import is_plot_func, PlotHelper
+from utopya.eval import PlotHelper, is_plot_func
 
 # -----------------------------------------------------------------------------
 
-@is_plot_func(use_dag=True, required_dag_tags=['opinion', 'opinion_space'])
+
+@is_plot_func(use_dag=True, required_dag_tags=["opinion", "opinion_space"])
 def opinion_time_series(
     *,
     hlpr: PlotHelper,
     data: dict,
     bins: int = 100,
-    opinion_range = None,
+    opinion_range=None,
     representatives: dict = None,
     density_kwargs: dict = None,
-    hist_kwargs: dict = None
+    hist_kwargs: dict = None,
 ):
     """Plots the temporal development of the opinion density and the final
     opinion distribution.
@@ -36,19 +37,19 @@ def opinion_time_series(
         density_kwargs (dict, optional): Passed to plt.imshow (density plot)
         hist_kwargs (dict, optional): Passed to plt.hist (final distribution)
     """
-    opinions = data['opinion']
+    opinions = data["opinion"]
     final_opinions = opinions.isel(time=-1)
-    cfg_op_space = data['opinion_space']
+    cfg_op_space = data["opinion_space"]
     if opinion_range is not None:
         opinion_range = opinion_range
     else:
-        if (cfg_op_space['type']) == 'continuous':
-            opinion_range = cfg_op_space['interval']
-        elif (cfg_op_space['type']) == 'discrete':
-            opinion_range = tuple((0, cfg_op_space['num_opinions']))
+        if (cfg_op_space["type"]) == "continuous":
+            opinion_range = cfg_op_space["interval"]
+        elif (cfg_op_space["type"]) == "discrete":
+            opinion_range = tuple((0, cfg_op_space["num_opinions"]))
 
-    num_vertices = opinions.coords['vertex_idx'].size
-    time = opinions.coords['time'].data
+    num_vertices = opinions.coords["vertex_idx"].size
+    time = opinions.coords["time"].data
 
     density_kwargs = density_kwargs if density_kwargs else {}
     hist_kwargs = hist_kwargs if hist_kwargs else {}
@@ -59,14 +60,12 @@ def opinion_time_series(
     densities = np.empty((bins, len(time)))
 
     for i in range(len(time)):
-        densities[:,i] = np.histogram(
+        densities[:, i] = np.histogram(
             opinions.isel(time=i), range=opinion_range, bins=bins
         )[0]
 
     density_plot = hlpr.ax.imshow(
-        densities,
-        extent=[time[0], time[-1], *opinion_range],
-        **density_kwargs
+        densities, extent=[time[0], time[-1], *opinion_range], **density_kwargs
     )
 
     hlpr.provide_defaults("set_limits", y=opinion_range)
@@ -79,12 +78,12 @@ def opinion_time_series(
     # The representative vertices are chosen based on the final opinion groups.
     # Reps are first picked for the largest opinion groups.
 
-    if (rep_kwargs.get('enabled', False)):
+    if rep_kwargs.get("enabled", False):
 
-        max_reps = rep_kwargs.get('max_reps', num_vertices)
-        rep_threshold = rep_kwargs.get('rep_threshold', 1)
+        max_reps = rep_kwargs.get("max_reps", num_vertices)
+        rep_threshold = rep_kwargs.get("rep_threshold", 1)
 
-        reps = [] # store the vertex ids of the representatives here
+        reps = []  # store the vertex ids of the representatives here
 
         hist, bin_edges = np.histogram(
             final_opinions, range=opinion_range, bins=bins
@@ -107,21 +106,22 @@ def opinion_time_series(
             for v in rand_vertex_idxs:
                 if (
                     final_opinions.isel(vertex_idx=v) > b
-                    and final_opinions.isel(vertex_idx=v) < b+1./bins
+                    and final_opinions.isel(vertex_idx=v) < b + 1.0 / bins
                 ):
                     reps.append(v)
                     break
 
         # If more reps available, add a second rep for larger opinion groups
-        if (len(reps) < max_reps):
+        if len(reps) < max_reps:
             for h, b, n in zip(
-                hist_sorted, bins_to_rep, range(max_reps-len(reps))
+                hist_sorted, bins_to_rep, range(max_reps - len(reps))
             ):
-                if (h > rep_threshold):
+                if h > rep_threshold:
                     for v in rand_vertex_idxs:
                         if (
                             final_opinions.isel(vertex_idx=v) > b
-                            and final_opinions.isel(vertex_idx=v) < b+1./bins
+                            and final_opinions.isel(vertex_idx=v)
+                            < b + 1.0 / bins
                             and v not in reps
                         ):
                             reps.append(v)

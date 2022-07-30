@@ -1,10 +1,91 @@
-# Base configs for PredatorPreyPlant model plots
+# Base plot configuration pool for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file.
+#
+# TODO Reduce duplicates from PredatorPrey model
+#
 ---
+.variables:
+  base_path: &base_path data/PredatorPreyPlant
+
+  colors: &colors
+    empty: &color_empty white
+    predator: &color_predator '#FFCC66'
+    prey: &color_prey '#006666'
+    plant: &color_plant '#339999'
+    both: &color_both '#CC3333'
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
 # -- Phase space plots --------------------------------------------------------
 phase_space:
-  based_on: .time_series.phase_space
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter
 
-  model_name: PredatorPreyPlant
+  select: &pred_prey_plant_density
+    predator_density:
+      path: predator
+      transform:
+        - .mean: [ !dag_prev , [ 'x', 'y' ] ]
+    prey_density:
+      path: prey
+      transform:
+        - .mean: [ !dag_prev , [ 'x', 'y' ] ]
+    plant_density:
+      path: plant
+      transform:
+        - .mean: [ !dag_prev , [ 'x', 'y' ] ]
+
+  transform:
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          predator_density: !dag_tag predator_density
+          prey_density: !dag_tag prey_density
+          plant_density: !dag_tag plant_density
+      tag: data
 
   # How to color-code the time axis
   cmap: viridis_r
@@ -12,83 +93,193 @@ phase_space:
   # All below: passed on to plt.scatter
   s: 3.5
 
-
-# -- Time series --------------------------------------------------------------
+# -- Time series of the predator and prey densities ---------------------------
 species_densities:
-  based_on: .time_series.densities
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+
+  select:
+    <<: *pred_prey_plant_density
+
+  transform:
+    - xr.Dataset:
+        data_vars:
+          predator: !dag_tag predator_density
+          prey: !dag_tag prey_density
+    - .to_array: [!dag_prev ]
+      kwargs:
+        dim: kind
+      tag: data
+
+  hue: kind
 
   helpers:
-    set_limits:
-      x: [0, max]
     set_labels:
       y: Density $[1/A]$
     set_title:
-      title: Densities
+      title: Predator and Prey Densities
+    set_legend:
+      title: Species
 
-  model_name: PredatorPreyPlant
-
-  # Which data to calculate the densities from
-  to_plot:
-    predator:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
-      label: Predator
-
-    prey:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
-      label: Prey
-
-    plant:
-      mean_of: [x, y]
-      preprocess:
-        - create_mask: [==, 1]
-      label: Plant
+  style: &color_cycler
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{colors[predator]:}', '{colors[prey]:}'])"
+      colors: *colors
 
 # -- Time series of the predator and prey resources ---------------------------
 mean_resources:
-  based_on: .basic_uni.lineplots
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+
+  select:
+    resource_predator:
+      path: resource_predator
+      transform:
+        - .where: [ !dag_prev ge 1, !dag_prev , 0]  # TODO Syntax ok???
+        - .mean: [!dag_prev , ['x', 'y']]
+    resource_prey:
+      path: resource_prey
+      transform:
+        - .where: [ !dag_prev ge 1, !dag_prev , 0]
+        - .mean: [!dag_prev , ['x', 'y']]
+
+  transform:
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          predator: !dag_tag resource_predator
+          prey: !dag_tag resource_prey
+    - .to_array: [ !dag_prev ]
+      kwargs:
+        dim: kind
+      tag: data
+
+  x: time
+  hue: kind
 
   helpers:
     set_limits:
-      x: [0, max]
       y: [0, ~]
     set_labels:
       y: Resource Density $[1/A]$
     set_title:
       title: Mean Total Resources
+    set_legend:
+      title: Species
 
-  model_name: PredatorPreyPlant
+  style:
+    <<: *color_cycler
 
-  # Take average only of cells with resources >= 1
+# --- Animation of the spatial resource development of prey and predators -----
+resources:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    resource_predator: resource_predator
+    resource_prey: resource_prey
+
+  # Select the properties to plot
   to_plot:
     resource_predator:
-      path_to_data: resource_predator
-      transform_data:
-        - where: [ge, 1]
-        - mean: [x, y]
-      label: Predator
+      title: Predator resources
+      limits: [0, max]   # Should be adapted to the resource_max model parameter
+      cmap: YlGn
 
     resource_prey:
-      path_to_data: resource_prey
-      transform_data:
-        - where: [ge, 1]
-        - mean: [x, y]
-      label: Prey
+      title: Prey resources
+      limits: [0, max]   # Should be adapted to the resource_max model parameter
+      cmap: YlGn
 
 
-# -- A grid animation that shows combined predator and prey positions ---------
-combined_grid_animation_frames: &combined_grid_anim
-  based_on: .ca.state.anim_frames
+# --- Animation of the spatial development of prey and predator populations ---
+population:
+  based_on:
+    - .creator.universe
+    - .plot.ca
 
-  model_name: PredatorPreyPlant
+  select:
+    predator:
+      path: predator
+      transform: [.data]  # resolve GridDC to have an xr-native object
+    prey:
+      path: prey
+      transform: [.data]  # resolve GridDC to have an xr-native object
 
-  # Use the custom plotting function
-  module: model_plots.PredatorPreyPlant
-  plot_func: combine_pred_and_prey
+  transform:
+    # Use base-2 encoding to denote whether a cell is empty, contains only a
+    # prey, only a predator or both:
+    - mul: [!dag_tag predator, 2]
+    - add: [!dag_prev , !dag_tag prey]
+      tag: combined
 
-combined_grid_animation_ffmpeg:
-  <<: *combined_grid_anim
-  based_on: .ca.state.anim_ffmpeg
+  to_plot:
+    combined:
+      title: Predator & Prey positions
+      limits: [0, 3]
+      cmap:
+        empty: *color_empty         # 0
+        prey: *color_prey           # 1
+        predator: *color_predator   # 2
+        both: *color_both           # 3
+
+
+# --- More detailed animation: prey only, combined, predator only -------------
+population_detailed:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+  select:
+    predator:
+      path: predator
+      transform: [.data]  # resolve GridDC to have an xr-native object
+    prey:
+      path: prey
+      transform: [.data]  # resolve GridDC to have an xr-native object
+    plant:
+      path: plant
+      transform: [ .data ]  # resolve GridDC to have an xr-native object
+
+  transform:
+    # Use base-2 encoding to denote whether a cell is empty or contains both
+    - mul: [ !dag_tag predator, !dag_tag prey ]
+    - .assign_attrs: [!dag_prev , {'grid_structure': 'square'}]
+      tag: combined
+
+  to_plot:
+    predator:
+      title: Predator
+      limits: [0, 1]
+      cmap:
+        empty: *color_empty
+        predator: *color_predator
+      draw_cbar: false
+
+    prey:
+      title: Prey
+      limits: [0, 1]
+      cmap:
+        empty: *color_empty
+        prey: *color_prey
+      draw_cbar: false
+
+    combined:
+      title: Predator & Prey
+      limits: [0, 1]
+      cmap:
+        empty: *color_empty
+        both: *color_both
+      draw_cbar: false
+
+    plant:
+      title: Plant
+      limits: [0, 1]
+      cmap:
+        empty: *color_empty
+        both: *color_plant
+      draw_cbar: false

@@ -1,19 +1,29 @@
+.. _dataio_DataManager:
+
 Utopia Datamanager — How to
 ===========================
 
-This guide shows you how to set up your model to use the Datamanager layer of the
-Utopia data-IO module.
+This guide shows you how to set up your model to use the ``DataManager`` layer of the Utopia Data I/O module.
 
-.. contents:: Contents
+
+.. contents::
     :local:
     :depth: 2
 
+.. note::
 
-.. note:: If you just want to know what to do to get your model up and running
-          with the datamanager, jump to the `Usage` section. The `Overview` and
-          `Structure` sections are meant as a supplement for developers, or for
-          the curious, but the information they contain is not needed for
-          using the datamanager.
+    If you just want to know what to do to get your model up and running with the datamanager, jump to the :ref:`dataio_DataManager_usage` section.
+    The :ref:`dataio_DataManager_overview` and :ref:`dataio_DataManager_structure` sections are meant as a supplement for developers, or for the curious, but the information they contain is not needed for *using* the datamanager.
+
+.. hint::
+
+    For the ``DataManager`` C++ documentation, have a look `here <../../../doxygen/html/group___data_manager.html>`__.
+
+.. note::
+
+    This page is about the Utopia C++ library's ``DataManager``, which is something else than the :ref:`object with the same name in the frontend <utopya_data_manager>`.
+
+.. _dataio_DataManager_overview:
 
 Overview
 --------
@@ -53,8 +63,13 @@ orchestrate their execution. It therefore links a source of data to a target,
 and adds some processing capabilities inbetween; it is thus a
 `C++ stream <https://en.cppreference.com/w/cpp/io>`_.
 
-As a side note: the execution process can be customized too!
+.. admonition:: Side Note
 
+    The execution process can be customized too!
+
+
+
+.. _dataio_DataManager_structure:
 
 Structure
 ---------
@@ -64,7 +79,7 @@ parts:
 
 * The ``DataManager`` class, which manages ``WriteTasks``. This class is
   indepenent of HDF5, hence could be used with your favorite csv-library or some
-  other binary format like `NetCDF <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html>`_,
+  other binary format like `NetCDF <https://en.wikipedia.org/wiki/NetCDF>`_,
   as long as you adhere to the task structure the entire module is built
   around.
 
@@ -151,21 +166,17 @@ Here, the Utopia and HDF5 specifics come in. The defaults provide types and
 classes needed for the usage of the datamanager with an Utopia model.
 First, we need types for the five functions a ``WriteTask`` holds.
 
-* ``DefaultBaseGroupBuilder``: a function which gets a reference to an `HDFGroup` as input and returns another `HDFGroup` as output.
+* ``DefaultBaseGroupBuilder``: a function which gets a reference to an ``HDFGroup`` as input and returns another ``HDFGroup`` as output.
 
-* ``DefaultDataWriter``: a function which gets a reference to an `HDFDataset`
-  and a reference to the model as input and returns nothing.
+* ``DefaultDataWriter``: a function which gets a reference to an ``HDFDataset`` and a reference to the model as input and returns nothing.
 
-* ``DefaultBuilder``: a function which gets a reference to an `HDFGroup` and a
-  reference to the model as input and returns a new `HDFDataset`.
+* ``DefaultBuilder``: a function which gets a reference to an ``HDFGroup`` and a reference to the model as input and returns a new ``HDFDataset``.
 
-* ``DefaultAttributeWriterGroup``: a function which gets a reference to an
-  `HDFGroup` and a reference to the model, and returns nothing.
+* ``DefaultAttributeWriterGroup``: a function which gets a reference to an ``HDFGroup`` and a reference to the model, and returns nothing.
 
-* ``DefaultAttributeWriterDataset``: a function which gets an `HDFDataset` and a
-  reference to the model as input and returns nothing.
+* ``DefaultAttributeWriterDataset``: a function which gets an ``HDFDataset`` and a reference to the model as input and returns nothing.
 
-All of these are implemented as `std::function` so that we can use (generic)
+All of these are implemented as ``std::function`` so that we can use (generic)
 lambdas to supply them:
 
 .. code-block:: c++
@@ -194,6 +205,8 @@ to describe here.
 Refer to the C++ documentation if you want to know exactly what is
 going on.
 
+.. _data_mngr_default_triggers_and_deciders:
+
 Default Triggers and Deciders
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Of prime importance are the defaults for the triggers and the deciders. These
@@ -207,26 +220,19 @@ The following default deciders are provided:
 
 ``IntervalDecider``
 """""""""""""""""""
-
-For an interval ``[start, stop, step]`` the decider returns true exactly when
-for model time ``t`` it holds that ``(start <= t < stop) && t%step == 0``. The
-default value for ``step`` is 1. If model time is in the foremost of these
-intervals, it returns true every ``step``-th time, else it returns false, and if
-model time hits `stop`, it removes the foremost interval of the list. It
-continues this until either the model has run out or its list of intervals
-becomes empty. Note that the ``start`` of an interval must be larger or equal to
-``stop`` of the previous interval.
+For an interval ``[start, stop, step]`` the decider returns true exactly when for model time ``t`` it holds that ``(start <= t < stop) && t%step == 0``.
+The default value for ``step`` is 1.
+If model time is in the foremost of these intervals, it returns true every ``step``-th time, else it returns false, and if model time hits ``stop``, it removes the foremost interval of the list.
+It continues this until either the model has run out or its list of intervals becomes empty.
+Note that the ``start`` of an interval must be larger or equal to ``stop`` of the previous interval.
 
 ``OnceDecider``
 """""""""""""""
-
 This returns true if model time is equal to the value it holds, otherwise it returns false.
 
 ``AlwaysDecider``
 """""""""""""""""
-
 This always returns true.
-
 
 These deciders are stored in a global map called ``default_decidertypes``,
 which looks like this:
@@ -246,6 +252,10 @@ This is also used for triggers.
 
 The factories are left out here for brevity, they are only needed for
 convenience and model integration.
+
+
+
+.. _dataio_DataManager_usage:
 
 Usage
 -----
@@ -345,6 +355,8 @@ You have two choices:
     .. code-block:: c++
 
         Model model(name, parent, std::make_tuple(args1, args2, ...));
+
+.. _data_mngr_custom_deciders:
 
 How to use custom deciders or triggers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -533,12 +545,11 @@ has three subnodes.
 
 Deciders
 """"""""
-
 This node has an arbitrary number of subnodes which represent the name of
 a decider. Below this comes the name of the type of the decider, i.e., the
 name under which it is stored in the deciders dictionary presented in
-`Default Triggers and Deciders` or discussed under
-`How to use custom deciders or triggers`.
+:ref:`data_mngr_default_triggers_and_deciders` or discussed under
+:ref:`data_mngr_custom_deciders`.
 After this, a node  named "args" follows, which contains the arguments for the
 deciders you want.
 The default deciders and their respective arguments are listed in the
@@ -580,8 +591,7 @@ For instance, the deciders node could look like this:
         type: always
 
 
-If you have added a custom decider as described under
-`How to use custom deciders or triggers`, you can add its config node in the same way:
+If you have added a custom decider as described under :ref:`data_mngr_custom_deciders`, you can add its config node in the same way:
 
   .. code-block:: yaml
 

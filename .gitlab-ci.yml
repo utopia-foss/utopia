@@ -1,7 +1,19 @@
 # Continuous Integration and Deployment of Utopia Framework Repository
 ---
 # ++ Pipeline preparations ++++++++++++++++++++++++++++++++++++++++++++++++++++
+stages:
+  - setup     # set up the docker base image
+  - build     # build utopia and all tests
+  - check     # carries out static checks
+  - test      # carry out tests
+  - docs      # build the documentation (requires build stage artifacts)
+  - deploy    # deploy documentation; build and deploy docker image (on master)
+
+
 variables:
+  # Need to clone submodules as well
+  GIT_SUBMODULE_STRATEGY: recursive
+
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
   BASE_IMAGE_UBUNTU_VERSION: focal  # NOTE Adjust upon new Ubuntu Release
@@ -41,12 +53,18 @@ variables:
   # The GitLab Pages where artifacts can be shown
   PAGES_URL: https://utopia-project.gitlab.io/-/utopia
 
+  # Variables that control whether certain jobs are executed.
+  # These can be overwritten via the GitLab CI/CD interface.
+  UPDATE_UTOPIA_BASE_IMAGE: "false"
+  DEPLOY_DOCKER_IMAGE: "false"
+  DEPLOY_DOCS: "false"
 
-stages:
-  - setup     # (on master) set up the docker base image
-  - build     # build utopia and all tests
-  - test      # carry out tests
-  - deploy    # deploy documentation; build and deploy docker image (on master)
+
+# Run pipelines on tags and branches
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
 
 
 # As base image for the jobs, use the Utopia image created in the setup stage
@@ -73,7 +91,7 @@ image: ${BASE_IMAGE}
     expire_in: 3 hours
 
 
-# Add cobertura coverage report visualization for MRs
+# Add coverage report visualization for MRs
 # Docs: https://docs.gitlab.com/ee/user/project/merge_requests/test_coverage_visualization.html
 # Reports are generated from multiple jobs and is then merged by GitLab
 .coverage_report:
@@ -97,7 +115,6 @@ image: ${BASE_IMAGE}
     - $DOCKER_HUB_LOGIN
 
 
-
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # -- Setup stage --------------------------------------------------------------
 # This stage takes care to build the utopia base testing image
@@ -105,9 +122,12 @@ image: ${BASE_IMAGE}
 setup:utopia-base:
   extends: .dind
   stage: setup
-  only:
-    - master
-    - web
+  rules:
+    - if: '$UPDATE_UTOPIA_BASE_IMAGE == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   script:
     - docker build -f docker/utopia-base.dockerfile
                    -t ${BASE_IMAGE}
@@ -119,36 +139,8 @@ setup:utopia-base:
 
 
 # -- Build stage --------------------------------------------------------------
-# In this stage, the tests, models, and documentation is built
-# The artifacts of the tests and models jobs are needed in the test stage
-
-# Build the documentation and expose it as a review environment
-build:docs:
-  stage: build
-  allow_failure: true
-  script:
-    - mkdir build && cd build
-    - cmake ..
-    - make doc
-  after_script:
-    # Append the error log such that it's more convenient to read in the CI log
-    - echo "-------- Errors emitted during building of documentation --------"
-    - cat $CI_PROJECT_DIR/build/doc/build_errors.log || true
-  artifacts:
-    name: "$CI_JOB_NAME"
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/build/doc
-      - $CI_PROJECT_DIR/build/doc/build_errors.log
-    expire_in: 1 day
-    expose_as: Documentation build - including error log
-
-  environment:
-    name: review/docs/$CI_COMMIT_REF_NAME
-    auto_stop_in: six weeks
-    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
-
-
+# In this stage, the tests and models are built.
+# Artifacts are needed in the next stages.
 
 # Build the core unit tests; artifacts used in test stage
 build:tests_core:
@@ -184,7 +176,7 @@ build:models:
     - make $MAKE_FLAGS_BUILD build_tests_models
   after_script:
     # Copy the frontend configuration to the project dir such that it is part
-    # of the artifacts and can be re-used in the test stages
+    # of the artifacts and can be re-used in the test jobs
     - cp -r ~/.config $CI_PROJECT_DIR/
 
 
@@ -201,13 +193,16 @@ build:debug:
     - cmake
         -DCMAKE_BUILD_TYPE=Debug
       ..
+    #
     # Build all the tests
     - make $MAKE_FLAGS_BUILD build_tests_core
     - make $MAKE_FLAGS_BUILD build_tests_dataio
     - make $MAKE_FLAGS_BUILD build_tests_models
+    #
     # Test that additional convenience targets exist
     - make $MAKE_FLAGS_BUILD build_tests_backend
     - make $MAKE_FLAGS_BUILD build_tests_all
+    #
     # Build all the models
     - make $MAKE_FLAGS_BUILD all
 
@@ -219,23 +214,9 @@ build:debug-clang:
     CC: clang
     CXX: clang++
     CXXFLAGS: -Werror
-  script:
-    - mkdir build && cd build
-    - cmake
-        -DCMAKE_BUILD_TYPE=Debug
-      ..
-    # Build all the tests
-    - make $MAKE_FLAGS_BUILD build_tests_core
-    - make $MAKE_FLAGS_BUILD build_tests_dataio
-    - make $MAKE_FLAGS_BUILD build_tests_models
-    # Test that additional convenience targets exist
-    - make $MAKE_FLAGS_BUILD build_tests_backend
-    - make $MAKE_FLAGS_BUILD build_tests_all
-    # Build all the models
-    - make $MAKE_FLAGS_BUILD all
 
 
-# Build for installation tests
+# Build for installation tests using Release mode
 build:install:
   stage: build
   extends:
@@ -244,7 +225,7 @@ build:install:
     name: "$CI_JOB_NAME"
     paths:
       - $CI_PROJECT_DIR/build
-      - $CI_PROJECT_DIR/install # installation directory
+      - $CI_PROJECT_DIR/install  # installation directory
     expire_in: 3 hours
   script:
     - mkdir build && cd build
@@ -252,14 +233,29 @@ build:install:
         -DCMAKE_INSTALL_PREFIX=$CI_PROJECT_DIR/install
         -DCMAKE_BUILD_TYPE=Release
         -DMULTITHREADING=On
+        -DCMAKE_EXPORT_PACKAGE_REGISTRY=On
         ..
     - make $MAKE_FLAGS_BUILD install
-    - cp -r ~/.cmake . # copy the packgage registry
+
+    # Make packgage registry available as artifact
+    - cp -r ~/.cmake .
+
+
+# -- Check stage --------------------------------------------------------------
+
+# Tests pre-commit hooks
+check:hooks:
+  stage: check
+  image: python:3.10
+  needs: []
+  before_script:
+    - pip install pre-commit
+  script:
+    - pre-commit run --all-files --verbose --show-diff-on-failure
 
 
 # -- Test stage ---------------------------------------------------------------
-# Using the artifacts of the build stage, executes tests of core, data I/O,
-# frontend, models, and CLI.
+# Uses artifacts of the build stage to test: backend, models, CLI, installation
 
 # Test the core library
 test:core:
@@ -268,7 +264,7 @@ test:core:
     - .coverage_report
     - .use_multicore_group_runners
   needs:
-    - "build:tests_core"
+    - build:tests_core
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -276,9 +272,10 @@ test:core:
   script:
     - cd build
     - make $MAKE_FLAGS_TEST test_core
-  after_script:  # NOTE: This will always execute, even if the script fails
+  after_script:
+    - $ENTER_UTOPIA_ENV
+
     # Install gcvor
-    - source $CI_PROJECT_DIR/build/activate
     - pip3 install gcovr
     - cd $CI_PROJECT_DIR/build
     - mkdir coverage
@@ -297,7 +294,7 @@ test:core:
     expire_in: 1 week
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/core
+    name: review/coverage/core/$CI_COMMIT_REF_NAME
     auto_stop_in: six weeks
     url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/coverage/report.html
 
@@ -306,7 +303,7 @@ test:core:
 test:dataio:
   extends: test:core
   needs:
-    - "build:tests_dataio"
+    - build:tests_dataio
   variables:
     GCOVR_PATHS:
       --root $CI_PROJECT_DIR
@@ -318,7 +315,7 @@ test:dataio:
     expose_as: Coverage report of DataIO tests
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/dataio
+    name: review/coverage/dataio/$CI_COMMIT_REF_NAME
 
 
 # Test the models via their own tests and via the CLI
@@ -326,7 +323,7 @@ test:models:
   stage: test
   extends: test:core
   needs:
-    - "build:models"
+    - build:models
   variables:
     # Exclude any paths containing 'test', should not count towards coverage
     GCOVR_PATHS:
@@ -349,12 +346,12 @@ test:models:
     - utopia run dummy --debug
     - utopia run CopyMeGraph --debug
     - utopia run CopyMeGrid --debug
-    - utopia run CopyMeBare --debug --no-plot
-    - utopia run HdfBench --sweep --num-seeds 3 --debug
+    - utopia run CopyMeBare --debug --no-eval
+    - utopia run HdfBench --run-mode sweep --num-seeds 3 --debug
 
     # Now the actual models:
     - utopia run ContDisease --debug
-    - utopia run Environment --debug --num-steps 10
+    - utopia run Environment --debug -N 10
     - utopia run ForestFire --debug
     - utopia run GameOfLife --debug
     - utopia run Geomorphology --debug
@@ -367,52 +364,19 @@ test:models:
     - utopia run Vegetation --debug
 
   artifacts:
-    expose_as: Coverage report of Model tests
+    expose_as: Coverage report of model tests
 
   environment:
-    name: review/coverage/$CI_COMMIT_REF_NAME/models
-
-
-# Test the utopya package
-test:utopya:
-  stage: test
-  extends:
-    - .coverage_report
-    - .use_multicore_group_runners
-  needs:
-    - "build:models"
-  before_script:
-    # Make model registry available (from build:models job)
-    - *add_cfg_symlink
-  script:
-    - cd build
-    - make test_utopya
-
-  # In rare cases, this job fails due to race conditions on job executors with
-  # a high load. To cover those cases, simply retry the job ...
-  retry:
-    max: 2
-    when: script_failure
-
-  # Post-process the coverage report for cobertura MR visualization
-  coverage: '/^TOTAL.*?(\d+.?\d*\%)$/'
-  after_script:
-    # Copy the coverage XML file produced by `make test_utopya` into the
-    # expected coverage report directory ...
-    - cd $CI_PROJECT_DIR/build && mkdir coverage
-    - cp $CI_PROJECT_DIR/python/utopya/test/coverage.xml coverage/cobertura.xml
-
-    # Apply patch against: https://gitlab.com/gitlab-org/gitlab/-/issues/217664
-    # … as suggested here: https://forum.gitlab.com/t/enabling-cobertura/36918
-    - sed -i "s=<source>.*</source>=<source>$CI_PROJECT_DIR</source>=g" coverage/cobertura.xml
-    - sed -i "s;filename=\"$CI_PROJECT_DIR/;filename=\";g" coverage/cobertura.xml
+    name: review/coverage/models/$CI_COMMIT_REF_NAME
 
 
 # Test the utopia command line interface
+# NOTE This does not test the full CLI, because that is utopya's job.
+#      This job only makes sure that the most basic commands really work.
 test:cli:
   stage: test
   needs:
-    - "build:models"
+    - build:models
   artifacts:
     name: utopia_output
     paths:
@@ -426,122 +390,85 @@ test:cli:
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
 
-    # Test deployment of user configuration
-    - utopia config user --deploy
-
     # Adjust the user configuration to store to a local directory
     - utopia config user --set paths.out_dir=$CI_PROJECT_DIR/utopia_output --get
 
     # Show which models are available
-    - utopia models
     - utopia models ls --long
 
-    # Test the run command
-    - utopia run dummy
+    # .. Running models .......................................................
+    - utopia run dummy --debug
 
     # Test passing a custom run configuration and performing a sweep
-    - utopia run dummy python/model_tests/dummy/sweep.yml --sweep --note sweep
-
-    # Test setting the number of steps (negative should fail)
-    - utopia run dummy --num-steps 1 --no-plot
-    - if utopia run dummy --num-steps -1; then exit 1; else echo "all good"; fi
-
-    # Test setting the number of seeds (<= 1 should fail)
-    - utopia run dummy --num-seeds 2 --sweep --no-plot --note sweep_via_cli
-    - if utopia run dummy --num-seeds 1; then exit 1; else echo "all good"; fi
-
-    # Test debug mode and setting simulation errors level
-    - utopia run dummy --note debug0 --num-steps 3 --debug
-    - utopia run dummy --note debug1 --num-steps 3 --debug --sim-errors warn
+    - utopia run dummy python/model_tests/dummy/sweep.yml --run-mode sweep --note sweep --debug
 
     # Write start and step
-    - utopia run dummy --note write_sparse --num-steps 5 --write-every 2
-    - utopia run dummy --note write_last --num-steps 5 --write-start 5
+    - utopia run dummy -d --note write_sparse -N 10 --write-every 2 --no-eval
+    - utopia run dummy -d --note write_last -N 10 --write-start 10 --no-eval
+
+    # Select a different run mode
+    - utopia run ForestFire -d --num-seeds=3 --note some_sweep
+    - utopia run ForestFire -d --num-seeds=3 --run-mode single --note no_sweep
 
     # Test using a configuration set to specify run and plots config
-    - utopia run ForestFire --cs universe_example -N 10 --debug
-    - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo "\nFailed as expected"; fi
+    - utopia run ForestFire -d --cs long_run -N 10
+    - if utopia run ForestFire --cs bad_config_set_name; then exit 1; else echo -e "\nFailed as expected"; fi
 
-    # Test the printing of the data tree
-    # NOTE Need to sleep here because the eval directory will already exist
-    - utopia run dummy --full-data-tree
-    - sleep 1.1 && utopia eval dummy --full-data-tree
-    - utopia run dummy --suppress-data-tree
-    - sleep 1.1 && utopia eval dummy --suppress-data-tree
-
-    # Test tree file caching
-    - sleep 1.1 && utopia run dummy --use-data-tree-cache
-    - sleep 1.1 && utopia eval dummy --use-data-tree-cache
-    - sleep 1.1 && utopia eval dummy --use-data-tree-cache
-
-    # Test the plotting capabilities
-    - utopia run dummy --note plt0 --no-plot
+    # .. Evaluation ...........................................................
+    - utopia run dummy --note plt0 --no-eval
     - sleep 1.1 && utopia eval dummy  # should create the corresponding plots
 
-    - utopia run dummy --note plt1
-    - utopia run dummy --note plt2 --plot-only states
-    - utopia run dummy --note plt3
-        --plots-cfg src/utopia/models/dummy/dummy_plots.yml
-    - utopia run dummy --note plt4
-        --update-plots-cfg state_step_1.based_on=states state_step_1.step=1
-    - utopia run dummy --note plt5
-        --update-plots-cfg src/utopia/models/dummy/dummy_plots.yml
-    - utopia run dummy --note plt6 --load-parallel --num-seeds 3 --po states
-
-    # Test the interactive plotting mode, piping mock input to it
-    # None of these should lead to an exit code other than 0
-    - sleep 1.1 && utopia eval --interactive dummy
+    # Interactive
+    - sleep 1.1 && utopia eval -d --interactive dummy
         <<< $'\n--plot-only states\n--plot-only state_mean --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--debug\n--debug --update-plots-cfg state_mean.foo=bar'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--plot-only some_non_existing_plot --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--plot-only some_non_existing_plot --debug'
-    - sleep 1.1 && utopia eval --interactive dummy
+    - sleep 1.1 && utopia eval -d -i dummy
         <<< $'some offending arguments\n--help'
 
-    # Test the setting of parameters and config parameters from CLI
-    - utopia run dummy --set-model-params foo=3 bar=2.0
-    - utopia run dummy --set-params num_steps=3 write_every=2
-    - utopia run dummy --set-cfg parameter_space.seed=23
-
-    # Test run configs with a parameter space of >0 dimensions which is then
-    # reduced to 0 dimensions -- data retrieval and plotting should still work
-    - utopia run ForestFire --debug --num-seeds=3 --note some_sweep
-    - utopia run ForestFire --debug --num-seeds=3 --single --note not_a_sweep
-
-    # Test batch evaluation
-    - utopia batch python/utopya/test/cfg/batch_file.yml --single-worker --debug --note batch-CLI-test
-
-    # Test the model copying, first as a dry run, then for real
-    - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run
-    - utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive
-
-    # Fetching model information
+    # .. Getting model information ............................................
     - utopia models info dummy
     - utopia models info ForestFire
     - utopia models info SEIRD
+
+    # .. Model copying ........................................................
+    # Test the model copying, first as a dry run, then for real
+    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --dry-run
+    - utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes
+
+    # Attempting to copy it again should fail (only in debug mode, files exist)
+    - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --yes --debug; then exit 1; else echo -e "\n\nFailed as expected!"; fi
 
     # Test that it is registered. Note: Does not test building!
     - cd build && cmake ..
     - if utopia models ls | grep -q FooBar; then echo "Found copied FooBar!"; else echo "Could not find copied FooBar model!" && exit 1; fi
 
-    # Attempting to copy it again should fail
-    - if utopia models copy dummy --new-name FooBar --target-project Utopia --non-interactive --dry-run; then exit 1; else echo "\nFailed as expected!"; fi
+    # After registration via cmake, will also fail, even without debug mode
+    # and when doing --dry-run, because the model already exists
+    - if utopia models copy CopyMeGrid --new-name FooBar --target-project Utopia --dry-run --yes; then exit 1; else echo -e "\n\nFailed as expected!"; fi
 
+    # .. Removing model registry entries ......................................
     # Test model registry entry removal interface; do this last, obviously
-    - utopia models rm dummy HdfBench
-    - if utopia run dummy; then exit 1; else echo "\nFailed as expected"; fi
-    - utopia models rm --all
-    - if utopia run SandPile; then exit 1; else echo "\nFailed as expected"; fi
+    - utopia models rm FooBar --all --yes
+
+    - utopia models rm dummy --label added_by_cmake
+    - if utopia run dummy; then exit 1; else echo -e "\nFailed as expected"; fi
+
+    - utopia models rm SEIRD --all --yes
+    - if utopia run SEIRD; then exit 1; else echo -e "\nFailed as expected"; fi
 
 
 # Test if using Utopia in a downstream module works
 test:link_build_tree:
   stage: test
   needs:
-    - "build:install"
+    - build:install
+  dependencies:
+    - build:install
   script:
     # Move the package registry into the user path
     - cd build && cp -r .cmake ~/
@@ -562,28 +489,93 @@ test:link_install_tree:
     # Build downstream module
     - mkdir build-dep && cd build-dep
 
-    # CMake v3.10 is restricted to _DIR, CMake >=v3.14 can use _ROOT
     - cmake
-        -DUtopia_DIR=$CI_PROJECT_DIR/install/lib/cmake/Utopia
         -DUtopia_ROOT=$CI_PROJECT_DIR/install
         ../test/dependency
     - make $MAKE_FLAGS_BUILD all
     - make test
 
 
+
+
+# -- Docs stage ---------------------------------------------------------------
+
+# Build the documentation and expose it as a review environment
+docs:build:
+  stage: docs
+  allow_failure: true
+  when: always
+  extends:
+    - .use_multicore_group_runners
+  needs:
+    - build:models
+  before_script:
+    - cd build
+    - cmake ..
+
+    # Install dependencies and show installation result
+    - pip install -r ../doc/requirements.txt
+    - pip freeze
+  script:
+    # Generate figures and build docs
+    - UTOPIA_DOC_GENERATE_FIGURES=True make doc
+
+    # For testing, do not generate figures again
+    - make sphinx_doctest
+    - make sphinx_linkcheck || true
+    # NOTE linkcheck is not set to fail because there are some links that will
+    #      always lead to a failure (the relative doxygen links for instance)
+  after_script:
+    # Append the error log such that it's more convenient to read in the CI log
+    - echo "-------- Errors emitted during building of documentation --------"
+    - cat $CI_PROJECT_DIR/build/doc/build_errors.log || true
+
+  artifacts: &doc_artifacts
+    name: $CI_JOB_NAME
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/build/doc/
+
+
+
+
+
 # -- Deploy Stage -------------------------------------------------------------
 # Deploy ...
+#   - a documentation review environment, which is meant to *always* be created
+#     even if the build:docs job failed with allow_failure set.
 #   - the documentation by triggering a pipeline in the docs project, which has
 #     the docs.utopia-project.org domain registered with GitLab Pages
 #   - the latest Utopia docker image to Docker Hub: ccees/utopia:latest
 
+
+deploy:docs_review:
+  image: alpine
+  stage: deploy
+  needs:
+    - docs:build
+  when: always
+  script:
+    - echo "Deploying Utopia Docs to review environment ..."
+  artifacts:
+    <<: *doc_artifacts
+  environment:
+    name: review/docs/$CI_COMMIT_REF_NAME
+    auto_stop_in: six weeks
+    url: $PAGES_URL/-/jobs/$CI_JOB_ID/artifacts/build/doc/html/index.html
+
+
 deploy:docs_gitlab_pages:
   image: curlimages/curl:latest
   stage: deploy
-  only:
-    - master@utopia-project/utopia
+  rules:
+    - if: '$DEPLOY_DOCS == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   needs:
-    - job: "build:docs"
+    - job: docs:build
       artifacts: false
   script:
     - curl -X POST -F token=$DOC_DEPLOYMENT_TRIGGER_TOKEN -F ref=master https://gitlab.com/api/v4/projects/25960923/trigger/pipeline
@@ -595,8 +587,12 @@ deploy:docs_gitlab_pages:
 deploy:dockerhub-latest:
   extends: .dind
   stage: deploy
-  only:
-    - master@utopia-project/utopia
+  rules:
+    - if: '$DEPLOY_DOCKER_IMAGE == "true"'
+      when: always
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: always
+    - when: never
   script:
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE

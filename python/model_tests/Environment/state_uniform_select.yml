@@ -55,5 +55,3 @@ parameter_space:
               mode: sample
               generate: always
               num_cells: 4
-
-

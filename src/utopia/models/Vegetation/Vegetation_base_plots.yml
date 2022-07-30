@@ -1,0 +1,98 @@
+# Base plot configuration for the Vegetation model
+---
+.variables:
+  base_path: &base_path  data/Vegetation
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+# Spatial development in the CA
+plant_mass_spatial:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    plant_mass: plant_mass
+
+  to_plot:
+    plant_mass:
+      title: Plant Biomass
+      cmap: Greens
+      limits: [0, 12]
+
+
+# Mean plant mass (and std) over time
+time_series/mean_plant_mass:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.errorbands
+    - .hlpr.kind.time_series
+    - .hlpr.limits.y.from_zero
+
+  select_and_combine:
+    fields:
+      plant_mass_mean:
+        path: plant_mass
+        transform:
+          - .mean: [!dag_prev , [x, y]]
+      plant_mass_std:
+        path: plant_mass
+        transform:
+          - .std: [!dag_prev , [x, y]]
+
+  transform:
+    - xr.Dataset:
+      - mean: !dag_tag plant_mass_mean
+        std: !dag_tag plant_mass_std
+      tag: data
+
+  x: time
+  y: mean
+  yerr: std
+
+  helpers:
+    set_labels:
+      y: Plant Biomass
+      only_label_outer: true

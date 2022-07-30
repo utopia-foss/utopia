@@ -94,14 +94,14 @@ The following data is stored alongside the simulation:
 
 * ``kind``: the :ref:`state of each cell <SEIRD_fundamentals>`:
 
-   * ``0``: ``empty``
-   * ``1``: ``susceptible``
-   * ``2``: ``exposed``
-   * ``3``: ``infected``
-   * ``4``: ``recovered``
-   * ``5``: ``deceased``
-   * ``6``: ``source``, is constantly infectious
-   * ``7``: ``inert``, does not take part in any interaction
+  * ``0``: ``empty``
+  * ``1``: ``susceptible``
+  * ``2``: ``exposed``
+  * ``3``: ``infected``
+  * ``4``: ``recovered``
+  * ``5``: ``deceased``
+  * ``6``: ``source``, is constantly infectious
+  * ``7``: ``inert``, does not take part in any interaction
 
 * ``age``: the age of each cell, reset after a cell turns empty.
 * ``cluster_id``: a number identifying to which cluster a cell belongs; is ``0`` for non-living cells. Recovered cells do not count towards it.
@@ -110,17 +110,17 @@ The following data is stored alongside the simulation:
 * ``densities``: the densities of each of the kind of cells over time; this is a labeled 2D array with the dimensions ``time`` and ``kind``.
 * ``counts``: *cumulative* counters for a number of events, e.g. state transitions. This is a 2D array with the dimensions ``time`` and ``label``, where the latter describes the name of the counted event:
 
-    * ``empty_to_susceptible``, i.e. "birth"
-    * ``living_to_empty``, i.e. "random death"
-    * ``susceptible_to_exposed_contact``, via local contact with a neighbor
-    * ``susceptible_to_exposed_random``, via a random point exposure, controlled by ``p_exposed``
-    * ``susceptible_to_exposed_controlled``, via :ref:`SEIRD_exposure_control`
-    * ``exposed_to_infected``, as controlled by ``p_infected``
-    * ``infected_to_recovered``, as controlled by ``p_recovered``
-    * ``infected_to_deceased``, as controlled by ``p_deceased``
-    * ``recovered_to_susceptible``, which happens when losing immunity, as controlled by ``p_lose_immunity``
-    * ``move_randomly``, as controlled by ``p_move_randomly``
-    * ``move_away_from_infected``, as enabled by ``move_away_from_infected``
+  * ``empty_to_susceptible``, i.e. "birth"
+  * ``living_to_empty``, i.e. "random death"
+  * ``susceptible_to_exposed_contact``, via local contact with a neighbor
+  * ``susceptible_to_exposed_random``, via a random point exposure, controlled by ``p_exposed``
+  * ``susceptible_to_exposed_controlled``, via :ref:`SEIRD_exposure_control`
+  * ``exposed_to_infected``, as controlled by ``p_infected``
+  * ``infected_to_recovered``, as controlled by ``p_recovered``
+  * ``infected_to_deceased``, as controlled by ``p_deceased``
+  * ``recovered_to_susceptible``, which happens when losing immunity, as controlled by ``p_lose_immunity``
+  * ``move_randomly``, as controlled by ``p_move_randomly``
+  * ``move_away_from_infected``, as enabled by ``move_away_from_infected``
 
 .. hint::
 
@@ -155,4 +155,4 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.

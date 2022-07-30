@@ -55,93 +55,102 @@ Follow the `detailed instructions on the corresponding Docker Hub page <https://
 
 Basic Concepts
 --------------
-This section aims to convey the basic concepts of the interactive ``utopya`` interface.
+This section aims to convey the basic concepts of the interactive :py:mod:`utopya` interface.
 
-The ``Model`` class
-^^^^^^^^^^^^^^^^^^^
+The :py:class:`~utopya.model.Model` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Objects of this class are your main tool when working with Utopia interactively.
-When you want to run a certain model, say ``ForestFire``, the first thing to do is to create an instance of the ``Model`` class.
-
-.. code-block:: python
-
-  import utopya
-
-  ffm = utopya.Model(name='ForestFire')
-
-This object now provides an interface to perform one or many simulation runs, load the data, and continue working with it.
-It basically manages the model invocation and loading, and has the same capabilities the CLI has; in fact, the CLI is just a wrapper around the ``Model`` class.
-
-For example, to run a model, you can simply call:
-
-.. code-block:: python
-
-  mv, dm = ffm.create_run_load()
-
-This will create a ``Multiverse`` (see below), run a simulation (here: with the default parameters), and then load the data.
-It returns the ``Multiverse`` object and the corresponding ``DataManager``, for convenience.
-
-.. hint::
-
-  You can perform multiple runs with one single ``Model`` instance, so it suffices to create one such instance for a model in the beginning of the interactive session.
-
-Importantly, the ``Model`` is associated with one specific ``ModelInfoBundle``, which contains all the information that is required to run the selected model.
-By using the ``Model`` class and its interface, you don't need to worry about passing this info bundle around.
-
-For more information on the available interface, have a look at excerpts from its API:
-
-.. autoclass:: utopya.Model
-    :members: info_bundle, create_mv, create_run_load, create_frozen_mv, default_model_cfg
-    :noindex:
-
-    .. automethod:: __init__
-
-
-The ``Multiverse`` class
-^^^^^^^^^^^^^^^^^^^^^^^^
-This class actually carries out the simulation run, i.e. running multiple so-called "universes" (independent simulations with different parameters). Upon completion, it provides the interface to an associated ``DataManager`` and ``PlotManager``, which let you load the data and create plots, respectively. If you want to create a ``Multiverse`` object from your existing ``Model`` object, use the ``Model.create_mv`` method (see above for documentation).
 
 .. note::
 
-  Each ``Multiverse`` can only ``run`` once.
+    The frontend's Python :py:class:`~utopya.model.Model` class should not to be confused with the C++ library's ``Model`` base class.
 
-.. autoclass:: utopya.Multiverse
-    :members: __init__, dm, pm, meta_cfg, run
-    :noindex:
+When you want to run a certain model, say ``ForestFire``, the first thing to do is to create an instance of the :py:class:`~utopya.model.Model` class.
 
-The ``FrozenMultiverse`` class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you have already performed a run and only want to load and work with its data, you don't need a whole ``Multiverse`` with all its simulation capabilities.
+.. testcode:: Model_run_interactively
+
+    import utopya
+
+    ffm = utopya.Model(name="ForestFire")
+
+This object now provides an interface to perform one or many simulation runs, load the data, and continue working with it.
+It basically manages the model invocation and loading, and has the same capabilities the CLI has; in fact, the CLI is just a wrapper around the :py:class:`~utopya.model.Model` class.
+
+For example, to run a model, you can simply call:
+
+.. testcode:: Model_run_interactively
+
+    mv, dm = ffm.create_run_load()
+
+.. testoutput:: Model_run_interactively
+    :hide:
+    :options: +ELLIPSIS
+
+    ... Initialized PseudoParent ...
+
+This will create a :py:class:`~utopya.multiverse.Multiverse` (see below), run a simulation (here: with the default parameters), and then load the data.
+It returns the :py:class:`~utopya.multiverse.Multiverse` object and the corresponding :py:class:`~utopya.eval.datamanager.DataManager`, for convenience.
+
+.. hint::
+
+    You can perform multiple runs with one single :py:class:`~utopya.model.Model` instance, so it suffices to create one such instance for a model in the beginning of your interactive session.
+
+.. note::
+
+    The :py:class:`~utopya.model.Model` is associated with one specific :py:class:`~utopya.model_registry.info_bundle.ModelInfoBundle`, which contains all the information that is required to run the selected model.
+    By using the :py:class:`~utopya.model.Model` class and its interface, you don't need to worry about passing this info bundle around.
+
+For more information on the available interface, have a look at the :py:class:`utopya.model.Model` class and the following methods:
+
+- :py:meth:`~utopya.model.Model.create_mv`
+- :py:meth:`~utopya.model.Model.create_run_load`
+- :py:meth:`~utopya.model.Model.create_frozen_mv`
+- :py:attr:`~utopya.model.Model.info_bundle`
+- :py:attr:`~utopya.model.Model.default_model_cfg`
+
+
+The :py:class:`~utopya.multiverse.Multiverse` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This class actually carries out the simulation run, i.e. running multiple so-called "universes" (independent simulations with different parameters).
+Upon completion, it provides the interface to an associated :py:mod:`utopya` :py:class:`~utopya.eval.datamanager.DataManager` and :py:class:`~utopya.eval.plotmanager.PlotManager`, which let you load the data and create plots, respectively.
+If you want to create a :py:class:`~utopya.multiverse.Multiverse` object from your existing :py:class:`~utopya.model.Model` object, use its :py:meth:`~utopya.model.Model.create_mv` method.
+
+.. note::
+
+    Each :py:class:`~utopya.multiverse.Multiverse` can only invoke its :py:meth:`~utopya.multiverse.Multiverse.run` method once.
+
+
+The :py:class:`~utopya.multiverse.FrozenMultiverse` class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you have already performed a run and only want to load and work with its data, you don't need a whole :py:class:`~utopya.multiverse.Multiverse` with all its simulation capabilities.
 Instead, you want a frozen state of it, after the simulation.
 
-The ``FrozenMultiverse`` is just what you need: it couples to some output directory and then lets you continue working with the ``DataManager`` and ``PlotManager``, just as you would directly after a simulation run.
-After initialization, the API is the same as for the ``Multiverse``.
+The :py:class:`~utopya.multiverse.FrozenMultiverse` is just what you need: it couples to some output directory and then lets you continue working with the :py:class:`~utopya.eval.datamanager.DataManager` and :py:class:`~utopya.eval.plotmanager.PlotManager`, just as you would directly after a simulation run.
+After initialization, the API is the same as for the :py:class:`~utopya.multiverse.Multiverse`.
 
-To create such an instance from the ``Model`` class, use the ``Model.create_frozen_mv`` method (see above for documentation).
-
-.. autoclass:: utopya.multiverse.FrozenMultiverse
-  :members: __init__
-  :noindex:
+To create such an instance from the :py:class:`~utopya.model.Model` class, use the ``Model.create_frozen_mv`` method (see above for documentation).
 
 
-The ``DataManager``
-^^^^^^^^^^^^^^^^^^^
+The :py:class:`~utopya.eval.datamanager.DataManager`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This is the home of all your simulation data for a simulation run.
 It provides a dict-like interface to navigate through the data tree, consisting of data groups (branching points of the tree) and data containers (leaves of the tree).
 
-When created by a multiverse instance, it already has the required default configuration available.
+When created by a :py:class:`~utopya.multiverse.Multiverse` instance, it already has the required default configuration available (``data_manager``  key of the :ref:`meta configuration <feature_meta_config>`).
+The most important methods are implemented in the :py:mod:`dantro.data_mngr` module:
 
-.. autoclass:: utopya.DataManager
-    :members: __init__, load_from_cfg, load
-    :noindex:
+- :py:meth:`~dantro.data_mngr.DataManager.load_from_cfg`
+- :py:meth:`~dantro.data_mngr.DataManager.load`
 
 
-The ``PlotManager``
-^^^^^^^^^^^^^^^^^^^
-The ``PlotManager`` – well, manages the plotting.
+The :py:class:`~utopya.eval.plotmanager.PlotManager`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :py:class:`~utopya.eval.plotmanager.PlotManager` – well, manages the plotting.
 
-.. autoclass:: utopya.plotting.PlotManager
-    :members: __init__, plot, plot_from_cfg
-    :noindex:
+The most important methods are implemented in the :py:mod:`dantro.plot_mngr` module:
+
+- :py:meth:`~dantro.plot_mngr.PlotManager.plot_from_cfg`
+- :py:meth:`~dantro.plot_mngr.PlotManager.plot`
 
 
 
@@ -153,47 +162,48 @@ The simplest way was already demonstrated above. Let's do something more elabora
 
 .. code-block:: python
 
-  # Run the default configuration for 100 steps
-  mv = ffm.create_mv(parameter_space=dict(num_steps=100))
-  mv.run()
+    # Run the default configuration for 100 steps
+    mv = ffm.create_mv(parameter_space=dict(num_steps=100))
+    mv.run()
 
-  # Use a run configuration file, but update it
-  mv = ffm.create_mv(run_cfg_path='/absolute/path/to/run_cfg.yml',
-                     parameter_space=dict(seed=42, write_every=7))
-  mv.run_sweep()
+    # Use a run configuration file, but update it
+    mv = ffm.create_mv(run_cfg_path='/absolute/path/to/run_cfg.yml',
+                       parameter_space=dict(seed=42, write_every=7))
+    mv.run_sweep()
 
 With Utopia working so heavily with configuration files, it would be tedious to specify an absolute path for configuration files.
-Instead, ``create_mv`` also allows the ``from_cfg`` argument, where a path can be given *relative* to a base directory. The base directory needs to be specified at initialization of the ``Model`` instance:
+Instead, :py:meth:`~utopya.model.Model.create_mv` also allows the ``from_cfg`` argument, where a path can be given *relative* to a base directory.
+The base directory needs to be specified at initialization of the :py:class:`~utopya.model.Model` instance:
 
 .. code-block:: python
 
-  import os
+    import os
 
-  # An FFM model instance that has the current working directory as its base
-  ffm = utopya.Model(name='ForestFire', base_dir=os.getcwd())
+    # An FFM model instance that has the current working directory as its base
+    ffm = utopya.Model(name='ForestFire', base_dir=os.getcwd())
 
-  mv = ffm.create_mv(from_cfg="some/run_cfg.yml")
-  mv.run_sweep()
+    mv = ffm.create_mv(from_cfg="some/run_cfg.yml")
+    mv.run_sweep()
 
 .. note::
 
-  Although work happens interactively, the data is still stored in the regular output directory.
-  You don't have to worry that the simulation data won't be saved.
+    Although work happens interactively, the data is still stored in the regular output directory.
+    You don't have to worry that the simulation data won't be saved.
 
-  If, on the other hand, you do not *want* the simulation data saved, the ``use_tmpdir`` argument might be of interest to you (see the ``utopya.model`` module documentation in the `utopya API <../../api/utopya/utopya.html>`_ ).
-  The argument is available on all methods that produce a ``Multiverse`` and leads to the creation of a temporary directory, which is automatically deleted when the ``Model`` instance goes out of scope.
-  The default for this can be set when initializing the ``Model``, but can also be specified separately for each call.
+    If, on the other hand, you do not *want* the simulation data saved, the ``use_tmpdir`` argument might be of interest to you, see :py:class:`~utopya.model.Model`.
+    The argument is available on all methods that produce a :py:class:`~utopya.multiverse.Multiverse` and leads to the creation of a temporary directory, which is automatically deleted when the :py:class:`~utopya.model.Model` instance goes out of scope.
+    The default for this can be set when initializing the :py:class:`~utopya.model.Model`, but can also be specified separately for each call.
 
 Working with an already finished run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you want to work with an already executed simulation, you will need to instantiate a ``FrozenMultiverse``.
-You can do so via ``Model.create_frozen_mv``, which then returns such an object.
+If you want to work with an already executed simulation, you will need to instantiate a :py:class:`~utopya.multiverse.FrozenMultiverse`.
+You can do so via :py:meth:`~utopya.model.Model.create_frozen_mv`, which then returns such an object.
 
-If you do not specify any other parameters, this will inspect the output directory of the chosen model and couple to the run with the most recent timestamp (see ``FrozenMultiverse.__init__`` for available arguments.)
+If you do not specify any other parameters, this will inspect the output directory of the chosen model and couple to the run with the most recent timestamp (see :py:class:`~utopya.multiverse.FrozenMultiverse` for available arguments).
 
 Loading and navigating the data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-After instantiating some multiverse object, you can grab its ``DataManager`` and ask it to load the data from the output directory:
+After instantiating some multiverse object, you can grab its :py:class:`~utopya.eval.datamanager.DataManager` and ask it to load the data from the output directory:
 
 .. code-block:: python
 
@@ -204,10 +214,10 @@ After instantiating some multiverse object, you can grab its ``DataManager`` and
     dm = mv.dm
     dm.load_from_cfg(print_tree=True)
 
-The ``DataManager`` instance provides a dict-like interface with which you can navigate through the tree and access the simulation data as well as all the configuration files.
+The :py:class:`~utopya.eval.datamanager.DataManager` instance provides a dict-like interface with which you can navigate through the tree and access the simulation data as well as all the configuration files.
 
-For example, all the multiverse data is stored under the ``multiverse`` path.
-To perform an operation for each of the simulated universes, you can just iterate over the ``MultiverseGroup``:
+For example, all the multiverse data is stored under the :py:class:`~utopya.multiverse.Multiverse` path.
+To perform an operation for each of the simulated universes, you can just iterate over the :py:class:`~utopya.eval.groups.MultiverseGroup`:
 
 .. code-block:: python
 
@@ -223,23 +233,23 @@ To perform an operation for each of the simulated universes, you can just iterat
 
 .. note::
 
-  Utopia requires working with multi-dimensional data. As numpy can be very confusing in this regard, the `xarray <http://xarray.pydata.org/en/stable/>`_ package is used for almost all of the data handling.
-  We highly recommended having a look at how to work with labelled dimensions and coordinates; it will make your life much easier!
+    Utopia requires working with multi-dimensional data.
+    As numpy can be very confusing in this regard, the `xarray <http://xarray.pydata.org/en/stable/>`_ package is used for almost all of the data handling.
+    We highly recommended having a look at how to work with labelled dimensions and coordinates; it will make your life much easier!
 
 
 Plotting
 ^^^^^^^^
-To create plots, access the ``PlotManager`` via the ``pm`` property of your current multiverse object.
+To create plots, access the :py:class:`~utopya.eval.plotmanager.PlotManager` via the ``pm`` property of your current :py:class:`~utopya.multiverse.Multiverse` object.
 
-You can then create the default plots using the ``plot_from_cfg`` method. To create a single plot, use the ``plot`` method instead.
+You can then create the default plots using the :py:meth:`~dantro.plot_mngr.PlotManager.plot_from_cfg` method.
+To create a single plot, use the :py:meth:`~dantro.plot_mngr.PlotManager.plot` method instead.
 See the API reference for more information.
 
 .. note::
 
-  The ``PlotManager`` will store the plot directly in the output directory. There currently is no easy option to view the plot directly.
+    The :py:class:`~utopya.eval.plotmanager.PlotManager` will store the plot directly in the output directory. There currently is no easy option to view the plot directly.
 
 .. todo::
 
-  Expand this section.
-
-
+    Expand this section.

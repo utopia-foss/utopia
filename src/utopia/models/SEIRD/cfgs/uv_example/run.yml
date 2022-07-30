@@ -1,9 +1,0 @@
-# Example universe run for the SEIRD model
----
-parameter_space:
-  num_steps: 365  # Simulate for one year 
-
-  SEIRD:
-    cell_manager:
-      grid:
-        resolution: 512

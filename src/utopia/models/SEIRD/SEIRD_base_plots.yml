@@ -1,69 +1,211 @@
 # Base configuration for SEIRD model plots
 ---
-# -- Shared Definitions -------------------------------------------------------
-_cmap: &cmap
-  empty: &color_empty darkkhaki
-  susceptible: &color_susceptible forestgreen
-  exposed: &color_exposed darkorange
-  infected: &color_infected firebrick
-  recovered: &color_recovered slategray
-  deceased: &color_deceased black
-  source: &color_source maroon
-  inert: &color_inert moccasin
+_variables:
+  base_path: &base_path  data/SEIRD
 
-_style:
-  constrained_layout: &constrained_layout
-    figure.constrained_layout.use: true
-
-# .. Property cycles ..........................................................
-# Using these as base configurations allows to have consistent kind colors
-style.prop_cycle.seird:
-  style:
-    axes.prop_cycle: !format
-      fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
-      # NOTE The fstr has to match the order of the compute_for_kinds argument
-      #      of the SEIRD.compute_age_distribution operation
-      cmap: *cmap
-
-style.prop_cycle.deceased:
-  style:
-    axes.prop_cycle: !format
-      fstr: "cycler('color', ['{cmap[deceased]:}'])"
-      cmap: *cmap
-
-style.prop_cycle.default:
-  style:
-    axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
-
-# default animation configurations
-animation:
-  animation:
-    enabled: true
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 300
-      ffmpeg:
-        init:
-          fps: 8
-        saving:
-          dpi: 300
-    writer: ffmpeg
-  file_ext: mp4
+  cmap: &cmap
+    empty: &color_empty darkkhaki
+    susceptible: &color_susceptible forestgreen
+    exposed: &color_exposed darkorange
+    infected: &color_infected firebrick
+    recovered: &color_recovered slategray
+    deceased: &color_deceased black
+    source: &color_source maroon
+    inert: &color_inert moccasin
 
 
-# -- Any kind of phase plot ---------------------------------------------------
-phase_diagram:
-  based_on: .default_style_and_helpers
 
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Optionally define something here ...
+
+
+# -- Creators -----------------------------------------------------------------
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+# -- Plot functions -----------------------------------------------------------
+.plot.phase_diagram:
+  # Only works with UniversePlotCreator
   creator: universe
   universes: all
 
   module: model_plots.SEIRD
   plot_func: phase_diagram
 
-  cmap: viridis_r
 
+
+# -- Styles -------------------------------------------------------------------
+# .. Property cycles ..........................................................
+# Using these as base configurations allows to have consistent kind colors
+# NOTE The order in the evaluated format string needs to match the order in
+#      which the cycling happens! This is an implicit mapping.
+
+.style.prop_cycle.ESEIRDSI:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}', '{cmap[source]:}', '{cmap[inert]:}'])"
+      cmap: *cmap
+
+.style.prop_cycle.seird:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[susceptible]:}', '{cmap[exposed]:}', '{cmap[infected]:}', '{cmap[recovered]:}', '{cmap[deceased]:}'])"
+      cmap: *cmap
+
+.style.prop_cycle.deceased:
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{cmap[deceased]:}'])"
+      cmap: *cmap
+
+.style.prop_cycle.default:
+  style:
+    axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+# -- Densities time series ----------------------------------------------------
+
+densities.uni:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+    - .style.prop_cycle.ESEIRDSI
+
+  select:
+    data: densities
+
+  x: time
+  hue: kind
+
+  helpers: &helpers_densities
+    set_limits:
+      y: [0., 1.]
+    set_labels:
+      y: Density [1/A]
+      only_label_outer: true
+    set_title:
+      title: Densities
+    set_legend:
+      loc: best
+
+densities.mv:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.errorbands
+    - .hlpr.kind.time_series
+    - .hlpr.legend.hide
+    - .animation.disabled
+    - .style.prop_cycle.ESEIRDSI
+
+  expected_multiverse_ndim: [1, 2, 3]
+
+  select_and_combine:
+    fields:
+      _data: densities
+
+  transform:
+    - xr.full_like: [!dag_tag _data, !expr nan]
+      tag: nans
+
+    # Try to compute mean and std over ceratain dimensions, falling back to
+    # a NaN array if that dimension is not available
+    - .mean: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag _data
+      tag: mean
+    - .std: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag nans  # use NaN instead
+      tag: std
+
+    # Combine into a dataset
+    - xr.Dataset:
+        data_vars:
+          mean: !dag_tag mean
+          std: !dag_tag std
+      tag: data
+
+  y: mean
+  yerr: std
+  x: time
+  hue: kind
+
+  helpers:
+    <<: *helpers_densities
+    set_title:
+      enabled: false
+    set_suptitle:
+      title: Densities
+
+
+# -- Any kind of phase plot ---------------------------------------------------
+phase_diagram:
+  based_on:
+    - .defaults
+    - .creator.universe
+    - .plot.facet_grid.scatter
+  select:
+    kind:
+      path: densities
+  transform:
+    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [ !dag_tag kind, { kind: exposed } ]
+      kwargs: { drop: true }
+      tag: exposed
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true }
+      tag: infected
+    - .sel: [ !dag_tag kind, { kind: recovered } ]
+      kwargs: { drop: true }
+      tag: recovered
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          exposed: !dag_tag exposed
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+
+  cmap: viridis_r
+  hue: time
   helpers:
     set_title:
       title: Phase Diagram
@@ -74,81 +216,41 @@ phase_diagram:
   # Parameters that are passed on to plt.scatter
   s: 10
 
+phase_diagram/SI:
+  based_on: phase_diagram
 
-# -- Densities plot -----------------------------------------------------------
-densities:
-  based_on: .basic_uni.lineplots
-
-  model_name: SEIRD
-
-  to_plot:
-    empty:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: empty }
-      label: empty
-      color: *color_empty
-
-    susceptible:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: susceptible }
-      label: susceptible
-      color: *color_susceptible
-
-    exposed:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: exposed }
-      label: exposed
-      color: *color_exposed
-
-    infected:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: infected }
-      label: infected
-      color: *color_infected
-
-    recovered:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: recovered }
-      label: recovered
-      color: *color_recovered
-
-    deceased:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: deceased }
-      label: deceased
-      color: *color_deceased
-
-    source:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: source }
-      label: source
-      color: *color_source
-
-    inert:
-      transform_data:
-        - sel: { kind: inert }
-      path_to_data: densities
-      label: inert
-      color: *color_inert
+  # Select from which densities to create the phase diagram
+  x: susceptible
+  y: infected
 
   helpers:
-    set_limits:
-      x: [min, max]
-      y: [0., 1.]
     set_labels:
-      x: Time [Iteration Steps]
-      y: Density [1/A]
-    set_title:
-      title: Densities
-    set_legend:
-      loc: best
+      x: Susceptible Density [1/A]
+      y: Infected Density [1/A]
+
+phase_diagram/SE:
+  based_on: phase_diagram
+
+  x: susceptible
+  y: exposed
+
+  helpers:
+    set_labels:
+      x: Susceptible Density [1/A]
+      y: Exposed Density [1/A]
+
+phase_diagram/EI:
+  based_on: phase_diagram
+
+  x: exposed
+  y: infected
+
+  helpers:
+    set_labels:
+      x: Exposed Density [1/A]
+      y: Infected Density [1/A]
+
+
 
 
 # --- Counter-based -----------------------------------------------------------
@@ -156,7 +258,7 @@ densities:
 counters:
   based_on:
     - .creator.universe
-    - .dag.generic.facet_grid
+    - .plot.facet_grid
 
   select:
     counts: counts
@@ -184,19 +286,109 @@ counters:
           x: Time [Iteration Steps]
 
 
+# .. Movement stats ...........................................................
+movement:
+  based_on: counters
+
+  transform:
+    - .sel: [!dag_tag d_counts]
+      kwargs:
+        label:
+          - move_randomly
+          - move_away_from_infected
+      tag: data
+
+  kind: line
+  x: time
+  hue: label
+
+  helpers:
+    set_labels:
+      y: Movement Events
+
+
+# .. State transitions ........................................................
+transitions/raw:
+  based_on: counters
+
+  transform:
+    - &op_sel_transitions
+      .sel: [!dag_tag d_counts]
+      kwargs:
+        label:
+          - empty_to_susceptible
+          - living_to_empty
+          - susceptible_to_exposed_contact
+          - susceptible_to_exposed_random
+          - susceptible_to_exposed_controlled
+          - exposed_to_infected
+          - infected_to_recovered
+          - infected_to_deceased
+          - recovered_to_susceptible
+
+    # Define as data to be plotted
+    - define: !dag_prev
+      tag: data
+
+  kind: line
+  x: time
+  col: label
+  col_wrap: 3
+  sharey: true
+
+transitions/combined:
+  based_on: counters
+
+  transform:
+    - *op_sel_transitions
+    - define: !dag_prev
+      tag: data
+
+  kind: line
+  x: time
+  hue: label
+
+  helpers:
+    set_labels:
+      y: Counts
+
+transitions/smoothed:
+  based_on:
+    - transitions/combined
+    - .dag.meta_ops.rolling
+
+  dag_options:
+    define:
+      smoothed_by: &smoothed_by 7
+
+  transform:
+    - *op_sel_transitions
+
+    # Apply rolling mean over a number of time coordinates
+    - rolling: [!dag_prev , mean, {time: *smoothed_by}]
+      kwargs:
+        # Configure rolling window such that early values are included
+        min_periods: 2
+        center: false
+      tag: data
+
+  helpers:
+    set_labels:
+      y: !format ["Counts (smoothed over {} data points)", *smoothed_by]
+
+
+
 # --- Distributions -----------------------------------------------------------
 
 age_distribution:
   based_on:
-    - .default_style_and_helpers
+    - .defaults
     - .creator.universe
-    - .dag.generic.histogram
+    - .plot.histogram
 
   select:
     age: age
     kind: kind
-  dag_options:
-    select_path_prefix: data/SEIRD
 
   x: age
   hue: kind
@@ -208,58 +400,110 @@ age_distribution:
     set_title:
       title: Age Distribution
 
+age_distribution/final:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.seird
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+    # Select the last time step
+    - .isel: [!dag_prev , {time: -1}]
+      tag: counts
 
-# --- Grid Snapshots ----------------------------------------------------------
-# NOTE These can also be used as basis for grid animations.
-# ... The CA ..................................................................
-CA_snapshot:
-  based_on: .ca.state
-  model_name: SEIRD
+  helpers:
+    set_title:
+      title: Final Age Distribution
+
+
+age_distribution/time_series:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.seird
+    - .animation.defaults
+
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        normalize: false  # optional. Default: false
+      tag: counts
+
+  # Represent the time dimension as frames of the animation
+  frames: time
+
+
+age_distribution/deceased:
+  based_on:
+    - age_distribution
+    - .style.prop_cycle.deceased
+  transform:
+    - SEIRD.compute_age_distribution:
+        age: !dag_tag age
+        kind: !dag_tag kind
+        coarsen_by: 10
+        compute_for_kinds: [deceased]
+    - .sum: [!dag_prev , time]
+    - print: !dag_prev
+      tag: counts
+
+  helpers:
+    set_title:
+      title: Deceased Age Distribution
+
+
+
+
+
+# --- CA Plots ----------------------------------------------------------------
+ca/state:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    kind: kind
 
   to_plot:
     kind:
-      title: ""
+      title: State
       limits: [0, 7]
-      # Be aware that the colors need to be in the correct ordering!
-      cmap:
-        empty: *color_empty
-        susceptible: *color_susceptible
-        exposed: *color_exposed
-        infected: *color_infected
-        recovered: *color_recovered
-        deceased: *color_deceased
-        source: *color_source
-        inert: *color_inert
+      cmap: *cmap  # NOTE Colors need to be in the correct ordering!
 
-  style:
-    <<: [*constrained_layout]
 
-# ... The CA age ..............................................................
-CA_age_snapshot:
-  based_on: .ca.state
-  model_name: SEIRD
+ca/age:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    age: age
 
   to_plot:
     age:
       title: Age
       cmap: YlGn
 
-# ... The clusters ............................................................
-clusters_snapshot:
-  based_on: .ca.state
-  model_name: SEIRD
+
+ca/clusters:  # FIXME Does not show clusters in hexagonal mode
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    cluster:
+      path: cluster_id
+      with_previous_result: true
+      transform:
+        - where: ['!=', 0]       # 0 is masked: not part of a cluster
+        - np.fmod: 20
 
   to_plot:
-    cluster_id:
+    cluster:
       title: Clusters
       limits: [0, 20]
       cmap: tab20
       no_cbar_markings: true
-
-  transform_data:
-    cluster_id:
-      - where: ['!=', 0]       # 0 is masked: not part of a cluster
-      - mod: 20                # ... to match the tab20 color map
-
-  style:
-    <<: [*constrained_layout]

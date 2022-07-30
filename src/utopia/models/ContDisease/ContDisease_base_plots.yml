@@ -1,83 +1,151 @@
-# Base configuration for ContDisease model plots
+# Base plot configuration pool for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file.
 ---
+.variables:
+  base_path: &base_path data/ContDisease
+
+  colors:                                   # state value
+    empty: &color_empty darkkhaki           # 0
+    tree: &color_tree forestgreen           # 1
+    infected: &color_infected firebrick     # 2
+    source: &color_source orange            # 3
+    stone: &color_stone slategray           # 4
+
+    cycler: &cycler 'cycler(
+        "color",
+        ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
+    )'
+
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
 # -- Any kind of phase plot ---------------------------------------------------
 phase_diagram:
-  based_on: .default_style_and_helpers
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter
 
-  creator: universe
-  universes: all
+  select:
+    kind:
+      path: densities
 
-  module: model_plots.ContDisease
-  plot_func: phase_diagram
-
-  cmap: viridis_r
-
-  helpers:
-    set_title:
-      title: Phase Diagram
+  transform:
+    - .sel: [ !dag_tag kind, { kind: tree } ]
+      kwargs: { drop: true }
+      tag: tree
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true }
+      tag: infected
+    - xr.Dataset:
+        data_vars:
+          tree: !dag_tag tree
+          infected: !dag_tag infected
+      tag: data
 
 
 # -- Densities plot -----------------------------------------------------------
-densities:
-  based_on: .basic_uni.lineplots
+densities.base:
+  based_on:
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
 
-  model_name: ContDisease
+  x: time
+  hue: kind
 
-  to_plot:
-    empty:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: empty }
-      label: empty
-      color: &color_empty darkkhaki
-
-    tree:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: tree }
-      label: tree
-      color: &color_tree forestgreen
-
-    infected:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: infected }
-      label: infected
-      color: &color_infected firebrick
-
-    source:
-      path_to_data: densities
-      transform_data:
-        - sel: { kind: source }
-      label: source
-      color: &color_source orange
-
-    stone:
-      transform_data:
-        - sel: { kind: stone }
-      path_to_data: densities
-      label: stone
-      color: &color_stone slategray
+  style:
+    axes.prop_cycle: *cycler
 
   helpers:
     set_limits:
-      x: [min, max]
       y: [0., 1.]
     set_labels:
-      x: Time [Iteration Steps]
       y: Density [1/A]
-    set_title:
+      only_label_outer: true
+    set_suptitle:
       title: Densities
     set_legend:
       loc: best
+
+densities.universe:
+  based_on:
+    - .creator.universe
+    - densities.base
+
+  select:
+    data:
+      path: densities
+      transform:
+        - .data
+
+densities.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_3D
+    - densities.base
+    - .plot.facet_grid.with_auto_encoding
+
+  select_and_combine:
+    fields:
+      data:
+        path: densities
+        transform:
+          - .data
 
 
 # --- Grid Snapshots ----------------------------------------------------------
 # NOTE These can also be used as basis for grid animations.
 # ... The forest ..............................................................
-forest_snapshot:
-  based_on: .ca.state
-  model_name: ContDisease
+ca/forest:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    kind: kind
   
   to_plot:
     kind:
@@ -91,19 +159,35 @@ forest_snapshot:
         stone: *color_stone
 
 # ... The forest age ..........................................................
-forest_age_snapshot:
-  based_on: .ca.state
-  model_name: ContDisease
+ca/forest_age:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    age: age
 
   to_plot:
     age:
       title: Forest Age
       cmap: YlGn
+      limits: [0, max]
 
 # ... The clusters ............................................................
-clusters_snapshot:
-  based_on: .ca.state
-  model_name: ContDisease
+ca/clusters:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    cluster_id:
+      path: cluster_id
+      transform:
+        - where: [!dag_prev , "!=", 0]  # not part of the cluster
+        - np.fmod: [!dag_prev , 20]     # matching the size of the tab20 cmap
+        # NOTE Important to use np.fmod here because it carries through the
+        #      container attributes, which are needed for determining the
+        #      grid structure. The `mod` operation itself does not do that.
 
   to_plot:
     cluster_id:
@@ -111,8 +195,3 @@ clusters_snapshot:
       limits: [0, 20]
       cmap: tab20
       no_cbar_markings: true
-
-  transform_data:
-    cluster_id:
-      - where: ['!=', 0]       # 0 is masked: not part of a cluster
-      - mod: 20                # ... to match the tab20 color map

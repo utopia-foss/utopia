@@ -1,4 +1,4 @@
-.. utopia_cli:
+.. _utopia_cli:
 
 Utopia CLI
 ==========
@@ -14,3 +14,5 @@ Utopia CLI
         (utopia-env) $ utopia --help
         (utopia-env) $ utopia run --help
         (utopia-env) $ utopia eval --help
+
+    Alternatively, as the CLI is provided by :py:mod:`utopya`, refer to the `utopya CLI reference <https://utopya.readthedocs.io/en/latest/cli/index.html>`_.

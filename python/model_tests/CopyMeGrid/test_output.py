@@ -1,13 +1,12 @@
 """Tests of the output of the CopyMeGrid model"""
 
 import numpy as np
-
 import pytest
 
 from utopya.testtools import ModelTest
 
 # Configure the ModelTest class for CopyMeGrid
-mtc = ModelTest("CopyMeGrid", test_file=__file__) # TODO set the model name
+mtc = ModelTest("CopyMeGrid", test_file=__file__)  # TODO set the model name
 
 
 # Fixtures --------------------------------------------------------------------
@@ -15,6 +14,7 @@ mtc = ModelTest("CopyMeGrid", test_file=__file__) # TODO set the model name
 
 
 # Tests -----------------------------------------------------------------------
+
 
 def test_that_it_runs():
     """Tests that the model runs through with the default settings"""
@@ -46,13 +46,14 @@ def test_run_and_eval_cfgs():
     See :py:meth:`~utopya.model.Model.run_and_eval_cfg_paths` for more info.
     """
     for cfg_name, cfg_paths in mtc.default_config_sets.items():
-        print("\nRunning '{}' configuration ...".format(cfg_name))
+        print(f"\nRunning '{cfg_name}' configuration ...")
 
-        mv, _ = mtc.create_run_load(from_cfg=cfg_paths.get('run'),
-                                    parameter_space=dict(num_steps=3))
-        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get('eval'))
+        mv, _ = mtc.create_run_load(
+            from_cfg=cfg_paths.get("run"), parameter_space=dict(num_steps=3)
+        )
+        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get("eval"))
 
-        print("Succeeded running and evaluating '{}'.\n".format(cfg_name))
+        print(f"Succeeded running and evaluating '{cfg_name}'.\n")
 
 
 # NOTE The below test is an example of how to access data and write a test.
@@ -66,28 +67,28 @@ def test_output():
     # NOTE this is a shortcut. It creates the mv, lets it run, then loads data
 
     # Get the meta-config from the DataManager
-    mcfg = dm['cfg']['meta']
+    mcfg = dm["cfg"]["meta"]
     print("meta config: ", mcfg)
 
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
-    for uni_no, uni in dm['multiverse'].items():
+    for uni_no, uni in dm["multiverse"].items():
         # Get the data
-        data = uni['data']['CopyMeGrid']  # TODO change this to your model name
+        data = uni["data"]["CopyMeGrid"]  # TODO change this to your model name
 
         # Get the config of this universe
-        uni_cfg = uni['cfg']
+        uni_cfg = uni["cfg"]
 
         # Check that all datasets are available
-        assert 'some_state' in data
-        assert 'some_trait' in data
+        assert "some_state" in data
+        assert "some_trait" in data
 
         # It is very helpful to make use of the xarray functionality!
         # See:  http://xarray.pydata.org/en/stable/why-xarray.html
-        some_state = data['some_state']
-        assert some_state.dims == ('time', 'x', 'y')
+        some_state = data["some_state"]
+        assert some_state.dims == ("time", "x", "y")
 
-        some_trait = data['some_trait']
-        assert some_trait.dims == ('time', 'x', 'y')
+        some_trait = data["some_trait"]
+        assert some_trait.dims == ("time", "x", "y")
 
         # Can do further tests here ...

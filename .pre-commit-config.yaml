@@ -1,0 +1,65 @@
+# pre-commit configuration for Utopia
+#
+# NOTE See pyproject.toml for configuration options for some of these tools
+---
+# -- Hook definitions ---------------------------------------------------------
+repos:
+  # Manually run this every now and again .....................................
+  # Command:  pre-commit run --all-files --hook-stage manual
+
+  # Run if desiring to make use of newer language features
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.37.2
+    hooks:
+    - id: pyupgrade
+      name: upgrade python syntax
+      args:
+        - --py3-plus
+        - --py37-plus
+      stages: [manual]
+
+  # Default pre-commit hooks ..................................................
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: sort imports
+        additional_dependencies: [toml]
+        types: [python]
+        args: [--project=utopya, --settings, pyproject.toml]
+
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+        name: black code formatting
+        types: [python]
+        args: [--safe, --config, pyproject.toml]
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.9.0
+    hooks:
+      - id: rst-backticks
+        name: check RST backticks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: end-of-file-fixer
+        name: fix end of files
+
+      - id: check-added-large-files
+        name: no large files added
+        args: ["--maxkb=256"]
+
+      - id: no-commit-to-branch
+        name: do not commit to protected branch directly
+        args: [--branch, master, --branch, v1]
+
+      - id: check-merge-conflict
+        name: no leftover merge conflict strings
+
+      # TODO Consider activating this as well -- but causes many many changes
+      # - id: trailing-whitespace
+      #   name: fix trailing whitespace
+      #   args: [--markdown-linebreak-ext=md]

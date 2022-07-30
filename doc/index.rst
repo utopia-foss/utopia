@@ -4,7 +4,7 @@ Welcome to Utopia!
 ==================
 
 Utopia is a comprehensive modelling framework for complex and evolving systems.
-It is tailored to build models based on cellular automata (CA), agent-based models (ABMs), and network models.
+It is tailored to build cellular automata (CA) models, agent-based models (ABMs), and network models.
 Utopia provides tools for implementing a model, configuring and performing simulation runs, and evaluating the resulting data.
 Additionally, several readily implemented models are shipped with Utopia.
 
@@ -19,8 +19,14 @@ Where to next?
 
 * To learn more about the Utopia project, have a look at :ref:`about_utopia` and :ref:`utopia_features`.
 * If you want to start using Utopia right away, head for the :ref:`tutorial`.
-* To explore other parts of the documentation, use the navigation sidebar.
-* You can also take a look at the `project website <https://utopia-project.org>`_ to get to know us and explore some of Utopia's models and features!
+* To explore other parts of the documentation, use the navigation sidebar, for instance:
+
+  * :ref:`How to implement a model <impl>`
+  * :ref:`How to run a model <run>`
+  * 🎉 **Highlight:** our new and expanded :ref:`Plotting Tutorial <plotting>`.
+
+* Want a separate repository for your model implementations? Learn more about it :ref:`here <set_up_models_repo>`.
+* You can also take a look at our **project website** at `utopia-project.org <https://utopia-project.org>`_ to get to know us and explore some of Utopia's models and features!
 
 .. note::
 
@@ -93,15 +99,13 @@ Where to next?
    :maxdepth: 1
    :hidden:
 
-   C++ Documentation <../doxygen/html/index.html#http://>
-   ref/cpp_doc
-   api/utopya/utopya
-   dantro package <https://dantro.readthedocs.io/en/stable/>
-   api/paramspace/paramspace
-   ref/utopya_base_cfg
+   C++ Documentation <ref/cpp_doc>
+   ref/mv_base_cfg
    ref/base_plots_cfg
    ref/batch_cfg
-
+   utopya package <https://utopya.readthedocs.io/>
+   dantro package <https://dantro.readthedocs.io/>
+   paramspace package <https://paramspace.readthedocs.io/>
 
 .. toctree::
    :caption: Utopia Development
@@ -112,6 +116,7 @@ Where to next?
    dev/coding-guidelines
    dev/model-requirements
    dev/writing-docs
+   dev/versioning
 
 .. toctree::
    :caption: Miscellaneous

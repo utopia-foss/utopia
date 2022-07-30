@@ -22,14 +22,19 @@ The network consists of nodes (representing users) and edges (representing socia
 
 .. hint:: You can control the opinion space via the ``opinion_space`` key (see below).
 
-.. _interaction_functions:
+.. _opinionet_interaction_functions:
 
 Interaction functions
 ^^^^^^^^^^^^^^^^^^^^^
 
-There are two basic types of interaction functions: the *Deffuant* type, and the *Hegselmann-Krause* type. In addition, two parameters are relevant to the opinion interaction: the *tolerance* :math:`\epsilon`  and the *susceptibility* :math:`\mu`. The tolerance determines which spectrum of opinions a user is willing to engage with. A small tolerance bound means users only interact with opinions very close to their own; a large tolerance means users are rather more 'broad-minded'. The susceptibility, in general, models how susceptible users are to others' opinions, that is, to what degree they are willing to shift their own opinion towards that of others.
+There are two basic types of interaction functions: the *Deffuant* type, and the *Hegselmann-Krause* type.
+In addition, two parameters are relevant to the opinion interaction: the *tolerance* :math:`\epsilon`  and the *susceptibility* :math:`\mu`.
+The tolerance determines which spectrum of opinions a user is willing to engage with.
+A small tolerance bound means users only interact with opinions very close to their own; a large tolerance means users are rather more 'broad-minded'.
+The susceptibility, in general, models how susceptible users are to others' opinions, that is, to what degree they are willing to shift their own opinion towards that of others.
 
-**Hegselmann-Krause (HK) model:** In the HK model, users shift their opinions towards the average opinion of *all of their neighbors*. In a single step, a randomly chosen vertex updates its opinion via
+**Hegselmann-Krause (HK) model:** In the HK model, users shift their opinions towards the average opinion of *all of their neighbors*.
+In a single step, a randomly chosen vertex updates its opinion via
 
 *(a) Continuous opinion space:*
 
@@ -47,10 +52,11 @@ where :math:`[x]` denotes rounding to the nearest integer.
 
 Here, :math:`\langle \sigma_k \rangle` is the average opinion of all neighboring vertices whose opinions fall within the tolerance range, i.e. for whom :math:`\vert \sigma_i - \sigma_k \vert <  \epsilon`.
 
-In a directed network, this average is weighted, meaning the neighbors' opinions are weighted using the *edge weights* (see :ref:`network`) normalised to the number of actually interacting neighbors.
+In a directed network, this average is weighted, meaning the neighbors' opinions are weighted using the *edge weights* (see :ref:`opinionet_network`) normalised to the number of actually interacting neighbors.
 
 
-**Deffuant model:** In the Deffuant model, only *pairs of users* interact. A random vertex :math:`i` and one of its neighbors :math:`k` are chosen, and the vertex updates its opinion via
+**Deffuant model:** In the Deffuant model, only *pairs of users* interact.
+A random vertex :math:`i` and one of its neighbors :math:`k` are chosen, and the vertex updates its opinion via
 
 *(a) Continuous opinion space:*
 
@@ -66,13 +72,21 @@ In a directed network, this average is weighted, meaning the neighbors' opinions
 
 with probability :math:`\mu`.
 
-How the neighbor is chosen depends on the network: in a directed network, the probability is equal to the edge weights (see below). In an undirected network, a neighbor is chosen with uniform probability.
+How the neighbor is chosen depends on the network: in a directed network, the probability is equal to the edge weights (see below).
+In an undirected network, a neighbor is chosen with uniform probability.
 
-.. note:: With these implementations, user opinions will always remain in the opinion space, whether discrete or continuous. For :math:`\mu = 1`, the neighbors' opinion is always adopted entirely.
+.. note::
 
-.. hint:: You can control the interaction function, tolerance, and susceptibility through the keys of the same name. Note that the tolerance can be arbitrarily large, though it loses interpretability when negative. The susceptibility must be in :math:`[0, 1]`.
+    With these implementations, user opinions will always remain in the opinion space, whether discrete or continuous.
+    For :math:`\mu = 1`, the neighbors' opinion is always adopted entirely.
 
-.. _network:
+.. hint::
+
+    You can control the interaction function, tolerance, and susceptibility through the keys of the same name.
+    Note that the tolerance can be arbitrarily large, though it loses interpretability when negative.
+    The susceptibility must be in :math:`[0, 1]`.
+
+.. _opinionet_network:
 
 Network
 ^^^^^^^
@@ -81,23 +95,42 @@ In each iteration of the model, a single user is chosen at random with uniform p
 
 .. hint:: You can control the network topology through the ``network/model`` key, and the directedness through the ``directed`` key.
 
-**Undirected network:** In an undirected network, links have no orientation, and (in this model) hold no edge weights. In the Deffuant model of opinion dynamics, only pairs of nodes interact in one time step (see :ref:`interaction_functions`). In an undirected network, all neighbors of a given node have an equal probability of being selected as an interaction partner.
+**Undirected network:** In an undirected network, links have no orientation, and (in this model) hold no edge weights.
+In the Deffuant model of opinion dynamics, only pairs of nodes interact in one time step (see :ref:`opinionet_interaction_functions`).
+In an undirected network, all neighbors of a given node have an equal probability of being selected as an interaction partner.
 
-**Directed network:** In a directed network, edges have an orientation. Imagine a network of Twitter users: person A may follow person B, but person B does not necessarily follow person A back. Vertices therefore have an *out-degree* (people they follow), and an *in-degree* (people they are followed by). In the directed network, each link is given an *edge weight* :math:`w \in [0, 1]`. This weight plays a role in selecting neighbors for interaction (in the Deffuant model) or in giving weight to neighbors' opinions (in the Hegselmann-Krause model) – more on that below.
+**Directed network:** In a directed network, edges have an orientation.
+Imagine a network of Twitter users: person A may follow person B, but person B does not necessarily follow person A back.
+Vertices therefore have an *out-degree* (people they follow), and an *in-degree* (people they are followed by).
+In the directed network, each link is given an *edge weight* :math:`w \in [0, 1]`.
+This weight plays a role in selecting neighbors for interaction (in the Deffuant model) or in giving weight to neighbors' opinions (in the Hegselmann-Krause model) – more on that below.
 
-**Edge weights:** The edge weights are calculated using a softmax function. Let :math:`\Delta \sigma_{i,j}` be the opinion difference :math:`\vert \sigma_i - \sigma_j \vert` between users :math:`i` and :math:`j`. The weight on edge :math:`i, j` is then set to
+**Edge weights:** The edge weights are calculated using a softmax function.
+Let :math:`\Delta \sigma_{i,j}` be the opinion difference :math:`\vert \sigma_i - \sigma_j \vert` between users :math:`i` and :math:`j`.
+The weight on edge :math:`i, j` is then set to
 
 .. math::
 
     w_{i, j} = \dfrac{e^{-w \Delta \sigma_{i, j}}}{\sum_{k} e^{-w \Delta \sigma_{i, k}}},
 
-where the sum over :math:`k` ranges over all neighbors of :math:`i` (softmax function). The parameter :math:`w>0` is the *weighting parameter*. It controls how sharply the edge weights decrease with the opinion difference. For :math:`w=0`, the edge weights are all equal to 1/out degree(i).
+where the sum over :math:`k` ranges over all neighbors of :math:`i` (softmax function).
+The parameter :math:`w>0` is the *weighting parameter*.
+It controls how sharply the edge weights decrease with the opinion difference.
+For :math:`w=0`, the edge weights are all equal to 1/out degree(i).
 
-.. hint:: You can control the weighting parameter via the ``network/edges/weighting`` key. It only has an effect when the network is directed.
+.. hint::
 
-.. warning:: Extremely large ``weighting`` parameters (:math:`w \gg 10`) can lead to memory underflow, and weights will be written as zero.
+    You can control the weighting parameter via the ``network/edges/weighting`` key.
+    It only has an effect when the network is directed.
 
-.. note:: When the network is directed, edge weights are saved to an ``edge_weights`` dataset. You can use the edge weights in the graph plotting function, for instance to define the width of the links (see :ref:`plotting`).
+.. warning::
+
+    Extremely large ``weighting`` parameters (:math:`w \gg 10`) can lead to memory underflow, and weights will be written as zero.
+
+.. note::
+
+    When the network is directed, edge weights are saved to an ``edge_weights`` dataset.
+    You can use the edge weights in the graph plotting function, for instance to define the width of the links (see :ref:`opinionet_plotting`).
 
 **Rewiring:** The topology of the network does not have to be static. You can let users cut links and rewire to new neighbors via the ``rewiring`` key. If activated, a randomly selected link between users whose opinions are further apart than the tolerance :math:`\epsilon` is rewired to a new, randomly chosen neighbor.
 
@@ -140,7 +173,7 @@ The following keys in the model configuration allow you to control the model:
 
     - ``directed``: whether or not the network should be directed. If directed, the network edges will be given weights (see above).
 
-    - ``model``: the network topology: can be ``KlemmEguiluz`` (small-world, highly clustered, scale-free network, defualt), ``regular`` (a regular network), ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world, default), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), ``complete``, or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
+    - ``Model``: the network topology: can be ``KlemmEguiluz`` (small-world, highly clustered, scale-free network, defualt), ``regular`` (a regular network), ``ErdosRenyi`` (random), ``WattsStrogatz`` (small-world, default), ``BarabasiAlbert`` (scale-free undirected), ``BollobasRiordan`` (scale-free directed), ``complete``, or ``load_from_file`` (see :ref:`here<graph_gen_functions>`).
 
     - ``edges``:
 
@@ -152,7 +185,7 @@ The following keys in the model configuration allow you to control the model:
 
 
 
-.. _plotting:
+.. _opinionet_plotting:
 
 Plotting
 ^^^^^^^^
@@ -219,7 +252,7 @@ In each case, the time of the opinion distribution in question can be specified.
 
    </details>
 
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.
 
 
 Literature

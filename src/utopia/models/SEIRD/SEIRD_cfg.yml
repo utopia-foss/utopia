@@ -14,11 +14,11 @@ space:
 # --- CellManager and cell initialization -------------------------------------
 cell_manager:
   grid:
-    structure: hexagonal
+    structure: square
     resolution: 128      # in cells per unit length of physical space
 
   neighborhood:
-    mode: hexagonal
+    mode: Moore
 
   # Cell initialization parameters
   cell_params:
@@ -33,9 +33,9 @@ cell_manager:
 
     # The cell-specific probability p_transmit to transmit the disease to other
     # cells. This parameter sets the initial value for each cell.
-    # This probability can be manipulated using the transmission_control to either
-    # manipulate it for all cells or a subset of cells at specified times.
-    # This allows, for example, to set some cells to be superspreader.
+    # This probability can be manipulated using the transmission_control to
+    # either manipulate it for all cells or a subset of cells at specified
+    # times. This allows, for example, to set some cells to be superspreader.
     p_transmit: &p_transmit
       mode: value
       value:
@@ -174,9 +174,10 @@ immunity_control:
 
 # --- Transmission Control ----------------------------------------------------
 # Transmission control to investigate the time-dependent influence of actively
-# changing decease transmission probabilities. Note that transmission control is
-# applied at the beginning of an iteration step after the exposure and immunity
-# control. Its effect is seen in the following time step
+# changing decease transmission probabilities.
+# Note that transmission control is applied at the beginning of an iteration
+# step after the exposure and immunity control. Its effect is seen only in the
+# following time step
 transmission_control:
   enabled: false
   # Change the probability to transmit a decease of some randomly

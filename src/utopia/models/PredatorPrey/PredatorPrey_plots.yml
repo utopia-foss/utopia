@@ -15,62 +15,12 @@ mean_resources:
 
 # --- Animation of the spatial resource development of prey and predators -----
 resources:
-  based_on: .ca.state.anim_ffmpeg  # update to *_frames to save frames
+  based_on: resources
 
-  model_name: PredatorPrey
-
-  # Select the properties to plot
-  to_plot:
-    resource_predator:
-      title: Predator
-      limits: [0, 8]   # Should be adapted to the resource_max model parameter
-      
-    resource_prey:
-      title: Prey
-      limits: [0, 8]   # Should be adapted to the resource_max model parameter
-
-  # Adjust plot aesthetics
-  helpers:
-    set_suptitle:
-      title: Resources
-      fontsize: xx-large
-
-
-# --- Animation of the spatial development of prey and predator populations ---
 population:
-  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
+  based_on: population
+  enabled: true
 
-  to_plot:
-    # Combined by model_plots.PredatorPrey.ca.combine_pred_and_prey function
-    combined: &population_combined
-      title: Predator and Prey
-      limits: [0, 3]
-      cmap: 
-        empty: white
-        prey: orange
-        predator: blue
-        both: red
-
-
-# --- More detailed animation: prey only, combined, predator only -------------
 population_detailed:
-  based_on: combined_grid_animation_ffmpeg  # update to *_frames to save frames
-  enabled: false
-
-  to_plot:
-    predator:
-      title: Predator
-      limits: [0, 1]
-      cmap: 
-        empty: white
-        predator: blue
-
-    combined:
-      <<: *population_combined
-
-    prey:
-      title: Prey
-      limits: [0, 1]
-      cmap: 
-        empty: white
-        prey: orange
+  based_on: population_detailed
+  enabled: true

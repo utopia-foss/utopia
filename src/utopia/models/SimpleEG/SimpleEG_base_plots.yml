@@ -1,0 +1,209 @@
+# Base plot configurations for the SimpleEG model
+---
+.variables:
+  base_path: &base_path  data/SimpleEG
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+
+# .. S1 frequency time series .................................................
+frequency_S1:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_4D
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+
+  select_and_combine:
+    fields:
+      data: &select_S1_frequency
+        path: strategy
+        transform:
+          - .mean: [!dag_prev , [x, y]]
+
+  x: time
+
+  helpers:
+    set_labels:
+      y: $S_1$ Frequency
+      only_label_outer: true
+
+
+# .. Combined frequency plot ..................................................
+frequencies:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+
+  select:
+    S1: *select_S1_frequency
+
+  transform:
+    # Expect data of S1 frequency and compute the S0 frequency from it
+    - sub: [1, !dag_tag S1]
+      tag: S0
+    - xr.Dataset:
+      - $S_0$: !dag_tag S0
+        $S_1$: !dag_tag S1
+    - .to_array: !dag_prev
+    - .rename: [!dag_prev , {variable: strategy}]
+      tag: data
+
+  x: time
+  hue: strategy
+
+  helpers:
+    set_labels:
+      y: Frequencies
+      only_label_outer: true
+    set_limits:
+      y: [0., 1.]
+
+
+# .. Payoff ...................................................................
+payoff_distribution_over_time:
+  based_on:
+    - .creator.universe
+    - .animation.ffmpeg
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.hist
+
+  select:
+    payoff:
+      path: payoff
+      transform: [.data]
+    strategy:
+      path: strategy
+      transform: [.data]
+
+  transform:
+    # - xr.Dataset:  # FIXME No longer seems to work with `hue: strategy`
+    #   - payoff: !dag_tag payoff
+    #     strategy: !dag_tag strategy
+    - pass: !dag_tag payoff
+      tag: data
+
+    - .max.item: !dag_tag payoff
+      tag: max_payoff
+
+  # hue: strategy  # FIXME No longer seems to work
+  frames: time
+
+  bins: 30
+  range: [0, !dag_result max_payoff]
+
+  helpers:
+    set_labels:
+      x: Payoff
+      y: Counts
+    set_title:
+      title: " "
+
+
+payoff_distribution_final:  # TODO animate?
+  based_on:
+    - .creator.multiverse
+    - .plot.snsplot
+
+  select_and_combine:
+    fields:
+      payoff:
+        path: payoff
+        transform: &isel_last
+          - .isel: [!dag_prev , {time: -1}]
+            kwargs: {drop: true}
+      strategy:
+        path: strategy
+        transform: *isel_last
+
+  transform:
+    - xr.Dataset:
+      - payoff: !dag_tag payoff
+        strategy: !dag_tag strategy
+      tag: data
+
+  sns_kind: displot
+  reset_index: []
+  free_indices: [x, y]
+  x: payoff
+  hue: strategy
+  multiple: stack
+
+  bins: 25
+
+  facet_kws:
+    despine: false
+
+  helpers:
+    set_suptitle:
+      title: Final Payoff Distribution
+
+
+# .. Spatial plots ............................................................
+# The spatial development of the CA, showing strategy and payoff
+strategy_and_payoff:
+  based_on:
+    - .creator.universe
+    - .animation.ffmpeg
+    - .plot.ca
+
+  select:
+    strategy: strategy
+    payoff: payoff
+
+  to_plot:
+    strategy:
+      title: Strategy
+      limits: [0, 1]
+      cmap:
+        S0: red
+        S1: blue
+
+    payoff:
+      title: Payoff
+      limits: [0, 12]
+      cmap: viridis

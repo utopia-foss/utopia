@@ -1,0 +1,525 @@
+# Plots for the utopia plotting docs
+---
+_utopia_colors: &utopia_colors
+  dark_blue:          &darkblue           '#003366'
+  medium_blue:        &mediumblue         '#0099CC'
+  light_blue:         &lightblue          '#99CCFF'
+  dark_green:         &darkgreen          '#006666'
+  medium_green:       &mediumgreen        '#339999'
+  light_green:        &lightgreen         '#AFD8BC'
+  yellow:             &yellow             '#FFCC66'
+  red:                &red                '#CC3333'
+  cream_white:        &creamwhite         '#F6F6F6'
+  white:              &white              '#fff'
+  black:              &black              '#000000'
+  gray:               &gray               '#F7F9FF'
+  dark_gray:          &darkgray           '#666666'
+
+_default_style: &default_style
+  style:
+    text.usetex: True
+    mathtext.fontset: stix
+    font.family: serif
+
+# -----------------------------------------------------------------------------
+
+.flush_kind:
+  to_plot:
+    kind:
+      cmap: ~
+
+.flush_helper:
+  helpers: ~
+
+.flush_cmap:
+  cmap: ~
+
+# -----------------------------------------------------------------------------
+# Failing plots for usage/eval/dag/debug.rst
+
+.debug_DAG:
+  based_on: phase_diagram
+  debug: false
+
+  select: ~
+
+  transform:
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+      tag: data
+
+  dag_visualization:
+    enabled: true
+    when:
+      always: true
+      only_once: false
+
+debug_DAG_bad_op_name:
+  based_on: .debug_DAG
+
+### START --- debug_DAG_bad_op_name
+  select:
+    susceptible:
+      path: densities
+      transform:
+        - .sel: [!dag_prev , {kind: susceptible}]
+        - square: [!dag_prev ]  # does not exist
+### END --- debug_DAG_bad_op_name
+
+debug_DAG_bad_args:
+  based_on: .debug_DAG
+
+### START --- debug_DAG_bad_args
+  select:
+    susceptible:
+      path: densities
+      transform:
+        - .data   # to resolve the utopya XarrayDC into an xr.DataArray
+        - .sel: [!dag_prev , {kind: SuSCePTIble}]
+### END --- debug_DAG_bad_args
+
+debug_DAG_locate_with_vis:
+  based_on:
+    - .debug_DAG
+    - phase_diagram/SI
+
+### START --- debug_DAG_locate_with_vis
+  select:
+    kind:
+      path: densities
+
+  transform:
+    - .sel: [ !dag_tag kind, { kind: susceptible } ]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [ !dag_tag kind, { kind: exposed } ]
+      kwargs: { drop: true }
+      tag: exposed
+    - .sel: [ !dag_tag kind, { kind: infected } ]
+      kwargs: { drop: true, bAd_ArGuMeNT: i should not be here! }
+      tag: infected
+    - .sel: [ !dag_tag kind, { kind: recovered } ]
+      kwargs: { drop: true }
+      tag: recovered
+
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          exposed: !dag_tag exposed
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+### END --- debug_DAG_locate_with_vis
+
+
+debug_DAG_print_examples:
+  based_on: .debug_DAG
+
+  select:
+    some_data: densities
+  transform:
+### START --- debug_DAG_print_examples
+    # Example 1 --- Tagged operation to probe
+    - .mean: [!dag_tag some_data, [foo, bar]]
+      tag: my_result
+
+    #    ... and again with print added before and after
+    - print: [!dag_tag some_data]
+    - .mean: [!dag_prev , [foo, bar]]
+    - print: !dag_prev
+      tag: my_result
+
+    #    ... more verbose example that allows commenting out of prints
+    - pass: [!dag_tag some_data]
+    - print                                  # can comment this out
+    - .mean: [!dag_prev , [foo, bar]]
+    - print                                  # can comment this out
+    - pass: !dag_prev
+      tag: my_result
+
+
+    # Example 2 --- Untagged operation to probe
+    - .mean: [!dag_tag some_data, [foo, bar]]
+
+    #    ... and again with print added before and after
+    - print: [!dag_tag some_data]
+    - .mean: [!dag_prev , [foo, bar]]
+    - print
+### END --- debug_DAG_print_examples
+
+
+
+debug_DAG_advanced_print_examples:
+  based_on: .debug_DAG
+  debug: true  # should not be failing
+
+  select:
+    some_data:
+      path: densities
+      transform: [.data]
+  transform:
+### START --- debug_DAG_advanced_print_examples
+    - print: [!dag_tag some_data]
+      kwargs:
+        fstr: "Data before .mean operation:\n{}"
+
+    - .mean   # <-- operation to probe, could of course also have arguments
+
+    - print: !dag_prev
+      kwargs:
+        fstr: "Data after .mean operation:\n{}"
+### END --- debug_DAG_advanced_print_examples
+    # To make the plot work, just combine them here
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_prev
+          exposed: !dag_prev
+      tag: data
+
+  x: susceptible
+  y: exposed
+  hue: ~
+
+
+
+
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# Demonstrates a basic line plot
+density_basic:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+  select:
+    data:
+      path: densities
+      transform:
+        - .sel: [!dag_prev , { kind: [infected] }]
+
+# Demonstrates a basic line plot with style adjustments
+### Start --- line_plot
+line_plot:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+
+  # Select only the 'infected' agents
+  select:
+    data:
+      path: densities
+      transform:
+        - .sel: [!dag_prev , { kind: [infected] }]
+
+  # --- Optional additions ---------------------------------------------
+  # Use latex and set font and figure sizes. We recommend using YAML
+  # to globally define such features across plots.
+  # See the 'Customising plot styles' page for details.
+  style:
+    text.usetex: True
+    figure.figsize: [5, 4]
+    font.size: 10
+
+  # Set the line color
+  color: '#CC3333'
+
+  # Set labels and titles using the PlotHelper
+  helpers:
+    set_labels:
+      y: Density [1/A]
+    set_title:
+      title: Density of infected agents
+### End --- line_plot
+
+# Demonstrates a stacked line plot
+stacked_kinds:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - _default_style
+
+  select:
+    data:
+      path: densities
+      transform:
+        - .sel: [!dag_prev , { kind: [susceptible, infected, recovered] }]
+
+  x: time
+
+  style:
+    axes.prop_cycle: !format
+      fstr: "cycler('color', ['{colors[light_green]:}', '{colors[red]:}', '{colors[dark_green]:}'])"
+      colors: *utopia_colors
+  helpers:
+    set_labels:
+      y: Density [1/A]
+    set_title:
+      title: Density of agent kinds
+
+# Demonstrates an animated cellular automaton
+### Start --- .plot.ca.
+animated_ca:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    kind: kind
+
+  # Select the range to plot
+  frames_isel: !range [0, 50]
+
+  # Animation kwargs
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        saving:
+          dpi: 400
+
+  # Do not plot a time stamp
+  suptitle_fstr: False
+
+  to_plot:
+    kind:
+      limits: [0, 3]
+      # Use a custom cmap; these colors must be globally defined somewhere
+      cmap:
+        empty: *white
+        susceptible: *lightgreen
+        infected: *red
+        recovered: *darkgreen
+
+  # Optional: use latex and set font size
+  style:
+    text.usetex: True
+    mathtext.fontset: stix
+    font.family: serif
+    font.size: 10
+### End --- .plot.ca.
+
+# Demonstrates a simple 2D scatter plot
+scatter_2d_simple:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter
+    - _default_style
+  select:
+    kind:
+      path: densities
+  transform:
+    - .sel: [!dag_tag kind, { kind: susceptible }]
+      kwargs: { drop: true }
+      tag: susceptible
+
+    - .sel: [!dag_tag kind, { kind: infected }]
+      kwargs: { drop: true }
+      tag: infected
+
+    - .sel: [!dag_tag kind, { kind: recovered }]
+      kwargs: { drop: true }
+      tag: recovered
+
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+
+  x: susceptible
+  y: infected
+
+  color: *mediumgreen
+  alpha: 1
+  helpers:
+    set_title:
+      title: ~
+
+# Demonstrates a 2D scatterplot with an additional variable plotted on the 'hue'
+### Start --- scatter_2d
+scatter_2d:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter
+
+  select:
+    kind:
+      path: densities
+
+  # Select the agent kinds you which to show
+  transform:
+    - .sel: [!dag_tag kind, { kind: susceptible }]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [!dag_tag kind, { kind: infected }]
+      kwargs: { drop: true }
+      tag: infected
+    - .sel: [!dag_tag kind, { kind: recovered }]
+      kwargs: { drop: true }
+      tag: recovered
+    - xr.Dataset:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+
+  # Distribute the variables
+  x: susceptible
+  y: infected
+  hue: time
+  markersize: recovered
+### End --- scatter_2d
+  cmap:
+    continuous: true
+    from_values:
+      0: *yellow
+      1: *mediumblue
+  <<: *default_style
+  color: ~
+
+
+
+# Demonstrates a 3D scatter plot with hue
+### Start --- scatter_3d
+scatter_3d:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter3d
+    - _default_style
+  select:
+    kind:
+      path: densities
+
+  # Select the agent kinds you which to show
+  transform:
+    - .sel: [!dag_tag kind, { kind: susceptible }]
+      kwargs: { drop: true }
+      tag: susceptible
+    - .sel: [!dag_tag kind, { kind: infected }]
+      kwargs: { drop: true }
+      tag: infected
+    - .sel: [!dag_tag kind, { kind: recovered }]
+      kwargs: { drop: true }
+      tag: recovered
+    - operation: xr.Dataset
+      kwargs:
+        data_vars:
+          susceptible: !dag_tag susceptible
+          infected: !dag_tag infected
+          recovered: !dag_tag recovered
+      tag: data
+
+  # Distribute the variables
+  x: susceptible
+  y: infected
+  z: recovered
+  hue: time
+
+  # --- Optional additions ---------------------------------------------
+  # kwargs, passed to the low-level plot function
+  alpha: 1
+
+  # Define your own colormap. We recommend using YAML anchors to
+  # globally define colors: see the 'Customising plot styles' article.
+  cmap:
+    continuous: true
+    from_values:
+      0: '#FFCC66'
+      1: '#0099CC'
+
+  # Format the axis ticks
+  helpers:
+    set_title:
+      title: ~
+    set_ticks:
+      x:
+        major: [0.0, 0.1, 0.2, 0.3, 0.4]
+      y:
+        major: [0.0, 0.1, 0.2]
+      z:
+        major: [0.0, 0.1, 0.2, 0.3, 0.4]
+### End --- scatter_3d
+
+
+# Demonstrates specifying the colormap
+scatter_2d_colorful:
+  based_on:
+    - scatter_2d
+    - .flush_cmap
+
+  cmap:
+    continuous: true
+    from_values:
+      0: *red
+      0.2: *yellow
+      0.4: *mediumgreen
+      0.6: *darkgreen
+      0.8: *lightblue
+      1: *darkblue
+
+# Demonstrates some PlotHelper features
+helper_demo:
+  based_on:
+    - _default_style
+    - scatter_2d
+
+  helpers:
+    set_title:
+      title: My over-designed phase diagram
+    set_labels:
+      x: This is the x-axis
+      y:
+        label: And this is the y-axis
+        labelpad: 5
+    set_hv_lines:
+      hlines:
+        - pos: 0.05
+          color: *mediumgreen
+          label: Just a horizontal line
+        - pos: 0.01
+          color: *red
+          linestyle: dotted
+          label: Livin' in a lonely world
+    set_legend:
+      title: Lines and Dots
+      loc: best
+    annotate:
+      annotations:
+        - xy: [ 0.03, 0.16 ]
+          xycoords: data
+          text: Here is the maximum!
+          xytext: [ 0.0, 0.1 ]
+          arrowprops:
+            facecolor: *mediumblue
+            shrink: 0.05
+            linewidth: 0
+            alpha: 0.5
+          bbox:
+            facecolor: *mediumblue
+            linewidth: 0
+            alpha: 0.5
+            boxstyle: round
+    set_ticks:
+      x:
+        major:
+          locs: [0, 0.1, 0.2, 0.3, 0.4]
+          labels: ['No', more, trouble, with, tick labels]
+
+ca/state:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+  enabled: false
+
+  select:
+    kind: kind
+  to_plot:
+    kind:
+      title: State
+      limits: [0, 7]
+  suptitle_fstr: False

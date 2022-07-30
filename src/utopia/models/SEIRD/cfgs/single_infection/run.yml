@@ -1,18 +1,18 @@
 # Run configuration to create a single infection spread
 # including run-away movement and heterogeneities via inert cells
 ---
-# Configure the parameter space
 parameter_space:
-  num_steps: 300
+  num_steps: 365
 
   seed: 420
 
   SEIRD:
-    space:
-      periodic: false
     cell_manager:
       grid:
+        structure: square
         resolution: 256
+      neighborhood:
+        mode: Moore
     cell_params:
       p_susceptible: 0.4
       p_transmit:

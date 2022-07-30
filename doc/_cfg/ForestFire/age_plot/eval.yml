@@ -1,0 +1,76 @@
+---
+_utopia_colors:
+  dark_blue:          &darkblue           '#003366'
+  medium_blue:        &mediumblue         '#0099CC'
+  light_blue:         &lightblue          '#99CCFF'
+  dark_green:         &darkgreen          '#006666'
+  medium_green:       &mediumgreen        '#339999'
+  light_green:        &lightgreen         '#AFD8BC'
+  yellow:             &yellow             '#FFCC66'
+  red:                &red                '#CC3333'
+  cream_white:        &creamwhite         '#F6F6F6'
+  white:              &white              '#fff'
+  black:              &black              '#000000'
+  gray:               &gray               '#F7F9FF'
+  dark_gray:          &darkgray           '#666666'
+
+_default_style: &default_style
+  style:
+    text.usetex: True
+    mathtext.fontset: stix
+    font.family: serif
+
+# -----------------------------------------------------------------------------
+
+# Demonstrates a heatmap plot using pcolormesh
+### Start --- pcolormesh
+forest_age_with_pcolormesh:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.pcolormesh
+
+  select:
+    data:
+      path: age
+      transform:
+        - .isel: [!dag_prev , {time: -1}]
+
+  x: x
+### End --- pcolormesh
+  <<: *default_style
+  cmap:
+    continuous: true
+    from_values:
+      0: *yellow
+      1: *darkgreen
+  helpers:
+    set_labels:
+      x: ' '
+      y: ' '
+    set_ticks:
+      x:
+        major: []
+      y:
+        major: []
+
+# Demonstrates a heatmap plot with .plot.ca
+### Start --- .plot.ca
+forest_age_with_ca:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+    - .plot.ca.snapshot  # remove to make an animation
+
+  select:
+    age: age
+
+  to_plot:
+    age:
+      title: Forest Age
+      cmap: YlGn
+
+  # Optional: select the time to plot, and suppress the time stamp on the plot
+  frames_isel: -1
+  suptitle_fstr: False
+### End --- .plot.ca
+  <<: *default_style

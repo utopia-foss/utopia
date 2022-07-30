@@ -8,6 +8,12 @@
 time_series/norm_group_velocity:
   based_on: time_series/norm_group_velocity
 
+time_series/final_group_velocity:
+  based_on: time_series/final_group_velocity
+
+time_series/final_group_velocity_errorbars:
+  based_on: time_series/final_group_velocity_errorbars
+
 time_series/orientation_circstd:
   based_on: time_series/orientation_circstd
 
@@ -19,4 +25,3 @@ time_series/orientation:
 
 agents_in_domain:
   based_on: agents_in_domain
-

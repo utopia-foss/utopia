@@ -12,147 +12,66 @@
 #      and the target, e.g. numpy.ndarray, SomeException
 #   4) Decide whether it should be added here. Reasons for adding it:
 #
-#       - It's a refererence to a package that we don't include the API of,
-#         e.g. dantro, xarray, ...
 #       - It's a broken link that can't be fixed, e.g. because the file is
 #         rendered elsewhere as well (like README.md)
 #
 #      Reasons for NOT adding it here:
 #
+#       - It's a refererence to a package that we don't include the API of
+#         but that we can create an intersphinx link for --> add reference
 #       - It's a fixable reference error --> go fix it
 #
 # See the following page for more information and syntax:
 #  www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
 #
+#
+# NOTE Before adding something here, make sure that these really are to be
+#      ignored! There is a good chance that these entries could actually be
+#      referenced when specified correctly.
+#
+#      You can use the `sphobjinv` package which comes in very handy for that:
+#
+#           https://github.com/bskinn/sphobjinv
+#
+#           sphobjinv suggest <intersphinx-url> <name-to-lookup> -su
+#
 # -----------------------------------------------------------------------------
-# Python builtin types that cannot be referenced
-py:obj None
-py:class str
-py:class int
-py:class float
-py:class bool
-py:class dict
-py:class list
-py:class tuple
-py:class object
-py:class type
-py:class Cls
-py:class Class
-py:class builtins.dict
-py:class OrderedDict
-py:class collections.OrderedDict
-py:class collections.abc.Mapping
-py:class collections.abc.MutableMapping
-py:class collections.abc.MutableSequence
-py:class logging.Logger
-py:class subprocess.Popen
-py:class queue.Queue
-py:class TextIO
-py:class typing.TextIO
-py:class tempfile.TemporaryDirectory
-py:class datetime.timedelta
-py:class timedelta
 
-py:obj typing.TextIO
 
-# Exceptions, both as exception reference and type reference
-py:exc Exception
-py:exc ValueError
-py:exc IndexError
-py:exc KeyError
-py:exc TypeError
-py:exc AttributeError
-py:exc RuntimeError
-py:exc NotImplementedError
-py:exc UserWarning
-py:exc FileExistsError
-py:exc FileNotFoundError
-py:exc SyntaxError
-py:exc queue.Empty
-
-py:class Exception
-py:class ValueError
-py:class IndexError
-py:class KeyError
-py:class TypeError
-py:class AttributeError
-py:class RuntimeError
-py:class NotImplementedError
-py:class UserWarning
-py:class FileExistsError
-py:class FileNotFoundError
-py:class SyntaxError
-
-# Type-hinting related types
+# -- Docstring-content --
+# The (<type>, optional) part of parameter definitions is seemingly interpreted
+# as a type reference, so we need to ignore it.
 py:class optional
-py:class Any
-py:class Union
-py:class Callable
-py:class Sequence
-py:class Iterable
-py:class Tuple
-py:class List
-py:class Dict
-py:class Mapping
 
-# numpy
-py:class numpy.ndarray
-py:class np.ndarray
-py:class np.dtype
-py:class ndarray
-py:class scalar
+# -- Python builtin types --
+# ... that cannot be referenced (for whatever reason)
+py:class collections._Link
+py:class weakref
+py:class module
+py:class ModuleType
 
-# xarray
-py:class xr.Dataset
-py:class xr.DataArray
-
-# matplotlib
-py:class matplotlib.Figure
-py:class matplotlib.animation.AbstractMovieWriter
-py:class matplotlib.legend_handler.HandlerPatch
-py:class matplotlib.colors.Normalize
-py:class matplotlib.colors.Colormap
-py:class matplotlib.image.AxesImage
-py:class mpl.colors.Normalize
-py:class mpl.colors.Colormap
-py:class plt.axis
-
-# networkx
-py:class networkx.classes.graph.Graph
-py:class nx.Graph
+# -- third-party packages --
+py:class xarray.core.dataarray.DataArray
+py:class xarray.core.dataset.Dataset
 
 
-# paramspace
-py:class ruamel.yaml.representer
-py:class self
+# -- first-party packages --
+# ...
 
-# dantro
-py:class AbstractDataContainer
-py:class BaseDataContainer
-py:class BaseDataGroup
-py:class ItemAccessError
 
-# -----------------------------------------------------------------------------
-# NOTE Before adding something below this line, make sure that these really
-#      are to be ignored! There is a good chance that these entries could
-#      actually be referenced when specified correctly.
+# -- Regex patterns -----------------------------------------------------------
+# These are added to the nitpick_ignore_regex list and allow regex patterns in
+# both the reference type and the target.
+# To add to that list, lines need to start with `re: `, for example:
+#
+#   re: py:class .*Remove all items from D.*
+#
+# NOTE That the regex pattern needs to match the whole string, as if ^ and $
+#      would be inserted.
 
-# utopya
-py:class argparse.ArgumentParser
-py:class argparse.Namespace
+# From pydantic and ruamel.yaml (missing from intersphinx)
+re: py:class pydantic..*
+re: py:class ruamel..*
 
-py:class BasePlotCreator
-py:class StopCondition
-py:class TDims
-
-py:exc PlotConfigError
-py:exc PlotHelperErrors
-py:exc EnterAnimationMode
-py:exc ExitAnimationMode
-
-# ... due to inheritance issues from dantro
-py:meth utopya.datagroup.GraphGroup.create_graph
-
-# ... because reference is not part of API doc
-py:func utopya.task._follow
-py:meth utopya.reporter.WorkerManagerReporter._compute_est_left
+# From inherited code that uses `:` in places that are mis-interpreted
+# ...

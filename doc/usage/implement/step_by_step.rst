@@ -4,12 +4,7 @@ Step-by-step Guide
 ==================
 
 After having worked through the :doc:`README <../../README>`, the
-:ref:`tutorial <tutorial>`, and the :ref:`workflow <dev_workflow>`, this guide is for creating a new model in Utopia.
-
-.. note::
-
-  You **can** use the `Utopia docker image <https://hub.docker.com/r/ccees/utopia>`_ for model development.
-  Follow the instructions given there to find out how.
+:ref:`tutorial <tutorial>`, and (optionally) the :ref:`workflow <dev_workflow>`, this guide is for creating a new model in Utopia.
 
 If you go through all the steps, you will end up with a model that can profit
 from all Utopia features, but doesn't really do anything terribly interesting yet.
@@ -22,25 +17,32 @@ new models: the so-called ``CopyMe`` models.
 They not only showcase some Utopia functionality, but also provide good
 starting conditions for different scenarios:
 
-    * ``CopyMeGrid``: a basic Cellular Automaton model.
+* ``CopyMeGrid``: a basic Cellular Automaton model.
 
-        * Already includes the ``CellManager``.
-        * Recommended if you want to work with a Cellular Automaton.
+  * Already includes the ``CellManager``.
+  * Recommended if you want to work with a Cellular Automaton.
 
-    * ``CopyMeGraph``: a basic graph model.
+* ``CopyMeGraph``: a basic graph model.
 
-        * Already includes a graph and example functionality.
-        * Recommended if you want to work with a graph.
+  * Already includes a graph and example functionality.
+  * Recommended if you want to work with a graph.
 
-    * ``CopyMeBare``: the bare basics. Really.
+* ``CopyMeBare``: the bare basics. Really.
 
-        * Recommended if you do not need a cellular automaton or a graph.
-        * Recommended if you are proficient with Utopia.
+  * Recommended if you do not need a cellular automaton or a graph.
+  * Recommended if you are proficient with Utopia.
 
 You should now decide with which model you want to start with.
 This could be one of the above ``CopyMe`` models, but of course you can also take a pre-implemented model and adapt it to your needs.
 
-⚠️ In the following, you will need to replace all mentions of ``CopyMe`` with the name of your own model.
+⚠️ **Important:** In the following, you will need to replace all mentions of ``CopyMe`` with the name of your own model.
+
+
+.. admonition:: Model development in docker image
+
+    You **can** use the `Utopia docker image <https://hub.docker.com/r/ccees/utopia>`_ for model development.
+    Follow the instructions given there to find out how.
+
 
 
 Choosing a name for your model
@@ -66,17 +68,29 @@ Ok, let's get started by setting up the model infrastructure. If you wish to use
 
 .. code-block:: bash
 
-    (utopia-env) $ utopia models copy ModelToCopy --new-name YourModelName
+    (utopia-env) $ utopia models copy ModelToCopy --new-name YourModelName --dry-run
 
-Replace ``YourModelName`` with whatever you wish to call your model, and you're ready to go! This command creates new directories inside ``src/utopia/models`` and ``python/model_plots``, and ``python/model_tests``, copies the files from the ``CopyMe`` directory and renames all the relevant variables. See ``utopia models copy --help`` for more usage information.
+Replace ``YourModelName`` with whatever you wish to call your model, and you're ready to go!
+The ``--dry-run`` flag will first show a preview of what would be copied; remove that flag only when you have checked that the effect is as intended.
 
 .. note::
 
-    If you want your new model in your own models repository, see :ref:`set_up_models_repo`.
+    The command above will prompt for a *target project* to copy the model to.
+
+    * If you want to copy into the Utopia project, specify ``Utopia``.
+    * If you want your new model in your own models repository, see :ref:`set_up_models_repo`.
+      After having set up that repository, come back here to continue and use the chosen project name in the prompt, e.g. ``UtopiaModelsEvolution``.
+
+The copying tool creates new directories inside ``src/utopia/models`` (or the corresponding directory in your own models repository) and copies model files there, applying a number of replacements.
+In addition, the files from ``python/model_plots`` and ``python/model_tests`` are copied following an equivalent procedure.
+
+See ``utopia models copy --help`` for more usage information.
+
+Having done that, you can *skip* the manual copying description below and continue with :ref:`impl_step_by_step_adapt`.
+
 
 Copying Models Manually
 ^^^^^^^^^^^^^^^^^^^^^^^
-
 If you want, you can also do these steps manually: go through the following points from top to bottom, and first read the entire instructions for one step before starting to carry it out. Here, ``CopyMe`` refers to the model you wish to copy:
 
 1. Navigate to the ``src/utopia/models`` directory inside the ``utopia`` repository, duplicate the ``CopyMe`` directory of your choice, and rename it to the name of your model (``YourModelName`` above).
@@ -150,7 +164,7 @@ The ``state.py`` script is provided to show you how a model specific plotting
 script could look like.
 In ``generic.py`` you see some examples of generic plotting functions which can
 be used in combination with Utopia's :ref:`data transformation and selection
-framework <external_plot_creator_DAG_support>`.
+framework <plot_with_DAG>`.
 
 When starting to implement more plots, you should definitely have a look at
 the :ref:`detailed plotting documentation <eval_plotting>`!
@@ -165,15 +179,21 @@ the :ref:`detailed plotting documentation <eval_plotting>`!
 
 
 
+.. _impl_step_by_step_adapt:
+
 Adapting your code
 ------------------
 Depending on what model you want to implement, you will need to delete or
-adapt some provided functions. So, feel free to remove anything you do not
+adapt some provided functions.
+So, feel free to remove anything you do not
 need.
 
 * All variables, functions, etc. that are just there to show how you would use and implement them are denoted with the prefix ``some_`` or ``_some``\ , e.g. ``_ some_variable``\ , ``some_function``\ , ``some_interaction``\ , ...
   When writing your model, you should change these.
 * Remember to adapt the plotting and testing functions such that they belong to your model.
+* Have a look at the :ref:`impl` page for more information.
+
+.. todo:: 🚧 This section should be expanded.
 
 
 Some Final Remarks and Advice
@@ -181,7 +201,7 @@ Some Final Remarks and Advice
 
 Inspiration from other models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you want to learn more about the capabilities of Utopia and what models can look like, we recommend that you have a look at the already implemented models in the ``src/utopia/models`` directory.
+If you want to learn more about the capabilities of Utopia and what models can look like, we *strongly* recommend that you have a look at the already implemented models in the ``src/utopia/models`` directory.
 
 
 ``log->debug`` instead of ``std::cout``

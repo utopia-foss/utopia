@@ -100,4 +100,3 @@ data_manager0:
       active: true
       decider: write_intervals
       trigger: build_intervals
-

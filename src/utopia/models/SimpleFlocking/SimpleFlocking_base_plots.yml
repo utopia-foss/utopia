@@ -3,7 +3,7 @@
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
 _:
-  model_data_path:      &model_data_path      data/SimpleFlocking
+  model_data_path:      &base_path      data/SimpleFlocking
 
   aesthetics:
     hvline: &style_hvline
@@ -13,106 +13,58 @@ _:
       linewidth: 2.
       zorder: -42
 
-# -----------------------------------------------------------------------------
-# Plot configuration defaults -------------------------------------------------
-# -----------------------------------------------------------------------------
-# ... For all plots
-.defaults.style_and_helpers:
-  based_on: .default_style_and_helpers
-
-  style:
-    # https://matplotlib.org/gallery/style_sheets/style_sheets_reference.html
-    # https://matplotlib.org/stable/tutorials/introductory/customizing.html
-
-    # -- Style Sheet
-    base_style: seaborn-notebook
-
-    # -- Figure layouting etc.
-    # figure.constrained_layout.use: true
-    figure.dpi: 254       # important also for PDF to avoid rasterization bugs
-
-  helpers: {}
-
-.defaults.animation:
-  file_ext: .mp4
-
-  animation:
-    enabled: true
-
-    writer: frames  # assuming ffmpeg is not installed
-
-    # Configuration for each writer
-    writer_kwargs:
-      frames:
-        saving:
-          dpi: 92
-
-      ffmpeg:
-        init:
-          fps: 30
-        saving:
-          dpi: 254
-
-.defaults.animation.ffmpeg:
-  based_on: .defaults.animation
-  animation:
-    writer: ffmpeg
-
-.defaults.dag:
-  dag_options:
-    define:
-      # Can be invoked as fallback to skip a plot in a controlled fashion
-      _skip_plot:
-        - operation: raise_SkipPlot
-          args: [true]
 
 
-# Aggregated defaults
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
 .defaults:
   based_on:
-    - .defaults.style_and_helpers
-    - .defaults.dag
+    - .dag.define.defaults
+    - .defaults
+
+  # Can define something here ...
 
 
-# Creators ....................................................................
-# ... for DAG-based plots
-
+# .. Creators .................................................................
+# With all plots below being DAG plots, specialize creators accordingly
 .creator.universe:
-  creator: universe
-  universes: all
+  based_on:
+    - .creator.universe
+    - .defaults
 
   select:
     _model_base: "."
 
   dag_options:
-    select_path_prefix: *model_data_path
+    select_path_prefix: *base_path
 
 .creator.multiverse:
-  creator: multiverse
+  based_on:
+    - .creator.multiverse
+    - .defaults
 
   select_and_combine:
-    base_path: *model_data_path
+    base_path: *base_path
 
 
-# Helper shortcuts ............................................................
+# .. Plot functions ...........................................................
 
-.hlpr.limits.x_min_max:
-  helpers:
-    set_limits:
-      x: [min, max]
-
-.hlpr.limits.y_positive:
-  helpers:
-    set_limits:
-      y: [0, ~]
+.plot.agents_in_domain:
+  module: model_plots.SimpleFlocking
+  plot_func: agents_in_domain
 
 
-# Plot types ..................................................................
-
+# .. Facet grid specializations
 .plot.facet_grid:
   based_on:
-    - .dag.generic.facet_grid
-    - .defaults
+    - .plot.facet_grid
 
   # Explicitly set individual facet size and aspect ratio
   size: 4
@@ -123,36 +75,34 @@ _:
     # title: "{dim:} = {value:.3g}"   # ... for numeric values
     title: "{dim:} = {value:}"      # ... allowing non-numeric values
 
-
-.plot.facet_grid.with_auto_encoding:
-  based_on: .plot.facet_grid
-
-  auto_encoding: true
-  col_wrap: auto
-
-
 .plot.facet_grid.type.time_series:
   based_on:
+    - .plot.facet_grid.line
     - .plot.facet_grid.with_auto_encoding
-    - .hlpr.limits.x_min_max
+    - .hlpr.limits.x.min_max
 
   x: time
 
+  helpers:
+    set_labels:
+      x: time [steps]
+      only_label_outer: true
+
+
+
+
 
 # -----------------------------------------------------------------------------
-# Actual plot configurations --------------------------------------------------
+# Actual plots ----------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
 # .. Spatial plots ............................................................
 # A spatial plot of agent positions and orientations
 agents_in_domain:
   based_on:
-    - .defaults
-    - .defaults.animation.ffmpeg
     - .creator.universe
-
-  module: model_plots.SimpleFlocking
-  plot_func: agents_in_domain
+    - .plot.agents_in_domain
+    - .animation.ffmpeg
 
   select:
     x:
@@ -194,6 +144,7 @@ agents_in_domain:
   cmap: hsv  # TODO Is there a better cyclic one?
 
 
+
 # .. Time series ..............................................................
 
 # A time series plot of the normalized absolute group velocity
@@ -201,7 +152,7 @@ time_series/norm_group_velocity:
   based_on:
     - .creator.multiverse
     - .plot.facet_grid.type.time_series
-    - .hlpr.limits.y_positive
+    - .hlpr.limits.y.from_zero
 
   select_and_combine:
     fields:
@@ -214,9 +165,9 @@ time_series/norm_group_velocity:
 time_series/final_group_velocity:
   based_on:
     - .creator.multiverse
+    - .plot.facet_grid.line
     - .plot.facet_grid.with_auto_encoding
-    - .hlpr.limits.x_min_max
-    - .hlpr.limits.y_positive
+    - .hlpr.limits.y.from_zero
 
   expected_multiverse_ndim: [1, 2, 3, 4, 5]
 
@@ -232,17 +183,44 @@ time_series/final_group_velocity:
       tag: data
 
   helpers:
+    set_labels:
+      y: absolute group velocity
     set_title:
       title: final absolute group velocity
-    set_limits:
-      x: [0, ~]
+
+  linestyle: none
+  marker: "."
+
+
+# An adaptation of the final group velocity plot, averaged over dimensions
+time_series/final_group_velocity_errorbars:
+  based_on:
+    - time_series/final_group_velocity
+    - .plot.facet_grid.errorbars
+    - .dag.meta_ops.compute_mean_and_stddev
+
+  dag_options:
+    define:
+      _dims_to_reduce:
+        - define: [[seed]]  # can add other dimension names here
+
+  transform:
+    - compute_mean_and_stddev: [!dag_tag _data, !dag_tag _dims_to_reduce]
+      allow_failure: true
+      fallback: !dag_tag _skip_plot
+      tag: data
+
+  y: mean
+  yerr: stddev
+  use_bands: true
+
 
 # A time series plot of the orientation's circular std. dev.
 time_series/orientation_circstd:
   based_on:
     - .creator.multiverse
     - .plot.facet_grid.type.time_series
-    - .hlpr.limits.y_positive
+    - .hlpr.limits.y.from_zero
 
   select_and_combine:
     fields:
@@ -323,4 +301,3 @@ time_series/orientation:
 
     set_labels:
       y: orientation (circ. mean and std.)
-

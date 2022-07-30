@@ -1,0 +1,10 @@
+# Evaluate the example multiverse run of the ForestFire model
+# Plot only the tree_density and forest state animation
+---
+tree_density_over_p_lightning:
+  based_on: tree_density_facet_grid
+
+  col: p_lightning
+
+tree_density_asymptotic_over_p_lightning:
+  based_on: tree_density_asymptotic_over_p_lightning

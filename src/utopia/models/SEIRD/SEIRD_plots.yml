@@ -1,229 +1,97 @@
 # Default plots for the SEIRD model
 ---
-# --- Plot of all densities over time -----------------------------------------
+# -- Plot of all densities over time ------------------------------------------
 densities:
-  based_on: densities
+  based_on: densities.uni
+
+densities_facet_grid:
+  based_on: densities.mv
 
 
-# --- Counter-based -----------------------------------------------------------
+# -- Counter-based ------------------------------------------------------------
 
 # Transition plots ............................................................
 transitions/raw:
-  based_on: counters
+  based_on: transitions/raw
 
-  transform:
-    - &op_sel_transitions
-      .sel: [!dag_tag d_counts]
-      kwargs:
-        label:
-          - empty_to_susceptible
-          - living_to_empty
-          - susceptible_to_exposed_contact
-          - susceptible_to_exposed_random
-          - susceptible_to_exposed_controlled
-          - exposed_to_infected
-          - infected_to_recovered
-          - infected_to_deceased
-          - recovered_to_susceptible
-
-    # Define as data to be plotted
-    - define: !dag_prev
-      tag: data
-
-  kind: line
-  x: time
-  col: label
-  col_wrap: 3
-  sharey: true
-
-transitions/combined: &transitions_combined
-  based_on: counters
-
-  transform:
-    - *op_sel_transitions
-    - define: !dag_prev
-      tag: data
-
-  kind: line
-  x: time
-  hue: label
-
-  helpers:
-    set_labels:
-      y: Counts
+transitions/combined:
+  based_on: transitions/combined
 
 transitions/smoothed:
-  <<: *transitions_combined
-
-  transform:
-    - *op_sel_transitions
-
-    # Apply rolling mean over a number of time coordinates
-    - callattr: [!dag_prev , rolling]
-      kwargs:
-        dim:
-          # NOTE This value should be reduced if writing less frequently
-          time: &smoothed_by 7
-        # Configure rolling window such that early values are included
-        min_periods: 2
-        center: false
-    - callattr: [!dag_prev , mean]
-
-    # Define as data to be plotted
-    - define: !dag_prev
-      tag: data
-
-  helpers:
-    set_labels:
-      y: !format ["Counts (smoothed over {} data points)", *smoothed_by]
+  based_on: transitions/smoothed
 
 
 # Movement events .............................................................
 movement:
-  based_on: counters
-
-  transform:
-    - .sel: [!dag_tag d_counts]
-      kwargs:
-        label:
-          - move_randomly
-          - move_away_from_infected
-      tag: data
-
-  kind: line
-  x: time
-  hue: label
-
-  helpers:
-    set_labels:
-      y: Movement Events
+  based_on: movement
 
 
-# --- Distribution plots ------------------------------------------------------
+# -- Distribution plots -------------------------------------------------------
 age_distribution/final:
-  based_on: [age_distribution, style.prop_cycle.seird]
-  transform:
-    - SEIRD.compute_age_distribution:
-        age: !dag_tag age
-        kind: !dag_tag kind
-        coarsen_by: 10
-    # Select the last time step
-    - .isel: [!dag_prev , {time: -1}]
-      tag: counts
-
-  helpers:
-    set_title:
-      title: Final Age Distribution
-
+  based_on: age_distribution/final
 
 age_distribution/time_series:
-  based_on: [age_distribution, style.prop_cycle.seird, .animation.ffmpeg]
-  transform:
-    - SEIRD.compute_age_distribution:
-        age: !dag_tag age
-        kind: !dag_tag kind
-        coarsen_by: 10
-        normalize: false  # optional. Default: false
-      tag: counts
-
-  # Represent the time dimension as frames of the animation
-  frames: time
-
+  based_on: age_distribution/time_series
+  enabled: false
 
 age_distribution/deceased:
-  based_on: [age_distribution, style.prop_cycle.deceased]
-  transform:
-    - SEIRD.compute_age_distribution:
-        age: !dag_tag age
-        kind: !dag_tag kind
-        coarsen_by: 10
-        compute_for_kinds: [deceased]
-    - .sum: [!dag_prev , time]
-    - print: !dag_prev
-      tag: counts
-
-  helpers:
-    set_title:
-      title: Deceased Age Distribution
+  based_on: age_distribution/deceased
 
 
-# --- Phase diagrams from two densities ---------------------------------------
+
+# -- Phase diagrams from two densities ----------------------------------------
 phase_diagram/SI:
-  based_on: phase_diagram
-
-  # Select from which densities to create the phase diagram
-  x: susceptible
-  y: infected
-
-  helpers:
-    set_labels:
-      x: Susceptible Density [1/A]
-      y: Infected Density [1/A]
+  based_on: phase_diagram/SI
 
 phase_diagram/SE:
-  based_on: phase_diagram
-
-  x: susceptible
-  y: exposed
-
-  helpers:
-    set_labels:
-      x: Susceptible Density [1/A]
-      y: Exposed Density [1/A]
+  based_on: phase_diagram/SE
 
 phase_diagram/EI:
-  based_on: phase_diagram
-
-  x: exposed
-  y: infected
-
-  helpers:
-    set_labels:
-      x: Exposed Density [1/A]
-      y: Infected Density [1/A]
+  based_on: phase_diagram/EI
 
 
-# --- Snapshots and animations of the spatial grid ----------------------------
-# NOTE These are both based on the snapshot base plots and add the remaining
-#      parameters: For snapshots, the time index that is to be plotted; for
-#      animations, the animation parameters (using multiple inheritance).
 
-# ... The CA ..............................................................
-CA_snapshot:
-  based_on: CA_snapshot
-  enabled: true
-  time_idx: -1
+# -- CA plots -----------------------------------------------------------------
+ca/state:
+  based_on: ca/state
+  enabled: false
 
-CA:
+ca/state_final:
   based_on:
-    - CA_snapshot
-    - .ca.state.anim_ffmpeg
-    - animation
-
-
-
-# ... The CA age ..........................................................
-CA_age_snapshot:
-  based_on: CA_age_snapshot
+    - ca/state
+    - .plot.ca.snapshot
   enabled: false
-  time_idx: -1
-
-CA_age:
-  based_on: [CA_age_snapshot, .ca.state.anim_ffmpeg, animation]
 
 
-# ... The clusters ............................................................
-clusters_snapshot:
-  based_on: clusters_snapshot
+ca/age:
+  based_on: ca/age
   enabled: false
-  time_idx: -1
 
-clusters:
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg, animation]
-
-
-# --- Miscellaneous -----------------------------------------------------------
-# ... Combined plot of CA states and clusters .............................
-CA_and_clusters:
-  based_on: [CA_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
+ca/age_final:
+  based_on:
+    - ca/age
+    - .plot.ca.snapshot
   enabled: false
+
+
+ca/clusters:
+  based_on: ca/clusters
+  enabled: false
+
+ca/clusters_final:
+  based_on:
+    - ca/clusters
+    - .plot.ca.snapshot
+  enabled: false
+
+
+ca/combined:
+  based_on:
+    - ca/state
+    - ca/age
+    - ca/clusters
+
+ca/combined_final:
+  based_on:
+    - ca/combined
+    - .plot.ca.snapshot

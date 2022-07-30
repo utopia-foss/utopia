@@ -128,7 +128,7 @@ Below is the default model configuration for the ``SimpleEG`` model:
 Simulation Results
 ------------------
 
-*TODO*
+.. todo:: This still needs to be written.
 
 
 More Conceptual and Theoretical Background
@@ -218,6 +218,27 @@ Possible Future Extensions
 This section collects ideas of generalizing and extending the model:
 
 * **Generalize interactions to n-dimensional linear games:** currently, players can only choose between two different strategies. This could be generalized rather easily to *n* dimensions by generalizing the interaction matrix to *n* dimensions. With this, it would be possible to model for example rock-paper-scissors dynamics (:math:`n=3`).
+
+
+
+Available plots
+---------------
+The following plot configurations are available for the ``SimpleEG`` model:
+
+Default Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/SimpleEG/SimpleEG_plots.yml
+   :language: yaml
+   :start-after: ---
+
+Base Plot Configuration
+^^^^^^^^^^^^^^^^^^^^^^^
+.. literalinclude:: ../../src/utopia/models/SimpleEG/SimpleEG_base_plots.yml
+   :language: yaml
+   :start-after: ---
+
+For available base plots, see :ref:`utopia_base_plots_ref`.
+
 
 References
 ----------

@@ -1,17 +1,71 @@
 # Base configurations for SandPile model plots
 ---
-# --- A plot of the slope (mean - critical_slope) -----------------------------
-mean_slope:
-  based_on: .default_style_and_helpers
+.variables:
+  base_path: &base_path  data/SandPile
 
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+# -- Plot functions -----------------------------------------------------------
+# .. A plot of the slope (mean - critical_slope) ..............................
+.plot.mean_slope:
+  based_on:
+    - .defaults
+
+  # This plot only works with the universe plot creator, does not support DAG
   creator: universe
   universes: all
-  
+
   # Use the SandPile-specific plot functions
   module: model_plots.SandPile
   plot_func: mean_slope
 
-  # Select that the critical slope value should be added to the plot
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+
+# -- Mean slope ---------------------------------------------------------------
+mean_slope:
+  based_on:
+    - .plot.mean_slope
+
+  # Specify that the critical slope value should be added to the plot
   show_critical_slope_value: true
 
   # Add a title
@@ -24,55 +78,88 @@ mean_slope:
   marker: '.'
 
 
-# --- Plot the avalanche area fraction time series ----------------------------
+
+
+# -- Avalanche area fraction time series --------------------------------------
 area_fraction:
-  based_on: .time_series.density
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.scatter
+    - .hlpr.kind.time_series
+
+  select:
+    avalanche_size:
+      path: avalanche_size
+      transform:
+        - .data
+    num_cells:
+      path: avalanche_size
+      transform:
+        - .attrs: [!dag_prev , num_cells]
+
+  transform:
+    - div: [!dag_tag avalanche_size, !dag_tag num_cells]
+      tag: area_fraction
+
+    # Compute the marker sizes such that larger area fractions are larger
+    - mul: [!dag_tag area_fraction, 100]
+    - add: [!dag_prev , 2]
+      tag: sizes
+
+    # Combine into a dataset
+    - xr.Dataset:
+      - area_fraction: !dag_tag area_fraction
+        sizes: !dag_tag sizes
+      tag: data
+
+  x: time
+  y: area_fraction
+  s: !dag_result sizes
+
+  # Arguments passed on to plt.scatter ...
+  # Need to adjust scatter points such that they don't have an edge
+  marker: '.'
+  alpha: .8
+  edgecolors: none
+  linewidths: 0.
 
   # Adjust helpers
   helpers:
     set_labels:
       y: Rel. Area $[1/A]$
-    set_scales:
-      y: log
     set_limits:
-      y: [1.e-5, 1.]
+      y: [0., 1.]
     set_title:
       title: Avalanche Size Area Fraction
 
-  # Specify which data to use
-  model_name: SandPile
-  path_to_data: avalanche
-  
-  # Select states from which to calculate the density; result is binary mask
-  preprocess:
-    - create_mask: [==, 1]
-  
-  mean_of: [x, y]
-
-  # And that the avalanche sizes are to be used as dot sizes. The sizes are
-  # normalized by dividing through the maximum size, which allows scaling the
-  # scatter dots via the `size_factor` argument
-  sizes_from: avalanche_size
-  size_factor: 42.
-
-  # Arguments passed on to plt.scatter ...
-  # Adjust such that they don't have an edge
-  marker: 'o'
-  alpha: .9
 
 
-# --- A plot of the cluster size distribution ---------------------------------
+# -- Cluster size distribution ------------------------------------------------
 cluster_size_distribution:
-  based_on: .distribution.histogram
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.hist  # wraps xarray.plot.hist
 
   # Specify which data to calculate the histogram of
-  model_name: SandPile
-  path_to_data: avalanche_size
+  select:
+    avalanche_size: avalanche_size
+
+  transform:
+    # We are interested in the log-scaled avalanche sizes
+    - log10: !dag_tag avalanche_size
+      tag: data
+
+    # Generate a title which includes the number of avalanches
+    - len: !dag_tag data
+    - .format:
+        - "Cluster Size Distribution ($N={}$)"
+        - !dag_prev
+      tag: title_str
 
   # Set scales, limits, and title
   helpers:
     set_title:
-      title: Cluster Size Distribution
+      title: !dag_result title_str
     set_labels:
       x: $\log_{10}(A)$
       y: $N_A$
@@ -80,41 +167,115 @@ cluster_size_distribution:
       y: log
     set_limits:
       x: [0, max]
-      y: [0.8, ~]
-
-  # Preprocess the histogram
-  preprocess:
-  # Apply a base-10 logarithm; histogram makes no sense otherwise
-    - log10
+      y: [0.7, ~]
 
   # Configure the histogram
-  histogram_kwargs:
-    bins: 25
-    range: [0, ~]  # None is resolved to data.min() or data.max()
-
-  # Arguments passed to plt.bar
-  # ...
+  bins: 36
+  range: [0, 6]
+  # ... further arguments here are passed to np.histogram (via matplotlib)
 
 
-# --- A plot of the complementary cumulative probability distribution ---------
-compl_cum_prob_dist:
-  based_on: .distribution.histogram.complementary_cumulative
 
-  # Specify basic configuration for this model
-  model_name: SandPile
-  path_to_data: avalanche_size
 
-  helpers:
+# -- Complementary Cumulative Cluster Size Distribution -----------------------
+# ... for individual universes
+compl_cum_cluster_size_dist.universe:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+
+  select:
+    cluster_size: avalanche_size
+
+  transform:
+    # Use a custom operation to compute the complementary cluster size
+    # distribution. Repeated counts need to be masked because (in a cumulative
+    # distribution) they represent bins with zero counts; masking these makes
+    # the plot visually simpler ...
+    - complementary_cumulative_distribution: !dag_tag cluster_size
+      kwargs:
+        mask_repeated: true
+      tag: data
+
+  helpers: &compl_cum_helpers
     set_title:
-      title: Compl. Cum. Prob. Distr. of Avalanche Sizes
+      title: &compl_cum_title Compl. Cum. Cluster Size Distribution
+    set_labels:
+      x: Cluster Size $[A]$
+      y: $N_A$
     set_scales:
       x: log
       y: log
-    set_labels:
-      x: Cluster Size $[A]$
-      y: $P_A(A)$
-    set_limits:
-      x: [0.8, ~]
 
-  # Arguments passed to plt.plot
-  # ...
+  linestyle: "None"
+  marker: "."
+
+
+# ... more generically: for sweeps
+compl_cum_cluster_size_dist.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .skip.if_more_than_4D
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
+
+  select_and_combine:
+    fields:
+      data:
+        path: avalanche_size
+        transform:
+          - complementary_cumulative_distribution: !dag_prev
+            kwargs:
+              mask_repeated: true
+          - .rename: [!dag_prev , {bin_pos: "cluster size"}]
+
+  x: cluster size
+
+  helpers:
+    <<: *compl_cum_helpers
+    set_title:
+      enabled: false
+    set_suptitle:
+      title: *compl_cum_title
+
+  linestyle: "None"
+  marker: "."
+
+
+# -- CA Plots -----------------------------------------------------------------
+
+# START --- ca/slope
+ca/slope:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    slope: slope
+
+  to_plot:
+    slope:
+      title: Slope
+      cmap: copper
+# END --- ca/slope
+
+ca/avalanche:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    avalanche: avalanche
+
+  to_plot:
+    avalanche:
+      title: Avalanche
+      limits: [0, 1]
+      cmap:
+        static: black
+        mobile: orange
+
+ca/slope_and_avalanche:
+  based_on:
+    - ca/slope
+    - ca/avalanche

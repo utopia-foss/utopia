@@ -24,7 +24,8 @@ git and GitLab offer solutions to these kinds of questions. git is a *version co
 
 For Utopia, as for any project, this means that there is always a stable version (the "master" branch), which you can download, and which is guaranteed to work. All the development, so the things people are working on separately at the same time, happens on individual branches. When a developer has completed their project, they can ask to have their work merged into the master branch, thereby making it accessible to everyone else.
 
-A common scenario is that several people have simultaneously made changes to the same piece of code, such that your changes can no longer be automatically merged. This is called a `merge conflict`, and resolving it often requires manually selecting the changes to keep. However, more on that later.
+A common scenario is that several people have simultaneously made changes to the same piece of code, such that your changes can no longer be automatically merged.
+This is called a *merge conflict*, and resolving it often requires manually selecting the changes to keep. However, more on that later.
 
 The git workflow: Stage, Commit, Push
 -------------------------------------
@@ -84,7 +85,8 @@ To check the status of your repository, do
 
     git status
     
-This will display any changes to the repository which have not yet been pushed to the GitLab project. To `stage` files that contain changes you wish to store, do
+This will display any changes to the repository which have not yet been pushed to the GitLab project.
+To *stage* files that contain changes you wish to store, do
 
 .. code-block:: shell
     
@@ -109,7 +111,7 @@ To commit, do
 
     git commit -m '< ... >'
     
-where ``<...>`` should contain a `commit message`, i.e. a brief description of the content of the commit. For example, a valid example would be
+where ``<...>`` should contain a *commit message*, i.e. a brief description of the content of the commit. For example, a valid example would be
 
 .. code-block:: shell
     
@@ -184,7 +186,9 @@ Now click on the ``Submit issue`` button and – congratulations, you have creat
 
 Merge Request: The development phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you have planned out your issue to a sufficient extent (*you* decide what that means) and want to start coding, you can open a `merge reques` (MR). A MR is just that: a request to merge your branch into another branch, typically the master branch, though you can specify which branch you want to merge into. Click on the "Create merge request" button you find in the issue: this will automatically redirect you to a new page with your merge request, where you can select your branch (source) and the target branch into which you want to merge your changes.
+If you have planned out your issue to a sufficient extent (*you* decide what that means) and want to start coding, you can open a *merge request* (MR).
+A MR is just that: a request to merge your branch into another branch, typically the master branch, though you can specify which branch you want to merge into.
+Click on the "Create merge request" button you find in the issue: this will automatically redirect you to a new page with your merge request, where you can select your branch (source) and the target branch into which you want to merge your changes.
 
 When you create a MR, you should provide some information about what you want to implement. For this, click on the ``Edit`` button in the top right-hand corner of the page. Just as for the issue, you can also ``Choose a template``. Choose the ``Model-MR`` and fill in what you can already fill in. You should update this description alongside your work on the merge request, at the very latest when you are nearing the merge.
 
@@ -197,8 +201,12 @@ You should know that nothing will be merged into the Utopia master that has not 
 
 Automatic Testing Pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-How do we ensure that everything that is implemented in Utopia works correctly? By :ref:`writing tests <impl_unit_tests>`! Every time you push to any branch in the Utopia project, the code will be automatically tested in a so-called `pipeline`. These tests allow us to for instance check that a function returns exactly what it should return in all possible cases. Checking every component of your code with a test allows you to be quite sure that your code does what you want it to do. What is more, if future changes to your code happen to impair its functionality, the tests will fail, thereby alerting you to the error.
+How do we ensure that everything that is implemented in Utopia works correctly?
+By :ref:`writing tests <impl_unit_tests>`!
+Every time you push to any branch in the Utopia project, the code will be automatically tested in a so-called *pipeline*.
+These tests allow us to for instance check that a function returns exactly what it should return in all possible cases.
+Checking every component of your code with a test allows you to be quite sure that your code does what you want it to do.
+What is more, if future changes to your code happen to impair its functionality, the tests will fail, thereby alerting you to the error.
 
 Where do these tests come from? You need to write them. You can write tests in C++ and/or Python. For examples, look at existing model tests:
 
@@ -210,5 +218,3 @@ For setting up the testing system for your model, look at the description in the
 For running your tests, see :ref:`running_tests`.
 
 Note that if you have set up the testing infrastructure for your model, your tests will automatically be built and executed whenever you push something to the GitLab project. If your test fails, you will receive an e-mail notification and you will see in your merge request that the test failed. If this happens, don't worry! Just fix the error, commit it, and push it again. Only when you want your merge request to get integrated into the Utopia master branch do all tests need to pass.
-
-

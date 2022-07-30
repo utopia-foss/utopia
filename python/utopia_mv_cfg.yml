@@ -1,0 +1,79 @@
+# The Utopia framework's Multiverse framework-level configuration
+#
+# This recursively updates the utopya base configuration.
+---
+# Output directory configuration
+paths:
+  out_dir: ~/utopia_output
+
+
+# Data loading configuration
+data_manager:
+  load_cfg:
+    # Configure the DataManager to load the HDF5 simulation data as proxies
+    data:
+      loader: hdf5_proxy
+      glob_str: data/uni*/data.h5
+      required: true
+      path_regex: data/uni(\d+)/data.h5
+      target_path: multiverse/{match:}/data
+      enable_mapping: true   # see DataManager for content -> type mapping
+
+      # Options for loading data in parallel (speeds up CPU-limited loading)
+      parallel:
+        enabled: false
+
+        # Number of processes to use; negative is deduced from os.cpu_count()
+        processes: ~
+
+        # Threshold values for parallel loading; if any is below these
+        # numbers, loading will *not* be in parallel.
+        min_files: 5
+        min_total_size: 104857600  # 100 MiB
+
+  # --- End of load configuration
+
+
+# Plotting configuration
+plot_manager:
+  shared_creator_init_kwargs:
+    style:
+      figure.figsize: [8., 5.]  # (16:10 instead of 4:3)
+
+
+# Default parameter space configuration
+#
+# This extends the utopya defaults and/or explicitly specifies those
+# parameters that are required by the Utopia C++ backend.
+parameter_space:
+  # Default PRNG seed
+  seed: 42
+
+  # Time stepping defaults
+  num_steps: 3
+  write_start: 0
+  write_every: 1
+  # NOTE `write_start` and `write_every` are passed along to sub-models. Every
+  #       sub model can overwrite this entry by adding an entry in their model
+  #       configuration level (analogous to `log_levels`.)
+
+  # How frequently to emit monitoring information
+  monitor_emit_interval: 2.
+
+  # Parallel features of Utopia (need appropriate dependencies installed)
+  parallel_execution:
+    enabled: false
+
+  # Default logging pattern and level defaults
+  log_pattern: "[%T.%e] [%^%l%$] [%n]  %v"
+  log_levels:
+    # backend: core, data I/O, and DataManager (in WriteMode::managed)
+    core: warning
+    data_io: warning
+    data_mngr: warning
+
+    # root model: inherited by sub-models if they don't set their own log level
+    model: info
+
+  # File mode to use for the output HDF5 file
+  output_file_mode: w

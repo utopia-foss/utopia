@@ -1,75 +1,28 @@
 # This defines the default plots for the SimpleEG model
 ---
-# plot the frequency of the strategy S0
-frequency_S0:
-  enabled: false
-
-  creator: universe
-  universes: all
-
-  module: model_plots.SimpleEG
-  plot_func: frequency
-
-  strategy: S0
+# The frequency of the strategy S1 (a facet grid plot)
+frequency_S1:
+  based_on: frequency_S1
 
 
-# plot the frequency of strategy S0 and S1 in one plot
+# The frequency of strategies S0 and S1 in one plot
 frequencies:
-  creator: universe
-  universes: all
-
-  module: model_plots.SimpleEG
-  plot_func: frequency
-
-  strategy: [S0, S1]
+  based_on: frequencies
 
 
-# plot the spatial development in the CA of the strategy
-strategy_and_payoff: &strategy_and_payoff
-  # Base this plot on a utopya base plot configuration
-  based_on: .ca.state.anim_ffmpeg
+# Payoff distribution plots
+payoff_distribution_over_time:
+  based_on: payoff_distribution_over_time
 
-  model_name: SimpleEG
-
-  # Select the properties to plot
-  to_plot:
-    # The name of the property to plot with its options
-    strategy:
-      title: Strategy
-      limits: [0, 1]
-      cmap: 
-        S0: red
-        S1: blue
-
-    payoff:
-      title: Payoff
-      limits: [0, 12]
-      cmap: viridis
+payoff_distribution_final:
+  based_on: payoff_distribution_final
 
 
-# another plot that stores things as frames
-strategy_and_payoff_frames:
-  <<: *strategy_and_payoff
-  enabled: false
+# The spatial development in the CA of the strategy and the payoff
+ca/strategy_and_payoff:
+  based_on: strategy_and_payoff
 
-  # Writer options
-  writer: frames  # can be: frames, ffmpeg (if installed), ...
-  
-  # For the 'frames' writer, the following additional kwargs can be passed
-  frames_kwargs:
-    file_format: png
-
-
-# plot the spatial development in the CA of only the strategy
-strategy:
-  <<: *strategy_and_payoff
-  enabled: false
-
-  # Select only the strategy state property to plot
-  to_plot:
-    strategy:
-      title: Strategy
-      limits: [0, 1]
-      cmap: 
-        S0: red
-        S1: blue
+ca/strategy_and_payoff_final:
+  based_on:
+    - ca/strategy_and_payoff
+    - .plot.ca.snapshot

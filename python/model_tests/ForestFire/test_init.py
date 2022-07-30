@@ -14,19 +14,24 @@ mtc = ModelTest("ForestFire", test_file=__file__)
 # Helpers ---------------------------------------------------------------------
 # NOTE These helpers are also imported by other test modules for ForestFire
 
+
 def model_cfg(**kwargs) -> dict:
     """Creates a dict that can update the config of the ForestFire"""
     return dict(parameter_space=dict(ForestFire=dict(**kwargs)))
+
 
 def cell_params(**kwargs) -> dict:
     """Creates a dict that can update the config of the ForestFire"""
     return model_cfg(cell_manager=dict(cell_params=dict(**kwargs)))
 
+
 def is_equal(x, y, *, tol=1e-16) -> bool:
     """Whether x is in interval [y-tol, y+tol]"""
-    return y-tol <= x <= y+tol
+    return y - tol <= x <= y + tol
+
 
 # Tests -----------------------------------------------------------------------
+
 
 def test_basics():
     """Test the most basic features of the model"""
@@ -44,34 +49,36 @@ def test_basics():
     # Assert that data was loaded, i.e. that data was written
     assert len(mv.dm)
 
-def test_output(): 
+
+def test_output():
     """Test that the output structure is correct"""
     # Create a Multiverse and let it run
     mv, dm = mtc.create_run_load(from_cfg="output.yml", perform_sweep=True)
     # NOTE this is a shortcut. It creates the mv, lets it run, then loads data
 
     # Get the meta-config from the DataManager
-    mcfg = dm['cfg']['meta']
+    mcfg = dm["cfg"]["meta"]
     print("meta config: ", mcfg)
 
     # Assert that the number of runs matches the specified ones
-    assert len(dm['multiverse']) == mcfg['parameter_space'].volume
+    assert len(dm["multiverse"]) == mcfg["parameter_space"].volume
 
     # For each universe, iterate over the output data and assert the shape
     # and the content of the output data
-    for uni_no, uni in dm['multiverse'].items():
+    for uni_no, uni in dm["multiverse"].items():
         # Get the data
-        data = uni['data']['ForestFire']
+        data = uni["data"]["ForestFire"]
 
         # Get the config of this universe
-        uni_cfg = uni['cfg']
+        uni_cfg = uni["cfg"]
 
         # Check that all datasets are available
-        assert 'kind' in data
-        assert 'tree_density' in data
-        assert 'cluster_id' in data
+        assert "kind" in data
+        assert "tree_density" in data
+        assert "cluster_id" in data
 
-def test_initial_state_random(): 
+
+def test_initial_state_random():
     """Test that the initial states are random and densities are carried over.
 
     The tests done here only perform the initial write operation.
@@ -79,13 +86,15 @@ def test_initial_state_random():
     # Use the config file for common settings, change via additional kwargs
     # Start with .5 tree density
     p_tree = 0.5
-    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",  # num_steps: 0
-                                **cell_params(p_tree=p_tree))
+    _, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml",  # num_steps: 0
+        **cell_params(p_tree=p_tree),
+    )
 
     # For all universes, perform checks on the state
-    for uni in dm['multiverse'].values():
-        kind = uni['data/ForestFire/kind']
-        tree_density = uni['data/ForestFire/tree_density']
+    for uni in dm["multiverse"].values():
+        kind = uni["data/ForestFire/kind"]
+        tree_density = uni["data/ForestFire/tree_density"]
 
         # Kind should be random; calculate the ratio and check limits
         assert is_equal(kind.mean(), p_tree, tol=0.05)
@@ -95,36 +104,38 @@ def test_initial_state_random():
 
     # Test again for another probability value
     p_tree = 0.2
-    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                **cell_params(p_tree=p_tree))
+    _, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml", **cell_params(p_tree=p_tree)
+    )
 
-    for uni in dm['multiverse'].values():
-        kind = uni['data/ForestFire/kind']
-        tree_density = uni['data/ForestFire/tree_density']
+    for uni in dm["multiverse"].values():
+        kind = uni["data/ForestFire/kind"]
+        tree_density = uni["data/ForestFire/tree_density"]
         assert is_equal(kind.mean(), p_tree, tol=0.05)
         assert is_equal(kind.mean(), tree_density.item())
 
     # Test again for another probability value
     p_tree = 0.0
-    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                **cell_params(p_tree=p_tree))
+    _, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml", **cell_params(p_tree=p_tree)
+    )
 
-    for uni in dm['multiverse'].values():
-        kind = uni['data/ForestFire/kind']
-        tree_density = uni['data/ForestFire/tree_density']
+    for uni in dm["multiverse"].values():
+        kind = uni["data/ForestFire/kind"]
+        tree_density = uni["data/ForestFire/tree_density"]
 
         # check, that no cell is a tree
         assert (kind == 0).all()
         assert is_equal(kind.mean(), tree_density.item())
 
-    
     p_tree = 1.0
-    _, dm = mtc.create_run_load(from_cfg="initial_state.yml",
-                                **cell_params(p_tree=p_tree))
+    _, dm = mtc.create_run_load(
+        from_cfg="initial_state.yml", **cell_params(p_tree=p_tree)
+    )
 
-    for uni in dm['multiverse'].values():
-        kind = uni['data/ForestFire/kind']
-        tree_density = uni['data/ForestFire/tree_density']
+    for uni in dm["multiverse"].values():
+        kind = uni["data/ForestFire/kind"]
+        tree_density = uni["data/ForestFire/tree_density"]
 
         # check, that all cells are trees
         assert (kind == 1).all()
@@ -135,8 +146,8 @@ def test_fire_lanes():
     """Runs the model with the bottom row constantly ignited"""
     mv, dm = mtc.create_run_load(from_cfg="lanes.yml")
 
-    for uni_no, uni in dm['multiverse'].items():
-        data = uni['data']['ForestFire']['kind']
+    for uni_no, uni in dm["multiverse"].items():
+        data = uni["data"]["ForestFire"]["kind"]
 
         # The first row and first column are stones for all times
         assert (data.isel(x=0) == 4).all()
@@ -145,11 +156,11 @@ def test_fire_lanes():
         # With 2 vertical and 5 horizontal lanes, and a resolution of 22 on a
         # 1x1 space, the following indices are also stones for all times:
         assert (data.isel(x=11) == 4).all()
-        assert (data.isel(y=int(22*1/5)) == 4).all()
-        assert (data.isel(y=int(22*2/5)) == 4).all()
-        assert (data.isel(y=int(22*3/5)) == 4).all()
-        assert (data.isel(y=int(22*4/5)) == 4).all()
+        assert (data.isel(y=int(22 * 1 / 5)) == 4).all()
+        assert (data.isel(y=int(22 * 2 / 5)) == 4).all()
+        assert (data.isel(y=int(22 * 3 / 5)) == 4).all()
+        assert (data.isel(y=int(22 * 4 / 5)) == 4).all()
 
         # ... while neighbouring rows and columns are not!
-        assert not (data.isel(y=int(22*1/5) + 1) == 4).all()
-        assert not (data.isel(y=int(22*1/5) - 1) == 4).all()
+        assert not (data.isel(y=int(22 * 1 / 5) + 1) == 4).all()
+        assert not (data.isel(y=int(22 * 1 / 5) - 1) == 4).all()

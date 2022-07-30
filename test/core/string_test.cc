@@ -73,5 +73,3 @@ BOOST_AUTO_TEST_CASE(test_split) {
     // How about multi-character delimiters?
     BOOST_TEST(split("foo->bar", "->") == S({"foo", "bar"}));
 }
-
-

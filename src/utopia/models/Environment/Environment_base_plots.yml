@@ -1,6 +1,73 @@
-# This file holds the base configuration for Environment model plots
+# Base plot configuration for this model
+#
+# The configurations given here can be used in the <model_name>_plots.yml file
 ---
-state_anim:
-  based_on: .ca.state.anim_frames
-  
-  model_name: Environment
+.variables:
+  base_path: &base_path data/Environment
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+
+ca/parameter:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    some_heterogeneous_parameter: some_heterogeneous_parameter
+
+  to_plot:
+    some_heterogeneous_parameter:
+      title: some_heterogeneous_parameter
+      limits: [-0.2, +1.0]
+
+
+trajectory:
+  based_on:
+    - .creator.universe
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+
+  select:
+    data: some_global_parameter

@@ -1,0 +1,87 @@
+# Base plot configuration for the Geomorphology model
+---
+.variables:
+  base_path: &base_path data/Geomorphology
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
+
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+# The spatial development in the CA
+ca:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  # Select the data and process it
+  select:
+
+    height: height
+    watercolumn: watercolumn
+
+    # In the drainage area calculation, log10 leads to container attributes
+    # being dropped; need to manually add them back to not lose information
+    # about the grid structure.
+    _array_attrs:
+      path: drainage_area
+      transform: [.attrs]
+
+    log10_drainage_area:
+      path: drainage_area
+      transform:
+        - log10
+        - .assign_attrs: [!dag_prev , !dag_tag _array_attrs]
+
+  # Select the properties to plot
+  to_plot:
+    height:
+      title: Rock Height
+      cmap: gist_earth
+
+    log10_drainage_area:
+      title: $log_{10}$ Drainage Area
+      cmap: Blues
+      limits: [0, max]
+
+    watercolumn:
+      title: Water Column
+      cmap: Blues

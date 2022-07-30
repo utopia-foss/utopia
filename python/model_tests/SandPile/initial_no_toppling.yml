@@ -31,4 +31,3 @@ parameter_space:
     # --- Dynamics ------------------------------------------------------------
     # The critical slope; beyond this value, sand topples
     critical_slope: 4 
-

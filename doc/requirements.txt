@@ -1,10 +1,13 @@
-Sphinx >= 4.2
+# Use a sphinx version that is compatible with sphinx-book-theme
+Sphinx == 4.5.*
 
 # Extensions
 sphinx-argparse
-sphinx-markdown-tables
+sphinx-togglebutton
 breathe >= 4.13
 myst-parser
+sphinx-markdown-tables >= 0.0.16
+markdown>=3.4.1
 ipython>=7.0
 
 # Themes

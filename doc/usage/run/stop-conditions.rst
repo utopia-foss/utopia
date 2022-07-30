@@ -23,7 +23,7 @@ Configuring a simulation run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To configure such a stop condition, add an entry like the following to your :ref:`run configuration <feature_meta_config>`:
 
-.. literalinclude:: ../../../python/utopya/test/cfg/stop_conds.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/stop_conds.yml
     :language: yaml
     :start-after: ---
 
@@ -33,10 +33,10 @@ They do so once in short and once in long syntax (the short syntax is useful if 
 
 The third condition checks against the current model state, as conveyed to the frontend via its :ref:`monitor method <stop_conds_monitor>`.
 
-Currently, the following stop condition functions are available in the :py:mod:`~utopya.stopcond_funcs` module:
+Currently, the following stop condition functions are available in the :py:mod:`~utopya.stop_conditions` module:
 
-* :py:func:`~utopya.stopcond_funcs.timeout_wall` terminates a *single* universe if it took too much time (measured against the clock on the wall, not CPU time)
-* :py:func:`~utopya.stopcond_funcs.check_monitor_entry` reads the latest monitor entries and compares it to some ``value`` using an ``operator``.
+* :py:func:`~utopya.stop_conditions.timeout_wall` terminates a *single* universe if it took too much time (measured against the clock on the wall, not CPU time)
+* :py:func:`~utopya.stop_conditions.check_monitor_entry` reads the latest monitor entries and compares it to some ``value`` using an ``operator``.
 
 .. note::
 
@@ -76,7 +76,7 @@ During the simulation run
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Let's say that we choose the following run configuration:
 
-.. literalinclude:: ../../../python/utopya/test/cfg/stop_conds_integration.yml
+.. literalinclude:: ../../_inc/utopya/tests/cfg/stop_conds_integration.yml
     :language: yaml
     :start-after: ---
     :end-before: worker_manager

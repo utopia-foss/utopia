@@ -15,4 +15,3 @@ Model Life Cycle
 2. Implement the model
 3. Generate simulation data from the model
 4. Evaluate the output of the computer simulation
-

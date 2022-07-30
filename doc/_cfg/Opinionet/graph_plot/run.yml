@@ -1,0 +1,12 @@
+perform_sweep: false
+
+parameter_space:
+  num_steps: 1000
+  write_every: 50
+  seed: 10
+  Opinionet:
+    tolerance: 0.2
+    network:
+      model: regular
+      num_vertices: 50
+      mean_degree: 14

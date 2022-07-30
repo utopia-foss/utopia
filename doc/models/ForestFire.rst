@@ -39,11 +39,11 @@ The following data is stored alongside the simulation:
 
 * ``kind``: the state of each cell. Possible values:
 
-   * ``0``: ``empty``
-   * ``1``: ``tree``
-   * ``2``: (not used)
-   * ``3``: ``source``, is constantly ignited
-   * ``4``: ``stone``, does not take part in any interaction
+  * ``0``: ``empty``
+  * ``1``: ``tree``
+  * ``2``: (not used)
+  * ``3``: ``source``, is constantly ignited
+  * ``4``: ``stone``, does not take part in any interaction
 
 * ``age``: the age of each tree, reset after lightning strikes
 * ``cluster_id``: a number identifying to which cluster a cell belongs; ``0`` for non-tree cells
@@ -123,13 +123,12 @@ Base Plot Configuration
    :language: yaml
    :start-after: ---
 
-For the utopya base plots, see :ref:`utopya_base_cfg`.
+For available base plots, see :ref:`utopia_base_plots_ref`.
 
 References
 ----------
 
 * Bak, P., K. Chen and C. Tang, 1990: A forest-fire model and some thoughts on turbulence, Phys. Lett. A, 147, (5-6), 297–300,
   doi: `10.1016/0375–9601(90)90451–S <https://doi.org/10.1016/0375-9601(90)90451-S>`_
-  (`PDF <http://cqb.pku.edu.cn/tanglab/pdf/1990-55.pdf>`_).
 
 * Kurt Roth: Complex, Chaotic and Evolving Environmental Systems (Lecture Notes). Chapter: Discrete Complex Systems — Contact Processes

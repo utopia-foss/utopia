@@ -1,63 +1,76 @@
 # Default plots for the ContDisease model
 ---
-# --- Plot of all densities over time -----------------------------------------
+# --- Densities time series ---------------------------------------------------
 densities:
-  based_on: densities
+  enabled: false
+  based_on: densities.universe
+
+densities_facet_grid:
+  based_on: densities.multiverse
   
-# --- Create a phase plot of two densities ------------------------------------
+# --- Phase plot of two densities ---------------------------------------------
 phase_diagram:
   based_on: phase_diagram
 
   # Select from what densities to create the phase diagram
   x: tree
   y: infected
+  hue: time
 
   helpers:
     set_labels:
       x: Tree Density [1/A]
       y: Infected Density [1/A]
-    set_limits:
-      x: [0, 0.7]
-      y: [0, 0.01]
+    set_title:
+      title: Phase Diagram
 
-  # Parameters that are passed on to plot.scatter
+  cmap: viridis_r
+
+  # Parameters that are passed on to plt.scatter
   s: 10
 
 
 # --- Snapshots and animations of the spatial grid ----------------------------
-# NOTE These are both based on the snapshot base plots and add the remaining
-#      parameters: For snapshots, the time index that is to be plotted; for
-#      animations, the animation parameters (using multiple inheritance).
+# The snapshot plots show the final state of the CA or, more precisely, the
+# last written time step. To adjust these, set the `frames_isel` parameter.
 
 # ... The forest ..............................................................
-forest_snapshot:
-  based_on: forest_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest:
+  based_on: ca/forest
 
-forest:
-  based_on: [forest_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_snapshot:
+  based_on:
+    - ca/forest
+    - .plot.ca.snapshot
 
 # ... The forest age ..........................................................
-forest_age_snapshot:
-  based_on: forest_age_snapshot
-  enabled: false
-  time_idx: -1
+ca/forest_age:
+  based_on: ca/forest_age
 
-forest_age:
-  based_on: [forest_age_snapshot, .ca.state.anim_ffmpeg]
+ca/forest_age_snapshot:
+  based_on:
+    - ca/forest_age
+    - .plot.ca.snapshot
 
 # ... The clusters ............................................................
-clusters_snapshot:
-  based_on: clusters_snapshot
-  enabled: false
-  time_idx: -1
+ca/clusters:
+  based_on: ca/clusters
 
-clusters:
-  based_on: [clusters_snapshot, .ca.state.anim_ffmpeg]
+ca/clusters_snapshot:
+  based_on:
+    - ca/clusters
+    - .plot.ca.snapshot
 
-# --- Miscellaneous -----------------------------------------------------------
 # ... Combined plot of forest states and clusters .............................
-forest_and_clusters:
-  based_on: [forest_snapshot, clusters_snapshot, .ca.state.anim_ffmpeg]
-  enabled: false
+ca/combined:
+  based_on:
+    - ca/forest
+    - ca/forest_age
+    - ca/clusters
+
+  # col_wrap: false
+
+ca/combined_snapshot:
+  based_on:
+    - ca/combined
+    - .plot.ca.snapshot

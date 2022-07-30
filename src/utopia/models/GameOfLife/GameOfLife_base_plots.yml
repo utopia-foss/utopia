@@ -2,34 +2,94 @@
 #
 # The configurations given here can be used in the <model_name>_plots.yml file
 ---
-# Plot a state animation of the cellular automaton
-state_anim:
-  based_on: .ca.state
+.variables:
+  base_path: &base_path data/GameOfLife
 
-  model_name: GameOfLife
 
-  # Specify the time index (will be ignored, but needs to be specified)
-  time_idx: 0
 
-  # Enable animation
-  animation:
-    enabled: true
+# =============================================================================
+#  ╔╦╗╔═╗╔╦╗╔═╗╦  ╔═╗╔╦╗╔═╗╔═╗
+#   ║ ║╣ ║║║╠═╝║  ╠═╣ ║ ║╣ ╚═╗
+#   ╩ ╚═╝╩ ╩╩  ╩═╝╩ ╩ ╩ ╚═╝╚═╝
+# =============================================================================
+# -- Overloads ----------------------------------------------------------------
+# Overload some configs to insert model-specific settings
 
-# Plot the mean density of living cells
+# Model-specific defaults
+.defaults:
+  based_on: .defaults
+
+  # Can define something here ...
+
+
+# .. Creators .................................................................
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+
+  dag_options:
+    select_path_prefix: *base_path
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+  select_and_combine:
+    base_path: *base_path
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗╔═╗
+#  ╠═╝║  ║ ║ ║ ╚═╗
+#  ╩  ╩═╝╚═╝ ╩ ╚═╝
+# =============================================================================
+
+# A state animation of the cellular automaton
+ca/state:
+  based_on:
+    - .creator.universe
+    - .plot.ca
+
+  select:
+    living: living
+
+  to_plot:
+    living:
+      title: " "
+      limits: [0, 1]
+      draw_cbar: false
+      cmap:
+        empty: white
+        living: cornflowerblue
+
+
+# The mean density of living cells
 density_living_cells:
-  based_on: .dag.generic.facet_grid
-  creator: multiverse
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.line
+    - .hlpr.kind.time_series
+    - .hlpr.limits.y.from_zero
 
   select_and_combine:
     fields:
       living: living
-    base_path: data/GameOfLife
 
   transform:
     # The 'data' provided to the facet_grid plot function is the mean over
     # the 'x' and 'y' dimension. Due to the fact that living is represented as
     # 1 and dead as 0, calculating the mean over all grid cells automatically
     # results in the density
-    - operation: .mean
-      args: [!dag_tag living, ['x', 'y']]
+    - .mean: [!dag_tag living, ['x', 'y']]
       tag: data
+
+  helpers:
+    set_labels:
+      y: Density of living cells
+      only_label_outer: true

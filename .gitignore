@@ -32,6 +32,7 @@
 !*Doxylocal
 !*.bib
 !*.tex
+!*.txt
 !LICENSE
 !LICENSE.LESSER
 !CITATION.cff
@@ -40,10 +41,11 @@
 # Python and configuration
 !*.py
 !*.yml
+!*.yaml
+!*.toml
 !*.coveragerc
 
 # Miscellaneous
-!python/utopya/utopya/bin/utopia
 !.dockerignore
 !*.dockerfile
 !.gitignore
@@ -53,7 +55,8 @@
 # Again blacklist certain directories and files completely, e.g. because they
 # contain automatically created build artefacts or test metadata
 build/
-doc/api/utopya
+doc/api
+doc/_static/_gen
 *.egg-info
 *.pytest_cache
 __pycache__

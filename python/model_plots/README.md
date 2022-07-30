@@ -1,9 +1,9 @@
 # Model-specific plotting scripts
 
 This python package gathers all model-specific plotting scripts.
-These are scripts that go beyond the (rather general) capabilities of the `utopya.plot_funcs` subpackage in that they, e.g., perform hard-to-generalize transformations on the data before creating a plot.
+These are scripts that go beyond the (rather general) capabilities of the `utopya.eval.plots` subpackage in that they, e.g., perform hard-to-generalize transformations on the data before creating a plot.
 
-While it is ok (and necessary) to use these model-specific scripts, please ask yourself if it is _really_ necessary to add a new script or if an easy change might make it possible to use a more general version from `utopya.plot_funcs` for the same purposes?
+While it is ok (and necessary) to use these model-specific scripts, please ask yourself if it is _really_ necessary to add a new script or if an easy change might make it possible to use a more general version from `utopya.eval.plots` (or even `dantro.plot`) for the same purposes?
 
 In the following, it is described how you can configure plotting functions and access your own plotting scripts.
 
@@ -12,12 +12,13 @@ In the following, it is described how you can configure plotting functions and a
 Conceptually, there are three different ways to access
 
 ### Model-specific plotting scripts
-The model-specific plotting scripts are automatically available, as the path to the python directory is part of the `sys.path` for `ExternalPlotCreator`.
+The model-specific plotting scripts are automatically available, as the path to the python directory is part of the `sys.path` for `PyPlotCreator`.
 
 Thus, importing a plotting script using that creator is a simple matter of specifying the correct module and function name:
+
 ```yaml
 my_plot:
-  creator: external  # also the default value, so need not specify this
+  creator: pyplot  # also the default value, so need not specify this
 
   # Select the module to import
   module: model_plots.<model_name>.<module_name>
@@ -28,6 +29,7 @@ my_plot:
   # All further kwargs here are passed on to that plot function
   # ...
 ```
+
 Such a configuration entry should be created for each available plotting function. You can add them to `<model_name>_plots.yml`. By adding the `enabled: false` entry, they can also be disabled by default.
 
 (_Behind-the-scenes detail:_ The `model_plots` package is made available by adding its location to `sys.path`.)
@@ -41,6 +43,7 @@ Thus, it is often worth to check whether they might already suit your needs.
 Still, their generality will often be limiting to what you might want to visualize with plots; in those cases, feel free to create a model-specific plotting script.
 
 General plotting scripts can be imported with the somewhat shorter, relative import syntax (note the leading `.` in the `module` string):
+
 ```yaml
 my_plot_using_a_general_plot_function:
   # Select the basic
@@ -59,12 +62,14 @@ my_plot_using_a_general_plot_function:
     bbox_inches: ~
     transparent: true
 ```
-(_Behind-the-scenes detail:_ it is just a relative import from the `utopya.plot_funcs` sub-package.)
+
+(_Behind-the-scenes detail:_ it is just a relative import from the `utopya.eval.plots` sub-package.)
 
 
 
 ### Plotting scripts from files
 It is also possible to load modules directly from files:
+
 ```yaml
 my_plot_from_a_module_file:
   # Use a module file from a path
@@ -76,9 +81,10 @@ my_plot_from_a_module_file:
   # further kwargs to that plot function
 ```
 
-In order to allow relative imports, the `ExternalPlotCreator` needs to be initialized with the `base_module_file_dir` argument; paths given to the `module_file` argument are then seen as relative to that directory.
+In order to allow relative imports, the `PyPlotCreator` needs to be initialized with the `base_module_file_dir` argument; paths given to the `module_file` argument are then seen as relative to that directory.
 
 The `PlotManager` is able to set this value. To do so, set the following key in a run configuration or in your user configuration:
+
 ```yaml
 plot_manager:
   creator_init_kwargs:
@@ -86,9 +92,11 @@ plot_manager:
       # Path to my 
       base_module_file_dir: ~/my_plot_funcs
 ```
+
 (Yep, this is a bit nested, but this is also a special feature... :wink:)
 
 With this config entry set, the plot configuration is simpler:
+
 ```yaml
 my_plot_from_a_relative_module_file:
   # Define the module file, now as relative path, yay

@@ -1,0 +1,295 @@
+# Base plot configuration for models using the Utopia framework
+#
+# This file contains shared config entries that can be used in the composition
+# of plot configurations.
+#
+# TODO Should these all move to utopya's base plots??
+---
+# YAML anchors used throughout this file
+_:
+  labels:
+    time:                  &label_time            Time [Steps]
+
+  aesthetics:
+    hvline: &style_hvline
+      linestyle: solid
+      color: grey
+      alpha: .4
+      linewidth: 2.
+      zorder: -42
+
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗╔═╗╦ ╦╦ ╔╦╗╔═╗
+#   ║║║╣ ╠╣ ╠═╣║ ║║  ║ ╚═╗
+#  ═╩╝╚═╝╚  ╩ ╩╚═╝╩═╝╩ ╚═╝
+# =============================================================================
+# start: .defaults
+# This section defines defaults that are (meant to be) used in all plots.
+# These find their way into the plot configuration via the `.creator` configs.
+
+# .. Aggregated defaults ......................................................
+.defaults:
+  based_on:
+    - .defaults  # utopya .defaults
+    - .defaults.style
+    - .defaults.file_ext
+
+
+# .. Individual defaults ......................................................
+.defaults.style:
+  based_on: .defaults.style
+
+.defaults.file_ext:
+  file_ext: pdf
+
+
+
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗  ╔═╗╦═╗╔═╗╔═╗╔╦╗╔═╗╦═╗╔═╗
+#  ╠═╝║  ║ ║ ║   ║  ╠╦╝║╣ ╠═╣ ║ ║ ║╠╦╝╚═╗
+#  ╩  ╩═╝╚═╝ ╩   ╚═╝╩╚═╚═╝╩ ╩ ╩ ╚═╝╩╚═╚═╝
+# =============================================================================
+# start: .creator
+# This is where the above defaults enter the plot configuration
+.creator.base:
+  based_on:
+    - .creator.base
+    - .defaults
+
+.creator.pyplot:
+  based_on:
+    - .creator.pyplot
+    - .defaults
+
+.creator.universe:
+  based_on:
+    - .creator.universe
+    - .defaults
+  universes: all
+
+.creator.multiverse:
+  based_on:
+    - .creator.multiverse
+    - .defaults
+
+
+# .. Specializations ..........................................................
+.creator.universe.any:
+  based_on: .creator.universe
+  universes: any
+
+.creator.universe.first:
+  based_on: .creator.universe
+  universes: first
+
+.creator.universe.all:
+  based_on: .creator.universe
+  universes: all
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗  ╔═╗╦ ╦╔╗╔╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
+#  ╠═╝║  ║ ║ ║   ╠╣ ║ ║║║║║   ║ ║║ ║║║║╚═╗
+#  ╩  ╩═╝╚═╝ ╩   ╚  ╚═╝╝╚╝╚═╝ ╩ ╩╚═╝╝╚╝╚═╝
+# =============================================================================
+# start: .plot
+# -- Overloads of existing plot functions -------------------------------------
+
+.plot.ca:
+  based_on:
+    - .plot.ca
+    - .animation.defaults
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦╔═╦╔═╗  ╔═╗╔═╗╔╗╔╔╦╗╦╔╦╗╦╔═╗╔╗╔╔═╗
+#  ╚═╗╠╩╗║╠═╝  ║  ║ ║║║║ ║║║ ║ ║║ ║║║║╚═╗
+#  ╚═╝╩ ╩╩╩    ╚═╝╚═╝╝╚╝═╩╝╩ ╩ ╩╚═╝╝╚╝╚═╝
+# =============================================================================
+# start: .skip
+
+.skip.if_less_than_1D:
+  expected_multiverse_ndim: [1, 2, 3, 4, 5]
+
+.skip.if_less_than_2D:
+  expected_multiverse_ndim: [2, 3, 4, 5]
+
+.skip.if_more_than_1D:
+  expected_multiverse_ndim: [0, 1]
+
+.skip.if_more_than_2D:
+  expected_multiverse_ndim: [0, 1, 2]
+
+.skip.if_more_than_3D:
+  expected_multiverse_ndim: [0, 1, 2, 3]
+
+.skip.if_more_than_4D:
+  expected_multiverse_ndim: [0, 1, 2, 3, 4]
+
+.skip.if_more_than_5D:
+  expected_multiverse_ndim: [0, 1, 2, 3, 4, 5]
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╔╦╗╦ ╦╦  ╔═╗
+#  ╚═╗ ║ ╚╦╝║  ║╣
+#  ╚═╝ ╩  ╩ ╩═╝╚═╝
+# =============================================================================
+# start: .style
+
+
+
+
+
+
+# =============================================================================
+#  ╔═╗╦  ╔═╗╔╦╗  ╦ ╦╔═╗╦  ╔═╗╔═╗╦═╗╔═╗
+#  ╠═╝║  ║ ║ ║   ╠═╣║╣ ║  ╠═╝║╣ ╠╦╝╚═╗
+#  ╩  ╩═╝╚═╝ ╩   ╩ ╩╚═╝╩═╝╩  ╚═╝╩╚═╚═╝
+# =============================================================================
+# start: .hlpr
+
+# For specific kinds of representations .......................................
+
+# A time series plot along the x-axis
+.hlpr.kind.time_series:
+  based_on:
+    - .hlpr.ticks.x.si_suffixes
+
+  helpers:
+    set_limits:
+      x: [min, max]
+
+    axis_specific:
+      [~, -1]:  # bottom row
+        set_labels:
+          x: *label_time
+
+
+
+# =============================================================================
+#  ╔═╗╔╗╔╦╔╦╗╔═╗╔╦╗╦╔═╗╔╗╔
+#  ╠═╣║║║║║║║╠═╣ ║ ║║ ║║║║
+#  ╩ ╩╝╚╝╩╩ ╩╩ ╩ ╩ ╩╚═╝╝╚╝
+# =============================================================================
+# start: .animation
+# The default animation config
+.animation.defaults:
+  based_on:
+    - .animation.defaults    # from utopya
+    - .animation.medium_dpi  # from here
+
+  # By default, use the ffmpeg writer and the mp4 output format
+  file_ext: mp4
+  animation:
+    writer: ffmpeg
+
+
+# Animation defaults that are disabled by default
+.animation.disabled:
+  based_on:
+    - .animation.defaults
+    - .animation.disabled
+    - .defaults.file_ext
+
+
+# Base configs enabling animation for a writer & including the Utopia defaults
+.animation.ffmpeg:
+  based_on:
+    - .animation.ffmpeg      # from utopya
+    - .animation.defaults    # from here
+
+.animation.frames:
+  based_on:
+    - .animation.frames      # from utopya
+    - .animation.defaults    # from here
+
+
+# DPI settings
+.animation.medium_dpi:
+  animation:
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 96
+      ffmpeg:
+        saving:
+          dpi: 96
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗  ╔═╗╦═╗╔═╗╔╦╗╔═╗╦ ╦╔═╗╦═╗╦╔═
+#   ║║╠═╣║ ╦  ╠╣ ╠╦╝╠═╣║║║║╣ ║║║║ ║╠╦╝╠╩╗
+#  ═╩╝╩ ╩╚═╝  ╚  ╩╚═╩ ╩╩ ╩╚═╝╚╩╝╚═╝╩╚═╩ ╩
+# =============================================================================
+# start: .dag
+# -- Options ------------------------------------------------------------------
+# .. Aggregated DAG default options ...........................................
+.dag.defaults:
+  based_on: .dag.defaults
+
+
+
+# -- Visualization ------------------------------------------------------------
+# Parameters controlling DAG visualization
+.dag.vis.defaults:
+  based_on: .dag.vis.defaults
+
+
+
+# -- Definitions --------------------------------------------------------------
+# The entries below set certain tags using the `dag_options.define` argument.
+# This should not be confused with the .dag.meta_ops defined below.
+
+.dag.define.defaults:
+  based_on: .dag.define.defaults
+
+
+
+
+
+
+
+
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗  ╔╦╗╔═╗╔╦╗╔═╗  ╔═╗╔═╗╔═╗╦═╗╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
+#   ║║╠═╣║ ╦  ║║║║╣  ║ ╠═╣  ║ ║╠═╝║╣ ╠╦╝╠═╣ ║ ║║ ║║║║╚═╗
+#  ═╩╝╩ ╩╚═╝  ╩ ╩╚═╝ ╩ ╩ ╩  ╚═╝╩  ╚═╝╩╚═╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
+# =============================================================================
+# start: .dag.meta_ops
+# The following entries can be included into a plot configuration to make
+# certain meta-operations available for the data transformation framework.
+
+
+
+
+
+# =============================================================================
+# end of Utopia base plots
+# -----------------------------------------------------------------------------
+# Maintenance remark: ASCII headings were created using the Calvin S font at
+#   https://patorjk.com/software/taag/#p=display&c=bash&f=Calvin%20S
+#

@@ -49,6 +49,8 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 * [Quickstart](#quickstart)
 * [Documentation and Guides](#utopia-documentation)
 * [Information for Developers](#information-for-developers)
+    * [Testing](#testing)
+    * [Utopia v1](#utopia-v1)
 * [Dependencies](#dependencies)
 * [Troubleshooting](#troubleshooting)
 
@@ -59,8 +61,8 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 <!-- marker-installation-instructions -->
 
 ## How to install
-The following instructions will install Utopia into a development environment
-on your machine. If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
+The following instructions will install Utopia into a development environment on your machine.
+If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker image][Utopia-docker]; see [below](#utopia-via-docker) for more information.
 
 
 ### Step-by-step Instructions
@@ -115,7 +117,7 @@ apt update
 apt install ffmpeg graphviz doxygen
 ```
 
-You will _probably_ need administrator rights. ([`sudo`, anyone?](https://xkcd.com/149/))
+You will _probably_ need administrator rights.
 
 **Note:** For simplicity, we suggest installing the meta-package `libboost-all-dev` which includes the whole [Boost][Boost] library.
 If you want a minimal installation (only the [strictly required components](#dependencies)), use the following packages instead:
@@ -368,17 +370,35 @@ To work comfortably with Utopia, access to the GitLab needs to be easy.
 The best way to achieve that is by registering a so-called SSH key with your
 GitLab account.
 
-To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ce/ssh/#generating-a-new-ssh-key-pair)
-and to [add a key to your GitLab account](https://docs.gitlab.com/ce/ssh/#adding-an-ssh-key-to-your-gitlab-account).
+To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ee/user/ssh.html#generate-an-ssh-key-pair)
+and to [add a key to your GitLab account](https://docs.gitlab.com/ee/user/ssh.html#add-an-ssh-key-to-your-gitlab-account).
 
 ### New to Utopia? How do I implement a model?
-Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will guide you through the process of implementing your very own Utopia model.
+Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will lead you through the process of implementing your very own Utopia model.
 
 ### Building the documentation locally
-To build the documentation locally, navigate to the `build` directory and run
+To build the documentation locally, first make sure that all submodules are downloaded, because they are needed for building the documentation:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then navigate to the `build` directory and run
 
 ```bash
 make doc
+```
+
+In case you also want to generate (some of) the figures that are embedded into the documentation, set the `UTOPIA_DOC_GENERATE_FIGURES` environment variable:
+
+```bash
+UTOPIA_DOC_GENERATE_FIGURES=True make doc
+```
+
+After building, carrying out a link check and running some documentation tests is advisable:
+
+```bash
+make check_docs
 ```
 
 The [Sphinx][Sphinx]-built user documentation will then be located at `build/doc/html/`.
@@ -449,18 +469,24 @@ Working inside a clone or a fork of this repository is generally *not* a good id
 To make setting up such a project repository as easy as possible, we provide a template repository, which can be used to start a new Utopia project!
 Follow the instructions in [the `models_template` project][models_template] for more information.
 
+Call the following command to export package information to the CMake project registry:
+
+```bash
+cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
+```
+
 
 
 <!-- ###################################################################### -->
 
 ## Dependencies
 
-| Software                                       | Required Version    | Tested Version  | Comments                    |
-| ---------------------------------------------- | ------------------- | --------------- | --------------------------- |
+| Software      | Required Version    | Tested Version  | Comments            |
+| ------------- | ------------------- | --------------- | ------------------- |
 | GCC                                            | >= 9                | 10              | Full C++17 support required |
 | _or:_ clang                                    | >= 9                | 10.0            | Full C++17 support required |
 | _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
-| [CMake](https://cmake.org/)                    | >= 3.13             | 3.16            | |
+| [CMake](https://cmake.org/)                    | >= 3.16             | 3.16            | |
 | pkg-config                                     | >= 0.29             | 0.29            | |
 | [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4           | 1.10.4          | |
 | [Boost](http://www.boost.org/)                 | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
@@ -481,21 +507,33 @@ If you encounter difficulties with the installation procedure for any of these d
 
 
 ### Python
-Utopia's frontend, `utopya`, uses some additional python packages.
-These packages and their dependencies are _automatically_ installed into a virtual environment when the `cmake ..` command is carried out during the [configuration step of the installation](#3-configure-and-build).
+Utopia also has some Python dependencies, which are _automatically_ installed during the [configuration step of the installation](#3-configure-and-build).
 
-| Software                                                | Version    | Comments                        |
-| ------------------------------------------------------- | ---------- | ------------------------------- |
-| [Sphinx](https://www.sphinx-doc.org/en/master/)         | >= 4.2     | Builds the Utopia documentation |
-| [paramspace](https://gitlab.com/blsqr/paramspace)       | >= 2.5.8   | Makes parameter sweeps easy     |
-| [dantro](https://gitlab.com/utopia-project/dantro) | >= 0.17    | Handle, transform, and visualize hierarchically organized data |
+The following table includes the most important Python dependencies:
+
+| Software                  | Version  | Comments                        |
+| ------------------------- | -------- | ------------------------------- |
+| [utopya](https://gitlab.com/utopia-project/utopya)   | >= 1.0   | The (outsourced) Utopia frontend package |
+| [dantro](https://gitlab.com/utopia-project/dantro)   | >= 0.18  | Handle, transform, and visualize hierarchically organized data |
+| [paramspace](https://gitlab.com/blsqr/paramspace)    | >= 2.5   | Makes parameter sweeps easy |
+
+In addition, the following packages are _optionally_ used for development of the framework or its models.
+
+| Software                  | Version   | Comments                        |
+| ------------------------- | --------- | ------------------------------- |
+| [pytest](https://docs.pytest.org/)    |          | For model tests |
+| [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
+| [black](https://github.com/psf/black) | >= 22.6  | For formatting python code |
+| [Sphinx](https://www.sphinx-doc.org/) | == 4.5.* | Builds the Utopia documentation |
+
+These requirements are defined in the `.utopia-env-requirements.txt` file; in case installation fails, a warning will be emitted during [configuration](#3-configure-and-build).
 
 
 ### Recommended
 The following depencies are _recommended_ to be installed, but are not strictly required by Utopia:
 
-| Software                                              | Version | Comments                          |
-| ----------------------------------------------------- | ------- | --------------------------------- |
+| Software                  | Version  | Comments                        |
+| ------------------------- | -------- | ------------------------------- |
 | [doxygen](http://www.doxygen.nl)                      | >= 1.8  | Builds the C++ code documentation |
 | [graphviz](https://graphviz.gitlab.io)                | >= 2.40 | Used by doxygen to create dependency diagrams |
 | [ffmpeg](https://www.ffmpeg.org)                      | >= 4.1  | Used for creating videos |
@@ -513,13 +551,11 @@ The following depencies are _recommended_ to be installed, but are not strictly 
     In cases where the installation _used_ to work but at some point _stopped_ working, this should be a general remedy.
     If the problem does *not* seem to be related to the Python environment, deleting only `build/CMakeCache.txt` may already suffice and save some configuration time.
 
-* In cases where you encounter errors with the **model registry**, it helps to
-    remove the registry entries of all models and regenerate them:
-
+* If you have trouble with more recent **HDF5** versions on macOS, one workaround is to use an older version:
+    
     ```bash
-    utopia models rm --all
-    cd build
-    cmake ..
+    brew install hdf5@1.10
+    brew link hdf5@1.10 --overwrite
     ```
 
 * **Anaconda** ships its own version of the HDF5 library which is _not_
@@ -554,6 +590,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
+[utopya]: https://gitlab.com/utopia-project/utopya
 [paramspace]: https://gitlab.com/blsqr/paramspace
 [dantro]: https://gitlab.com/utopia-project/dantro
 
@@ -565,6 +602,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [Anaconda]: https://www.anaconda.com/
 
 <!-- These shortlinks are used in the text but cannot be used in the table (due to this file being embedded via sphinx) -->
+<!-- TODO Check if this is still the case -->
 [CMake]: https://cmake.org/
 [HDF5]: https://www.hdfgroup.org/solutions/hdf5/
 [Boost]: http://www.boost.org/

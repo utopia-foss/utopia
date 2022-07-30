@@ -1,1 +1,1 @@
-"""This module implements plots that are specific to the ForestFire model"""
+"""Plots and operations specific to the ForestFire model"""

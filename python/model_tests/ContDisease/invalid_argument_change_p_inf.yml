@@ -11,4 +11,3 @@ parameter_space:
       at_times: []
       change_p_infect: 
         - ["no pair"]
-

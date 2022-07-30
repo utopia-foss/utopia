@@ -26,7 +26,7 @@ cell_manager:
  
     # The probabilities to have a predator, plant, and/or prey on a cell.
     # These probabilities are evaluated independently and for each cell.
-    p_predator: !is-probability 0.05
+    p_predator: !is-probability 0.2
     p_prey: !is-probability 0.3
     p_plant: !is-probability 1.
 
@@ -52,39 +52,39 @@ num_moves_fraction: !is-positive 1.
 predator:
   # Resource intake from eating and maximum resource value
   resource_intake: !param
-    default: 3.
+    default: 15.
     dtype: float
     limits: [0.,~]
     
   resource_max: !param
-    default: 20.
+    default: 30.
     dtype: float
     limits: [0.,~]
     
 
   # Cost of living (per time step)
   cost_of_living: !param
-    default: 1.
+    default: 3.5
     dtype: float
     limits: [0.,~]
     
 
   # Movement limit; how many single steps a predator can make when moving.
   move_limit: !param
-    default: 1
+    default: 2
     dtype: int
     limits: [1, ~]
     
   # Reproduction parameters: minimum resources required, probability for
   # the reproduction taking place, and cost of reproduction.
   repro_resource_requ: !param
-    default: 4.
+    default: 2.
     dtype: float
     limits: [0.,~]
     
-  repro_prob: !is-probability 0.5
+  repro_prob: !is-probability 0.2
   repro_cost: !param
-    default: 2.
+    default: 1.
     dtype: float
     limits: [0.,~]
     
@@ -114,16 +114,16 @@ prey:
     limits: [1, ~]
 
   # Fleeing probability when on the same cell together with a predator
-  p_flee: !is-probability 0.5
+  p_flee: !is-probability 0.3
 
   repro_resource_requ: !param
-    default: 4.
+    default: 1.5
     dtype: float
     limits: [0., ~]
     
-  repro_prob: !is-probability 0.2
+  repro_prob: !is-probability 0.4
   repro_cost: !param
-    default: 2.
+    default: 1.2
     dtype: float
     limits: [0., ~]
     
@@ -145,7 +145,7 @@ plant:
   #                    step for each cell without a plant on it.
 
   # The deterministic regeneration time
-  regen_time: !is-unsigned 20
+  regen_time: !is-unsigned 7
 
   # The regeneration probability (for stochastic regrowth)
-  regen_prob: !is-probability 0.05
+  regen_prob: !is-probability 0.25

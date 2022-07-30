@@ -12,6 +12,7 @@ mtc = ModelTest("ForestFire", test_file=__file__)
 
 # Tests -----------------------------------------------------------------------
 
+
 def test_run_and_eval_cfgs():
     """Carries out all additional configurations that were specified alongside
     the default model configuration.
@@ -25,10 +26,11 @@ def test_run_and_eval_cfgs():
     See :py:meth:`~utopya.model.Model.run_and_eval_cfg_paths` for more info.
     """
     for cfg_name, cfg_paths in mtc.default_config_sets.items():
-        print("\nRunning '{}' example ...".format(cfg_name))
+        print(f"\nRunning '{cfg_name}' example ...")
 
-        mv, _ = mtc.create_run_load(from_cfg=cfg_paths.get('run'),
-                                    parameter_space=dict(num_steps=3))
-        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get('eval'))
+        mv, _ = mtc.create_run_load(
+            from_cfg=cfg_paths.get("run"), parameter_space=dict(num_steps=3)
+        )
+        mv.pm.plot_from_cfg(plots_cfg=cfg_paths.get("eval"))
 
-        print("Succeeded running and evaluating '{}'.\n".format(cfg_name))
+        print(f"Succeeded running and evaluating '{cfg_name}'.\n")

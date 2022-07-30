@@ -16,4 +16,3 @@ parameter_space:
       load_predator: true
       load_prey: true
       load_plant: true
-

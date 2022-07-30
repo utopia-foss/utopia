@@ -1,0 +1,17 @@
+# Evaluate the example universe run of the ForestFire model
+# Plot only the tree_density and forest state animation
+---
+# --- Tree density ------------------------------------------------------------
+# ... Of the single universes .................................................
+tree_density:
+  based_on: tree_density
+
+# --- Animation of the spatial grid -------------------------------------------
+# ... With binary state .......................................................
+ca/forest:
+  based_on: ca/forest
+
+ca/forest_final:
+  based_on:
+    - ca/forest
+    - .plot.ca.snapshot
