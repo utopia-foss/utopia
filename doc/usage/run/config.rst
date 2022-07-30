@@ -100,6 +100,8 @@ This can be controlled by the ``backups`` key of the meta-configuration:
        :end-before: # Control of the model executable
 
 
+.. _mv_cfg_backup_repo_info:
+
 Repository information
 ^^^^^^^^^^^^^^^^^^^^^^
 In addition to the configuration files, the :py:class:`~utopya.multiverse.Multiverse` stores the current state of the framework and project repositories.

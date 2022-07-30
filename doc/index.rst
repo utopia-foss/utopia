@@ -107,9 +107,6 @@ Where to next?
    dantro package <https://dantro.readthedocs.io/>
    paramspace package <https://paramspace.readthedocs.io/>
 
-.. api/utopya/utopya         .. FIXME Remove
-.. api/paramspace/paramspace .. FIXME Remove
-
 .. toctree::
    :caption: Utopia Development
    :maxdepth: 1
@@ -119,6 +116,7 @@ Where to next?
    dev/coding-guidelines
    dev/model-requirements
    dev/writing-docs
+   dev/versioning
 
 .. toctree::
    :caption: Miscellaneous
