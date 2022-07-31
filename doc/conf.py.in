@@ -407,15 +407,36 @@ for line in open(f"{doc_dir}/.nitpick-ignore"):
 
 
 # -----------------------------------------------------------------------------
-# Show some information
+# Link-checking
+# Docs:
+#   https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-the-linkcheck-builder
 
-print("\n\nNow building sphinx docs ...")
-print(f"  Version:      {version}")
-print(f"  Source dir:   {doc_dir}")
-print(f"  Doxygen dir:  {breathe_projects['utopia']}")
-print("")
+# Link patterns to ignore
+linkcheck_ignore = [
+    # With linkcheck failing to check relative links to the doxygen output,
+    # all those need to be ignored.
+    r"(\.\./)*doxygen/.*",
+    #
+    # Same for links to copied files.
+    r".*README\.html.*",
+    r".*CONTRIBUTING\.html.*",
+    r".*CODE_OF_CONDUCT\.html.*",
+    r".*COPYING\.html.*",
+    #
+    # And the IUP homepage, which has some weird certificate settings
+    r".*(www\.)?iup\.uni-heidelberg\.de/.*"
+]
 
 
+linkcheck_retries = 2
+
+
+
+
+
+
+
+# #############################################################################
 # -----------------------------------------------------------------------------
 # -- Custom build setup -------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -631,6 +652,12 @@ def generate_figures():
 
 
 def setup(app):
+    print("\n\nNow building sphinx docs ...")
+    print(f"  Version:      {version}")
+    print(f"  Source dir:   {doc_dir}")
+    print(f"  Doxygen dir:  {breathe_projects['utopia']}")
+    print("")
+
     # Perform model simulations to generate to-be-embedded figures
     generate_figures()
 

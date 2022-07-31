@@ -41,7 +41,7 @@ set(SHARED_SPHINX_ARGS
         ${CMAKE_CURRENT_SOURCE_DIR}                 # input dir
         ${CMAKE_CURRENT_BINARY_DIR}/html            # output dir
 )
-set(SPHINX_FAIL_ON_WARN -W --keep-going)
+set(SPHINX_FAIL_ON_WARN -W --keep-going)            # fail on warnings
 
 # Register sphinx build targets
 add_custom_target(sphinx_html
@@ -56,7 +56,7 @@ add_custom_target(sphinx_doctest
 )
 add_custom_target(sphinx_linkcheck
     COMMAND ${RUN_IN_UTOPIA_ENV}
-        sphinx-build -T -b linkcheck ${SHARED_SPHINX_ARGS}
+        sphinx-build -T -b linkcheck ${SHARED_SPHINX_ARGS} ${SPHINX_FAIL_ON_WARN}
 )
 
 # Add the doxygen-dependent documentation target only when it exists
