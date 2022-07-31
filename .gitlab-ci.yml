@@ -27,6 +27,7 @@ variables:
   # counterpart (deployed from the ci_test stage for testing)
   UTOPIA_IMAGE_NAME: ccees/utopia
   UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
+  UTOPIA_IMAGE_BRANCH: master
 
   UTOPIA_DEV_IMAGE_TAG: dev
   UTOPIA_DEV_IMAGE_CHECKOUT: master
@@ -112,6 +113,7 @@ image: ${BASE_IMAGE}
   variables:
     DOCKER_DRIVER: overlay2
   before_script:
+    - docker info
     - $DOCKER_HUB_LOGIN
 
 
@@ -590,9 +592,25 @@ pages:
     url: https://docs.utopia-project.org/
 
 
-deploy:dockerhub-latest:
+deploy:dockerhub:
   extends: .dind
   stage: deploy
+  # Speed up pipeline by requiring only test jobs to complete, not docs:build.
+  # Need to specify them all individually to not trigger artifacts download.
+  needs:
+    - job: test:core
+      artifacts: false
+    - job: test:dataio
+      artifacts: false
+    - job: test:cli
+      artifacts: false
+    - job: test:models
+      artifacts: false
+    - job: test:link_build_tree
+      artifacts: false
+    - job: test:link_install_tree
+      artifacts: false
+  # Should always run on master and optionally via CI/CD variable
   rules:
     - if: '$DEPLOY_DOCKER_IMAGE == "true"'
       when: always
@@ -603,7 +621,7 @@ deploy:dockerhub-latest:
     - docker build -f docker/utopia.dockerfile
                    --build-arg BASE_IMAGE=$BASE_IMAGE
                    --build-arg PROCNUM=$CPUS_DIND
-                   --build-arg GIT_CHECKOUT=master
+                   --build-arg GIT_CHECKOUT=$UTOPIA_IMAGE_BRANCH
                    --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
                    -t $UTOPIA_IMAGE_NAME:latest
                    ./
