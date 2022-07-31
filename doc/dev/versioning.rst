@@ -31,6 +31,10 @@ While we aim to cherry-pick important bug fixes into the branch, future developm
 
 Upgrading from ``v1``
 ^^^^^^^^^^^^^^^^^^^^^
+.. NOTE If changing something here, also check whether the information in
+        cmake/modules/UtopiaUtopyaCalls.cmake is still valid.
+        If not, also update it there.
+
 To upgrade Utopia to its latest version, simply pull the latest changes:
 
 .. code-block:: bash
@@ -75,6 +79,9 @@ If you are using a :ref:`separate project for model implementations <set_up_mode
 
     In the ``metadata`` node, you can put in some descriptive info about your models, e.g. a list of `authors` or a short `description`.
     *Hint:* You can also have a look at Utopia's ``.utopya-project.yml`` file to see more possible entries.
+
+  - Delete the ``build/CMakeCache.txt`` file in your models repository to avoid carrying over outdated variables.
+    If you get an error in the next step, try deleting the whole ``build`` directory and creating it anew.
 
   - Now, run ``cmake ..`` again.
 

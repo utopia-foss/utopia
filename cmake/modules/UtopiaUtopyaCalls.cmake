@@ -4,6 +4,10 @@
 # required for using the latest Utopia.
 #
 function(register_models_with_frontend)
+    #
+    # NOTE If changing something here, also check the doc/dev/versioning.rst
+    #      file, making sure that the instructions match each other.
+    #
     message(FATAL_ERROR
         "It looks like you have updated Utopia.\n"
         "This error is to inform you about the changes needed to get your "
@@ -29,7 +33,10 @@ function(register_models_with_frontend)
         "where this error message comes) to the updated function name "
         "`register_models_with_utopya`. After having done that, this error "
         "message will no longer appear.\n"
-        "3) Run `cmake ..` again.\n"
+        "3) Remove the CMake cache file (`build/CMakeCache.txt`) in your "
+        "models repository or remove your whole `build` directory to avoid "
+        "carrying over outdated variables.\n"
+        "4) Run `cmake ..` in your models repository.\n"
         "This should get your project running again with the latest version "
         "of Utopia. However, there may be further steps necessary to update "
         "your model plots and tests. "
