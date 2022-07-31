@@ -31,7 +31,8 @@ RUN if [ -n "$GIT_REMOTE_URL" ]; then git remote set-url origin ${GIT_REMOTE_URL
 
 # Configure and build Utopia
 WORKDIR /utopia/build
-RUN cmake -DCMAKE_BUILD_TYPE=Release .. && make -j${PROCNUM} all
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
+RUN make -j${PROCNUM} all
 
 # To make sure everything works as desired, make a quick run... and directly
 # delete the data again.
