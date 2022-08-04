@@ -19,17 +19,17 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections; \
     apt-get update -y \
     && apt-get install -y \
+    # general tools
         tzdata \
-    && apt-get install -y \
         curl \
         locales \
-        pkg-config \
         git \
+    # required packages
+        pkg-config \
         cmake \
-        doxygen \
-        gcc-10 \
-        g++-10 \
-        gfortran-10 \
+        gcc \
+        g++ \
+        gfortran \
         clang \
         libarmadillo-dev \
         libboost-dev \
@@ -38,26 +38,24 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
         libboost-regex-dev \
         libhdf5-dev \
         libspdlog-dev \
-        # NOTE: Clang package currently depends on wrong lib version
-        libstdc++-10-dev \
-        libtbb-dev \
         libyaml-cpp-dev \
         python3-dev \
         python3-pip \
         python3-venv \
+    # optional packages
+        libtbb-dev \
+        doxygen \
         ffmpeg \
-    && apt-get install -y \
         libgraphviz-dev \
         graphviz \
-        texlive-latex-extra texlive-fonts-recommended dvipng cm-super \
+    # some tools for convenience & nicer plots
         vim \
         nano \
+        texlive-latex-extra texlive-fonts-recommended dvipng cm-super \
     && apt-get clean
-# NOTE Not all packages above are _required_ by Utopia; some are added for
-#      convenience in downstream images, like: vim and nano
 
-# Make CMake use GCC 10 as compiler
-ENV CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10
+# Maybe relevant in the future: Use a specific gcc version as compiler
+# ENV CC=/usr/bin/gcc-12 CXX=/usr/bin/g++-12
 
 # manage locales
 RUN rm -rf /var/lib/apt/lists/* \

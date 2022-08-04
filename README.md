@@ -66,12 +66,12 @@ If you simply want to _run_ Utopia, you can do so via a [ready-to-use docker ima
 
 
 ### Step-by-step Instructions
-These instructions are intended for 'clean' __macOS__ (both Intel and Apple Silicon) or __Ubuntu__ (20.04 or newer) setups.
+These instructions are intended for 'clean' __macOS__ (both Intel and Apple Silicon) or recent __Ubuntu__ setups.
 Since __Windows__ supports the installation of Ubuntu via [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), Utopia can also be used on Windows.
 Follow the [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to install Ubuntu, then follow the instructions for Ubuntu in this README.
 
-**Note:** Utopia is always tested against a recent Ubuntu release.
-However, you may also use Utopia with an earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
+**Note:** Utopia is always tested against a recent Ubuntu release, currently [Ubuntu 22.04](https://releases.ubuntu.com/22.04/).
+However, you can use Utopia with any earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
 ⚠️ If you encounter difficulties, have a look at the [**troubleshooting section**](#troubleshooting).
 If this does not resolve your installation problems, [please file an issue in the GitLab project][Utopia-new-issue].
@@ -80,8 +80,7 @@ If this does not resolve your installation problems, [please file an issue in th
 #### 1 — Clone Utopia
 First, create a `Utopia` directory at a place of your choice.
 This is where the Utopia repository will be cloned to.
-When working with or developing for Utopia, auxiliary data will have a place
-there as well.
+When working with or developing for Utopia, auxiliary data will have a place there as well.
 
 In your terminal, enter the `Utopia` directory you just created and invoke the clone command:
 
@@ -102,7 +101,7 @@ Install the third-party dependencies using a package manager.
 However, notice that there might be issues during [the configuration step](#4-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
-##### On Ubuntu (20.04)
+##### On Ubuntu (22.04)
 ```bash
 apt update
 apt install cmake gcc g++ gfortran git libarmadillo-dev libboost-all-dev \
@@ -131,8 +130,7 @@ First, install the Apple Command Line Tools:
 xcode-select --install
 ```
 
-There are two popular package managers on macOS, [Homebrew][Homebrew] and [MacPorts][MacPorts].
-We recommend you use Homebrew.
+There are two popular package managers on macOS, [Homebrew][Homebrew] and [MacPorts][MacPorts]; we recommend to use Homebrew.
 Here are the installation instructions for both:
 
 * **Homebrew**:
@@ -173,7 +171,7 @@ Here are the installation instructions for both:
     Further, we recommend installing the following optional packages:
 
     ```bash
-    port install doxygen ffmpeg graphviz
+    port install ffmpeg graphviz doxygen
     ```
 
 
@@ -410,18 +408,18 @@ CMake will inspect your system paths and use the default compiler.
 You can use the `CC` and `CXX` environment variables to select a specific C and C++ compiler, respectively.
 As compiler paths are cached by CMake, changing the compiler requires you to delete the `build` directory and re-run CMake.
 
-Ubuntu 20.04 LTS (Focal Fossa), for example, provides GCC 9 and GCC 10.
-To use GCC 10, first install it via APT:
+Ubuntu 22.04 LTS (Jammy Jellyfish), for example, provides [GCC versions 10 to 12][Ubuntu-packages].
+To use GCC 12, for example, first install it via APT:
 
 ```bash
-apt update && apt install gcc-10 g++-10
+apt update && apt install gcc-12 g++-12
 ```
 
 Then create the build directory, enter it, and set the `CC` and `CXX` environment variables when calling CMake:
 
 ```bash
 mkdir build && cd build
-CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10 cmake ..
+CC=/usr/bin/gcc-12 CXX=/usr/bin/g++-12 cmake ..
 ```
 
 Alternatively, you can `export` these variables in separate bash commands before executing CMake.
@@ -481,22 +479,22 @@ cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
 
 ## Dependencies
 
-| Software      | Required Version    | Tested Version  | Comments            |
-| ------------- | ------------------- | --------------- | ------------------- |
-| GCC                                            | >= 9                | 10              | Full C++17 support required |
-| _or:_ clang                                    | >= 9                | 10.0            | Full C++17 support required |
-| _or:_ Apple LLVM                               | >= 9                |                 | Full C++17 support required |
-| [CMake](https://cmake.org/)                    | >= 3.16             | 3.16            | |
-| pkg-config                                     | >= 0.29             | 0.29            | |
-| [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4           | 1.10.4          | |
-| [Boost](http://www.boost.org/)                 | >= 1.67             | 1.71            | required components: `graph`, `regex` and `unit_test_framework` |
-| [Armadillo](http://arma.sourceforge.net/)      | >= 9.600            | 9.800           | |
-| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.6.2            | 0.6.2           | |
-| [spdlog](https://github.com/gabime/spdlog)     | >= 1.3              | 1.5.0           | |
-| [Python3](https://www.python.org/downloads/)   | >= 3.6              | 3.8.2           | |
+| Software                                       | Required Version | Tested Version  | Comments     |
+| ---------------------------------------------- | ---------------- | --------------- | ------------ |
+| GCC                                            | >= 9             | 11.2            | Full C++17 support required |
+| _or:_ clang                                    | >= 9             | 14.0            | Full C++17 support required |
+| _or:_ Apple LLVM                               | >= 9             |                 | Full C++17 support required |
+| [CMake](https://cmake.org/)                    | >= 3.16          | 3.22            | |
+| pkg-config                                     | >= 0.29          | 0.29            | |
+| [HDF5](https://www.hdfgroup.org/solutions/hdf5/)  | >= 1.10.4     | 1.10.7          | |
+| [Boost](http://www.boost.org/)                 | >= 1.67          | 1.74            | required components: `graph`, `regex` and `unit_test_framework` |
+| [Armadillo](http://arma.sourceforge.net/)      | >= 9.600         | 10.8.2          | |
+| [yaml-cpp](https://github.com/jbeder/yaml-cpp) | >= 0.6.2         | 0.7.0           | |
+| [spdlog](https://github.com/gabime/spdlog)     | >= 1.3           | 1.9.2           | |
+| [Python3](https://www.python.org/downloads/)   | >= 3.6           | 3.10.4          | |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
-Currently, Utopia is tested against the packages provided by **Ubuntu 20.04**.
+Currently, Utopia is tested against the packages provided by [**Ubuntu 22.04**][Ubuntu-packages].
 However the above version _requirements_ (i.e., those _enforced_ by the build system) can be fulfilled also with Ubuntu 19.10.
 
 To get Utopia running on a system with an earlier Ubuntu version, the above dependencies still need to be fulfilled.
