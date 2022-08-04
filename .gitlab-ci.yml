@@ -16,7 +16,7 @@ variables:
 
   # Variables needed for docker image deployment
   # The different segments of the resulting test image tag
-  BASE_IMAGE_UBUNTU_VERSION: focal  # NOTE Adjust upon new Ubuntu Release
+  BASE_IMAGE_UBUNTU_VERSION: jammy  # NOTE Adjust upon new Ubuntu Release
   BASE_IMAGE_VERSION: "2.1"         # NOTE Increment when changing dockerfile
   BASE_IMAGE_NAME: ccees/utopia-base
   BASE_IMAGE: "${BASE_IMAGE_NAME}:${BASE_IMAGE_UBUNTU_VERSION}-v${BASE_IMAGE_VERSION}"
@@ -28,9 +28,6 @@ variables:
   UTOPIA_IMAGE_NAME: ccees/utopia
   UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
   UTOPIA_IMAGE_BRANCH: master
-
-  UTOPIA_DEV_IMAGE_TAG: dev
-  UTOPIA_DEV_IMAGE_CHECKOUT: master
 
   # Setting number of processes for build jobs and DIND jobs
   CPUS_BUILD: 4
