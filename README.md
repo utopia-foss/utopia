@@ -1,7 +1,6 @@
 ![Utopia Logo](doc/_static/images/logo_blue_full.svg)
 
 # Utopia
-
 Utopia is a comprehensive modelling framework for complex and evolving systems.
 It aims to provide the tools to conveniently implement a model, configure and perform simulation runs, and evaluate the resulting data.
 
@@ -9,7 +8,6 @@ Utopia is free software and licensed under the [GNU Lesser General Public Licens
 For the copyright notice and the list of copyright holders, see [`COPYING.md`](COPYING.md).
 
 ## Overview
-
 Complex and evolving systems are investigated with a wide array of different models types.
 Among the most popular are cellular automata (CA), agent-based models (ABMs), and network models.
 Utopia provides a library to build these types of models in modern C++.
@@ -17,7 +15,7 @@ Its `core` template library contains functions for implementing model dynamics a
 The Utopia `dataIO` library is capable of storing hierarchical simulation data efficiently in the H5 file format.
 Within Utopia, and when using Utopia as a dependency, models are integrated into a simulation infrastructure for conveniently executing and analyzing them.
 
-The `utopya` Python package constitutes Utopia's frontend.
+The [`utopya` Python package][utopya] constitutes Utopia's frontend.
 It configures and performs the simulation runs and embeds the model into a data processing pipeline, such that the simulation data can directly be analyzed and visualized.
 All parts of the frontend make use of a hierarchic, recursively-updated YAML-based configuration structure.
 Using the [paramspace package][paramspace], this allows to easily define parameter sweeps, which can then be carried out as simultaneous simulations on massively parallel, distributed machines.
@@ -33,7 +31,6 @@ Additionally, you can retrieve the code and get in contact via a mirrored reposi
 Note that we *used* to host our own GitLab instance at `ts-gitlab.iup.uni-heidelberg.de`; traces of that past development platform may still be around this project somewhere ... 👻
 
 ### How to cite Utopia
-
 Utopia was reviewed and published in the [Journal of Open Source Software (JOSS)](https://joss.theoj.org/).
 Please cite at least the following publication if you use Utopia (or a modified version thereof) for your own work:
 
@@ -50,7 +47,7 @@ See the [user manual](https://docs.utopia-project.org/html/cite.html) for more i
 * [Documentation and Guides](#utopia-documentation)
 * [Information for Developers](#information-for-developers)
     * [Testing](#testing)
-    * [Utopia v1](#utopia-v1)
+    * [Setting up a separate models repository](#setting-up-a-separate-repository-for-models)
 * [Dependencies](#dependencies)
 * [Troubleshooting](#troubleshooting)
 
@@ -371,9 +368,6 @@ GitLab account.
 To do that, follow the linked instructions to [generate a key pair](https://docs.gitlab.com/ee/user/ssh.html#generate-an-ssh-key-pair)
 and to [add a key to your GitLab account](https://docs.gitlab.com/ee/user/ssh.html#add-an-ssh-key-to-your-gitlab-account).
 
-### New to Utopia? How do I implement a model?
-Aside from exploring the already existing models, you should check out the guides in the [documentation][Utopia-docs] which will lead you through the process of implementing your very own Utopia model.
-
 ### Building the documentation locally
 To build the documentation locally, first make sure that all submodules are downloaded, because they are needed for building the documentation:
 
@@ -467,11 +461,12 @@ Working inside a clone or a fork of this repository is generally *not* a good id
 To make setting up such a project repository as easy as possible, we provide a template repository, which can be used to start a new Utopia project!
 Follow the instructions in [the `models_template` project][models_template] for more information.
 
-Call the following command to export package information to the CMake project registry:
+Make sure to call the following command to export package information to the CMake project registry, such that a separate repository can find Utopia:
 
 ```bash
 cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
 ```
+
 
 
 
