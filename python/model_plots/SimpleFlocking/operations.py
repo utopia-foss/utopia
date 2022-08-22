@@ -3,7 +3,10 @@
 import numpy as np
 import xarray as xr
 
+from utopya.eval import is_operation
 
+
+@is_operation
 def set_nan_at_discontinuities(
     ds: xr.Dataset, *, variable: str, threshold: float
 ) -> xr.Dataset:
@@ -44,6 +47,7 @@ def set_nan_at_discontinuities(
     )
 
 
+@is_operation
 def insert_nan_at_discontinuities(
     ds: xr.Dataset, *, variable: str, threshold: float
 ) -> xr.Dataset:
