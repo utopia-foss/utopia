@@ -2,7 +2,7 @@
 
 # Make them all available here to allow easier import
 # Register some custom operation with the DAG framework
-from utopya.plotting import register_operation
+from utopya.eval import register_operation
 
 from .state import *
 
