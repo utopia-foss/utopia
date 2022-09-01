@@ -1,0 +1,13 @@
+# Runs SEIRD with a hexagonal grid
+---
+parameter_space:
+  num_steps: 365
+
+  SEIRD:
+    cell_manager:
+      grid:
+        structure: hexagonal
+        resolution: 32
+
+      neighborhood:
+        mode: hexagonal

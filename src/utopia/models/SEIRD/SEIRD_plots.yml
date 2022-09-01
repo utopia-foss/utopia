@@ -50,6 +50,18 @@ phase_diagram/EI:
   based_on: phase_diagram/EI
 
 
+# ... and their facet grid equivalent
+phase_diagram_facet_grid/SI:
+  based_on: phase_diagram_facet_grid/SI
+
+phase_diagram_facet_grid/SE:
+  based_on: phase_diagram_facet_grid/SE
+
+phase_diagram_facet_grid/EI:
+  based_on: phase_diagram_facet_grid/EI
+
+
+
 
 # -- CA plots -----------------------------------------------------------------
 ca/state:

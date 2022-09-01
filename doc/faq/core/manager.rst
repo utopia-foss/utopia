@@ -21,7 +21,7 @@ They are passed to the managers to allow them to set up these entities in the de
 Only two properties need to always be defined: the state type of the entity and its update mode.
 A trait definition can then look like this:
 
-.. code-block :: c++
+.. code-block:: c++
 
   /// Traits for cells with synchronous update
   using MySyncCell = Utopia::CellTraits<MyCellState, Update::sync>;
@@ -38,19 +38,19 @@ The update modes behave as follows:
 
 * (always) **synchronously**: all agents of a manager are updated "at once"
 
-    * Internally, these entities have a buffer for their *new* state, where all changes are written to.
+  * Internally, these entities have a buffer for their *new* state, where all changes are written to.
       Only after all state buffers have been updated, the actual state is updated.
-    * This two-step process emulates an update process where a state change happens at the same time for all agents.
+  * This two-step process emulates an update process where a state change happens at the same time for all agents.
 
 * (always) **asynchronously**: all agents change their state directly
 
-    * These entities do *not* have a state buffer; all changes are applied directly.
-    * This emulates a process where state changes occur sequentially.
+  * These entities do *not* have a state buffer; all changes are applied directly.
+  * This emulates a process where state changes occur sequentially.
 
 * **manually**: whether the state is updated synchronously or asynchronously is determined by arguments to the ``apply_rule`` call
 
-    * This allows for more flexibility in the ``apply_rule`` calls
-    * Downside: creates some memory allocation overhead when using synchronous ``apply_rule`` calls, because the buffer needs to be stored anew
+  * This allows for more flexibility in the ``apply_rule`` calls
+  * Downside: creates some memory allocation overhead when using synchronous ``apply_rule`` calls, because the buffer needs to be stored anew
 
 
 .. hint:: Which ``Update`` mode should I choose in the entity state?
@@ -66,16 +66,14 @@ Initialize cells and agents
 ---------------------------
 Which ways are there to initialize cells and agents?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 There are three different ways to initialize cells and agents in your ``CellManager`` or ``AgentManager``. The examples below are for the ``CellManager`` but apply analogously to the ``AgentManager``.
 
 
-Constructing an initial state from configuration (recommended)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
+Constructing an initial state from configuration *(recommended)*
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 For this (recommended) way, the constructor of the state type accepts a ``Utopia::Config&`` node, from which all the information needed for that state can be extracted:
 
-.. code-block :: c++
+.. code-block:: c++
 
   /// The cell state type
   struct CellState {
@@ -97,7 +95,7 @@ For this (recommended) way, the constructor of the state type accepts a ``Utopia
 
 The manager itself can then be set up in the model without any further information:
 
-.. code-block :: c++
+.. code-block:: c++
 
   class MyFancyModel {
   public:
@@ -118,7 +116,7 @@ The manager itself can then be set up in the model without any further informati
 Here, the cell manager extracts the required information from the model configuration.
 It expects a configuration entry ``cell_manager``, which includes all the information needed for setup, including those parameters passed to the ``Config&`` constructor:
 
-.. code-block :: yaml
+.. code-block:: yaml
 
   # model configuration
   ---
@@ -140,7 +138,7 @@ It expects a configuration entry ``cell_manager``, which includes all the inform
 The same can be done for the agent manager. The respective configuration
 entries are listed below:
 
-.. code-block :: yaml
+.. code-block:: yaml
 
   # model configuration
   ---
@@ -156,21 +154,21 @@ entries are listed below:
       a_bool: true
 
   # Other model configuration parameters ...
-.. note ::
+
+.. note::
 
   As the ``CellManager`` is not finished with construction at this point, it is
   not possible to use any ``CellManager`` features for construction of the
   cells. The cell state constructor should regard itself only with the
   intrinsic properties of the cell.
 
-.. note ::
+.. note::
 
   For setting up cell states individually for *each* cell, see the :ref:`question regarding the use of random number generators <random_num_q>`.
 
 
 Constructing an initial state from the default constructor
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
 As default constructors can sometimes lead to undefined behaviour, they need to be explicitly allowed. This happens via the ``Utopia::CellTraits`` struct.
 
 .. code-block:: c++
@@ -192,14 +190,13 @@ As default constructors can sometimes lead to undefined behaviour, they need to 
 
 In such a case, the manager (as with config-constructible) does not require an initial state.
 
-.. note ::
+.. note::
 
-  For setting up cell states individually for *each* cell, see the :ref:`question regarding the use of random number generators <random_num_q>`.
+    For setting up cell states individually for *each* cell, see the :ref:`question regarding the use of random number generators <random_num_q>`.
 
 
 Explicit initial state
 """"""""""""""""""""""
-
 In this mode, all cells have an identical initial state, which is passed down from the ``CellManager``. Assuming you are setting up the manager as a member of ``MyFancyModel``, this would look something like this:
 
 .. code-block:: c++
@@ -233,6 +230,7 @@ In this mode, all cells have an identical initial state, which is passed down fr
           // ...
       {}
   };
+
 
 .. _random_num_q:
 
@@ -281,6 +279,9 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
 
 
 
+
+
+
 .. _cell_manager_faq:
 
 ``CellManager`` FAQs
@@ -288,56 +289,10 @@ Keep in mind to also change the ``CellTraitsRC`` such that the ``CellStateRC`` c
 
 Neighborhood calculation
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
 Where and how are neighborhoods calculated?
 """""""""""""""""""""""""""""""""""""""""""
 The neighborhood computation does not take place in the ``CellManager`` itself, but in the underlying ``Grid`` object and based on the cells' IDs.
 The ``CellManager`` then retrieves the corresponding shared pointers from the IDs and makes them available via the ``neighbors_of`` method.
-
-Can I change the grid discretization? And when should I?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Yes, the grid discretization can be changed.
-Currently available are the ``square`` and ``hexagonal`` grid discretizations.
-To change this, select the respective ``structure`` and ``neighborhood/mode`` in the ``cell_manager``'s configuration
-
-.. code-block :: yaml
-
-  # model configuration
-  ---
-  cell_manager:
-    grid:
-      structure: square   # can be: square or hexagonal
-      resolution: 42      # 42 cells per unit length (of space)
-
-    neighborhood:
-      mode: Moore         # can be: empty (0), vonNeumann (4), Moore (8) (with square structure)
-                          # can be: empty (0), hexagonal (6) (with hexagonal structure)
-                          # the number indicates the number of neighbors per cell
-
-    # Other cell_manager configuration parameters ...
-
-  # Other model configuration parameters ...
-
-.. note::
-
-  The ``resolution`` of the ``hexagonal`` discretization is evaluated per unit area (of space), instead of unit length, as the extent of a hexagon is non-isotrop.
-  I.e. with a resolution of 32 in 1x1 space, there will be 30 x 34 = 1020 cells.
-
-The grid discretization, together with the respectively available neighborhoods, should be changed when exploring the influence of geometry and cell-connectivity on cell-cell interactions.
-In particular, the number of neighbors per cell can be varied between
-
-* 4 (``square`` grid with ``vonNeumann`` neighborhood)
-* 6 (``hexagonal`` grid with ``hexagonal`` neighborhood)
-* 8 (``square`` grid with ``Moore`` neighborhood)
-* 0 (either grid with ``empty`` neighborhood).
-
-On the other hand, the two discretizations differ in how paths in space are constructed when moving from cell to cell:
-In the ``vonNeumann`` neighborhood on a ``square`` lattice the 4 next neighborhoods have unit distance, while the diagonal cells are overly far with distance 2.
-In the ``Moore`` neighborhood they are too close with distance 1, where the true distance of the cell centers would be :math:`\sqrt{2}`.
-In the ``hexagonal`` discretization all neighbors have the true unit distance, however this is only true for paths that are 60° (instead of 90°) apart.
-
-For more details have a look at the `grid implementation <../../doxygen/html/class_utopia_1_1_grid.html>`_ and `these tutorial <https://www.redblobgames.com>`_.
 
 
 Are neighborhoods computed on the fly, or can I cache them?
@@ -359,4 +314,62 @@ However, if memory is limited, it might make sense to disable it:
         compute_and_store: false
 
 .. note::
+
     In the ``Grid`` itself, the IDs of the cells in the neighborhood are always computed on the fly.
+
+
+
+.. _cell_manager_grid_discretization:
+
+Can I change the grid discretization? And when should I?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Yes, the grid discretization can be changed.
+Currently available are the ``square`` and ``hexagonal`` grid discretizations.
+To change this, select the respective ``structure`` and ``neighborhood/mode`` in the ``cell_manager``'s configuration:
+
+.. code-block:: yaml
+
+    # model configuration
+    ---
+    cell_manager:
+      grid:
+        structure: square   # can be: square or hexagonal
+        resolution: 42      # cells per unit length (of space)
+
+      neighborhood:
+        mode: Moore         # can be: empty (0), vonNeumann (4), Moore (8) (with square structure)
+                            # can be: empty (0), hexagonal (6) (with hexagonal structure)
+                            # the number indicates the number of neighbors per cell
+
+      # Other cell_manager configuration parameters ...
+
+    # Other model configuration parameters ...
+
+.. note::
+
+    The ``resolution`` of the ``hexagonal`` discretization is evaluated per unit area (of space), instead of unit length, as the extent of a hexagon is non-isotropic.
+    I.e. with a resolution of 32 in a space with extent ``(1.0, 1.0)``, there will be 30 x 34 = 1020 cells.
+
+The grid discretization, together with the respectively available neighborhoods, should be changed when exploring the influence of geometry and cell-connectivity on cell-cell interactions.
+In particular, the number of neighbors per cell can be varied between
+
+* 4 (``square`` grid with ``vonNeumann`` neighborhood)
+* 6 (``hexagonal`` grid with ``hexagonal`` neighborhood)
+* 8 (``square`` grid with ``Moore`` neighborhood)
+* 0 (either grid with ``empty`` neighborhood).
+
+On the other hand, the two discretizations differ in how paths in space are constructed when moving from cell to cell:
+In the ``vonNeumann`` neighborhood on a ``square`` lattice the 4 next neighborhoods have unit distance, while the diagonal cells are overly far with distance 2.
+In the ``Moore`` neighborhood they are too close with distance 1, where the true distance of the cell centers would be :math:`\sqrt{2}`.
+In the ``hexagonal`` discretization all neighbors have the true unit distance, however this is only true for paths that are 60° (instead of 90°) apart.
+
+For more details (e.g. regarding coordinate mode, cell orientation etc.) have a look at the `grid implementation <../../doxygen/html/class_utopia_1_1_grid.html>`_ and `this excellent introduction to hexagonal grid representation <https://www.redblobgames.com/grids/hexagons/>`_.
+
+.. note::
+
+    For an example for comparing these, have a look at the :ref:`SEIRD model <model_SEIRD>` and its ``grid_structure_sweep`` config set.
+
+.. hint::
+
+    The plot function specialized on cellular automata, ``.plot.ca``, can visualize hexagonal grids out-of-the-box.
+    For more info, see :ref:`the corresponding page <plot_ca_hex>`.

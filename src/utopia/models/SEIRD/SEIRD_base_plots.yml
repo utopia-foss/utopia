@@ -13,6 +13,12 @@ _variables:
     source: &color_source maroon
     inert: &color_inert moccasin
 
+  labels:
+    label_susceptible:    &label_susceptible  Susceptible Density [1/A]
+    label_infected:       &label_infected     Infected Density [1/A]
+    label_exposed:        &label_exposed      Exposed Density [1/A]
+    label_recovered:      &label_recovered    Recovered Density [1/A]
+
 
 
 # =============================================================================
@@ -48,16 +54,6 @@ _variables:
     base_path: *base_path
 
 
-# -- Plot functions -----------------------------------------------------------
-.plot.phase_diagram:
-  # Only works with UniversePlotCreator
-  creator: universe
-  universes: all
-
-  module: model_plots.SEIRD
-  plot_func: phase_diagram
-
-
 
 # -- Styles -------------------------------------------------------------------
 # .. Property cycles ..........................................................
@@ -88,6 +84,46 @@ _variables:
     axes.prop_cycle: &default_prop_cycle "cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf'])"
 
 
+# =============================================================================
+#  ╔╦╗╔═╗╔═╗  ╔╦╗╔═╗╔╦╗╔═╗  ╔═╗╔═╗╔═╗╦═╗╔═╗╔╦╗╦╔═╗╔╗╔╔═╗
+#   ║║╠═╣║ ╦  ║║║║╣  ║ ╠═╣  ║ ║╠═╝║╣ ╠╦╝╠═╣ ║ ║║ ║║║║╚═╗
+#  ═╩╝╩ ╩╚═╝  ╩ ╩╚═╝ ╩ ╩ ╩  ╚═╝╩  ╚═╝╩╚═╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
+# =============================================================================
+# The following entries can be included into a plot configuration to make
+# certain meta-operations available for the data transformation framework.
+
+.dag.meta_ops.build_densities_dataset:
+  dag_options:
+    meta_operations:
+      #
+      # Selects the relevant densities for the phase diagram plot
+      #
+      # Args:
+      #   0:             The `densities` data container
+      #
+      # Returns:
+      #   xr.Dataset with variables:  susceptible, exposed, infected, recovered
+      #
+      build_densities_dataset:
+        - .sel: [!arg 0, {kind: susceptible}]
+          kwargs: {drop: true}
+          tag: susceptible
+        - .sel: [!arg 0, {kind: exposed}]
+          kwargs: {drop: true}
+          tag: exposed
+        - .sel: [!arg 0, {kind: infected}]
+          kwargs: {drop: true}
+          tag: infected
+        - .sel: [!arg 0, {kind: recovered}]
+          kwargs: {drop: true}
+          tag: recovered
+
+        - xr.Dataset:
+            data_vars:
+              susceptible: !dag_tag susceptible
+              exposed: !dag_tag exposed
+              infected: !dag_tag infected
+              recovered: !dag_tag recovered
 
 
 
@@ -175,80 +211,130 @@ densities.mv:
 
 
 # -- Any kind of phase plot ---------------------------------------------------
-phase_diagram:
+
+# The base plot, defining styles etc.
+.plot.phase_diagram:
   based_on:
     - .defaults
-    - .creator.universe
     - .plot.facet_grid.scatter
-  select:
-    kind:
-      path: densities
-  transform:
-    - .sel: [ !dag_tag kind, { kind: susceptible } ]
-      kwargs: { drop: true }
-      tag: susceptible
-    - .sel: [ !dag_tag kind, { kind: exposed } ]
-      kwargs: { drop: true }
-      tag: exposed
-    - .sel: [ !dag_tag kind, { kind: infected } ]
-      kwargs: { drop: true }
-      tag: infected
-    - .sel: [ !dag_tag kind, { kind: recovered } ]
-      kwargs: { drop: true }
-      tag: recovered
-    - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          exposed: !dag_tag exposed
-          infected: !dag_tag infected
-          recovered: !dag_tag recovered
-      tag: data
+    - .dag.meta_ops.build_densities_dataset
 
   cmap: viridis_r
   hue: time
   helpers:
-    set_title:
-      title: Phase Diagram
     set_limits:
       x: [0, ~]
       y: [0, ~]
+    set_labels:
+      only_label_outer: true
 
   # Parameters that are passed on to plt.scatter
   s: 10
 
+
+# Universe phase diagram
+phase_diagram:
+  based_on:
+    - .creator.universe
+    - .plot.phase_diagram
+
+  select:
+    data:
+      path: densities
+      transform:
+        - build_densities_dataset
+
+  helpers:
+    set_title:
+      title: Phase Diagram
+
+
+# Multiverse phase diagram, with
+phase_diagram_facet_grid:
+  based_on:
+    - .creator.multiverse
+    - .plot.facet_grid.with_auto_encoding
+    - .plot.phase_diagram
+
+  expected_multiverse_ndim: [1, 2, 3]
+
+  select_and_combine:
+    fields:
+      _data:
+        path: densities
+        transform:
+          - build_densities_dataset
+
+
+  transform:
+    # Try to compute mean over certain dimensions, falling back if it fails
+    - .mean: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag _data
+
+    - pass: !dag_prev
+      tag: data
+
+
+# .. Specializations ..........................................................
+# .. Universe . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
 phase_diagram/SI:
   based_on: phase_diagram
 
-  # Select from which densities to create the phase diagram
   x: susceptible
   y: infected
-
   helpers:
     set_labels:
-      x: Susceptible Density [1/A]
-      y: Infected Density [1/A]
+      x: *label_susceptible
+      y: *label_infected
 
 phase_diagram/SE:
   based_on: phase_diagram
-
   x: susceptible
   y: exposed
-
   helpers:
     set_labels:
-      x: Susceptible Density [1/A]
-      y: Exposed Density [1/A]
+      x: *label_susceptible
+      y: *label_exposed
 
 phase_diagram/EI:
   based_on: phase_diagram
-
   x: exposed
   y: infected
-
   helpers:
     set_labels:
-      x: Exposed Density [1/A]
-      y: Infected Density [1/A]
+      x: *label_exposed
+      y: *label_infected
+
+# .. Universe . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+phase_diagram_facet_grid/SI:
+  based_on: phase_diagram_facet_grid
+  x: susceptible
+  y: infected
+  helpers:
+    set_labels:
+      x: *label_susceptible
+      y: *label_infected
+
+phase_diagram_facet_grid/SE:
+  based_on: phase_diagram_facet_grid
+  x: susceptible
+  y: exposed
+  helpers:
+    set_labels:
+      x: *label_susceptible
+      y: *label_exposed
+
+phase_diagram_facet_grid/EI:
+  based_on: phase_diagram_facet_grid
+  x: exposed
+  y: infected
+  helpers:
+    set_labels:
+      x: *label_exposed
+      y: *label_infected
 
 
 

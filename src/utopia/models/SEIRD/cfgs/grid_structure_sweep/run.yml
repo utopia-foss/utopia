@@ -3,7 +3,7 @@
 perform_sweep: true
 
 parameter_space:
-  num_steps: 365 # Corresponding to one 'real-life' year
+  num_steps: 365
 
   SEIRD:
     cell_manager:
@@ -11,7 +11,7 @@ parameter_space:
         resolution: 128
         structure: !coupled-sweep
           # Attach to sweep of parameter 'mode'
-          target_name: mode
+          target_name: neighborhood
           default: hexagonal
           values: [square, hexagonal, square]
 
@@ -19,3 +19,4 @@ parameter_space:
         mode: !sweep
           default: hexagonal
           values: [vonNeumann, hexagonal, Moore]
+          name: neighborhood

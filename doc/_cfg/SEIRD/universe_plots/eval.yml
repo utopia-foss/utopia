@@ -79,10 +79,14 @@ debug_DAG_bad_args:
         - .sel: [!dag_prev , {kind: SuSCePTIble}]
 ### END --- debug_DAG_bad_args
 
+.flush_select:
+  select: ~
+
 debug_DAG_locate_with_vis:
   based_on:
     - .debug_DAG
     - phase_diagram/SI
+    - .flush_select
 
 ### START --- debug_DAG_locate_with_vis
   select:
@@ -90,17 +94,17 @@ debug_DAG_locate_with_vis:
       path: densities
 
   transform:
-    - .sel: [ !dag_tag kind, { kind: susceptible } ]
-      kwargs: { drop: true }
+    - .sel: [!dag_tag kind, {kind: susceptible}]
+      kwargs: {drop: true}
       tag: susceptible
-    - .sel: [ !dag_tag kind, { kind: exposed } ]
-      kwargs: { drop: true }
+    - .sel: [!dag_tag kind, {kind: exposed}]
+      kwargs: {drop: true}
       tag: exposed
-    - .sel: [ !dag_tag kind, { kind: infected } ]
-      kwargs: { drop: true, bAd_ArGuMeNT: i should not be here! }
+    - .sel: [!dag_tag kind, {kind: infected}]
+      kwargs: {drop: true, bAd_ArGuMeNT: i should not be here! }
       tag: infected
-    - .sel: [ !dag_tag kind, { kind: recovered } ]
-      kwargs: { drop: true }
+    - .sel: [!dag_tag kind, {kind: recovered}]
+      kwargs: {drop: true}
       tag: recovered
 
     - xr.Dataset:
