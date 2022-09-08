@@ -115,7 +115,7 @@ Animated Network Plots
 
 .. raw:: html
 
-    <video width="800" src="../../../_static/_gen/Opinionet/graph_plot/graph_animation.mp4" controls></video>
+    <video width="800" src="../../../_static/_gen/Opinionet/graph_plot/animated_network.mp4" controls></video>
 
 
 Let's look at another example: in the :ref:`previous section <plot_networks>` we saw how to plot
