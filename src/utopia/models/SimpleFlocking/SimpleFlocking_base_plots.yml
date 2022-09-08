@@ -60,6 +60,28 @@ _:
   module: model_plots.SimpleFlocking
   plot_func: agents_in_domain
 
+  # Use a square figure
+  helpers:
+    setup_figure:
+      figsize: [6, 6]
+
+  # Configure aesthetics
+  cmap: twilight
+  s: 12
+
+  # Colorbar
+  add_colorbar: true
+  cbar_kwargs:
+    orientation: horizontal
+    fraction: 0.02
+    aspect: 30
+  cbar_labels:
+    +3.14159: $+π$
+    +1.570795: $+π/2$
+    0: $0$
+    -1.570795: $+π/2$
+    -3.14159: $-π$
+
 
 # .. Facet grid specializations
 .plot.facet_grid:
@@ -131,17 +153,10 @@ agents_in_domain:
         orientation: !dag_tag orientation
       tag: data
 
-  # Use a square figure
-  helpers:
-    setup_figure:
-      figsize: [6, 6]
-
   # Pass on space extent (used for setting limits)
   space_extent: !dag_result space_extent
 
-  # passed on to plt.scatter
-  s: 12
-  cmap: hsv  # TODO Is there a better cyclic one?
+
 
 
 

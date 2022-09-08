@@ -3,9 +3,11 @@
 # The configurations given here can be used in the <model_name>_plots.yml file.
 ---
 .variables:
+  model_name: &model_name PredatorPrey
   base_path: &base_path data/PredatorPrey
 
-  colors: &colors
+  # Colors used throughout these plots
+  cmap: &cmap
     empty: &color_empty white
     predator: &color_predator '#FFCC66'
     prey: &color_prey '#006666'
@@ -128,8 +130,8 @@ species_densities:
 
   style: &color_cycler
     axes.prop_cycle: !format
-      fstr: "cycler('color', ['{colors[predator]:}', '{colors[prey]:}'])"
-      colors: *colors
+      fstr: "cycler('color', ['{cmap[predator]:}', '{cmap[prey]:}'])"
+      cmap: *cmap
 
 # -- Time series of the predator and prey resources ---------------------------
 mean_resources:
@@ -197,16 +199,30 @@ resources:
     resource_predator: resource_predator
     resource_prey: resource_prey
 
+    resource_max_predator:
+      path: "../../cfg"
+      with_previous_result: true
+      transform:
+        - recursive_getitem: [[*model_name, predator, resource_max]]
+
+    resource_max_prey:
+      path: "../../cfg"
+      with_previous_result: true
+      transform:
+        - recursive_getitem: [[*model_name, prey, resource_max]]
+
   # Select the properties to plot
   to_plot:
     resource_predator:
       title: Predator resources
-      limits: [0, max]   # Should be adapted to the resource_max model parameter
+      vmin: 0
+      vmax: !dag_result resource_max_predator
       cmap: YlGn
 
     resource_prey:
       title: Prey resources
-      limits: [0, max]   # Should be adapted to the resource_max model parameter
+      vmin: 0
+      vmax: !dag_result resource_max_prey
       cmap: YlGn
 
 
@@ -233,13 +249,13 @@ population:
 
   to_plot:
     combined:
-      title: Predator & Prey positions
-      limits: [0, 3]
+      title: Predator & Prey
       cmap:
         empty: *color_empty         # 0
         prey: *color_prey           # 1
         predator: *color_predator   # 2
         both: *color_both           # 3
+
 
 
 # --- More detailed animation: prey only, combined, predator only -------------
@@ -264,24 +280,21 @@ population_detailed:
   to_plot:
     predator:
       title: Predator
-      limits: [0, 1]
+      add_colorbar: false
       cmap:
         empty: *color_empty
         predator: *color_predator
-      draw_cbar: false
-
-    prey:
-      title: Prey
-      limits: [0, 1]
-      cmap:
-        empty: *color_empty
-        prey: *color_prey
-      draw_cbar: false
 
     combined:
       title: Both
-      limits: [ 0, 1 ]
+      add_colorbar: false
       cmap:
         empty: *color_empty
         both: *color_both
-      draw_cbar: false
+
+    prey:
+      title: Prey
+      add_colorbar: false
+      cmap:
+        empty: *color_empty
+        prey: *color_prey

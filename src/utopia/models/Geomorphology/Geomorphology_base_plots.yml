@@ -80,7 +80,8 @@ ca:
     log10_drainage_area:
       title: $log_{10}$ Drainage Area
       cmap: Blues
-      limits: [0, max]
+      vmin: 0
+      vmax: max
 
     watercolumn:
       title: Water Column

@@ -846,27 +846,44 @@ public:
                        const std::vector<hsize_t> chunksize={})
     {
         // Forward to the main create_dset function
-        const auto dset = create_dset(name, _hdfgrp,
-                                      {cm.cells().size()}, // -> 2D dataset
-                                      compression_level, chunksize);
+        const auto dset = create_dset(
+            name,
+            _hdfgrp,
+            {cm.cells().size()}, // -> 2D dataset
+            compression_level,
+            chunksize
+        );
 
         // Set attributes to mark this dataset as containing grid data
         dset->add_attribute("content", "grid");
+
+        // Need further attributes to denote the grid structure, size, etc.
+        const auto grid_structure = cm.grid()->structure_name();
+        dset->add_attribute("grid_structure", grid_structure);
         dset->add_attribute("grid_shape", cm.grid()->shape());
-        dset->add_attribute("grid_structure", cm.grid()->structure_name());
         dset->add_attribute("space_extent", cm.grid()->space()->extent);
+        dset->add_attribute("periodic_space", cm.grid()->space()->periodic);
+
+        if (grid_structure == "hexagonal") {
+            // ... some additional info is needed, which is dependent on the
+            // way the HexagonalGrid maps cells
+            dset->add_attribute("coordinate_mode", "offset");
+            dset->add_attribute("offset_mode", "even");
+            dset->add_attribute("pointy_top", true);
+        }
+
+        // The CellManager uses "column-style" index ordering, also called
+        // "Fortran-style". This is relevant for assigning the correct IDs.
         dset->add_attribute("index_order", "F");
-        // NOTE CellManager uses "column-style" index ordering, also called
-        //  "Fortran-style".
 
         _log->debug("Added attributes to dataset '{}' to mark it as storing "
                     "grid data.", name);
 
         // Write additional attributes, if not specifically suppressed.
         if (get_as<bool>("write_dim_labels_and_coords", _cfg, true)) {
-            // We know that the dimensions here refer to (time, cell ids). The
-            // time  information is already added in create_dset; add the ID
-            // information here
+            // We know that the dimensions here refer to (time, cell ids).
+            // The time information is already added in create_dset; only need
+            // to add the ID information here
             dset->add_attribute("dim_name__1", "ids");
 
             // For ids, the dimensions are trivial

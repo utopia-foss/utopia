@@ -5,18 +5,18 @@
 .variables:
   base_path: &base_path data/ContDisease
 
-  colors:                                   # state value
+  colors: &cmap                             # state value
+    # NOTE Order is very important here!
     empty: &color_empty darkkhaki           # 0
     tree: &color_tree forestgreen           # 1
     infected: &color_infected firebrick     # 2
     source: &color_source orange            # 3
     stone: &color_stone slategray           # 4
 
-    cycler: &cycler 'cycler(
-        "color",
-        ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
-    )'
-
+  cycler: &cycler !format
+    fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[tree]:}', '{cmap[infected]:}', '{cmap[source]:}', '{cmap[stone]:}'])"
+    cmap:
+      <<: *cmap
 
 
 
@@ -150,13 +150,7 @@ ca/forest:
   to_plot:
     kind:
       title: Forest State
-      limits: [0, 4]
-      cmap:
-        empty: *color_empty
-        tree: *color_tree
-        infected: *color_infected
-        source: *color_source
-        stone: *color_stone
+      cmap: *cmap
 
 # ... The forest age ..........................................................
 ca/forest_age:
@@ -171,7 +165,8 @@ ca/forest_age:
     age:
       title: Forest Age
       cmap: YlGn
-      limits: [0, max]
+      vmin: 0
+      vmax: max
 
 # ... The clusters ............................................................
 ca/clusters:
@@ -192,6 +187,7 @@ ca/clusters:
   to_plot:
     cluster_id:
       title: Clusters
-      limits: [0, 20]
       cmap: tab20
+      vmin: 0
+      vmax: 20
       no_cbar_markings: true

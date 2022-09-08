@@ -3,12 +3,16 @@
 Heatmaps
 ========
 
+There are two options for plotting heatmaps:
+For general heatmaps, ``.plot.facet_grid`` with ``kind: pcolormesh`` offers many possibilities.
+In the case of cellular automata (CA) time series data, there is :ref:`a specialized plot function <plot_ca>`: ``.plot.ca``.
+
 .. admonition:: Summary
 
     On this page, you will see how to
 
     * use ``.plot.facet_grid`` with ``kind: pcolormesh`` to plot heatmaps and spatially two-dimensional plots.
-    * use ``.plot.ca`` to plot spatially two-dimensional plots.
+    * use ``.plot.ca`` to create plots of cellular automata (CA).
     * adjust the style and coloring of your plots.
     * animate your heatmaps based on ``pcolormesh`` by passing a ``frames`` key.
     * animate your heatmaps based on ``.plot.ca``, with more details in the :ref:`section on animations <plot_animations>`.
@@ -37,8 +41,6 @@ Heatmaps
 
 Plotting heatmaps with ``pcolormesh``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-There are two options for plotting heatmaps: the standard one should be using ``.plot.facet_grid`` and ``kind: pcolormesh``, and the other -- discussed :ref:`below <plot_ca>` -- makes use of ``.plot.ca``.
-
 Let's look at the ``pcolormesh``-based approach first:
 
 .. code-block:: yaml
@@ -111,7 +113,7 @@ Use the ``PlotHelper`` (see :ref:`here <plot_helper>`) to set titles, axis label
 
 Colormaps
 """""""""
-With the `dantro ColorManager <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#colormanager-integration>`_, adjusting the colormap is easy:
+With the dantro :py:class:`~dantro.plot.utils.color_mngr.ColorManager`, adjusting the colormap is easy:
 Just add a ``cmap`` key to the plot configuration.
 You can define your own continuous or discrete colormap right from the configuration:
 
@@ -168,14 +170,51 @@ This will produce something like this:
     :width: 800
     :alt: The Forest age from .plot.ca
 
-.. warning::
-
-    🚧 The :py:class:`~dantro.plot.utils.color_mngr.ColorManager` is not yet fully implemented into ``.plot.ca``, thus you cannot define custom continuous colormaps as for ``pcolormesh``.
-    It is therefore recommended to just pass the name of a matplotlib or seaborn colormap.
-    Discrete maps work just the same.
-
-
 Just like ``pcolormesh``, ``.plot.ca`` supports animations.
 To animate, simply remove the ``.plot.ca.snapshot`` reference in the above code.
 You do not need to add an animation base plot, since this is already part of ``.plot.ca``.
 More details on this are given in the :ref:`animations article <plot_animations>`.
+
+
+.. _plot_ca_hex:
+
+Hexagonal grids
+"""""""""""""""
+Aside from the typically used square grid discretizations, the Utopia ``CellManager`` :ref:`supports a hexagonal discretization <cell_manager_grid_discretization>` as well.
+For some model dynamics, the grid discretization can have an effect on the behavior, e.g. because all neighbors are at an equal distance (unlike with a Moore neighborhood in a square grid).
+
+Correspondingly, the :py:func:`utopya.eval.plots.ca.caplot` invoked by ``.plot.ca`` has support to visualize hexagonal grids.
+By default, there is nothing you need to do:
+The grid structure and its properties are stored alongside the data and the underlying :py:func:`~utopya.eval.plots.ca.imshow_hexagonal` plotting function reads that metadata to generate the appropriate visualization.
+In effect, the same ``.plot.ca``-configurations used above are also valid for hexagonal grid structure.
+
+Let's say we have told the model's ``CellManager`` to use a hexagonal grid, e.g. as is done in the ``hex_grid`` config set of the :ref:`SEIRD model <model_SEIRD>`:
+
+.. code-block:: bash
+
+    utopia run SEIRD --cs hex_grid
+
+The resulting ``ca/state`` plot will create output like this.
+
+.. image:: ../../../_static/_gen/SEIRD/hex_grid/kind_snapshot.pdf
+    :width: 800
+    :alt: A hexagonal SEIRD grid visualized by .plot.ca
+
+For more information on available visualization options, see :py:func:`~utopya.eval.plots.ca.caplot`.
+
+.. hint::
+
+    Have a look at the ``grid_structure_sweep`` config set to compare the effect of the different discretizations on the SEIRD model.
+
+.. note::
+
+    The underlying function to draw the hexagons, :py:func:`~utopya.eval.plots.ca.imshow_hexagonal`, is also available for use in facet grid by setting ``kind: imshow_hexagonal`` or using the ``.plot.facet_grid.imshow_hexagonal`` base configuration.
+
+    .. code-block:: yaml
+
+        my_own_hexgrid_plot:
+          based_on:
+            - .creator.universe
+            - .plot.facet_grid.imshow_hexagonal
+
+          # ...

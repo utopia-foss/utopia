@@ -158,7 +158,8 @@ ca/state:
     some_state:
       title: Some State
       cmap: Greens
-      limits: [min, max]
+      vmin: min
+      vmax: max
 
 ca/trait:
   based_on:
@@ -172,4 +173,5 @@ ca/trait:
     some_trait:
       title: Some Trait
       cmap: Blues
-      # limits: [0, ~]
+      # vmin: 0
+      # vmax: ~

@@ -59,7 +59,8 @@ plant_mass_spatial:
     plant_mass:
       title: Plant Biomass
       cmap: Greens
-      limits: [0, 12]
+      vmin: 0
+      vmax: max
 
 
 # Mean plant mass (and std) over time

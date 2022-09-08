@@ -5,6 +5,11 @@
 .variables:
   base_path: &base_path data/GameOfLife
 
+  # The discretized colormap used here, mapping to states 0 and 1, respectively
+  cmap: &cmap
+    empty: &color_empty     white
+    living: &color_living   cornflowerblue
+
 
 
 # =============================================================================
@@ -61,11 +66,9 @@ ca/state:
   to_plot:
     living:
       title: " "
-      limits: [0, 1]
-      draw_cbar: false
-      cmap:
-        empty: white
-        living: cornflowerblue
+      add_colorbar: false
+      cmap: *cmap
+
 
 
 # The mean density of living cells
@@ -93,3 +96,5 @@ density_living_cells:
     set_labels:
       y: Density of living cells
       only_label_outer: true
+
+  color: *color_living

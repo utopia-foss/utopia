@@ -3,6 +3,11 @@
 .variables:
   base_path: &base_path  data/SandPile
 
+  # Colors used throughout the plots, mapping to state values
+  cmap: &cmap
+    static: &color_static  black       # 0
+    mobile: &color_mobile  sandybrown  # 1
+
 
 
 # =============================================================================
@@ -270,10 +275,7 @@ ca/avalanche:
   to_plot:
     avalanche:
       title: Avalanche
-      limits: [0, 1]
-      cmap:
-        static: black
-        mobile: orange
+      cmap: *cmap
 
 ca/slope_and_avalanche:
   based_on:

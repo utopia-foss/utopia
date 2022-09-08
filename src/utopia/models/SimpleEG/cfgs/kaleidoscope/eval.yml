@@ -1,13 +1,10 @@
 # Eval configuration to create a kaleidoscope pattern
 ---
-# plot the spatial development in the CA of only the strategy
-strategy:
-  based_on: .ca.state.anim_ffmpeg
-  model_name: SimpleEG
-  to_plot:
-    strategy:
-      title: Strategy
-      limits: [0, 1]
-      cmap: 
-        S0: red
-        S1: blue
+# The spatial development in the CA of the strategy and the payoff
+ca/strategy_and_payoff:
+  based_on: strategy_and_payoff
+
+ca/strategy_and_payoff_final:
+  based_on:
+    - ca/strategy_and_payoff
+    - .plot.ca.snapshot

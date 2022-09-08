@@ -38,11 +38,13 @@ std::string grid_structure_to_string(const GridStructure& structure) {
             return m.first;
         }
     }
-    // Entry is missing; this should not happen, as the grid_structure_to_string
-    // is meant to include all possible enum values. Inform about it ...
-    throw std::invalid_argument("The given grid structure was not available in "
-        "the grid_structure_map! Are all GridStructure enum values represented "
-        "in the map?");
+    // Entry is missing; this should not happen, as the
+    // grid_structure_to_string is meant to include all possible enum values.
+    throw std::invalid_argument(
+        "The given grid structure was not available in the "
+        "grid_structure_map! Are all GridStructure enum values represented "
+        "in the map?"
+    );
 };
 
 

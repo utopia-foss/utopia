@@ -113,6 +113,11 @@ _:
     - .plot.ca
     - .animation.defaults
 
+  imshow_hexagonal_extra_kwargs:
+    # Need a custom mapping for grid properties because space size is written
+    # to the `space_extent` attribute, not `space_size`
+    grid_properties_keys:
+      space_size: space_extent
 
 
 

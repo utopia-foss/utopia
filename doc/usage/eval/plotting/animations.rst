@@ -44,7 +44,6 @@ A particularly common case is animating cellular automata, such as the :ref:`SEI
 .. code-block:: yaml
 
     animated_ca:
-
       # Base your plot on .plot.ca
       based_on:
         - .creator.universe
@@ -57,8 +56,9 @@ A particularly common case is animating cellular automata, such as the :ref:`SEI
       # .plot.ca requires a 'to_plot' key
       to_plot:
         kind:
-          limits: [~, 3]
           # title: My title
+          vmin: 0
+          vmax: 3
           cmap:
             empty: white
             susceptible: lightgreen
@@ -68,8 +68,9 @@ A particularly common case is animating cellular automata, such as the :ref:`SEI
 :code:`.plot.ca` requires a :code:`to_plot` key, specifying what to put into each subplot.
 The keys (here: ``kind``) need to correspond to the selected data entries.
 
-In addition, it is used to specify the limits of the colormap (and other information like a subplot title).
-Here, we are only plotting the susceptible, infected, and recovered agents, so we set the limits to :code:`[0, 3]`, and define the colors we want for each :code:`kind`:
+In addition, it is used to specify the limits of the colormap (``vmin`` and ``vmax``) and other information like the subplot's title.
+Here, we are only plotting empty cells and cells with susceptible, infected, and recovered agents, denoted by the integer ``kind`` values of ``0`` to ``3``.
+To ensure that the colormap stays in that range, we set ``vmin`` and ``vmax`` accordingly and define the colors we want for each ``kind``; they are associated depending on the order within ``cmap``, starting at ``vmin`` and going up to ``vmax`` in integer steps:
 
 .. raw:: html
 
@@ -103,10 +104,13 @@ Simply add
 
       frames_isel: !range [30, 60]
 
-This will only plot the frames from 30 to 60. You can also manually specify an array, i.e. :code:`frames_isel: [10, 20, 30, 40]`.
+This will only plot the frames from 30 to 59.
+You can also manually specify a list, i.e. :code:`frames_isel: [10, 20, 30, 40]`.
 
-You can also use the ``.plot.facet_grid`` base configuration with ``kind: pcolormesh`` to animate heatmaps.
-See the :ref:`article on heatmaps <pcolormesh>` for more details.
+.. hint::
+
+    As an alternative for plotting heatmaps that is not specialized on CA, you can use the ``.plot.facet_grid.pcolormesh`` base configuration.
+    See the :ref:`article on heatmaps <pcolormesh>` for more details.
 
 
 

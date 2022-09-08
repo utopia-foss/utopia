@@ -18,11 +18,11 @@ cell_manager:
     # Initial prey and predator resources are drawn from a uniform integer (!)
     # distribution with the limits specified below.
     predator:
-      min_init_resources: !is-unsigned 2
-      max_init_resources: !is-unsigned 8
+      min_init_resources: !is-positive-or-zero 2
+      max_init_resources: !is-positive-or-zero 8
     prey:
-      min_init_resources: !is-unsigned 2
-      max_init_resources: !is-unsigned 8
+      min_init_resources: !is-positive-or-zero 2
+      max_init_resources: !is-positive-or-zero 8
  
     # The probabilities to have a predator, plant, and/or prey on a cell.
     # These probabilities are evaluated independently and for each cell.
@@ -36,7 +36,7 @@ cell_manager:
 # Values can only be 0 or 1, specifying whether the respective entity is
 # present on the corresponding cell.
 cell_states_from_file:
-  hdf5_file: !is-string /abs/path/to/data.hdf5
+  hdf5_file: !is-string /abs/path/to/data.hdf5  # TODO Set this in your run.yml
   load_predator: !is-bool false
   load_prey: !is-bool false
   load_plant: !is-bool false
@@ -44,94 +44,59 @@ cell_states_from_file:
 
 # --- Model dynamics ----------------------------------------------------------
 # How many cells to randomly select each time step and apply the movement rule
-# to. This is specified in units of the number of available cells.
-num_moves_fraction: !is-positive 1.
+# to (in units of the number of available cells). Can also be > 1.
+num_moves_fraction: !is-positive-or-zero 1.
 
 
 # Species-specific parameters; the model dynamics arise from these
 predator:
   # Resource intake from eating and maximum resource value
-  resource_intake: !param
-    default: 15.
-    dtype: float
-    limits: [0.,~]
-    
-  resource_max: !param
-    default: 30.
-    dtype: float
-    limits: [0.,~]
-    
+  resource_intake: !is-positive-or-zero 15.
+
+  resource_max: !is-positive-or-zero 30.
 
   # Cost of living (per time step)
-  cost_of_living: !param
-    default: 3.5
-    dtype: float
-    limits: [0.,~]
-    
+  cost_of_living: !is-positive-or-zero 3.5
 
   # Movement limit; how many single steps a predator can make when moving.
-  move_limit: !param
-    default: 2
-    dtype: int
-    limits: [1, ~]
+  move_limit: !is-positive-int 2
     
   # Reproduction parameters: minimum resources required, probability for
   # the reproduction taking place, and cost of reproduction.
-  repro_resource_requ: !param
-    default: 2.
-    dtype: float
-    limits: [0.,~]
-    
+  repro_resource_requ: !is-positive-or-zero 2.
+
   repro_prob: !is-probability 0.2
-  repro_cost: !param
-    default: 1.
-    dtype: float
-    limits: [0.,~]
+
+  repro_cost: !is-positive-or-zero 1.
     
 
 
 prey:
-  resource_intake: !param
-    default: 3.
-    dtype: float
-    limits: [0.,~]
+  resource_intake: !is-positive-or-zero 3.
     
-  resource_max: !param
-    default: 8.
-    dtype: float
-    limits: [0.,~]
-    
+  resource_max: !is-positive-or-zero 8.
 
-  cost_of_living: !param
-    default: 1.
-    dtype: float
-    limits: [0.,~]
-    
+  cost_of_living: !is-positive-or-zero 1.
 
-  move_limit: !param
-    default: 1
-    dtype: int
-    limits: [1, ~]
+  move_limit: !is-positive-int 1
 
   # Fleeing probability when on the same cell together with a predator
   p_flee: !is-probability 0.3
 
-  repro_resource_requ: !param
-    default: 1.5
-    dtype: float
-    limits: [0., ~]
+  repro_resource_requ: !is-positive-or-zero 1.5
     
   repro_prob: !is-probability 0.4
-  repro_cost: !param
-    default: 1.2
-    dtype: float
-    limits: [0., ~]
+
+  repro_cost: !is-positive-or-zero 1.2
     
 
 
 plant:
   # Plants' growth model
-  growth_model: !is-string stochastic
+  growth_model: !param
+    dtype: str
+    default: stochastic
+    is_any_of: [none, deterministic, stochastic]
   # Available models:
   #  - none:           As in the standard Predator-Prey model, the presence of
   #                    plants is ignored. Thus, available resources for prey

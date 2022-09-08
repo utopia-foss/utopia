@@ -1,9 +1,11 @@
 """Spatially resolved plots, e.g. of agent position"""
 
 import logging
+from typing import Union
 
 import numpy as np
 import xarray as xr
+from dantro.plot import ColorManager
 
 from utopya.eval import PlotHelper, is_plot_func
 
@@ -58,7 +60,13 @@ def agents_in_domain(
     x: str = "x",
     y: str = "y",
     orientation: str = "orientation",
+    frames: str = "time",
+    cmap: Union[str, dict] = "twilight",
     title_fstr: str = "$t$ = {time:5d}",
+    title_kwargs: dict = dict(fontfamily="monospace"),
+    add_colorbar: bool = True,
+    cbar_labels: dict = None,
+    cbar_kwargs: dict = None,
     **plot_kwargs,
 ):
     """Plots agent positions and orientations in the domain"""
@@ -68,34 +76,47 @@ def agents_in_domain(
     if not isinstance(ds, xr.Dataset):
         raise TypeError(f"Expected xr.Dataset, got {type(ds)}!")
 
-    # Apply encoding
+    # Apply encoding such that the frames are not needed downstream
     ds = ds.rename(
         {
             x: "x",
             y: "y",
             orientation: "orientation",
+            frames: "time",
         }
     )
+
+    # Prepare colormap
+    cm = ColorManager(cmap=cmap, labels=cbar_labels)
+    plot_kwargs["cmap"] = cm.cmap
 
     # Extract space information and set axis and aspect ratio accordingly
     hlpr.ax.set_xlim(0, space_extent[0])
     hlpr.ax.set_ylim(0, space_extent[1])
     hlpr.ax.set_aspect("equal")
 
-    # Draw initial frame
-    # draw_agents(ds.isel(time=0), hlpr=hlpr, **plot_kwargs)  # FIXME Needed?
+    # TODO Adapt for case where *no* animation is desired
+
+    # .. Animation ............................................................
 
     def update_position_and_orientation():
         collection = None
-        for _t, _ds in ds.groupby("time"):
+        for i, (_t, _ds) in enumerate(ds.groupby("time")):
             hlpr.ax.set_title(
-                title_fstr.format(time=_t.item()),
-                fontfamily="monospace",
+                title_fstr.format(time=_t.item()), **title_kwargs
             )
 
             collection = draw_agents(
                 _ds, hlpr=hlpr, collection=collection, **plot_kwargs
             )
+
+            if i == 0 and add_colorbar:
+                cm.create_cbar(
+                    collection,
+                    fig=hlpr.fig,
+                    ax=hlpr.ax,
+                    **(cbar_kwargs if cbar_kwargs else {}),
+                )
 
             # Done with this frame; yield control to the animation framework
             # which will grab the frame...
