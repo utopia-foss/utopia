@@ -1,0 +1,11 @@
+# Run configuration for a hexagonal grid
+---
+parameter_space:
+  num_steps: 75
+
+  SimpleEG:
+    cell_manager:
+      grid:
+        structure: hexagonal
+      neighborhood:
+        mode: hexagonal

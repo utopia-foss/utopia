@@ -13,11 +13,10 @@
     source: &color_source orange            # 3
     stone: &color_stone slategray           # 4
 
-  cycler: &cycler 'cycler(
-        "color",
-        ["darkkhaki", "forestgreen", "firebrick", "orange", "slategray",]
-    )'
-
+  cycler: &cycler !format
+    fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[tree]:}', '{cmap[infected]:}', '{cmap[source]:}', '{cmap[stone]:}'])"
+    cmap:
+      <<: *cmap
 
 
 

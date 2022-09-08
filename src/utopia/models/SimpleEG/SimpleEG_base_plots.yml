@@ -3,6 +3,16 @@
 .variables:
   base_path: &base_path  data/SimpleEG
 
+  # Colors used for the plots, mapping to states 0 and 1
+  cmap: &cmap
+    S0: &color_S0 tab:red
+    S1: &color_S1 tab:blue
+
+  cycler: &cycler !format
+    fstr: "cycler('color', ['{cmap[S0]:}', '{cmap[S1]:}'])"
+    cmap:
+      <<: *cmap
+
 
 
 # =============================================================================
@@ -70,6 +80,8 @@ frequency_S1:
       y: $S_1$ Frequency
       only_label_outer: true
 
+  color: *color_S1
+
 
 # .. Combined frequency plot ..................................................
 frequencies:
@@ -78,6 +90,9 @@ frequencies:
     - .plot.facet_grid.with_auto_encoding
     - .plot.facet_grid.line
     - .hlpr.kind.time_series
+
+  style:
+    axes.prop_cycle: *cycler
 
   select:
     S1: *select_S1_frequency
@@ -198,12 +213,10 @@ strategy_and_payoff:
   to_plot:
     strategy:
       title: Strategy
-      cmap:
-        S0: red
-        S1: blue
+      cmap: *cmap
 
     payoff:
       title: Payoff
       vmin: 0
       vmax: max
-      cmap: viridis
+      cmap: mako

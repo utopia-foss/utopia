@@ -3,6 +3,20 @@
 .variables:
   base_path: &base_path  data/ForestFire
 
+  # Colormap used throughout these plots
+  # NOTE The order maps to the `kind` values from 0 .. 4
+  cmap: &cmap
+    empty: &color_empty   darkkhaki
+    tree: &color_tree     forestgreen
+    ' ': none  # not used in FFM
+    source: &color_source orange
+    stone: &color_stone   slategrey
+
+  cycler: &cycler !format
+    fstr: "cycler('color', ['{cmap[empty]:}', '{cmap[tree]:}', '{cmap[ ]:}', '{cmap[source]:}', '{cmap[stone]:}'])"
+    cmap:
+      <<: *cmap
+
 
 
 
@@ -200,7 +214,7 @@ tree_density:
       y: [0., 1.]
 
   # Passed on to plt.plot
-  # ...
+  color: *color_tree
 
 
 # .. Facet grid ...............................................................
@@ -369,12 +383,7 @@ ca/forest:
   to_plot:
     kind:
       title: Forest State
-      cmap:
-        empty: darkkhaki
-        tree: forestgreen
-        ' ': none  # not used in FFM
-        source: orange
-        stone: slategrey
+      cmap: *cmap
 
 # ... The forest age ..........................................................
 ca/forest_age:

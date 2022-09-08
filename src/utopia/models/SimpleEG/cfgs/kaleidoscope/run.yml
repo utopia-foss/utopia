@@ -1,16 +1,17 @@
 # Run configuration to create a kaleidoscope pattern
 ---
-# Configure the parameter space
 parameter_space:
   num_steps: 300
 
   SimpleEG:
     space:
       periodic: false
+
     cell_manager:
       grid:
         resolution: 501      
       neighborhood:
         mode: Moore
+
     initial_state: single_s1
     b: 1.61

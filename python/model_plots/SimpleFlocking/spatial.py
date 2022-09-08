@@ -95,22 +95,13 @@ def agents_in_domain(
     hlpr.ax.set_ylim(0, space_extent[1])
     hlpr.ax.set_aspect("equal")
 
-    # Draw initial frame and colorbar
-    collection = draw_agents(ds.isel(time=0), hlpr=hlpr, **plot_kwargs)
-
-    if add_colorbar:
-        cm.create_cbar(
-            collection,
-            fig=hlpr.fig,
-            ax=hlpr.ax,
-            **(cbar_kwargs if cbar_kwargs else {}),
-        )
+    # TODO Adapt for case where *no* animation is desired
 
     # .. Animation ............................................................
 
     def update_position_and_orientation():
         collection = None
-        for _t, _ds in ds.groupby("time"):
+        for i, (_t, _ds) in enumerate(ds.groupby("time")):
             hlpr.ax.set_title(
                 title_fstr.format(time=_t.item()), **title_kwargs
             )
@@ -118,6 +109,14 @@ def agents_in_domain(
             collection = draw_agents(
                 _ds, hlpr=hlpr, collection=collection, **plot_kwargs
             )
+
+            if i == 0 and add_colorbar:
+                cm.create_cbar(
+                    collection,
+                    fig=hlpr.fig,
+                    ax=hlpr.ax,
+                    **(cbar_kwargs if cbar_kwargs else {}),
+                )
 
             # Done with this frame; yield control to the animation framework
             # which will grab the frame...
