@@ -14,9 +14,7 @@ opinion_space:
 
 tolerance: !is-positive 0.3
 
-susceptibility: !param
-  default: 0.3
-  limits: [0, 1]
+susceptibility: !is-in-unit-interval 0.3
 
 interaction_function: !param
   default: Deffuant
@@ -30,16 +28,22 @@ network:
   directed: !is-bool true
 
   # network model
-  model: KlemmEguiluz # can be: WattsStrogatz (scale-free), ErdosRenyi (random),
-                       # regular, complete, BollobasRiordan (small-world, directed),
-                       # BarabasiAlbert (small-world, undirected),
-                       # regular, load_from_file (load a custom graph)
-  num_vertices: 200
-  mean_degree: 4
+  model: KlemmEguiluz
+  # can be:
+  #   - WattsStrogatz (scale-free)
+  #   - ErdosRenyi (random)
+  #   - regular
+  #   - complete
+  #   - BollobasRiordan (small-world, directed)
+  #   - BarabasiAlbert (small-world, undirected)
+  #   - load_from_file (load a custom graph)
+
+  num_vertices: !is-unsigned 200
+  mean_degree: !is-positive-or-zero 4
 
   ErdosRenyi:
-    parallel: False
-    self_edges: False
+    parallel: false
+    self_edges: false
 
   WattsStrogatz:
     p_rewire: 0.2

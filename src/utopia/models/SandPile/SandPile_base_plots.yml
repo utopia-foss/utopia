@@ -270,10 +270,9 @@ ca/avalanche:
   to_plot:
     avalanche:
       title: Avalanche
-      limits: [0, 1]
       cmap:
-        static: black
-        mobile: orange
+        static: black       # 0
+        mobile: sandybrown  # 1
 
 ca/slope_and_avalanche:
   based_on:

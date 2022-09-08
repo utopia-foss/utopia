@@ -198,12 +198,12 @@ strategy_and_payoff:
   to_plot:
     strategy:
       title: Strategy
-      limits: [0, 1]
       cmap:
         S0: red
         S1: blue
 
     payoff:
       title: Payoff
-      limits: [0, 12]
+      vmin: 0
+      vmax: max
       cmap: viridis

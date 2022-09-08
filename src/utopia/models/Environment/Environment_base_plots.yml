@@ -60,7 +60,8 @@ ca/parameter:
   to_plot:
     some_heterogeneous_parameter:
       title: some_heterogeneous_parameter
-      limits: [-0.2, +1.0]
+      vmin: -0.2
+      vmax: +1.0
 
 
 trajectory:

@@ -34,6 +34,9 @@ _default_style: &default_style
 .flush_cmap:
   cmap: ~
 
+
+
+
 # -----------------------------------------------------------------------------
 # Failing plots for usage/eval/dag/debug.rst
 
@@ -191,8 +194,6 @@ debug_DAG_advanced_print_examples:
 
 
 
-
-
 # -----------------------------------------------------------------------------
 # Demonstrates a basic line plot
 density_basic:
@@ -204,6 +205,7 @@ density_basic:
       path: densities
       transform:
         - .sel: [!dag_prev , { kind: [infected] }]
+
 
 # Demonstrates a basic line plot with style adjustments
 ### Start --- line_plot
@@ -239,6 +241,7 @@ line_plot:
       title: Density of infected agents
 ### End --- line_plot
 
+
 # Demonstrates a stacked line plot
 stacked_kinds:
   based_on:
@@ -263,6 +266,7 @@ stacked_kinds:
       y: Density [1/A]
     set_title:
       title: Density of agent kinds
+
 
 # Demonstrates an animated cellular automaton
 ### Start --- .plot.ca.
@@ -289,8 +293,8 @@ animated_ca:
 
   to_plot:
     kind:
-      limits: [0, 3]
       # Use a custom cmap; these colors must be globally defined somewhere
+      # Will automatically be mapped to values [0, 1, 2, 3]
       cmap:
         empty: *white
         susceptible: *lightgreen
@@ -304,6 +308,7 @@ animated_ca:
     font.family: serif
     font.size: 10
 ### End --- .plot.ca.
+
 
 # Demonstrates a simple 2D scatter plot
 scatter_2d_simple:
@@ -343,7 +348,8 @@ scatter_2d_simple:
     set_title:
       title: ~
 
-# Demonstrates a 2D scatterplot with an additional variable plotted on the 'hue'
+
+# Demonstrates a 2D scatterplot with an additional variable plotted on 'hue'
 ### Start --- scatter_2d
 scatter_2d:
   based_on:
@@ -385,7 +391,6 @@ scatter_2d:
       1: *mediumblue
   <<: *default_style
   color: ~
-
 
 
 # Demonstrates a 3D scatter plot with hue
@@ -466,6 +471,7 @@ scatter_2d_colorful:
       0.8: *lightblue
       1: *darkblue
 
+
 # Demonstrates some PlotHelper features
 helper_demo:
   based_on:
@@ -513,17 +519,3 @@ helper_demo:
         major:
           locs: [0, 0.1, 0.2, 0.3, 0.4]
           labels: ['No', more, trouble, with, tick labels]
-
-ca/state:
-  based_on:
-    - .creator.universe
-    - .plot.ca
-  enabled: false
-
-  select:
-    kind: kind
-  to_plot:
-    kind:
-      title: State
-      limits: [0, 7]
-  suptitle_fstr: False

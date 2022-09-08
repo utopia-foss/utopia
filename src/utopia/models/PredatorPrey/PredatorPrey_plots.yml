@@ -14,13 +14,12 @@ mean_resources:
 
 
 # --- Animation of the spatial resource development of prey and predators -----
-resources:
+ca/resources:
   based_on: resources
 
-population:
+ca/population:
   based_on: population
-  enabled: true
 
-population_detailed:
+ca/population_detailed:
   based_on: population_detailed
-  enabled: true
+  enabled: false

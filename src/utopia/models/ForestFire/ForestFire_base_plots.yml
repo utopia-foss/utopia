@@ -369,7 +369,6 @@ ca/forest:
   to_plot:
     kind:
       title: Forest State
-      limits: [0, 4]
       cmap:
         empty: darkkhaki
         tree: forestgreen
@@ -390,7 +389,8 @@ ca/forest_age:
     age:
       title: Forest Age
       cmap: YlGn
-      limits: [0, max]
+      vmin: 0
+      vmax: max
 
 # ... The clusters ............................................................
 ca/clusters:
@@ -409,6 +409,7 @@ ca/clusters:
   to_plot:
     cluster_id:
       title: Clusters
-      limits: [0, 20]
       cmap: tab20
+      vmin: 0
+      vmax: 20
       no_cbar_markings: true

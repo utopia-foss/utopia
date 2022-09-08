@@ -4,14 +4,15 @@ _variables:
   base_path: &base_path  data/SEIRD
 
   cmap: &cmap
-    empty: &color_empty darkkhaki
-    susceptible: &color_susceptible forestgreen
-    exposed: &color_exposed darkorange
-    infected: &color_infected firebrick
-    recovered: &color_recovered slategray
-    deceased: &color_deceased black
-    source: &color_source maroon
-    inert: &color_inert moccasin
+    # NOTE Order is important here, mapping to `kind` values 0 ... 7
+    empty:        &color_empty                darkkhaki           # 0
+    susceptible:  &color_susceptible          forestgreen         # 1
+    exposed:      &color_exposed              darkorange          # 2
+    infected:     &color_infected             firebrick           # 3
+    recovered:    &color_recovered            slategray           # 4
+    deceased:     &color_deceased             black               # 5
+    source:       &color_source               maroon              # 6
+    inert:        &color_inert                moccasin            # 7
 
   labels:
     label_susceptible:    &label_susceptible  Susceptible Density [1/A]
@@ -556,8 +557,7 @@ ca/state:
   to_plot:
     kind:
       title: State
-      limits: [0, 7]
-      cmap: *cmap  # NOTE Colors need to be in the correct ordering!
+      cmap: *cmap
 
 
 ca/age:
@@ -574,7 +574,7 @@ ca/age:
       cmap: YlGn
 
 
-ca/clusters:  # FIXME Does not show clusters in hexagonal mode
+ca/clusters:
   based_on:
     - .creator.universe
     - .plot.ca
@@ -590,6 +590,7 @@ ca/clusters:  # FIXME Does not show clusters in hexagonal mode
   to_plot:
     cluster:
       title: Clusters
-      limits: [0, 20]
+      vmin: 0
+      vmax: 20
       cmap: tab20
       no_cbar_markings: true

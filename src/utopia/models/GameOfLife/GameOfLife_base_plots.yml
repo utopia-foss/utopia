@@ -61,8 +61,7 @@ ca/state:
   to_plot:
     living:
       title: " "
-      limits: [0, 1]
-      draw_cbar: false
+      add_colorbar: false
       cmap:
         empty: white
         living: cornflowerblue

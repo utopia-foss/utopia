@@ -34,7 +34,7 @@ cell_manager:
 # Values can only be 0 or 1, specifying whether the respective entity is
 # present on the corresponding cell.
 cell_states_from_file:
-  hdf5_file: !is-string /abs/path/to/data.hdf5
+  hdf5_file: !is-string /abs/path/to/data.hdf5  # TODO Set this in your run.yml
   load_predator: !is-bool false
   load_prey: !is-bool false
 
@@ -43,60 +43,31 @@ cell_states_from_file:
 # Species-specific parameters; the model dynamics arise from these
 predator:
   # Resource intake from eating and maximum resource value
-  resource_intake: !param
-    default: 3.
-    dtype: float
-    limits: [0.,~]
+  resource_intake: !is-positive-or-zero 3.
     
-  resource_max: !param
-    default: 8.
-    dtype: float
-    limits: [0.,~]
+  resource_max: !is-positive-or-zero 8.
 
   # Cost of living (per time step)
-  cost_of_living: !param
-    default: 1.
-    dtype: float
-    limits: [0.,~]
+  cost_of_living: !is-positive-or-zero 1.
 
   # Reproduction parameters: minimum resources required, probability for
   # the reproduction taking place, and cost of reproduction.
-  repro_resource_requ: !param
-    default: 4.
-    dtype: float
-    limits: [0.,~]
+  repro_resource_requ: !is-positive-or-zero 4.
+
   repro_prob: !is-probability 0.2
-  repro_cost: !param
-    default: 2.
-    dtype: float
-    limits: [0.,~]
+  repro_cost: !is-positive-or-zero 2
 
 prey:
-  resource_intake: !param
-    default: 3.
-    dtype: float
-    limits: [0.,~]
+  resource_intake: !is-positive-or-zero 3.
     
-  resource_max: !param
-    default: 8.
-    dtype: float
-    limits: [0.,~]
+  resource_max: !is-positive-or-zero 8.
 
   # Cost of living (per time step)
-  cost_of_living: !param
-    default: 1.
-    dtype: float
-    limits: [0.,~]
+  cost_of_living: !is-positive-or-zero 1.
 
   # Fleeing probability when on the same cell together with a predator
   p_flee: !is-probability 0.5
 
-  repro_resource_requ: !param
-    default: 4.
-    dtype: float
-    limits: [0.,~]
+  repro_resource_requ: !is-positive-or-zero 4.
   repro_prob: !is-probability 0.2
-  repro_cost: !param
-    default: 2.
-    dtype: float
-    limits: [0.,~]
+  repro_cost: !is-positive-or-zero 2.
