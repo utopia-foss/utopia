@@ -506,7 +506,7 @@ The following table includes the most important Python dependencies:
 
 | Software                  | Version  | Comments                        |
 | ------------------------- | -------- | ------------------------------- |
-| [utopya](https://gitlab.com/utopia-project/utopya)   | >= 1.1   | The (outsourced) Utopia frontend package |
+| [utopya](https://gitlab.com/utopia-project/utopya)   | >= 1.2   | The (outsourced) Utopia frontend package |
 | [dantro](https://gitlab.com/utopia-project/dantro)   | >= 0.18  | Handle, transform, and visualize hierarchically organized data |
 | [paramspace](https://gitlab.com/blsqr/paramspace)    | >= 2.5   | Makes parameter sweeps easy |
 

@@ -1,0 +1,26 @@
+# A run configuration that yields pretty demo plots for the flocking scenario
+---
+perform_sweep: true
+
+paths:
+  model_note: demo
+
+parameter_space:
+  num_steps: 2k
+  write_every: 5
+
+  seed: !sweep
+    default: 42
+    values: [0, 1, 2, 6, 42]
+
+  SimpleFlocking:
+    space:
+      extent: 25
+
+    agent_manager:
+      initial_num_agents: 300
+
+    speed: 0.04
+    noise_level: !sweep
+      default: 0.1
+      values: [0.3, 0.4, 0.5]

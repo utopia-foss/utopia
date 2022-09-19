@@ -1,0 +1,21 @@
+# Output for the demo scenario
+---
+
+agents_in_domain:
+  based_on: agents_in_domain
+
+
+agents_in_domain_clean:
+  enabled: false
+  based_on:
+    - agents_in_domain
+    # - .animation.high_dpi
+    - .animation.fps30
+    - .hlpr.ticks.x.hide
+    - .hlpr.ticks.y.hide
+    - .style.no_spines
+    - .style.no_grid
+
+  figsize_aspect_offset: 0
+  suptitle_fstr: false
+  add_colorbar: false

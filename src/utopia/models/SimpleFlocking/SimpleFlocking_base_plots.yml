@@ -56,32 +56,12 @@ _:
 
 # .. Plot functions ...........................................................
 
-.plot.agents_in_domain:
-  module: model_plots.SimpleFlocking
-  plot_func: agents_in_domain
-
-  # Use a square figure
-  helpers:
-    setup_figure:
-      figsize: [6, 6]
+.plot.abm:
+  based_on:
+    - .plot.abm
 
   # Configure aesthetics
   cmap: twilight
-  s: 12
-
-  # Colorbar
-  add_colorbar: true
-  cbar_kwargs:
-    orientation: horizontal
-    fraction: 0.02
-    aspect: 30
-  cbar_labels:
-    +3.14159: $+π$
-    +1.570795: $+π/2$
-    0: $0$
-    -1.570795: $+π/2$
-    -3.14159: $-π$
-
 
 # .. Facet grid specializations
 .plot.facet_grid:
@@ -123,9 +103,11 @@ _:
 agents_in_domain:
   based_on:
     - .creator.universe
-    - .plot.agents_in_domain
+    - .plot.abm
     - .animation.ffmpeg
+    - .animation.fps30
 
+  # Prepare data
   select:
     x:
       path: agent/x
@@ -151,11 +133,47 @@ agents_in_domain:
       - x: !dag_tag x
         y: !dag_tag y
         orientation: !dag_tag orientation
-      tag: data
+      tag: agents
+
+  # Data encoding
+  x: x
+  y: y
+  frames: time
+  orientation: orientation
+  hue: orientation
+
+  # Define what to plot
+  to_plot:
+    agents:
+      size_scale: 0.0002
 
   # Pass on space extent (used for setting limits)
-  space_extent: !dag_result space_extent
+  domain:
+    extent: !dag_result space_extent
+    pad: 0
 
+  # Aesthetics
+  marker: wedge
+
+  tail_length: 16
+  tail_decay: 0.12
+  tail_max_segment_length: 1.  # to avoid problems when crossing a boundary
+  tail_kwargs:
+    color: black
+    linewidth: 0.5
+    alpha: .6
+    zorder: -10
+
+  # Colorbar
+  cmap: twilight
+  vmin: -3.14159
+  vmax: +3.14159
+  cbar_labels:
+    +3.14159: $+π$
+    +1.570795: $+π/2$
+    0: $0$
+    -1.570795: $+π/2$
+    -3.14159: $-π$
 
 
 

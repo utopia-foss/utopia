@@ -164,7 +164,12 @@ _:
 # start: .style
 
 
-
+.style.no_spines:
+  style:
+    axes.spines.left: false
+    axes.spines.right: false
+    axes.spines.bottom: false
+    axes.spines.top: false
 
 
 
@@ -231,7 +236,7 @@ _:
     - .animation.defaults    # from here
 
 
-# DPI settings
+# DPI and FPS settings
 .animation.medium_dpi:
   animation:
     writer_kwargs:
@@ -241,6 +246,34 @@ _:
       ffmpeg:
         saving:
           dpi: 96
+
+.animation.fps10:
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 10
+
+.animation.fps20:
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 20
+
+.animation.fps24:
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 24
+
+.animation.fps30:
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 30
 
 
 
