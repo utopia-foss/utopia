@@ -1,6 +1,9 @@
 # Run configuration to create a single infection spread
 # including run-away movement and heterogeneities via inert cells
 ---
+paths:
+  model_note: single_infection
+
 parameter_space:
   num_steps: 365
 

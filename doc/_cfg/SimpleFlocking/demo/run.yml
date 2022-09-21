@@ -11,7 +11,7 @@ parameter_space:
 
   seed: !sweep
     default: 42
-    values: [0, 1, 2, 6, 42]
+    values: [0, 1, 2]
 
   SimpleFlocking:
     space:
@@ -21,6 +21,4 @@ parameter_space:
       initial_num_agents: 300
 
     speed: 0.04
-    noise_level: !sweep
-      default: 0.1
-      values: [0.3, 0.4, 0.5]
+    noise_level: 0.7
