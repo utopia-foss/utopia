@@ -19,10 +19,105 @@ _utopia_colors: &utopia_colors
 
 # -----------------------------------------------------------------------------
 
-agents_in_domain:
-  enabled: false
-  based_on: agents_in_domain
+# Demonstrates agents in a domain
+### Start --- agents_in_domain
+agents:
 
+  based_on:
+    - .creator.universe
+    - .plot.abm
+    - .animation.ffmpeg
+    - .animation.fps30
+
+  # Prepare data
+  select:
+    x:
+      path: agent/x
+      transform: [ .data ]
+      allow_failure: silent
+      fallback: !dag_tag _skip_plot
+    y:
+      path: agent/y
+      transform: [ .data ]
+    orientation:
+      path: agent/orientation
+      transform: [ .data ]
+
+    space_extent:
+      path: agent/x  # meta data is written to every other dataset as well
+      transform:
+        - getattr: [ !dag_prev , attrs ]
+        - getitem: [ !dag_prev , space_extent ]
+
+  transform:
+    # Combine data into one dataset
+    - xr.Dataset:
+        - x: !dag_tag x
+          y: !dag_tag y
+          orientation: !dag_tag orientation
+      tag: agents
+
+  # Data encoding
+  x: x
+  y: y
+  frames: time
+  orientation: orientation
+  hue: orientation
+
+  # Define what to plot
+  to_plot:
+    agents:
+      marker: wedge
+
+  # Pass on space extent (used for setting limits)
+  domain:
+    extent: !dag_result space_extent
+    pad: 0
+
+  # Set tail lengths, style, and decay factor
+  tail_length: 24
+  tail_decay: 0.12
+  tail_max_segment_length: 1.  # to avoid problems when crossing a boundary
+  tail_kwargs:
+    color: black
+    linewidth: 0.5
+    alpha: .6
+    zorder: -10
+
+  # Colorbar settings
+  vmin: -3.14159
+  vmax: +3.14159
+  cbar_labels:
+    +3.14159: $+π$
+    +1.570795: $+π/2$
+    0: $0$
+    -1.570795: $+π/2$
+    -3.14159: $-π$
+
+### End --- agents_in_domain
+  enabled: true
+
+  universes:
+    seed: [ 0 ]
+  # Use a Utopia-themed colormap
+  cmap: &cmap
+    continuous: true
+    from_values:
+      0.0: *darkgreen
+      0.333: *yellow
+      0.666: *red
+      1.0: *darkgreen
+  frames_isel: !range [ 200 ]
+
+
+fish_demo:
+  based_on:
+    - agents
+    - .animation.disabled
+  frames_isel: [10]
+  to_plot:
+    agents:
+      marker: fish2
 
 agents_in_domain_clean:
   based_on:
@@ -45,15 +140,11 @@ agents_in_domain_clean:
   style:
     axes.facecolor: *gray
 
-  # Use a Utopia-themed colormap
   cmap:
-    continuous: true
-    from_values:
-      0.0: *darkgreen
-      0.333: *yellow
-      0.666: *red
-      1.0: *darkgreen
+    <<: *cmap
 
+  universes:
+    seed: [ 1, 2 ]
 
 agents_in_domain_clean_frames:
   enabled: false
