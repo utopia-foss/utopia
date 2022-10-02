@@ -21,7 +21,8 @@ However, especially for large simulation runs with many parameters, you will soo
 
 This section will give you a brief guide through Utopia's data transformation and data plotting capabilities.
 We will begin by using several of the most :ref:`common and ubiquitous plots <line_plots>` to show you how to use it, before moving to more sophisticated, :ref:`high-dimensional operations <facet_grids>`, :ref:`animations <plot_animations>`, and :ref:`network <plot_networks>` plots.
-We will be illustrating everything using the Utopia :ref:`SEIRD <model_SEIRD>`, :ref:`Opinionet <model_Opinionet>` and :ref:`ForestFire <model_ForestFire>` models as examples.
+We will be illustrating everything using various Utopia models, such as the :ref:`SEIRD <model_SEIRD>`, :ref:`Opinionet <model_Opinionet>`,
+:ref:`SimpleFlocking <model_SimpleFlocking>`, and :ref:`ForestFire <model_ForestFire>` models.
 
 
 
@@ -234,10 +235,9 @@ Now that we have the data, **we need to transform it**. Simple:
 
         # Bundle everything together and tag it
         - xr.Dataset:
-            data_vars:
-               x: !dag_tag x_axis
-               y: !dag_tag mean_state
-               dy: !dag_tag state_variance
+          - x: !dag_tag x_axis
+            y: !dag_tag mean_state
+            dy: !dag_tag state_variance
           tag: data
 
 And that's it!

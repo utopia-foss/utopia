@@ -148,9 +148,8 @@ This would be much more meaningful if we could add errorbands to each of the cur
       - .std: [!dag_tag infected, seed]
         tag: std
       - xr.Dataset:
-          data_vars:
-            infected density: !dag_tag mean
-            err: !dag_tag std
+        - infected density: !dag_tag mean
+          err: !dag_tag std
         tag: data
 
     x: time

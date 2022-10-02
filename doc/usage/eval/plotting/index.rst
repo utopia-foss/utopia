@@ -18,6 +18,7 @@ You can dive right in with the :ref:`introduction <eval_plotting>`.
     heatmaps
     subspaces
     networks
+    abm
     animations
     bifurcation
 

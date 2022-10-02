@@ -63,11 +63,9 @@ errorbars:
     - .std: [!dag_tag infected, [seed]]
       tag: infected_std
 
-    - operation: xr.Dataset
-      kwargs:
-        data_vars:
-          avg: !dag_tag infected_mean
-          err: !dag_tag infected_std
+    - xr.Dataset:
+      - avg: !dag_tag infected_mean
+        err: !dag_tag infected_std
       tag: data  # Don't forget to define the 'data' tag
 
   # Distribute the data dimensions
@@ -182,9 +180,8 @@ stacked_errorbands:
         dim: seed
       tag: std
     - xr.Dataset:
-        data_vars:
-          infected density: !dag_tag mean
-          err: !dag_tag std
+      - infected density: !dag_tag mean
+        err: !dag_tag std
       tag: data
 
   # Distribute the variables accordingly
@@ -231,9 +228,8 @@ panel_errorbands:
     - .std: [!dag_tag infected, seed]
       tag: std
     - xr.Dataset:
-        data_vars:
-          infected density: !dag_tag mean
-          err: !dag_tag std
+      - infected density: !dag_tag mean
+        err: !dag_tag std
       tag: data
 
   # Distribute the variables
@@ -274,6 +270,7 @@ panel_all:
   color: ~
   style:
     axes.prop_cycle: cycler('color', ['#CC3333', '#006666', '#AFD8BC' ])
+    savefig.transparent: true
   helpers:
     set_limits:
       y: [ 0, 0.6 ]
@@ -361,9 +358,8 @@ scatter_2d_facet:
       tag: infected
 
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          infected: !dag_tag infected
+      - susceptible: !dag_tag susceptible
+        infected: !dag_tag infected
       tag: data
 
   # Distribute the variables
@@ -409,10 +405,9 @@ scatter_3d:
       tag: recovered
 
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          infected: !dag_tag infected
-          recovered: !dag_tag infected
+      - susceptible: !dag_tag susceptible
+        infected: !dag_tag infected
+        recovered: !dag_tag infected
       tag: data
 
   z: recovered

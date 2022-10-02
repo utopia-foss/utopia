@@ -214,7 +214,8 @@ Let us change the colormap used for the nodes, and add a label to the colorbar; 
           colorbar:
             label: opinion $\sigma$
 
-The ``cmap`` entry makes use of the `ColorManager <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#colormanager-integration>`_, and offers a wide range of capabilities, including using different norms; take a look at the :ref:`style section <colormaps>` for more details.
+The ``cmap`` entry makes use of the
+`ColorManager <https://dantro.readthedocs.io/en/latest/plotting/plot_functions.html#colormanager-integration>`_, and offers a wide range of capabilities, including using different norms; take a look at the :ref:`style section <colormaps>` for more details.
 
 The colorbar is automatically shown whenever a property mapping was done for the node colors.
 You can turn it off by setting

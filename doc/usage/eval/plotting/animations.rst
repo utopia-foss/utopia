@@ -39,7 +39,8 @@ Animations can make complex dynamics much more comprehensible, and are easy to c
 Animated Cellular Automaton
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A particularly common case is animating cellular automata, such as the :ref:`SEIRD <model_SEIRD>` model, for which the :code:`.plot.ca` function provides a simple interface to create an animated plot.
+A particularly common case is animating cellular automata, such as the :ref:`SEIRD <model_SEIRD>` model,
+for which the :code:`.plot.ca` function provides a simple interface to create an animated plot.
 
 .. code-block:: yaml
 
