@@ -180,9 +180,8 @@ Let's run our :ref:`SEIRD <model_SEIRD>` model over a number of different seeds,
 
         # Bundle everything together
         - xr.Dataset:
-            data_vars:
-              avg: !dag_tag infected_mean
-              err: !dag_tag infected_std
+          - avg: !dag_tag infected_mean
+            err: !dag_tag infected_std
           tag: data
 
       x: time
@@ -228,9 +227,8 @@ Several things are important:
      .. code-block:: yaml
 
         - xr.Dataset:
-            data_vars:
-              avg: !dag_tag infected_mean
-              err: !dag_tag infected_std
+          - avg: !dag_tag infected_mean
+            err: !dag_tag infected_std
           tag: data
 
      The data variables (:code:`data_vars`) are the averages and standard deviations we calculated previously, and we can reference them using the :code:`!dag_tag` s we assigned them.

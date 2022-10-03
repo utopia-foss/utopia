@@ -48,8 +48,7 @@ _default_style: &default_style
 
   transform:
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
+      - susceptible: !dag_tag susceptible
       tag: data
 
   dag_visualization:
@@ -111,11 +110,10 @@ debug_DAG_locate_with_vis:
       tag: recovered
 
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          exposed: !dag_tag exposed
-          infected: !dag_tag infected
-          recovered: !dag_tag recovered
+      - susceptible: !dag_tag susceptible
+        exposed: !dag_tag exposed
+        infected: !dag_tag infected
+        recovered: !dag_tag recovered
       tag: data
 ### END --- debug_DAG_locate_with_vis
 
@@ -179,9 +177,8 @@ debug_DAG_advanced_print_examples:
 ### END --- debug_DAG_advanced_print_examples
     # To make the plot work, just combine them here
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_prev
-          exposed: !dag_prev
+      - susceptible: !dag_prev
+        exposed: !dag_prev
       tag: data
 
   x: susceptible
@@ -333,10 +330,9 @@ scatter_2d_simple:
       tag: recovered
 
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          infected: !dag_tag infected
-          recovered: !dag_tag recovered
+      - susceptible: !dag_tag susceptible
+        infected: !dag_tag infected
+        recovered: !dag_tag recovered
       tag: data
 
   x: susceptible
@@ -372,10 +368,9 @@ scatter_2d:
       kwargs: { drop: true }
       tag: recovered
     - xr.Dataset:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          infected: !dag_tag infected
-          recovered: !dag_tag recovered
+      - susceptible: !dag_tag susceptible
+        infected: !dag_tag infected
+        recovered: !dag_tag recovered
       tag: data
 
   # Distribute the variables
@@ -415,12 +410,10 @@ scatter_3d:
     - .sel: [!dag_tag kind, { kind: recovered }]
       kwargs: { drop: true }
       tag: recovered
-    - operation: xr.Dataset
-      kwargs:
-        data_vars:
-          susceptible: !dag_tag susceptible
-          infected: !dag_tag infected
-          recovered: !dag_tag recovered
+    - xr.Dataset:
+      - susceptible: !dag_tag susceptible
+        infected: !dag_tag infected
+        recovered: !dag_tag recovered
       tag: data
 
   # Distribute the variables

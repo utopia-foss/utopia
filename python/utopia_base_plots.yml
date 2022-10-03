@@ -167,7 +167,6 @@ _:
 
 
 
-
 # =============================================================================
 #  ╔═╗╦  ╔═╗╔╦╗  ╦ ╦╔═╗╦  ╔═╗╔═╗╦═╗╔═╗
 #  ╠═╝║  ║ ║ ║   ╠═╣║╣ ║  ╠═╝║╣ ╠╦╝╚═╗
@@ -229,6 +228,10 @@ _:
   based_on:
     - .animation.frames      # from utopya
     - .animation.defaults    # from here
+    - .defaults.file_ext     # from here
+
+  animation:
+    writer: frames
 
 
 # DPI settings
@@ -241,6 +244,50 @@ _:
       ffmpeg:
         saving:
           dpi: 96
+
+.animation.very_high_dpi:
+  animation:
+    writer_kwargs:
+      frames:
+        saving:
+          dpi: 254
+      ffmpeg:
+        saving:
+          dpi: 254
+
+
+# FPS settings
+.animation.fps10:
+  based_on: .animation.ffmpeg
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 10
+
+.animation.fps20:
+  based_on: .animation.ffmpeg
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 20
+
+.animation.fps24:
+  based_on: .animation.ffmpeg
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 24
+
+.animation.fps30:
+  based_on: .animation.ffmpeg
+  animation:
+    writer_kwargs:
+      ffmpeg:
+        init:
+          fps: 30
 
 
 

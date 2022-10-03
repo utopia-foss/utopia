@@ -2,6 +2,9 @@
 ---
 perform_sweep: true
 
+paths:
+  model_note: grid_structure_sweep
+
 parameter_space:
   num_steps: 365
 

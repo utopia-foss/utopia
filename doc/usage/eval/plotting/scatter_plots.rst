@@ -66,9 +66,8 @@ For example, here we are plotting a phase diagram of the :ref:`SEIRD model <mode
 
         # Combine into a Dataset
         - xr.Dataset:
-            data_vars:
-              susceptible: !dag_tag susceptible
-              infected: !dag_tag infected
+          - susceptible: !dag_tag susceptible
+            infected: !dag_tag infected
           tag: data
 
       # Tell the scatter plot what to plot on x- and y-axes
@@ -174,10 +173,9 @@ Additionally, let's encode the ``time`` dimension as the ``hue``:
           tag: recovered
 
         - xr.Dataset:
-            data_vars:
-              susceptible: !dag_tag susceptible
-              infected: !dag_tag infected
-              recovered: !dag_tag recovered
+          - susceptible: !dag_tag susceptible
+            infected: !dag_tag infected
+            recovered: !dag_tag recovered
           tag: data
 
       x: susceptible
@@ -271,10 +269,9 @@ And of course, the same works for three-dimensional plots (take care to change t
           tag: recovered
 
         - xr.Dataset:
-            data_vars:
-              susceptible: !dag_tag susceptible
-              infected: !dag_tag infected
-              recovered: !dag_tag recovered
+          - susceptible: !dag_tag susceptible
+            infected: !dag_tag infected
+            recovered: !dag_tag recovered
           tag: data
 
       # Distribute your variables:

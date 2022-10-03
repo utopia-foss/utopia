@@ -1,12 +1,12 @@
-# A run configuration that configures a hexagonal grid
+# Uses a hexagonal grid discretization
 ---
 paths:
   model_note: hex_grid
 
 parameter_space:
-  num_steps: 365
+  num_steps: 500
 
-  SEIRD:
+  ContDisease:
     cell_manager:
       grid:
         structure: hexagonal
