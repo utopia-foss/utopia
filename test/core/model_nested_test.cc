@@ -13,6 +13,7 @@
 
 
 // +++ Fixtures +++
+namespace tt = boost::test_tools;
 
 /// A specialized infrastructure fixture, loading a configuration file
 /** \note If no configuration file is required or available, you can
@@ -103,6 +104,41 @@ BOOST_AUTO_TEST_CASE (test_iteration_order)
     // the sub-model run during prolog with num_steps = 20
     BOOST_TEST(root.sub_another.another_lazy.get_time() == 20);
 
+
+    // Check that in all models data was written
+    log->debug("Asserting correct data-writing ...");
+
+    auto ext_root = root._dset_state->get_current_extent();
+    auto ext_r_s1 = root.sub_one._dset_state->get_current_extent();
+    auto ext_r_s1_lazy = root.sub_one.lazy._dset_state->get_current_extent();
+    
+    BOOST_TEST(ext_root == std::vector<std::size_t>({10 + 1}),
+               tt::per_element());
+
+    BOOST_TEST(ext_r_s1 == std::vector<std::size_t>({3 + 1}),
+               tt::per_element()); // time stop = 3
+    BOOST_TEST(ext_r_s1_lazy == std::vector<std::size_t>({3 + 1}),
+               tt::per_element());
+
+    auto dset = root.sub_another.another_one._dset_state;
+    auto ext_r_sa = dset->get_current_extent();    
+    dset = root.sub_another.another_one._dset_state;
+    auto ext_r_sa_a = dset->get_current_extent();
+    dset = root.sub_another.another_one.lazy._dset_state;
+    auto ext_r_sa_a_l = dset->get_current_extent();
+    BOOST_TEST(ext_r_sa == std::vector<std::size_t>({6 + 1}),
+               tt::per_element()); // time start = 5
+    BOOST_TEST(ext_r_sa_a == std::vector<std::size_t>({6 + 1}),
+               tt::per_element());
+    BOOST_TEST(ext_r_sa_a_l == std::vector<std::size_t>({6 + 1}),
+               tt::per_element());
+
+    // the sub-model run during prolog with num_steps = 20
+    dset = root.sub_another.another_lazy._dset_state;
+    auto ext_r_sa_al = dset->get_current_extent();
+
+    BOOST_TEST(ext_r_sa_al == std::vector<std::size_t>({20 + 1}),
+               tt::per_element());
 
     // check log level propagation
     log->debug("Asserting correct log levels ...");
