@@ -26,6 +26,9 @@ public:
     /// Whether the epilog was performed
     bool _epilog_run;
 
+    /// Some data
+    std::shared_ptr<DataSet> _dset_state;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -35,7 +38,8 @@ public:
         // Pass arguments to the base class constructor
         Base(name, parent_model),
         _prolog_run(false),
-        _epilog_run(false)
+        _epilog_run(false),
+        _dset_state(this->create_dset("state", {}))
     {
         this->_log->info("DoNothingModel initialized. Level: {}", this->_level);
     }
@@ -46,8 +50,10 @@ public:
     /// Monitor data (does nothing)
     void monitor () {}
 
-    /// Data write method (does nothing here)
-    void write_data () {}
+    /// Data write method (write zeros)
+    void write_data () {
+        _dset_state->write(0);
+    }
 
     /// The prolog
     void prolog () {
@@ -96,6 +102,9 @@ public:
     /// Whether the epilog was performed
     bool _epilog_run;
 
+    /// Some data
+    std::shared_ptr<DataSet> _dset_state;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -107,7 +116,8 @@ public:
         // Submodel initialization
         lazy("lazy", *this),
         _prolog_run(false),
-        _epilog_run(false)
+        _epilog_run(false),
+        _dset_state(this->create_dset("state", {}))
     {
         this->_log->info("OneModel initialized. Level: {}", this->_level);
     }
@@ -121,8 +131,10 @@ public:
     /// Monitor data (do nothing here)
     void monitor () {}
 
-    /// Data write method (does nothing here)
-    void write_data () {}
+    /// Data write method
+    void write_data () {
+        _dset_state->write(1);
+    }
 
     /// Prolog
     void prolog () {
@@ -182,6 +194,9 @@ public:
     /// Whether the epilog was performed
     bool _epilog_run;
 
+    /// Some data
+    std::shared_ptr<DataSet> _dset_state;
+
 public:
     /// Constructor
     template<class ParentModel>
@@ -194,7 +209,8 @@ public:
         another_one("one", *this),
         another_lazy("lazy", *this),
         _prolog_run(false),
-        _epilog_run(false)
+        _epilog_run(false),
+        _dset_state(this->create_dset("state", {}))
     {
         this->_log->info("AnotherModel initialized. Level: {}", this->_level);
     }
@@ -208,8 +224,10 @@ public:
     /// Monitor data (do nothing here)
     void monitor () {}
 
-    /// Data write method (does nothing here)
-    void write_data () {}
+    /// Data write method
+    void write_data () {
+        _dset_state->write(this->get_time());
+    }
 
     /// Prolog
     void prolog () {
@@ -278,6 +296,9 @@ public:
     /// Start iterating model another at this time
     Time _start_iterate_another;
 
+    /// Some data
+    std::shared_ptr<DataSet> _dset_state;
+
 public:
     /// Create RootModel with initial state
     template<class ParentModel>
@@ -293,7 +314,8 @@ public:
         _prolog_run(false),
         _epilog_run(false),
         _stop_iterate_one(get_as<Time>("stop_iterate_one", this->_cfg)),
-        _start_iterate_another(get_as<Time>("start_iterate_another", this->_cfg))
+        _start_iterate_another(get_as<Time>("start_iterate_another", this->_cfg)),
+        _dset_state(this->create_dset("state", {}))
 
     {
         this->_log->info("RootModel initialized. Level: {}", this->_level);
@@ -327,8 +349,10 @@ public:
     /// Monitor data (do nothing here)
     void monitor () {}
 
-    /// Data write method (does nothing here)
-    void write_data () {}
+    /// Data write method
+    void write_data () {
+        _dset_state->write(this->get_time());
+    }
 
     /// Prolog
     void prolog () {

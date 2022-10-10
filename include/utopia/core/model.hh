@@ -458,10 +458,16 @@ public:
         );
 
         if constexpr (_write_mode == WriteMode::basic) {
+            if (_time_max == std::numeric_limits<hsize_t>::max()) {
+                return std::numeric_limits<hsize_t>::max();
+            }
             return (  (_time_max - std::max(_time, _write_start))
                     / _write_every) + 1;
         }
         else if constexpr (_write_mode == WriteMode::manual) {
+            if (_time_max - _time == std::numeric_limits<hsize_t>::max()) {
+                return std::numeric_limits<hsize_t>::max();
+            }
             return _time_max - _time + 1;
         }
         else {
