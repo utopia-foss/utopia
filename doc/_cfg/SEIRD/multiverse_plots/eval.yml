@@ -45,7 +45,7 @@ errorbars:
       infected:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
 
     # Select a subspace of the sweep parameters that was performed here
     # (not needed if you are only sweeping over 'seed'. See the 'subspace' page
@@ -105,7 +105,7 @@ stacked_transmission:
       data:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
     subspace:
       immunity rate: [0.3]
       seed: [0]
@@ -133,7 +133,7 @@ stacked_transmission_averaged:
       infected:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
     subspace:
       immunity rate: [ 0.3 ]
 
@@ -165,7 +165,7 @@ stacked_errorbands:
       infected:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
     subspace:
       immunity rate: [ 0.3 ]
 
@@ -219,7 +219,7 @@ panel_errorbands:
       infected:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
 
   # Calculate mean and std for each
   transform:
@@ -305,7 +305,7 @@ histogram:
       infected:
         path: densities
         transform:
-          - .sel: [!dag_prev , { kind: [infected] }]
+          - .sel: [!dag_prev , { kind: infected }]
 
   # Get the maximum value
   transform:
@@ -329,6 +329,61 @@ histogram:
     text.usetex: True
     mathtext.fontset: stix
     font.family: serif
+
+### Start --- double_histogram
+double_histogram:
+  based_on:
+    - .creator.multiverse
+    - .plot.multiplot
+
+  # Select the infected and susceptible populations
+  select_and_combine:
+    fields:
+      infected:
+        path: densities
+        transform:
+          - .sel: [ !dag_prev , { kind: infected } ]
+      susceptible:
+        path: densities
+        transform:
+          - .sel: [!dag_prev , {kind: susceptible} ]
+
+  # Get the maximum value for the infected and the minimum for the suscpetible population
+  transform:
+    - np.max: [ !dag_tag infected ]
+      kwargs:
+        axis: 3
+    - .values: [!dag_prev ]
+    - .flatten: [!dag_prev ]
+      tag: data_infected
+    - np.min: [!dag_tag susceptible ]
+      kwargs:
+        axis: 3
+    - .values: [ !dag_prev ]
+    - .flatten: [ !dag_prev ]
+      tag: data_susceptible
+
+  bins: 50
+  color: '#006666'
+
+  # Use seaborn.histplot with kde to show densities
+  to_plot:
+    [0, 0]:
+      - function: sns.histplot
+        args:
+          - !dag_result data_infected
+        kde: true
+    [0, 1]:
+      - function: sns.histplot
+        args:
+          - !dag_result data_susceptible
+        kde: true
+
+  helpers:
+    setup_figure:
+      nrows: 2
+      sharex: true
+### End --- double_histogram
 
 # Demonstrates a facet grid 2d scatter plot
 ### Start --- scatter_2d_facet
@@ -430,3 +485,153 @@ scatter_3d:
     set_ticks:
       y:
         major: [0, 0.05, 0.1]
+
+single_kdeplot:
+
+  based_on:
+    - .creator.multiverse
+    - .plot.multiplot
+
+  select_and_combine:
+    fields:
+      infected:
+        path: densities
+        transform:
+          - .sel: [ !dag_prev , { kind: infected } ]
+    subspace:
+      immunity rate: [ 0.2 ]
+
+  transform:
+    - .sel: [ !dag_tag infected, { transmission rate: 0.4 } ]
+    - np.max: [ !dag_prev , 2 ]
+    - .squeeze: [ !dag_prev ]
+      tag: data_low
+    - .sel: [ !dag_tag infected, { transmission rate: 0.6 } ]
+    - np.max: [ !dag_prev , 2 ]
+    - .squeeze: [ !dag_prev ]
+      tag: data_high
+  to_plot:
+    - function: sns.kdeplot
+      data: !dag_result data_low
+      label: $p_\mathrm{transmit}=0.4$
+      linestyle: dashed
+      color: *red
+    - function: sns.kdeplot
+      data: !dag_result data_high
+      label: $p_\mathrm{transmit}=0.6$
+      color: *yellow
+  compute_only: [ ]
+  style:
+    text.usetex: True
+    mathtext.fontset: stix
+    font.family: serif
+    figure.figsize: [4, 4]
+  helpers:
+    set_legend:
+      use_legend: True
+    set_labels:
+      x: Infection peak
+      y: ' '
+
+double_kdeplot:
+  based_on: single_kdeplot
+  to_plot:
+    [0, 0]:
+      - function: sns.kdeplot
+        data: !dag_result data_low
+        label: $p_\mathrm{transmit}=0.4$
+        fill: true
+    [1, 0]:
+      - function: sns.kdeplot
+        data: !dag_result data_high
+        label: $p_\mathrm{transmit}=0.6$
+        fill: true
+  color: *darkblue
+  helpers:
+    setup_figure:
+      ncols: 2
+      sharey: true
+    set_limits:
+      x: [0.06, 0.2]
+  style:
+    figure.figsize: [8, 4]
+
+# Demonstrates a scatterplot and an errorbar plot on a single axis using multiplot
+### Start --- multiplot
+multiplot:
+  based_on:
+    - .creator.multiverse
+    - .plot.multiplot
+  select_and_combine:
+    fields:
+      susceptible:
+        path: densities
+        transform:
+          - .sel: [!dag_prev , {kind: susceptible}]
+            kwargs:
+              drop: true
+      infected:
+        path: densities
+        transform:
+          - .sel: [!dag_prev , {kind: infected}]
+            kwargs:
+              drop: true
+      recovered:
+        path: densities
+        transform:
+          - .sel: [!dag_prev , {kind: recovered}]
+            kwargs:
+              drop: true
+    subspace:
+      immunity rate: 0.1
+      transmission rate: 0.2
+
+  compute_only: [ ]
+  transform:
+    - .coords: [!dag_tag infected, time]
+      tag: time
+    - .mean: [!dag_tag susceptible, seed]
+    - .squeeze: [!dag_prev ]
+      tag: mean_s
+    - .std: [!dag_tag susceptible, seed]
+    - .squeeze: [!dag_prev ]
+      tag: std_s
+    - .mean: [!dag_tag infected, seed]
+      tag: mean_i
+    - .mean: [!dag_tag recovered, seed]
+      tag: mean_r
+    - xr.Dataset:
+      - infected: !dag_tag mean_i
+        recovered: !dag_tag mean_r
+      tag: scatter_data
+
+  to_plot:
+    - function: plt.errorbar
+      x: !dag_result time
+      y: !dag_result mean_s
+      yerr: !dag_result std_s
+      label: Susceptible agents
+      color: '#0099CC'
+    - function: [xarray.plot, scatter]
+      args:
+        - !dag_result scatter_data
+      x: time
+      y: recovered
+      hue: infected
+      cmap:
+        continuous: true
+        from_values:
+          0: '#006666'
+          1: '#CC3333'
+      label: Recovered agents
+      zorder: 3
+
+  helpers:
+    set_labels:
+      y: Agent density
+    set_legend:
+      use_legend: True
+      loc: 'best'
+      fontsize: 11
+### End --- multiplot
+  <<: *default_style
