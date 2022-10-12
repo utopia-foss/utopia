@@ -61,10 +61,7 @@ The output then looks like this:
     :width: 800
     :alt: A facet grid example with subspace selection
 
-.. note::
-
-    Even when selecting a single value, the subspace entry needs to be sequence-like, i.e. a list.
-    That's why we specify ``transmission rate: [0.2]`` above.
+.. hint::
 
     Subspace selection happens via the :py:class:`~paramspace.paramspace.ParamSpace` method :py:meth:`~paramspace.paramspace.ParamSpace.activate_subspace`, which also offers some other syntax options.
 

@@ -16,6 +16,7 @@ You can dive right in with the :ref:`introduction <eval_plotting>`.
     histograms
     scatter_plots
     heatmaps
+    multiplot
     subspaces
     networks
     abm

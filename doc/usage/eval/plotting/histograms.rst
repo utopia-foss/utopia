@@ -1,3 +1,5 @@
+.. _histograms:
+
 Histograms
 ==========
 
@@ -6,11 +8,7 @@ Histograms
     On this page, you will see how to
 
     * use ``.plot.facet_grid.hist`` to plot histograms
-    * use ``.plot.facet_grid.hist`` to plot panels of histograms
-
-.. admonition:: WIP 🚧
-
-    * Plotting several panels of histograms with ``.plot.facet_grid.hist`` does not yet work.
+    * use ``.plot.multiplot`` to plot panels of histograms
 
 Histograms are one of the most commonly used plots to visualise distributions.
 Let us run the :ref:`SEIRD <model_SEIRD>` model with a fixed configuration multiple times over different seeds, and plot a histogram of the maximum peak height of the number of infected agents.
@@ -40,4 +38,21 @@ The output will look something like this:
 
 .. image:: ../../../_static/_gen/SEIRD/multiverse_plots/histogram.pdf
   :width: 800
-  :alt: caption
+  :alt: Single histogram
+
+Plotting facetted histograms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For facetted histograms, use the :ref:`multiplot <multiplot>` functionality. Here, we are plotting the distribution of the
+peak of infection in the top plot, and the minimum number of susceptible agents in the bottom plot:
+
+.. literalinclude:: ../../../_cfg/SEIRD/multiverse_plots/eval.yml
+    :language: yaml
+    :dedent: 0
+    :start-after: ### Start --- double_histogram
+    :end-before: ### End --- double_histogram
+
+This will produce a plot like this:
+
+.. image:: ../../../_static/_gen/SEIRD/multiverse_plots/double_histogram.pdf
+  :width: 800
+  :alt: Double histogram
