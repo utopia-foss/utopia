@@ -52,10 +52,14 @@ struct LocationInfo {
         }
 
         using namespace fmt::literals;
-        return fmt::format(fstr,
-                           "file_path"_a=file_path.string(),
-                           "file_name"_a=file_path.filename().string(),
-                           "line"_a=line);
+        return fmt::vformat(
+            fstr,
+            fmt::make_format_args(
+                "file_path"_a=file_path.string(),
+                "file_name"_a=file_path.filename().string(),
+                "line"_a=line
+            )
+        );
     }
 };
 
