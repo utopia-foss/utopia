@@ -21,6 +21,9 @@ _default_style: &default_style
     mathtext.fontset: stix
     font.family: serif
 
+
+
+
 # -----------------------------------------------------------------------------
 
 .flush_kind:
@@ -30,6 +33,9 @@ _default_style: &default_style
 
 .flush_helper:
   helpers: ~
+
+
+
 
 # -----------------------------------------------------------------------------
 # Demonstrates a line plot with errorbars
@@ -88,11 +94,13 @@ errorbars:
 ### End --- errorbars
   <<: *default_style
 
+
 # Demonstrates a line plot with errorbands
 errorbands:
   based_on:
     - errorbars
     - .plot.facet_grid.errorbands
+
 
 # Demonstrates a stacked line plot
 stacked_transmission:
@@ -120,6 +128,7 @@ stacked_transmission:
       y: Density [1/A]
     set_title:
       title: Density of infected agents
+
 
 # Demonstrates a stacked averaged line plot
 stacked_transmission_averaged:
@@ -151,6 +160,7 @@ stacked_transmission_averaged:
       y: Density [1/A]
     set_title:
       title: Density of agent kinds
+
 
 # Demonstrates a stacked line plot with errorbands
 ### Start --- stacked_errorbands
@@ -205,6 +215,7 @@ stacked_errorbands:
     axes.prop_cycle: cycler('color', ['#AFD8BC', '#FFCC66', '#006666' ])
 ### End --- stacked_errorbands
 
+
 # Demonstrates a facet grid plot errorbands
 ### Start --- facet_grid
 panel_errorbands:
@@ -252,6 +263,7 @@ panel_errorbands:
     font.family: serif
 ### End --- facet_grid
 
+
 # Demonstrates a facet grid of stacked line plots with errorbands
 panel_all:
   based_on:
@@ -275,6 +287,7 @@ panel_all:
     set_limits:
       y: [ 0, 0.6 ]
 
+
 # Demonstrates subspace selection
 panel_subspace:
   based_on: panel_all
@@ -291,6 +304,7 @@ panel_subspace:
   helpers:
     set_limits:
       y: [ 0, 0.6 ]
+
 
 # Demonstrates a histogram plot
 ### Start --- histogram
@@ -329,6 +343,7 @@ histogram:
     text.usetex: True
     mathtext.fontset: stix
     font.family: serif
+
 
 ### Start --- double_histogram
 double_histogram:
@@ -385,6 +400,7 @@ double_histogram:
       sharex: true
 ### End --- double_histogram
 
+
 # Demonstrates a facet grid 2d scatter plot
 ### Start --- scatter_2d_facet
 scatter_2d_facet:
@@ -436,6 +452,7 @@ scatter_2d_facet:
 ### End --- scatter_2d_facet
   <<: *default_style
 
+
 # Demonstrates a facet grid 3d scatter plot
 scatter_3d:
   based_on:
@@ -486,8 +503,8 @@ scatter_3d:
       y:
         major: [0, 0.05, 0.1]
 
-single_kdeplot:
 
+single_kdeplot:
   based_on:
     - .creator.multiverse
     - .plot.multiplot
@@ -533,6 +550,7 @@ single_kdeplot:
       x: Infection peak
       y: ' '
 
+
 double_kdeplot:
   based_on: single_kdeplot
   to_plot:
@@ -556,12 +574,14 @@ double_kdeplot:
   style:
     figure.figsize: [8, 4]
 
-# Demonstrates a scatterplot and an errorbar plot on a single axis using multiplot
+
+# Demonstrates a scatterplot and an errorbar plot on a single axis (multiplot)
 ### Start --- multiplot
 multiplot:
   based_on:
     - .creator.multiverse
     - .plot.multiplot
+
   select_and_combine:
     fields:
       susceptible:
@@ -586,20 +606,25 @@ multiplot:
       immunity rate: 0.1
       transmission rate: 0.2
 
-  compute_only: [ ]
+  compute_only: []
   transform:
     - .coords: [!dag_tag infected, time]
       tag: time
+
     - .mean: [!dag_tag susceptible, seed]
     - .squeeze: [!dag_prev ]
       tag: mean_s
+
     - .std: [!dag_tag susceptible, seed]
     - .squeeze: [!dag_prev ]
       tag: std_s
+
     - .mean: [!dag_tag infected, seed]
       tag: mean_i
+
     - .mean: [!dag_tag recovered, seed]
       tag: mean_r
+
     - xr.Dataset:
       - infected: !dag_tag mean_i
         recovered: !dag_tag mean_r
@@ -612,19 +637,21 @@ multiplot:
       yerr: !dag_result std_s
       label: Susceptible agents
       color: '#0099CC'
-    - function: [xarray.plot, scatter]
-      args:
-        - !dag_result scatter_data
-      x: time
-      y: recovered
-      hue: infected
-      cmap:
-        continuous: true
-        from_values:
-          0: '#006666'
-          1: '#CC3333'
-      label: Recovered agents
-      zorder: 3
+
+    # FIXME Not working with xarray 2022.10.0
+    # - function: [xarray.plot, scatter]
+    #   args:
+    #     - !dag_result scatter_data
+    #   x: time
+    #   y: recovered
+    #   hue: infected
+    #   cmap:
+    #     continuous: true
+    #     from_values:
+    #       0: '#006666'
+    #       1: '#CC3333'
+    #   label: Recovered agents
+    #   zorder: 3
 
   helpers:
     set_labels:

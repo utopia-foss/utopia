@@ -56,6 +56,7 @@ variables:
   UPDATE_UTOPIA_BASE_IMAGE: "false"
   DEPLOY_DOCKER_IMAGE: "false"
   DEPLOY_DOCS: "false"
+  FORCE_DEPLOY_DOCS: "false"
 
 
 # Run pipelines:
@@ -513,12 +514,12 @@ test:link_install_tree:
 # Build the documentation and expose it as a review environment
 docs:build:
   stage: docs
-  allow_failure: true
-  when: always
   extends:
     - .use_multicore_group_runners
   needs:
     - build:models
+  when: always
+  allow_failure: false
   before_script:
     - cd build
     - cmake ..
@@ -553,7 +554,8 @@ docs:build:
 #   - a documentation review environment, which is meant to *always* be created
 #     even if the build:docs job failed with allow_failure set.
 #   - the production-level documentation by running a GitLab Pages job, which
-#     ends up being served under docs.utopia-project.org
+#     ends up being served under docs.utopia-project.org — this will only be
+#     deployed if the docs:build was successful
 #   - the latest Utopia docker image to Docker Hub: ccees/utopia:latest
 
 
@@ -577,10 +579,12 @@ pages:
   image: alpine
   stage: deploy
   rules:
+    - if: '$FORCE_DEPLOY_DOCS == "true"'
+      when: always
     - if: '$DEPLOY_DOCS == "true"'
-      when: always
+      when: on_success
     - if: '$CI_COMMIT_BRANCH == "master"'
-      when: always
+      when: on_success
     - when: never
   needs:
     - docs:build
