@@ -84,11 +84,12 @@ image: ${BASE_IMAGE}
 # .. YAML Templates ...........................................................
 # These are used in job definitions via the `extends` keyword
 
-.use_multicore_group_runners:
+# Tags for 
+.use_multicore_runner:
   tags:
-    # These tags make the jobs run using dedicated multicore group runners:
-    - default
-    - multicore
+    # 4vCPU, 16GB RAM instances
+    # See:  https://docs.gitlab.com/ee/ci/runners/saas/linux_saas_runner.html
+    - saas-linux-large-amd64
 
 # Create artifacts of build results and meta-data that's shared between jobs
 .default_artifacts:
@@ -115,8 +116,6 @@ image: ${BASE_IMAGE}
 # Use the Docker-in-Docker executor and services, log into Docker Hub
 .dind:
   image: docker:stable
-  tags:
-    - dind
   services:
     - docker:dind
   variables:
@@ -158,7 +157,7 @@ build:tests_core:
   stage: build
   extends:
     - .default_artifacts
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -179,7 +178,7 @@ build:models:
   stage: build
   extends:
     - .default_artifacts
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   script:
     - mkdir build && cd build
     - cmake -DCPP_COVERAGE=On -DMULTITHREADING=On ..
@@ -196,7 +195,7 @@ build:debug:
   stage: build
   allow_failure: true
   extends:
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   variables:
     CXXFLAGS: -Werror
   script:
@@ -231,7 +230,7 @@ build:debug-clang:
 build:install:
   stage: build
   extends:
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   artifacts:
     name: "$CI_JOB_NAME"
     paths:
@@ -273,7 +272,7 @@ test:core:
   stage: test
   extends:
     - .coverage_report
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   needs:
     - build:tests_core
   variables:
@@ -515,7 +514,7 @@ test:link_install_tree:
 docs:build:
   stage: docs
   extends:
-    - .use_multicore_group_runners
+    - .use_multicore_runner
   needs:
     - build:models
   when: always
