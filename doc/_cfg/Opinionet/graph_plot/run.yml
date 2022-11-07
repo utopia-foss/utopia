@@ -8,5 +8,5 @@ parameter_space:
     tolerance: 0.2
     network:
       model: regular
-      num_vertices: 50
-      mean_degree: 14
+      num_vertices: 42
+      mean_degree: 6

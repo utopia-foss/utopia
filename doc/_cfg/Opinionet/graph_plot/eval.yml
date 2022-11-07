@@ -208,6 +208,6 @@ animated_network:
         init:
           fps: 3
         saving:
-          dpi: 254
+          dpi: 192
 ### End --- animated_network
   <<: *default_style

@@ -8,7 +8,7 @@ parameter_space:
 
   seed: !sweep
     default: 420
-    range: [20]
+    range: [16]
 
   SEIRD:
     space:

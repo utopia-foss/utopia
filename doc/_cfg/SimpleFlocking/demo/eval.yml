@@ -22,7 +22,6 @@ _utopia_colors: &utopia_colors
 # Demonstrates agents in a domain
 ### Start --- agents_in_domain
 agents:
-
   based_on:
     - .creator.universe
     - .plot.abm
@@ -46,8 +45,8 @@ agents:
     space_extent:
       path: agent/x  # meta data is written to every other dataset as well
       transform:
-        - getattr: [ !dag_prev , attrs ]
-        - getitem: [ !dag_prev , space_extent ]
+        - getattr: [!dag_prev , attrs]
+        - getitem: [!dag_prev , space_extent]
 
   transform:
     # Combine data into one dataset
@@ -98,7 +97,8 @@ agents:
   enabled: true
 
   universes:
-    seed: [ 0 ]
+    seed: [0]
+
   # Use a Utopia-themed colormap
   cmap: &cmap
     continuous: true
@@ -107,7 +107,7 @@ agents:
       0.333: *yellow
       0.666: *red
       1.0: *darkgreen
-  frames_isel: !range [ 200 ]
+  frames_isel: !range [200]
 
 
 fish_demo:
@@ -120,6 +120,7 @@ fish_demo:
       marker: fish2
 
 agents_in_domain_clean:
+  enabled: false  # not needed in docs (but used on webpage)
   based_on:
     - agents_in_domain
     - .animation.fps30
@@ -144,7 +145,7 @@ agents_in_domain_clean:
     <<: *cmap
 
   universes:
-    seed: [ 1, 2 ]
+    seed: [1, 2]
 
 agents_in_domain_clean_frames:
   enabled: false

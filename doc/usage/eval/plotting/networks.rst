@@ -366,20 +366,20 @@ You can also reduce the transparency of the unmarked edges to make the marked on
         # Add labels for the nodes in the path
         node_labels:
           enabled: True
-          show_only: &nodelist [2, 3, 4, 6, 7, 11, 13, 15, 18, 22, 24, 30, 49]
+          show_only: &nodelist !range [2, 12]  # [2, 3, .., 11]
 
         # Mark the nodes in the nodelist
         mark_nodes:
           nodelist: *nodelist
           color: crimson
 
-        # Mark some edges
+        # Mark some edges (will be ignored if they do not exist)
         mark_edges:
           colors:
             [24, 11]: crimson
             [18, 15]: crimson
             [49, 15]: crimson
-            # add more edges to mark ...
+            # add more edges to mark here ...
 
 
 

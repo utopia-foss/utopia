@@ -283,7 +283,7 @@ animated_ca:
     writer_kwargs:
       ffmpeg:
         saving:
-          dpi: 400
+          dpi: 192
 
   # Do not plot a time stamp
   suptitle_fstr: False
