@@ -4,9 +4,9 @@
 stages:
   - setup     # set up the docker base image
   - build     # build utopia and all tests
-  - check     # carries out static checks
   - test      # carry out tests
   - docs      # build the documentation (requires build stage artifacts)
+  - check     # carries out static checks
   - deploy    # deploy documentation; build and deploy docker image (on master)
 
 
@@ -28,15 +28,6 @@ variables:
   UTOPIA_IMAGE_NAME: ccees/utopia
   UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
   UTOPIA_IMAGE_BRANCH: master
-
-  # Setting number of processes for build jobs and DIND jobs
-  CPUS_BUILD: 4
-  CPUS_TEST: 4
-  CPUS_DIND: 4
-
-  # Build flags
-  MAKE_FLAGS_BUILD: -j$CPUS_BUILD
-  MAKE_FLAGS_TEST: -j$CPUS_TEST
 
   # Utopia virtual environment shortcuts
   RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build/run-in-utopia-env
@@ -84,11 +75,20 @@ image: ${BASE_IMAGE}
 # .. YAML Templates ...........................................................
 # These are used in job definitions via the `extends` keyword
 
-# Tags for 
+# Tags for jobs that need (or profit from) multiple vCPUs
 .use_multicore_runner:
+  variables:
+    CPUS_BUILD: 4
+    CPUS_TEST: 4
+    CPUS_DIND: 4
+
+    # Make flags that are used in building and testing
+    MAKE_FLAGS_BUILD: -j$CPUS_BUILD
+    MAKE_FLAGS_TEST: -j$CPUS_TEST
   tags:
     # 4vCPU, 16GB RAM instances
     # See:  https://docs.gitlab.com/ee/ci/runners/saas/linux_saas_runner.html
+    # NOTE If adjusting this, update the
     - saas-linux-large-amd64
 
 # Create artifacts of build results and meta-data that's shared between jobs
@@ -116,6 +116,8 @@ image: ${BASE_IMAGE}
 # Use the Docker-in-Docker executor and services, log into Docker Hub
 .dind:
   image: docker:stable
+  extends:
+    - .use_multicore_runner
   services:
     - docker:dind
   variables:
@@ -123,6 +125,8 @@ image: ${BASE_IMAGE}
   before_script:
     - docker info
     - $DOCKER_HUB_LOGIN
+
+
 
 
 # ++ Job definitions ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -146,6 +150,7 @@ setup:utopia-base:
                    .
     - docker push ${BASE_IMAGE}
     - docker push ${BASE_IMAGE_NAME}:latest
+
 
 
 # -- Build stage --------------------------------------------------------------
@@ -250,18 +255,6 @@ build:install:
     # Make packgage registry available as artifact
     - cp -r ~/.cmake .
 
-
-# -- Check stage --------------------------------------------------------------
-
-# Tests pre-commit hooks
-check:hooks:
-  stage: check
-  image: python:3.10
-  needs: []
-  before_script:
-    - pip install pre-commit
-  script:
-    - pre-commit run --all-files --verbose --show-diff-on-failure
 
 
 # -- Test stage ---------------------------------------------------------------
@@ -527,12 +520,11 @@ docs:build:
     - pip install -r ../doc/requirements.txt
     - pip freeze
   script:
-    # Generate figures and build docs
+    # Now generate figures and build the docs
     - UTOPIA_DOC_GENERATE_FIGURES=True make doc
 
-    # For testing, do not generate figures again
+    # Run doctests (require models to have been built)
     - make sphinx_doctest
-    - make sphinx_linkcheck
   after_script:
     # Append the error log such that it's more convenient to read in the CI log
     - echo "-------- Errors emitted during building of documentation --------"
@@ -543,8 +535,37 @@ docs:build:
     when: always
     paths:
       - $CI_PROJECT_DIR/build/doc/
+      - $CI_PROJECT_DIR/doc/_static/_gen/    # output needed for linkcheck
 
 
+
+
+
+# -- Check stage --------------------------------------------------------------
+
+# Runs pre-commit hooks and checks that
+check:hooks:
+  stage: check
+  image: python:3.10
+  needs: []
+  before_script:
+    - pip install pre-commit
+  script:
+    - pre-commit run --all-files --verbose --show-diff-on-failure
+
+
+# Checks the links in the documentation
+check:docs_linkcheck:
+  stage: check
+  extends: docs:build
+  when: on_success
+  allow_failure: true
+  tags: ~
+  needs:
+    - docs:build
+  script:
+    - make sphinx_linkcheck
+  artifacts: ~
 
 
 
