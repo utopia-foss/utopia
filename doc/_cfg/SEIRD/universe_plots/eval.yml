@@ -156,7 +156,8 @@ debug_DAG_print_examples:
 
 
 debug_DAG_advanced_print_examples:
-  based_on: .debug_DAG
+  based_on:
+    - density_basic
   debug: true  # should not be failing
 
   select:
@@ -175,15 +176,7 @@ debug_DAG_advanced_print_examples:
       kwargs:
         fstr: "Data after .mean operation:\n{}"
 ### END --- debug_DAG_advanced_print_examples
-    # To make the plot work, just combine them here
-    - xr.Dataset:
-      - susceptible: !dag_prev
-        exposed: !dag_prev
-      tag: data
-
-  x: susceptible
-  y: exposed
-  hue: ~
+      force_compute: true
 
 
 
