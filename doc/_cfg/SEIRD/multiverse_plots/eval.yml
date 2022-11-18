@@ -638,20 +638,20 @@ multiplot:
       label: Susceptible agents
       color: '#0099CC'
 
-    # FIXME Not working with xarray 2022.10.0
-    # - function: [xarray.plot, scatter]
-    #   args:
-    #     - !dag_result scatter_data
-    #   x: time
-    #   y: recovered
-    #   hue: infected
-    #   cmap:
-    #     continuous: true
-    #     from_values:
-    #       0: '#006666'
-    #       1: '#CC3333'
-    #   label: Recovered agents
-    #   zorder: 3
+    - function: [xarray.plot, scatter]
+      args:
+        - !dag_result scatter_data
+      x: time
+      y: recovered
+      hue: infected
+      cmap:
+        continuous: true
+        from_values:
+          0: '#006666'
+          1: '#CC3333'
+      label: Recovered agents
+      zorder: 3
+      linewidths: 0
 
   helpers:
     set_labels:
