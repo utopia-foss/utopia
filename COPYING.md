@@ -1,7 +1,7 @@
 # Copyright Notice
 
     Utopia — Comprehensive Modelling Framework for Complex Environmental Systems
-    Copyright (C) 2016 – 2021  Utopia Developers
+    Copyright (C) 2016 – 2023  Utopia Developers
 
     The term "Utopia Developers" refers to all direct contributors to this
     software package. A full list of copyright holders and information about
