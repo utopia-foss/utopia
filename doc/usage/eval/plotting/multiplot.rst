@@ -106,7 +106,7 @@ Next, distribute the plots onto the axes. This requires setting up the figure ac
           label: $p_\mathrm{transmit}=0.6$
           fill: true
     color: darkblue
-    helper:
+    helpers:
       setup_figure:
         ncols: 2
 
@@ -205,7 +205,7 @@ For instance, to modify horizontal or vertical distancing between plots and have
 
 .. code-block:: yaml
 
-  helper:
+  helpers:
     # set the number of rows and columns with shared axes
     setup_figure:
       ncols: 2
@@ -227,7 +227,7 @@ apply these to the entire plot, or only individual axes. For instance,
 .. code-block:: yaml
 
   multiplot:
-    helper:
+    helpers:
       set_limits:
         x: [0, 1]
 
@@ -236,7 +236,7 @@ will set the x limits on *all* axes to [0, 1]. You can use the ``axis_specific``
 .. code-block:: yaml
 
   multiplot:
-    helper:
+    helpers:
       axis_specific:
         axis1:            # some arbitrary axis name
           axis: [0, 0]    # the x and y coordinates of the subplot in the plot
