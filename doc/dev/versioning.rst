@@ -88,7 +88,7 @@ If you are using a :ref:`separate project for model implementations <set_up_mode
 - Furthermore, you *may* need to update ``import`` statements in your Python model tests or model plots because the utopya and dantro package structures changed.
   To find out the new import locations, refer to the API references in the `utopya documentation <https://utopya.readthedocs.io/>`_ and `dantro documentation <https://dantro.readthedocs.io/>`_.
 
-If you encounter difficulties in upgrading, we are happy to help; please open an issue in our `GitLab project <https://gitlab.com/utopia-project/utopia/-/issues/new>`_.
+If you encounter difficulties in upgrading, we are happy to help; please open an issue in our `GitLab project <https://gitlab.com/utopia-project/utopia/-/issues>`_.
 
 
 

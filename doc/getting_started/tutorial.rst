@@ -201,15 +201,17 @@ Every time you evaluate a simulation, a new folder is created.
 This way, no evaluation result is ever overwritten.
 
 The ``mean_slope.pdf`` file contains the plot of the mean slope over time.
-You can see that only four time steps are shown.
-That is because by default Utopia runs three iteration steps producing four data points taking into account the initial state.
+You can see that data for times 0 to 100 are shown.
+That is because, by default, Utopia runs 100 iteration steps, thus producing 101 data points taking into account the initial state.
 You can run
 
 .. code-block:: console
 
     $ utopia run SandPile --num-steps 1000
 
-and open the new plot (remember to go down the new data tree). It should show a more interesting plot now. You can also look at the plot for the complementary cumulative probability distribution in the ``compl_cum_cluster_size_dist.pdf`` file or at any other plot.
+and open the new plot (remember to go down the new data tree).
+It should show a more interesting plot now.
+You can also look at the plot for the complementary cumulative probability distribution in the ``compl_cum_cluster_size_dist.pdf`` file or at any other plot.
 
 Increasing ``num_steps`` can make the evaluation take quite a while, as you probably already saw for the movie creation of the simulation with 1000 iteration steps.
 If you further increase ``num_steps``, you will most certainly need to select which plot to create (e.g. by appending ``--plot-only mean_slope`` to ``utopia run``).
@@ -276,7 +278,8 @@ You are already familiar with the ``build`` directory, needed for the build comm
   Remember that what relates to the home directory below is your *mounted* directory in the docker container.
   Inside the docker container, the output directory is ``~/io/utopia_output``.
 
-The Utopia frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory. The output is ordered by the name of the model you ran and the timestamp of the simulation:
+The Utopia frontend also took care of creating an ``utopia_output`` directory, which by default is inside your home directory.
+The output is ordered by the name of the model you ran and the timestamp of the simulation:
 
 .. code-block:: console
 

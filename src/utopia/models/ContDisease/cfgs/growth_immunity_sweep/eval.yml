@@ -1,0 +1,4 @@
+---
+# --- Densities time series ---------------------------------------------------
+densities_facet_grid:
+  based_on: densities.multiverse

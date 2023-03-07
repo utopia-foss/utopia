@@ -22,9 +22,10 @@ def test_default():
 
     for uni_no, uni in dm["multiverse"].items():
         times = uni["data/HdfBench/times"]
-        assert times.shape == (4, 3)
+        num_steps = uni["cfg"]["num_steps"]
+        assert times.shape == (num_steps + 1, 3)
         assert np.min(times) > 0.0
-        assert len(uni["data/HdfBench"]) == 3 + 1
+        assert len(uni["data/HdfBench"]) == 3 + 1  # 4 datasets
 
 
 def test_write():

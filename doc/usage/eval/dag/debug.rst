@@ -293,6 +293,6 @@ If the above does not help in isolating the error, there are a bunch of other th
 Open an issue and ask for help
 ------------------------------
 If all of the above approaches did not succeed, we are more than happy to assist.
-Feel free to open an issue in the `Utopia GitLab project <https://gitlab.com/utopia-project/utopia/-/issues/new>`_.
+Feel free to open an issue in the `Utopia GitLab project <https://gitlab.com/utopia-project/utopia/-/issues>`_.
 
-For bug reports or suggestions to improve the DAG framework, we are welcoming your feedback in the `dantro GitLab project <https://gitlab.com/utopia-project/dantro/-/issues/new>`_.
+For bug reports or suggestions to improve the DAG framework, we are welcoming your feedback in the `dantro GitLab project <https://gitlab.com/utopia-project/dantro/-/issues>`_.

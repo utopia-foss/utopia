@@ -145,7 +145,7 @@ See the :ref:`styles section <colormaps>` for more details on colormaps.
 3-Dimensional Scatter Plot
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 For 3-dimensional scatter plots, use the ``.plot.facet_grid.scatter3d`` base
-function, which calls the corresponding `matplotlib 3d scatter function <https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.html#mpl_toolkits.mplot3d.axes3d.Axes3D.scatter>`_ for 3-dimensional axes.
+function, which calls the corresponding `matplotlib 3d scatter function <https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.scatter.html#mpl_toolkits.mplot3d.axes3d.Axes3D.scatter>`_ for 3-dimensional axes.
 
 Let's plot a 3-dimensional phase diagram, showing ``susceptible``, ``infected``, and ``recovered`` agents all in a single plot.
 Additionally, let's encode the ``time`` dimension as the ``hue``:
