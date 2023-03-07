@@ -50,7 +50,7 @@ parameter_space:
   seed: 42
 
   # Time stepping defaults
-  num_steps: 3
+  num_steps: 100
   write_start: 0
   write_every: 1
   # NOTE `write_start` and `write_every` are passed along to sub-models. Every

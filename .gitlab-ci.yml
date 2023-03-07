@@ -393,8 +393,10 @@ test:cli:
     # Now, enter the virtual environment and test the CLI
     - $ENTER_UTOPIA_ENV
 
-    # Adjust the user configuration to store to a local directory
+    # Adjust the user configuration to store to a local directory and use a
+    # different default for the number of simulation steps
     - utopia config user --set paths.out_dir=$CI_PROJECT_DIR/utopia_output --get
+    - utopia config user --set paramter_space.num_steps=3 --get
 
     # Show which models are available
     - utopia models ls --long

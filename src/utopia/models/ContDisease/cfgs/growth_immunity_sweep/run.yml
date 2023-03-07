@@ -1,0 +1,26 @@
+# A sweep over growth and immunity parameters
+---
+perform_sweep: true
+
+parameter_space:
+  num_steps: 1k
+  seed: !sweep
+    default: 42
+    range: [10]
+
+  ContDisease:
+    p_infect: 1.e-4
+
+    p_growth: !sweep
+      default: 7.5e-3
+      values: [0.001, 0.01, 0.1]
+
+    p_immunity: !sweep
+      default: 0.0
+      values: [0.0, 0.2, 0.5]
+
+
+    infection_source:
+      enabled: false
+
+    write_only_densities: true

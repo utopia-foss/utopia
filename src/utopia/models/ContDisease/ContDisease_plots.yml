@@ -37,6 +37,7 @@ phase_diagram:
 # ... The forest ..............................................................
 ca/forest:
   based_on: ca/forest
+  enabled: false
 
 ca/forest_snapshot:
   based_on:
@@ -46,6 +47,7 @@ ca/forest_snapshot:
 # ... The forest age ..........................................................
 ca/forest_age:
   based_on: ca/forest_age
+  enabled: false
 
 ca/forest_age_snapshot:
   based_on:
@@ -55,6 +57,7 @@ ca/forest_age_snapshot:
 # ... The clusters ............................................................
 ca/clusters:
   based_on: ca/clusters
+  enabled: false
 
 ca/clusters_snapshot:
   based_on:
@@ -63,12 +66,7 @@ ca/clusters_snapshot:
 
 # ... Combined plot of forest states and clusters .............................
 ca/combined:
-  based_on:
-    - ca/forest
-    - ca/forest_age
-    - ca/clusters
-
-  # col_wrap: false
+  based_on: ca/combined
 
 ca/combined_snapshot:
   based_on:

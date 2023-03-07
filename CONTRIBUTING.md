@@ -32,7 +32,7 @@ does not already cover your question.
 
 We prefer to discuss even minor questions users might have in public, so we
 encourage you to
-[raise an issue](https://gitlab.com/utopia-project/utopia/issues/new?issue)
+[raise an issue](https://gitlab.com/utopia-project/utopia/-/issues)
 in GitLab and use the `question` description template.
 
 ### Code Development
@@ -50,5 +50,5 @@ a change.
 After discussing the issue and implementing the feature, open a merge request.
 Again, we encourage you to use one of the description templates. Provide
 information on how your code changes and additions solve the problem or
-implement the feature. Make sure that your MR fulfills the criteria for
+implement the feature. Make sure that your MR fulfils the criteria for
 being merged.

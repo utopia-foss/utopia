@@ -127,13 +127,43 @@ densities.multiverse:
     - .skip.if_more_than_3D
     - densities.base
     - .plot.facet_grid.with_auto_encoding
+    - .plot.facet_grid.errorbands
+    - .hlpr.legend.hide
+    - .animation.disabled
 
   select_and_combine:
     fields:
-      data:
+      _data:
         path: densities
         transform:
           - .data
+
+  transform:
+    - xr.full_like: [!dag_tag _data, !expr nan]
+      tag: nans
+
+    # Try to compute mean and std over ceratain dimensions, falling back to
+    # a NaN array if that dimension is not available
+    - .mean: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag _data
+      tag: mean
+    - .std: [!dag_tag _data, seed]
+      allow_failure: silent
+      fallback: !dag_tag nans  # use NaN instead
+      tag: std
+
+    # Combine into a dataset
+    - xr.Dataset:
+        data_vars:
+          mean: !dag_tag mean
+          std: !dag_tag std
+      tag: data
+
+  y: mean
+  yerr: std
+  x: time
+  hue: kind
 
 
 # --- Grid Snapshots ----------------------------------------------------------
@@ -191,3 +221,13 @@ ca/clusters:
       vmin: 0
       vmax: 20
       no_cbar_markings: true
+
+# ... Combined plot of forest states and clusters .............................
+
+ca/combined:
+  based_on:
+    - ca/forest
+    - ca/forest_age
+    - ca/clusters
+
+  # col_wrap: false

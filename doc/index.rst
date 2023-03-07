@@ -30,7 +30,7 @@ Where to next?
 
 .. note::
 
-    If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform us about them by `opening an issue <https://gitlab.com/utopia-project/utopia/-/issues/new>`_ or `emailing us <mailto:utopia-dev@iup.uni-heidelberg.de>`_.
+    If you notice any errors in this documentation, even minor, or have suggestions for improvements, please inform us about them by `opening an issue <https://gitlab.com/utopia-project/utopia/-/issues>`_ or `emailing us <mailto:utopia-dev@iup.uni-heidelberg.de>`_.
     Thank you!
 
 

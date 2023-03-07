@@ -577,7 +577,7 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [models_template]: https://gitlab.com/utopia-project/models_template
 
 [Utopia-issues]: https://gitlab.com/utopia-project/utopia/issues
-[Utopia-new-issue]: https://gitlab.com/utopia-project/utopia/issues/new?issue
+[Utopia-new-issue]: https://gitlab.com/utopia-project/utopia/issues/new
 
 [Utopia-docs]: https://docs.utopia-project.org/html/index.html
 [Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html

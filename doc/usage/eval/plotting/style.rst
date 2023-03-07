@@ -441,7 +441,7 @@ Of those, some helpers act on the level of the associated :py:class:`matplotlib.
 
 .. admonition:: Missing a plot helper function?
 
-    If you are missing a plot helper function, consider `opening an issue in the dantro project <https://gitlab.com/utopia-project/dantro/-/issues/new>`_, we are happy to add more helper functions.
+    If you are missing a plot helper function, consider `opening an issue in the dantro project <https://gitlab.com/utopia-project/dantro/-/issues>`_, we are happy to add more helper functions.
 
     In the meantime, you can use the ``call`` and ``figcall`` helpers to invoke arbitrary functions on the axes or the figure.
     See :py:meth:`~dantro.plot.plot_helper.PlotHelper._hlpr_call` for more information.

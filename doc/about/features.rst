@@ -11,7 +11,7 @@ Lines starting with the 📚 symbol also denote further reading material.
 
 .. note::
 
-    Please `inform us <https://gitlab.com/utopia-project/utopia/-/issues/new>`_ about any outdated information or broken links on this page!
+    Please `inform us <https://gitlab.com/utopia-project/utopia/-/issues>`_ about any outdated information or broken links on this page!
 
 .. contents::
     :local:
