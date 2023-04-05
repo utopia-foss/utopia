@@ -71,7 +71,7 @@ Follow the [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl
 However, you can use Utopia with any earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
 ⚠️ If you encounter difficulties, have a look at the [**troubleshooting section**](#troubleshooting).
-If this does not resolve your installation problems, [please file an issue in the GitLab project][Utopia-new-issue].
+If this does not resolve your installation problems, [please file an issue in the GitLab project][Utopia-issues].
 
 
 #### 1 — Clone Utopia
@@ -496,7 +496,7 @@ To get Utopia running on a system with an earlier Ubuntu version, the above depe
 You can use the [Ubuntu Package Search][Ubuntu-packages] to find the versions available on your system.
 If a required version is not available, private package repositories may help to install a more recent version of a dependency.
 
-If you encounter difficulties with the installation procedure for any of these dependencies, please [file an issue in the GitLab project][Utopia-new-issue].
+If you encounter difficulties with the installation procedure for any of these dependencies, please [file an issue in the GitLab project][Utopia-issues].
 
 
 ### Python
@@ -574,18 +574,16 @@ The following depencies are _recommended_ to be installed, but are not strictly 
 [Utopia]: https://gitlab.com/utopia-project/utopia
 [Utopia-Gitlab]: https://gitlab.com/utopia-project/utopia
 [Utopia-Github]: https://github.com/utopia-foss/utopia
-[models_template]: https://gitlab.com/utopia-project/models_template
-
 [Utopia-issues]: https://gitlab.com/utopia-project/utopia/issues
-[Utopia-new-issue]: https://gitlab.com/utopia-project/utopia/issues/new
 
 [Utopia-docs]: https://docs.utopia-project.org/html/index.html
 [Utopia-tutorial]: https://docs.utopia-project.org/html/getting_started/tutorial.html
 [Utopia-docker]: https://hub.docker.com/r/ccees/utopia
 
-[utopya]: https://gitlab.com/utopia-project/utopya
+[models_template]: https://gitlab.com/utopia-project/models_template
 [paramspace]: https://gitlab.com/blsqr/paramspace
 [dantro]: https://gitlab.com/utopia-project/dantro
+[utopya]: https://gitlab.com/utopia-project/utopya
 
 [LGPL]: https://www.gnu.org/licenses/lgpl-3.0.en.html
 [Ubuntu-packages]: https://packages.ubuntu.com
