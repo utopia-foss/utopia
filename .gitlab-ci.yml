@@ -427,9 +427,7 @@ test:cli:
     - sleep 1.1 && utopia eval -d --interactive dummy
         <<< $'\n--plot-only states\n--plot-only state_mean --debug'
     - sleep 1.1 && utopia eval -d -i dummy
-        <<< $'--debug\n--debug --update-plots-cfg state_mean.foo=bar'
-    - sleep 1.1 && utopia eval -d -i dummy
-        <<< $'--plot-only some_non_existing_plot --debug'
+        <<< $'--debug\n--debug --plot-only state_mean'
     - sleep 1.1 && utopia eval -d -i dummy
         <<< $'--plot-only some_non_existing_plot --debug'
     - sleep 1.1 && utopia eval -d -i dummy
