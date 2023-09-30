@@ -54,6 +54,15 @@ add_library(Utopia::utopia ALIAS utopia)
 # Require C++17 support
 target_compile_features(utopia INTERFACE cxx_std_17)
 
+# As of libgcc >= 15, some functions needed by boost are removed and it is not
+# always correctly detected that an alternative needs to be used.
+# Re-enable it for Utopia.
+# See also:
+#   https://developer.apple.com/documentation/xcode-release-notes/xcode-15-release-notes#Deprecations
+target_compile_definitions(
+    utopia INTERFACE _LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION
+)
+
 # Add include directories
 target_include_directories(utopia INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
