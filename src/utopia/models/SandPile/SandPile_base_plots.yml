@@ -125,7 +125,7 @@ area_fraction:
   # Need to adjust scatter points such that they don't have an edge
   marker: '.'
   alpha: .8
-  edgecolors: none
+  edgecolor: none
   linewidths: 0.
 
   # Adjust helpers

@@ -103,7 +103,7 @@ Using the ``complete`` graph generator, you can generate a complete (fully-conne
 
 Erdős-Rényi random graphs
 **************************
-The ``random`` model creates a random graph using the Erdös-Rényi model, in which all links have an equal probability of occuring. If you set the ``parallel`` key to ``false``, no multi-edges are added. Utopia uses the ``boost::generate_random_graph`` `algorithm <https://github.com/boostorg/graph/blob/35d3e15a47c58e7e933a69354033ecb48bce75aa/include/boost/graph/random.hpp#L208>`_.
+The ``random`` model creates a random graph using the Erdös-Rényi model, in which all links have an equal probability of occuring. If you set the ``parallel`` key to ``false``, no multi-edges are added. Utopia uses the ``boost::generate_random_graph`` `algorithm <https://github.com/boostorg/graph/blob/master/include/boost/graph/random.hpp>`_.
 
 Small-world Watts-Strogatz graphs
 *********************************

@@ -336,6 +336,10 @@ test:models:
   before_script:
     # Place a symlink at the expected path to make the model registry available
     - &add_cfg_symlink ln -s $CI_PROJECT_DIR/.config ~/.config && ls -la ~/
+    #
+    # Reduce number of steps for models to speed up CI
+    - $ENTER_UTOPIA_ENV
+    - utopia config user --set paramter_space.num_steps=10 --get
   script:
     # Test models using C++ and Python model tests
     - cd build
@@ -354,7 +358,7 @@ test:models:
 
     # Now the actual models:
     - utopia run ContDisease --debug
-    - utopia run Environment --debug -N 10
+    - utopia run Environment --debug
     - utopia run ForestFire --debug
     - utopia run GameOfLife --debug
     - utopia run Geomorphology --debug

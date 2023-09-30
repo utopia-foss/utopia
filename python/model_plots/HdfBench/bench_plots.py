@@ -82,7 +82,9 @@ def times(dm: DataManager, *, uni: UniverseGroup, **kwargs):
     times = uni["data/HdfBench/times"]
 
     # Use helper function for actual plot
-    _plot_times(times=times, bench_names=times.coords["benchmark"], **kwargs)
+    _plot_times(
+        times=times, bench_names=times.coords["benchmark"].values, **kwargs
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -124,7 +126,7 @@ def mean_times(
     _plot_times(
         times=times_mean,
         std=times_std,
-        bench_names=times.coords["benchmark"],
+        bench_names=times.coords["benchmark"].values,
         num_seeds=times["seed"].shape[0],
         **kwargs,
     )
