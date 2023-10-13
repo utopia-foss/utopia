@@ -265,7 +265,8 @@ Note that the legend and row and column titles are automatically plotted.
 
 .. hint::
 
-    If you have lots of columns and few rows, use ``col_wrap: auto`` to create a more square plot.
+    If you have lots of columns and few rows, use ``col_wrap: auto`` together with
+    ``.plot.facet_grid.with_auto_encoding`` (see below) to create a more square plot.
 
 
 .. _facet_grid_auto_encoding:
