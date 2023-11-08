@@ -75,14 +75,19 @@ target_include_directories(utopia INTERFACE
 #       linked *first* such that their include directories are searched first.
 target_link_libraries(utopia INTERFACE
     spdlog::spdlog
-    yaml-cpp
     Threads::Threads # NOTE: required by spdlog on Ubuntu 18.04
     armadillo
     Boost::boost
     Boost::graph
     Boost::regex
     hdf5
+    yaml-cpp
 )
+
+# To find the yaml-cpp library during linking, it needs to be included
+# separately ... for whatever reason.
+# This was not necessary for yaml-cpp < 0.8, but became necessary afterwards.
+target_link_directories(utopia INTERFACE ${YAML_CPP_LIBRARY_DIR})
 
 # Set preprocessor definitions
 target_compile_definitions(utopia INTERFACE
