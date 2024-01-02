@@ -21,7 +21,7 @@ doc_dir = "@CMAKE_CURRENT_SOURCE_DIR@"
 # -- Project information ------------------------------------------------------
 
 project = "Utopia"
-copyright = "2016 – 2023, Utopia Developers"
+copyright = "2016 – 2024, Utopia Developers"
 author = "Utopia Developers"
 
 # The short X.Y version
