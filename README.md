@@ -246,7 +246,7 @@ The following instructions will enable additional, *optional* features of Utopia
         apt update && apt install libtbb-dev
         ```
 
-        Alternatively, one may install the Intel oneAPI base toolkit following these [installation instructions](https://www.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html).
+        Alternatively, one may install the Intel oneAPI base toolkit following these [installation instructions](https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2024-0/overview.html).
         The only required package is `intel-basekit`.
         It includes the oneDPL library we use for parallelization.
 

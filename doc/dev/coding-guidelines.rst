@@ -59,9 +59,10 @@ Use it where applicable. Stay true to Duck Typing though!
 C++
 ---
 
-We use C++17. For very recent coding guidelines on the new C++ standard(s), refer to
-`CppCoreGuidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_ and
-`Scott Meyers: Effective Modern C++ (2014) <https://moodle.ufsc.br/pluginfile.php/2377667/mod_resource/content/0/Effective_Modern_C__.pdf>`_.
+We use C++17.
+For very recent coding guidelines on the new C++ standard(s), refer to
+`CppCoreGuidelines <https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md>`_.
+A good starter is also the *Effective Modern C++* book by Scott Meyers.
 
 We will mostly stick to the STL library.
 Its complete reference can be found on `cppreference.com <http://en.cppreference.com/w/>`_.

@@ -429,7 +429,10 @@ linkcheck_ignore = [
     r".*COPYING\.html.*",
     #
     # And the IUP homepage, which has some weird certificate settings
-    r".*(www\.)?iup\.uni-heidelberg\.de/.*"
+    r".*(www\.)?iup\.uni-heidelberg\.de/.*",
+    #
+    # Sites that do not allow the sphinx linkcheck client (403 client error)
+    r".*(www\.)?intel\.com/.*",
 ]
 
 
