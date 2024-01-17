@@ -517,7 +517,7 @@ In addition, the following packages are _optionally_ used for development of the
 | [pytest](https://docs.pytest.org/)    |          | For model tests |
 | [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
 | [black](https://github.com/psf/black) | >= 22.6  | For formatting python code |
-| [Sphinx](https://www.sphinx-doc.org/) | == 4.5.* | Builds the Utopia documentation |
+| [Sphinx](https://www.sphinx-doc.org/) | == 5.*   | Builds the Utopia documentation |
 
 These requirements are defined in the `.utopia-env-requirements.txt` file; in case installation fails, a warning will be emitted during [configuration](#3-configure-and-build).
 
