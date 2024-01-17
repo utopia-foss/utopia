@@ -95,7 +95,7 @@ After cloning, there will be a new `utopia` directory (mirroring this repository
 Install the third-party dependencies using a package manager.
 
 **Note:** If you have [Anaconda][Anaconda] installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
-However, notice that there might be issues during [the configuration step](#4-configure-and-build).
+However, notice that there might be issues during [the configuration step](#3-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
 ##### On Ubuntu (22.04)

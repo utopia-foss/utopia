@@ -260,6 +260,9 @@ epub_exclude_files = ["search.html"]
 
 # -- MyST ---------------------------------------------------------------------
 
+# Generate heading anchors, which we need for cross-referencing
+myst_heading_anchors = 5
+
 
 # -- Todo extension -----------------------------------------------------------
 
@@ -490,10 +493,24 @@ def manipulate_source_read(app, docname: str, source: list):
         ``source`` object (a list).
     """
     if docname == "README":
+        print("\nAdjusting README content ...")
+
         # Drop everything before the installation instructions
         marker = "<!-- marker-installation-instructions -->"
         new_start = source[0].find(marker) + len(marker)
         source[0] = "# Installation" + source[0][new_start:]
+
+        # Text Replacements
+        # ... to take care of changes in how the link slugs are created by myst
+        print("Carrying out text replacements ...")
+        source[0] = source[0].replace(
+            "#3-configure-and-build", "#configure-and-build"
+        )
+        source[0] = source[0].replace(
+            "../src/utopia/models",
+            "https://gitlab.com/utopia-project/utopia/-/tree/master/src/utopia/models",
+        )
+
         return
 
 
