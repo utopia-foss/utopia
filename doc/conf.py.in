@@ -104,7 +104,9 @@ exclude_patterns = [
 pygments_style = None
 
 # Can suppress some warnings that cannot be resolved
-suppress_warnings = []
+suppress_warnings = [
+    "myst.xref_missing",  # because of different syntax in copied .md files
+]
 
 
 # -- Options for HTML output --------------------------------------------------
