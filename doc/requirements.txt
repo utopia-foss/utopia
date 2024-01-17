@@ -1,5 +1,4 @@
-# Use a sphinx version that is compatible with sphinx-book-theme
-Sphinx == 4.5.*
+Sphinx == 5.*
 
 # Extensions
 sphinx-argparse

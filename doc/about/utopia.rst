@@ -118,9 +118,12 @@ As part of these projects, more than 45 models have been implemented so far (mos
 
 2021
 ^^^^
-The `Utopia Project webpage <https://utopia-project.org>`_ is published.
-
 With the sunset of the TS-CCEES research group, the Utopia framework has to find a new home ...
+
+The `Utopia Project webpage <https://utopia-project.org>`_ is published.
+Code repositories are migrated to a `GitLab.com group <https://gitlab.com/utopia-project>`_.
+
+Benjamin Herdeanu and Yunus Sevinchan defend their doctoral theses; both have been using Utopia extensively.
 
 
 2022
@@ -129,3 +132,11 @@ The Utopia project has migrated all its repositories from the TS-CCEES group's s
 
 The `outsourcing of the Utopia frontend <https://gitlab.com/utopia-project/utopia/-/merge_requests/277>`_ brings about a larger architectural change.
 This makes the features of `utopya <https://gitlab.com/utopia-project/utopya>`_ available for use with other simulation backends, adds a bunch of new features, expands the documentation, and aims to reduce future maintenance load.
+
+
+2023
+^^^^
+Harald Mack and Julian Weninger defend their doctoral theses, using Utopia as the foundation for their computer models.
+
+Utopia is used in `several scientific publications <https://utopia-project.org/publications/>`_.
+With utopya as a standalone package, first Python-based models or analysis frameworks are implemented.

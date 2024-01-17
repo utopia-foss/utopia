@@ -95,7 +95,7 @@ After cloning, there will be a new `utopia` directory (mirroring this repository
 Install the third-party dependencies using a package manager.
 
 **Note:** If you have [Anaconda][Anaconda] installed, you already have a working Python installation on your system, and you can omit installing the `python` packages below.
-However, notice that there might be issues during [the configuration step](#4-configure-and-build).
+However, notice that there might be issues during [the configuration step](#3-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
 ##### On Ubuntu (22.04)
@@ -246,7 +246,7 @@ The following instructions will enable additional, *optional* features of Utopia
         apt update && apt install libtbb-dev
         ```
 
-        Alternatively, one may install the Intel oneAPI base toolkit following these [installation instructions](https://www.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html).
+        Alternatively, one may install the Intel oneAPI base toolkit following these [installation instructions](https://www.intel.com/content/www/us/en/docs/oneapi/installation-guide-linux/2024-0/overview.html).
         The only required package is `intel-basekit`.
         It includes the oneDPL library we use for parallelization.
 
@@ -517,7 +517,7 @@ In addition, the following packages are _optionally_ used for development of the
 | [pytest](https://docs.pytest.org/)    |          | For model tests |
 | [pre-commit](https://pre-commit.com)  | >= 2.18  | For pre-commit hooks |
 | [black](https://github.com/psf/black) | >= 22.6  | For formatting python code |
-| [Sphinx](https://www.sphinx-doc.org/) | == 4.5.* | Builds the Utopia documentation |
+| [Sphinx](https://www.sphinx-doc.org/) | == 5.*   | Builds the Utopia documentation |
 
 These requirements are defined in the `.utopia-env-requirements.txt` file; in case installation fails, a warning will be emitted during [configuration](#3-configure-and-build).
 
