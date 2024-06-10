@@ -314,7 +314,7 @@ Parallel STL Algorithms
 * Utopia ``ExecPolicy`` mirrors `STL execution policies <https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t>`_.
 * Parallel features can be controlled via the :ref:`meta-configuration <feature_meta_config>`.
   The ``PseudoParent`` enables or disables them depending on the ``parallel_execution`` node in the parameter space.
-* Depending on the execution policies, programmers will have to avoid `data races <https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races>`_.
+* Depending on the execution policies, programmers will have to avoid `data races <https://en.cppreference.com/w/c/language/memory_model>`_.
 * 📚
   `Doxygen <../../doxygen/html/group___parallel.html>`__,
   :ref:`Parallel apply_rule <feature_apply_rule>`
