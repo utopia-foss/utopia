@@ -254,7 +254,7 @@ No need to re-invent the (color) wheel, *especially* when perceptually uniform c
 
 .. hint::
 
-    When using the *BoundaryNorm* together with one of the pre-registered colormaps (e.g., *viridis*), use the ``lut`` argument (see :py:func:`matplotlib.cm.get_cmap`) to resample the colormap to have *lut* entries in the lookup table.
+    When using the *BoundaryNorm* together with one of the pre-registered colormaps (e.g., *viridis*), use the ``lut`` argument (see :py:func:`~matplotlib.pyplot.get_cmap`) to resample the colormap to have *lut* entries in the lookup table.
     Set ``lut = <BoundaryNorm.ncolors>`` to use the full colormap range.
 
 

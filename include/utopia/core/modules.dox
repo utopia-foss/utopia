@@ -349,7 +349,7 @@ type is callable or not.
 ## Overview
 
 C++17 introduced [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) for running STL algorithms in parallel, on multiple threads and/or vectorized instructions.
-The decision of executing an algorithm is thereby taken at compile time because this optimizes performance and, depending on the particular policy chosen, poses restrictions on the algorithm and underlying data due to [data races](https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races).
+The decision of executing an algorithm is thereby taken at compile time because this optimizes performance and, depending on the particular policy chosen, poses restrictions on the algorithm and underlying data due to [data races](https://en.cppreference.com/w/c/language/memory_model).
 However, most large STL libraries still do not support parallel execution policies.
 Utopia therefore relies on optional third party software to implement multithreading.
 The [Intel oneAPI toolkit](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) is a complete software suite for developing high-performance software on heterogeneous, parallel computer architectures.
@@ -382,7 +382,7 @@ add_model(my_model my_model.cc DISABLE_PARALLEL)
 
 The basic rule of thumb is that developers who want their code to be executed in parallel using the Utopia facilities simply write the code as if it was *always* run in parallel, and then replace the STL execution policies with Utopia::ExecPolicy.
 In particular, this means that data races have to be avoided, which can be achieved by using [guards against mutual execution](https://en.cppreference.com/w/cpp/thread/mutex) (`mutex`) or [atomic data types](https://en.cppreference.com/w/cpp/atomic) which are inherently safe when accessed by multiple threads simultaneously.
-See the notes on [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) and [data races](https://en.cppreference.com/w/cpp/language/memory_model#Threads_and_data_races) for additional information.
+See the notes on [execution policies](https://en.cppreference.com/w/cpp/algorithm/execution_policy_tag_t) and [data races](https://en.cppreference.com/w/c/language/memory_model) for additional information.
 
 Parallel execution at runtime is controlled through Utopia::ParallelExecution and is **disabled** by default.
 Utopia::PseudoParent will **disable** parallel execution if the respective parameter space setting is not available.
