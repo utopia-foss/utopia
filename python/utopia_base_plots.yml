@@ -108,6 +108,10 @@ _:
 # start: .plot
 # -- Overloads of existing plot functions -------------------------------------
 
+.plot.facet_grid.scatter:
+  based_on: .plot.facet_grid
+  kind: scatter
+
 .plot.ca:
   based_on:
     - .plot.ca
