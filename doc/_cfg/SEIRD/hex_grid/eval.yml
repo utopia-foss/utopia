@@ -24,7 +24,6 @@ _default_style: &default_style
 .flush_kind_cmap:
   to_plot:
     kind:
-      limits: ~
       cmap: ~
 
 # -----------------------------------------------------------------------------
