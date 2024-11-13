@@ -19,7 +19,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     echo 'tzdata tzdata/Areas select Etc' | debconf-set-selections; \
     echo 'tzdata tzdata/Zones/Etc select UTC' | debconf-set-selections; \
     apt-get update -y \
-    && apt-get install -y \
+    && apt-get install -y --no-install-recommends \
     # general tools
         tzdata \
         curl \
@@ -51,6 +51,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
         graphviz \
         texlive-latex-extra texlive-fonts-recommended dvipng cm-super \
     # cleanup to get smaller image size
+    && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     # some final configurations
