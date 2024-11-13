@@ -74,8 +74,11 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 
-# As base image for the jobs, use the Utopia image created in the setup stage
-image: ${BASE_IMAGE}
+# As default image for jobs, use the Utopia base image (created in setup stage)
+#
+# By choosing the :latest tag, the default values from docker/Makefile will be
+# used (once there was a successful build and push).
+image: ccees/utopia-base:latest
 
 
 # .. YAML Templates ...........................................................
@@ -121,7 +124,7 @@ image: ${BASE_IMAGE}
 
 # Use the Docker-in-Docker executor and services, log into Docker Hub
 .dind:
-  image: docker:stable
+  image: docker:dind  # based on alpine linux
   extends:
     - .use_multicore_runner
   services:
@@ -132,6 +135,9 @@ image: ${BASE_IMAGE}
   before_script:
     - docker info
     - $DOCKER_HUB_LOGIN
+
+    # need some build tools
+    - apk add build-base make
 
 
 

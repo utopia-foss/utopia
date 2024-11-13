@@ -4,10 +4,14 @@
 # These can be overwritten via environment variables, but ideally the defaults
 # specified here should be respected. (Single source of truth.)
 #
-# NOTE regarding the UTOPIA_BASE_IMAGE_VERSION variable
-#	* increment this upon smaller (+0.1) or larger (+1.0) changes in
+# NOTE Regarding the UTOPIA_BASE_IMAGE_VERSION variable:
+#	- Increment this upon smaller (+0.1) or larger (+1.0) changes in
 #     the utopia-base.dockerfile
-#   * reset to 1.0 upon bump in UTOPIA_BASE_IMAGE_UBUNTU_VERSION
+#   - Reset to 1.0 upon bump in UTOPIA_BASE_IMAGE_UBUNTU_VERSION.
+#     Ideally, the Ubuntu versions should be those with LTS.
+# 	- Remark: The GitLab CI/CD will use the :latest base image by default,
+#     so there should be no need to update that variable there after making
+#     changes here.
 #
 UTOPIA_BASE_IMAGE_NAME ?= ccees/utopia-base
 UTOPIA_BASE_IMAGE_UBUNTU_VERSION ?= noble
@@ -67,7 +71,7 @@ push_base_image:
 	docker push $(UTOPIA_BASE_IMAGE)
 	docker push $(UTOPIA_BASE_IMAGE_NAME):latest
 
-push_utopia_image: build_utopia_image
+push_utopia_image:
 	docker push $(UTOPIA_IMAGE_NAME):latest
 
 
