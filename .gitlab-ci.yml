@@ -14,24 +14,22 @@ variables:
   # Need to clone submodules as well
   GIT_SUBMODULE_STRATEGY: recursive
 
+  #
   # Variables needed for docker image deployment
-  # The different segments of the resulting test image tag
-  BASE_IMAGE_UBUNTU_VERSION: jammy  # NOTE Adjust upon new Ubuntu Release
-  BASE_IMAGE_VERSION: "2.1"         # NOTE Increment when changing dockerfile
-  BASE_IMAGE_NAME: ccees/utopia-base
-  BASE_IMAGE: "${BASE_IMAGE_NAME}:${BASE_IMAGE_UBUNTU_VERSION}-v${BASE_IMAGE_VERSION}"
-  # NOTE Do not forget to increment the BASE_IMAGE_VERSION when changes to the
-  #      docker file are introduced.
+  #
+  # The default values are set in docker/Makefile, but can be overwritten here
+  # via environment variables. (Commented-out: use defaults)
+  #
 
-  # Variables controlling the deployed Utopia image and its development
-  # counterpart (deployed from the ci_test stage for testing)
-  UTOPIA_IMAGE_NAME: ccees/utopia
-  UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
-  UTOPIA_IMAGE_BRANCH: master
+  # UTOPIA_BASE_IMAGE_NAME: ccees/utopia-base
+  # UTOPIA_BASE_IMAGE_UBUNTU_VERSION: jammy
+  # UTOPIA_BASE_IMAGE_VERSION: "2.1"
+  # UTOPIA_BASE_IMAGE_BUILD_OPTIONS:
 
-  # Utopia virtual environment shortcuts
-  RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build/run-in-utopia-env
-  ENTER_UTOPIA_ENV: source $CI_PROJECT_DIR/build/activate
+  # UTOPIA_IMAGE_NAME: ccees/utopia
+  # UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
+  # UTOPIA_IMAGE_BRANCH: master
+  # UTOPIA_IMAGE_BUILD_OPTIONS:
 
   # Docker Hub login command
   DOCKER_HUB_LOGIN: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PW
@@ -42,8 +40,16 @@ variables:
   # The GitLab Pages where artifacts can be shown
   PAGES_URL: https://utopia-project.gitlab.io/-/utopia
 
+  #
+  # Utopia virtual environment shortcuts
+  #
+  RUN_IN_UTOPIA_ENV: $CI_PROJECT_DIR/build/run-in-utopia-env
+  ENTER_UTOPIA_ENV: source $CI_PROJECT_DIR/build/activate
+
+  #
   # Variables that control whether certain jobs are executed.
   # These can be overwritten via the GitLab CI/CD interface.
+  #
   UPDATE_UTOPIA_BASE_IMAGE: "false"
   DEPLOY_DOCKER_IMAGE: "false"
   DEPLOY_DOCS: "false"
@@ -122,6 +128,7 @@ image: ${BASE_IMAGE}
     - docker:dind
   variables:
     DOCKER_DRIVER: overlay2
+    UTOPIA_IMAGE_BUILD_OPTIONS: --build-arg PROCNUM=$CPUS_DIND
   before_script:
     - docker info
     - $DOCKER_HUB_LOGIN
@@ -143,13 +150,7 @@ setup:utopia-base:
       when: always
     - when: never
   script:
-    - docker build -f docker/utopia-base.dockerfile
-                   -t ${BASE_IMAGE}
-                   -t ${BASE_IMAGE_NAME}:latest
-                   --build-arg UBUNTU_VERSION=${BASE_IMAGE_UBUNTU_VERSION}
-                   .
-    - docker push ${BASE_IMAGE}
-    - docker push ${BASE_IMAGE_NAME}:latest
+    - cd docker && make build_and_push_base_image
 
 
 
@@ -654,14 +655,7 @@ deploy:dockerhub:
       when: always
     - when: never
   script:
-    - docker build -f docker/utopia.dockerfile
-                   --build-arg BASE_IMAGE=$BASE_IMAGE
-                   --build-arg PROCNUM=$CPUS_DIND
-                   --build-arg GIT_CHECKOUT=$UTOPIA_IMAGE_BRANCH
-                   --build-arg GIT_REMOTE_URL=$UTOPIA_IMAGE_REMOTE_URL
-                   -t $UTOPIA_IMAGE_NAME:latest
-                   ./
-    - docker push $UTOPIA_IMAGE_NAME:latest
+    - cd docker && make build_and_push_utopia_image
   environment:
     name: production/docker-latest
     url: https://hub.docker.com/r/$UTOPIA_IMAGE_NAME
