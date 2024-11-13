@@ -21,6 +21,7 @@ UTOPIA_BASE_IMAGE_BUILD_OPTIONS ?=
 UTOPIA_IMAGE_NAME ?= ccees/utopia
 UTOPIA_IMAGE_REMOTE_URL ?= https://gitlab.com/utopia-project/utopia.git
 UTOPIA_IMAGE_BRANCH ?= master
+UTOPIA_IMAGE_BUILD_PROCNUM ?= 1
 UTOPIA_IMAGE_BUILD_OPTIONS ?=
 
 #
@@ -56,12 +57,14 @@ build_base_image:
 
 build_utopia_image:
 	@echo "Building Utopia docker image ..."
-	docker build . \
-		-f utopia.dockerfile \
+	# Need to go to parent directory for this to have the proper build context
+	cd ../ && docker build . \
+		-f docker/utopia.dockerfile \
 		-t $(UTOPIA_IMAGE) \
 		--build-arg BASE_IMAGE=$(UTOPIA_BASE_IMAGE) \
 		--build-arg GIT_REMOTE_URL=$(UTOPIA_IMAGE_REMOTE_URL) \
 		--build-arg GIT_CHECKOUT=$(UTOPIA_IMAGE_BRANCH) \
+		--build-arg PROCNUM=$(UTOPIA_IMAGE_BUILD_PROCNUM) \
 		$(UTOPIA_IMAGE_BUILD_OPTIONS)
 	@echo "Built Utopia docker image, tagged $(UTOPIA_IMAGE) ..."
 

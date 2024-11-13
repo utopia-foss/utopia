@@ -29,6 +29,7 @@ variables:
   # UTOPIA_IMAGE_NAME: ccees/utopia
   # UTOPIA_IMAGE_REMOTE_URL: https://gitlab.com/utopia-project/utopia.git
   # UTOPIA_IMAGE_BRANCH: master
+  # UTOPIA_IMAGE_BUILD_PROCNUM: 1
   # UTOPIA_IMAGE_BUILD_OPTIONS:
 
   # Docker Hub login command
@@ -131,7 +132,7 @@ image: ccees/utopia-base:latest
     - docker:dind
   variables:
     DOCKER_DRIVER: overlay2
-    UTOPIA_IMAGE_BUILD_OPTIONS: --build-arg PROCNUM=$CPUS_DIND
+    UTOPIA_IMAGE_BUILD_PROCNUM: $CPUS_DIND
   before_script:
     - docker info
     - $DOCKER_HUB_LOGIN

@@ -21,7 +21,14 @@ ARG GIT_REMOTE_URL=""
 
 # End of argument definitions . . . . . . . . . . . . . . . . . . . . . . . . .
 
-# Enter a new work directory and copy over all data from the build context
+# Need some additional packages
+RUN    apt update \
+    && apt install -y --no-install-recommends build-essential \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy over the whole repository from the build context
 WORKDIR /utopia
 COPY ./ ./
 
