@@ -1,7 +1,7 @@
 # NOTE ------------------------------------------------------------------------
 # IMPORTANT:
-#     Do not forget to increment the $BASE_IMAGE_VERSION variable in the
-#     .gitlab-ci.yml when making changes to this file!
+#     Do not forget to increment the UTOPIA_BASE_IMAGE_VERSION variable in the
+#     docker/Makefile when making changes to this file!
 #     The version is a simple counter that should be increment upon _any_
 #     change in this file. It should be reset to 1 when a new Ubuntu version
 #     is used.

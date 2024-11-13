@@ -67,7 +67,7 @@ These instructions are intended for 'clean' __macOS__ (both Intel and Apple Sili
 Since __Windows__ supports the installation of Ubuntu via [Windows Subsystem for Linux](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux), Utopia can also be used on Windows.
 Follow the [WSL Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to install Ubuntu, then follow the instructions for Ubuntu in this README.
 
-**Note:** Utopia is always tested against a recent Ubuntu release, currently [Ubuntu 22.04](https://releases.ubuntu.com/22.04/).
+**Note:** Utopia is always tested against a recent Ubuntu release, currently [Ubuntu 24.04 (LTS)](https://releases.ubuntu.com/24.04/).
 However, you can use Utopia with any earlier release, as long as the [dependencies](#dependencies) can be fulfilled.
 
 ⚠️ If you encounter difficulties, have a look at the [**troubleshooting section**](#troubleshooting).
@@ -98,7 +98,7 @@ Install the third-party dependencies using a package manager.
 However, notice that there might be issues during [the configuration step](#3-configure-and-build).
 Have a look at the [troubleshooting](#troubleshooting) section to see how to address them.
 
-##### On Ubuntu (22.04)
+##### On Ubuntu (24.04 LTS)
 ```bash
 apt update
 apt install cmake gcc g++ gfortran git libarmadillo-dev libboost-all-dev \
@@ -489,8 +489,8 @@ cmake -DCMAKE_EXPORT_PACKAGE_REGISTRY=On ..
 | [Python3](https://www.python.org/downloads/)   | >= 3.6           | 3.10.4          | |
 
 Utopia aims to allow rapid development, and is thus being tested only against the more recent releases of its dependencies.
-Currently, Utopia is tested against the packages provided by [**Ubuntu 22.04**][Ubuntu-packages].
-However the above version _requirements_ (i.e., those _enforced_ by the build system) can be fulfilled also with Ubuntu 19.10.
+Currently, Utopia is tested against the packages provided by [**Ubuntu 24.04**][Ubuntu-packages].
+However the above version _requirements_ (i.e., those _enforced_ by the build system) can be fulfilled also with Ubuntu 19.10; we just don't test against them any more.
 
 To get Utopia running on a system with an earlier Ubuntu version, the above dependencies still need to be fulfilled.
 You can use the [Ubuntu Package Search][Ubuntu-packages] to find the versions available on your system.

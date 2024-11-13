@@ -4,9 +4,14 @@
 # These can be overwritten via environment variables, but ideally the defaults
 # specified here should be respected. (Single source of truth.)
 #
+# NOTE regarding the UTOPIA_BASE_IMAGE_VERSION variable
+#	* increment this upon smaller (+0.1) or larger (+1.0) changes in
+#     the utopia-base.dockerfile
+#   * reset to 1.0 upon bump in UTOPIA_BASE_IMAGE_UBUNTU_VERSION
+#
 UTOPIA_BASE_IMAGE_NAME ?= ccees/utopia-base
-UTOPIA_BASE_IMAGE_UBUNTU_VERSION ?= jammy
-UTOPIA_BASE_IMAGE_VERSION ?= 2.1
+UTOPIA_BASE_IMAGE_UBUNTU_VERSION ?= noble
+UTOPIA_BASE_IMAGE_VERSION ?= 1.0
 UTOPIA_BASE_IMAGE_BUILD_OPTIONS ?=
 
 UTOPIA_IMAGE_NAME ?= ccees/utopia
