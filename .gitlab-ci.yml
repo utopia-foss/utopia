@@ -527,7 +527,8 @@ docs:build:
     - cd build
     - cmake ..
 
-    # Install dependencies and show installation result
+    # Enter utopia-env and install dependencies
+    - source activate
     - pip install -r ../doc/requirements.txt
     - pip freeze
   script:
