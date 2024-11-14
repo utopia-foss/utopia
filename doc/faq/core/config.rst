@@ -71,11 +71,9 @@ To extract parameters for your model from the configuration, you can use the
     auto my_uint = get_as<unsigned int>("my_int", cfg);
 
 One way of remembering the order of arguments is: "``get_as`` an object of type
-``double``: the entry ``my_double`` from this ``cfg`` node". See below for the function signature and more information:
+``double``: the entry ``my_double`` from this ``cfg`` node".
+See :ref:`below <cfg_utils_cpp_doc>` for the function signature and more information
 
-.. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node)
-.. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node, ReturnType fallback)
-.. doxygenclass:: Utopia::KeyError
 
 
 How can I read linear algebra objects (vectors, matrices, ...) from the config?
@@ -91,7 +89,7 @@ fashion:
     auto some_pos = get_as_SpaceVec<2>("initial_pos", cfg);
     auto some_midx = get_as_MultiIndex<2>("some_midx", cfg);
 
-For information on these functions and the return types, see below.
+For information on these functions and the return types, see :ref:`below <cfg_utils_cpp_doc>`.
 
 To load data into custom ``arma`` objects, you will have to use an intermediate
 object that can be used to construct them. Please refer to the
@@ -110,7 +108,19 @@ cases.
   the desired type and (if it is a fixed-size object) take care of assigning
   elements.
 
-.. doxygenfunction:: Utopia::get_as_SpaceVec
-.. doxygenfunction:: Utopia::get_as_MultiIndex
+
+.. _cfg_utils_cpp_doc:
+
+C++ documentation of Config Utilities
+-------------------------------------
+.. FIXME These are not working, because the doxygen XML file is not created!
+   .. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node)
+   .. doxygenfunction:: Utopia::get_as(const std::string &key, const DataIO::Config &node, ReturnType fallback)
+   .. doxygenfunction:: Utopia::get_as_SpaceVec
+   .. doxygenfunction:: Utopia::get_as_MultiIndex
+
+.. doxygengroup:: ConfigUtilities
+
+.. doxygenclass:: Utopia::KeyError
 .. doxygentypedef:: Utopia::SpaceVecType
 .. doxygentypedef:: Utopia::MultiIndexType

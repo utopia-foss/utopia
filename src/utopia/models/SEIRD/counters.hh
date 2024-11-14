@@ -20,7 +20,7 @@ namespace Utopia::Models::SEIRD {
 template<class Counter>
 struct Counters {
     /// Number of counters
-    /** \NOTE When adjusting this, make sure to adjust the _labels as well!
+    /** NOTE When adjusting this, make sure to adjust the _labels as well!
       */
     static constexpr std::size_t size = 11;
 

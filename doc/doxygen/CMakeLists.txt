@@ -5,10 +5,16 @@ if (DOXYGEN_FOUND)
     # configure doxygen
     set(DOXYGEN_QUIET YES)
     set(DOXYGEN_EXTRACT_ALL YES)
+    set(DOXYGEN_EXTRACT_PACKAGE YES)
     set(DOXYGEN_EXTRACT_PRIVATE YES)
+    set(DOXYGEN_EXTRACT_PRIV_VIRTUAL YES)
     set(DOXYGEN_EXTRACT_STATIC YES)
+    set(DOXYGEN_EXTRACT_LOCAL_CLASSES YES)
+    set(DOXYGEN_EXTRACT_LOCAL_METHODS YES)
     set(DOXYGEN_GENERATE_HTML YES)
     set(DOXYGEN_GENERATE_XML YES)
+    set(DOXYGEN_INLINE_SOURCES YES)
+    set(DOXYGEN_FULL_PATH_NAMES YES)
     set(DOXYGEN_WARN_LOGFILE ${CMAKE_CURRENT_BINARY_DIR}/doxygen_warnings.log)
 
     # For persistent HTML page names, explicitly set file names to be generated
@@ -18,6 +24,11 @@ if (DOXYGEN_FOUND)
 
     # Use MathJax for nicer formulas
     set(DOXYGEN_USE_MATHJAX YES)
+
+    # Increase verbosity
+    set(DOXYGEN_WARN_NO_PARAMDOC YES)
+    set(DOXYGEN_WARN_UNDOC_ENUM_VAL YES)
+    set(DOXYGEN_WARN_AS_ERROR NO)  # TODO ... worth considering though!
 
     # register the target
     doxygen_add_docs(doxygen_utopia

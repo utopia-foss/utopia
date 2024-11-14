@@ -351,15 +351,15 @@ private:
         return lowest_neighbor;
     }
 
-    /// Update the CellContainer of lake and shore clls
-    /** \param lake Reference to a Container of lake cells. Lake: cells of
+    /// Update the CellContainer of lake and shore cells
+    /** updates the shore Container to match the new lake
+     *
+     *  \param lake Reference to a Container of lake cells. Lake: cells of
      *              equal waterline.
      *  \param shore Reference to the Cells neighboring the lake
      *
      *  \returns CellContainer of all cells connected and of same waterline as
      *           the given lake Container.
-     *
-     *  \Note updates the shore Container to match the new lake
      */
     GmorphCellContainer update_lakesites(GmorphCellContainer& lake,
                                          GmorphCellContainer& shore)

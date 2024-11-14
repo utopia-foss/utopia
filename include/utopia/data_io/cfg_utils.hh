@@ -127,8 +127,8 @@ to_string(const Config& node)
 /// This function is a wrapper around the yaml-cpp YAML::Node::as function
 /** It enhances the error messages that can occur in a read operation.
  *
- * Example:
- * \code{.cc}
+ *  Example:
+ *  \code{.cc}
  *   using namespace Utopia;
  *
  *   auto cfg = YAML::Load("{my_double: 3.14, my_int: 42, my_str: foo}");
@@ -136,7 +136,7 @@ to_string(const Config& node)
  *   auto my_uint = get_as<unsigned int>("my_int", cfg);
  *   auto my_int = get_as<int>("my_int", cfg);
  *   auto my_str = get_as<std::string>("my_str", cfg);
- * \endcode
+ *  \endcode
  *
  *  \note  This method may throw Utopia::KeyError,
  *         which contains the name of the key that could not be accessed.
@@ -205,6 +205,11 @@ get_as(const std::string& key, const DataIO::Config& node, ReturnType fallback)
     // All other errors will (rightly) be thrown
 }
 
+// end group ConfigUtilities
+/**
+ *  \}
+ */
+
 // Armadillo-related specialization
 // TODO These should be implemented specializations of the get_as function!
 namespace DataIO
@@ -250,6 +255,12 @@ get_as_arma_vec(const std::string& key, const DataIO::Config& node)
 }
 } // namespace DataIO
 
+
+/*!
+ * \addtogroup ConfigUtilities
+ * \{
+ */
+
 /// Special case of Utopia::get_as to retrieve an entry as SpaceVec
 /** \tparam dim The dimensionality of the returned Utopia::SpaceVecType
  */
@@ -269,8 +280,6 @@ get_as_MultiIndex(const std::string& key, const DataIO::Config& node)
 {
     return DataIO::get_as_arma_vec< MultiIndexType< dim >, dim >(key, node);
 }
-
-
 
 // end group ConfigUtilities
 /**

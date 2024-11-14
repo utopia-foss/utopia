@@ -72,7 +72,7 @@ The first line of your output should confirm that you are now on your new branch
 
 Well done! You have now created your own development branch. Utopia comes with a host of pre-implemented models for you to use and experiment with. And in the :ref:`impl_step_by_step` on how to build a model you can learn how to use these as a starting point, meaning you do not have to start from scratch when developing new models.
 
-Now that you have created a new branch, you are ready to code and upload your changes using git. There are a lot of guides and tutorials online where you can learn how to use git. A quick start would be `this one <https://git-scm.com/book/en/v2/Getting-Started-Git-Basics>`_; a longer one can be found on `git-tower <https://www.git-tower.com/learn/git/ebook>`_. Also, the `git documentation <https://git-scm.com/doc>`_ is quite comprehensive and well-written.
+Now that you have created a new branch, you are ready to code and upload your changes using git. There are a lot of guides and tutorials online where you can learn how to use git. A quick start would be `this one <https://git-scm.com/book/en/v2>`_; a longer one can be found on `git-tower <https://www.git-tower.com/learn/git/ebook>`_. Also, the `git documentation <https://git-scm.com/doc>`_ is quite comprehensive and well-written.
 
 Here, we provide only a small selection of commands that you will use a lot during your code development and address some frequent issues encountered when starting to use git. If you have questions or run into problems, it is always worth consulting the ``git <command> --help`` or checking out the guides linked above. Also, searching the internet for what you want to do is usually quite effective when it comes to questions with git.
 

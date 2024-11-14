@@ -64,11 +64,17 @@ namespace Utopia {
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
+/*!
+ * \addtogroup SelectionModes
+ * \{
+ */
+
 /// Possible selection modes; availability depends on choice of manager
 /** For further details, consult the actual implementations.
-  *
-  * \warning  Associated integer values may be subject to change.
-  */
+ *
+ *  \warning  Associated integer values may be subject to change.
+ */
 enum class SelectionMode {
     // .. Working on entities . . . . . . . . . . . . . . . . . . . . . . . . .
     /// Select if a condition is fulfilled
@@ -108,8 +114,10 @@ enum class SelectionMode {
 
     // .. Only relevant for GraphManager . . . . . . . . . . . . . . . . . . .
     // (Offset by 300)
+
+    // NOTE When adding new enum members, take care to update the
+    //      select_key_map!
 };
-// NOTE When adding new enum members, take care to update the select_key_map!
 
 
 /// A map from strings to Select enum values
@@ -143,6 +151,11 @@ std::string selection_mode_to_string(const SelectionMode& mode) {
     throw std::invalid_argument("The given entity selection mode is not "
         "available! Are all SelectionMode values represented in the map?");
 };
+
+// end group SelectionModes
+/**
+ *  \}
+ */
 
 
 /// Metafunction to determine whether a Manager is a CellManager
@@ -756,7 +769,7 @@ Container select_entities(
   *                     is also added to the cluster
   * \param  num_passes  How often to invoke the attachment iteration
   *
-  * \TODO Could generalize this to all kinds of entities that have neighbors.
+  * \todo TODO Could generalize this to all kinds of entities with neighbors.
   */
 template<
     SelectionMode mode,

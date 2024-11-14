@@ -59,7 +59,7 @@ class HDFDataspace final : public HDFObject< HDFCategory::dataspace >
 
     /**
      * @brief Get the properties object: size and capacity.
-     * @notice The dimensions can be infered from the size of the returned
+     * @note The dimensions can be infered from the size of the returned
      * vectors
      * @return auto pair containing (size, capacity) armadillo rowvectors
      */
