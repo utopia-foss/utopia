@@ -22,6 +22,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     && apt-get install -y --no-install-recommends \
     # general tools
         tzdata \
+        build-essential \
         curl \
         locales \
         git \
