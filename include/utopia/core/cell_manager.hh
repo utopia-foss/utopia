@@ -601,7 +601,7 @@ public:
     // -- Public Helpers ------------------------------------------------------
 
     /// Given a container IDs, convert it to container of entity pointers
-    /** \TODO This should move into a common manager base class
+    /** \todo TODO This should move into a common manager base class
       */
     template<class IndexContainer>
     CellContainer<Cell> entity_pointers_from_ids(IndexContainer&& ids) const {

@@ -409,12 +409,13 @@ for line in open(f"{doc_dir}/.nitpick-ignore"):
         nitpick_ignore.append((reftype, target.strip()))
 
 
-
-
 # -----------------------------------------------------------------------------
-# Link-checking
+# -- Link-checking ------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Docs:
 #   https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-the-linkcheck-builder
+
+linkcheck_retries = 2
 
 # Link patterns to ignore
 linkcheck_ignore = [
@@ -431,13 +432,12 @@ linkcheck_ignore = [
     # And the IUP homepage, which has some weird certificate settings
     r".*(www\.)?iup\.uni-heidelberg\.de/.*",
     #
-    # Sites that do not allow the sphinx linkcheck client (403 client error)
+    # Sites that do not allow the sphinx linkcheck user agent, or forward to
+    # such sites (typically shows a 403 client error) ... even if a custom
+    # user agent is set, these sites are not happy.
     r".*(www\.)?intel\.com/.*",
+    r".*doi\.org/10\.1103/[Pp]hys[Rr]ev[Ll]ett.*",
 ]
-
-
-linkcheck_retries = 2
-
 
 
 

@@ -299,11 +299,12 @@ public:
     // .. Runtime functions ...................................................
 
     /** @brief Iterate a single step
-     *  @detail Each step consists of an opinion update and edge rewiring.
-     *          Opinion update: Apply the interaction function to a randomly
-     *              chosen vertex.
-     *          Rewiring (if enabled): Rewire a random edge based on
-     *              selective exposure.
+     *  Each step consists of an opinion update and edge rewiring.
+     *
+     *  Opinion update: Apply the interaction function to a randomly chosen
+     *  vertex.
+     *
+     *  Rewiring, if enabled: Rewire a random edge based on selective exposure.
      */
     void perform_step ()
     {
@@ -322,10 +323,9 @@ public:
 
 
     /// Monitor model information
-    /** @detail Here, functions and values can be supplied to the monitor that
-     *          are then available to the frontend. The monitor() function is
-     *          _only_ called if a certain emit interval has passed; thus, the
-     *          performance hit is small.
+    /** Here, functions and values can be supplied to the monitor that are then
+     *  available to the frontend. The monitor() function is _only_ called if a
+     *  certain emit interval has passed; thus, the performance hit is small.
      */
     void monitor () {
         double mean_opinion = 0.;

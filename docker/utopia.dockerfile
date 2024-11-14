@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 
 # Select a base image via argument
-ARG BASE_IMAGE
+ARG BASE_IMAGE="ccees/utopia-base:latest"
 FROM ${BASE_IMAGE}
 
 LABEL maintainer="Utopia Developers <utopia-dev@iup.uni-heidelberg.de>"
@@ -21,13 +21,24 @@ ARG GIT_REMOTE_URL=""
 
 # End of argument definitions . . . . . . . . . . . . . . . . . . . . . . . . .
 
-# Enter a new work directory and copy over all data from the build context
+# Need some additional packages
+RUN    apt update \
+    && apt install -y --no-install-recommends \
+        build-essential \
+        openssh-client \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy over the whole repository from the build context
 WORKDIR /utopia
 COPY ./ ./
 
-# Checkout a specific commit and set the origin URL as specified
-RUN if [ -n "$GIT_CHECKOUT" ]; then git checkout ${GIT_CHECKOUT}; fi
-RUN if [ -n "$GIT_REMOTE_URL" ]; then git remote set-url origin ${GIT_REMOTE_URL}; fi
+# Set origin URL (to https://… typicalls) and checkout a specific branch
+RUN if [ -n "$GIT_REMOTE_URL" ]; then \
+        git remote set-url origin ${GIT_REMOTE_URL}; fi
+RUN if [ -n "$GIT_CHECKOUT" ]; then \
+        git fetch --all && git checkout ${GIT_CHECKOUT}; fi
 
 # Configure and build Utopia
 WORKDIR /utopia/build

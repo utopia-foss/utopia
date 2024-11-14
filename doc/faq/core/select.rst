@@ -34,10 +34,12 @@ There, the ``mode`` is crucial. Only those parameters that are relevant for the 
 
 Which selection modes are available?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The following is an excerpt from the C++ documentation. For information on parameters corresponding to each mode, take a look there.
+Selection modes are defined in the ``Utopia::SelectionMode`` enum.
 
-.. doxygenenum:: Utopia::SelectionMode
-  :project: utopia
+The following is an excerpt from the C++ documentation, showing available selection modes.
+For information on parameters corresponding to each mode, take a look there or at the documentation of the respective implementations.
+
+.. doxygengroup:: SelectionModes
 
 
 Selecting from the ``CellManager``
